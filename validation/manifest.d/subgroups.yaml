@@ -1,0 +1,224 @@
+# Cohesive subgroups: cores, cliques, and communities.
+# Format as in validation/manifest.yaml.
+
+coreness_all:
+  engine: {fn: coreness, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of nodes below degree k (validation/oracles/subgroups_definition_oracle.py)"
+    networkx:
+      call: "nx.core_number(nx.Graph(G) | nx.DiGraph(G)) after removing self-loops"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so it is run on
+        the simple graph without loops. igraph and this engine count each
+        parallel edge and count a loop in a node's degree (2 in undirected
+        networks, 1 in and 1 out in directed networks).
+    igraph:
+      call: "igraph::coreness(g, mode = 'all')"
+
+coreness_out:
+  engine: {fn: coreness, mode: out}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of nodes below out-degree k"
+    igraph:
+      call: "igraph::coreness(g, mode = 'out')"
+
+coreness_in:
+  engine: {fn: coreness, mode: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of nodes below in-degree k"
+    igraph:
+      call: "igraph::coreness(g, mode = 'in')"
+
+max_cliques:
+  engine: {fn: max_cliques, min_size: 0}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every clique built in increasing node order, kept when no node extends it"
+    networkx:
+      call: "nx.find_cliques(nx.Graph(G)) (undirected simple projection; find_cliques rejects directed graphs and ignores loops)"
+    igraph:
+      call: "igraph::max_cliques(g) (ignores directions, loops, and parallel edges)"
+
+max_cliques_min3:
+  engine: {fn: max_cliques, min_size: 3}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "maximal cliques by definition, keeping those with at least 3 members"
+    networkx:
+      call: "[c for c in nx.find_cliques(nx.Graph(G)) if len(c) >= 3]"
+    igraph:
+      call: "igraph::max_cliques(g, min = 3)"
+
+clique_number:
+  engine: {fn: clique_number}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest clique found by the definition oracle"
+    networkx:
+      call: "max(len(c) for c in nx.find_cliques(nx.Graph(G)))"
+    igraph:
+      call: "igraph::clique_num(g)"
+
+# Modularity is validated on a fixed, deterministic partition: node v of n
+# goes to group floor(3 v / n). Modularity is undefined for a network with
+# no edges: this engine, igraph, and the definition oracle return NaN and
+# NetworkX returns 0. NaN never compares equal, so on those fixtures
+# (tagged edge_case) agreement on NaN is also listed as documented.
+modularity:
+  engine: {fn: modularity, partition: blocks3, resolution: 1.0, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact double sum over node pairs of [A_ij - k_i k_j / 2m] (Leicht-Newman form for directed)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+    networkx:
+      call: "nx.community.modularity(G, blocks, weight = None) on the multigraph"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine and igraph return NaN.
+    igraph:
+      call: "igraph::modularity(g, blocks, weights = rep(1, m), directed = TRUE)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+
+modularity_resolution:
+  engine: {fn: modularity, partition: blocks3, resolution: 0.5, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact double sum with resolution 1/2"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+    networkx:
+      call: "nx.community.modularity(G, blocks, weight = None, resolution = 0.5)"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine and igraph return NaN.
+    igraph:
+      call: "igraph::modularity(g, blocks, weights = rep(1, m), resolution = 0.5)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+
+modularity_weighted:
+  engine: {fn: modularity, partition: blocks3, resolution: 1.0, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact double sum with weights as exact rationals"
+    networkx:
+      call: "nx.community.modularity(G, blocks, weight = 'weight')"
+    igraph:
+      call: "igraph::modularity(g, blocks, weights = E(g)$weight)"
+
+# Louvain partitions legitimately differ between implementations, so the
+# partition itself is not compared. Instead each oracle evaluates its own
+# modularity function on the partition this engine returns, which checks
+# that the reported modularity is exactly the modularity of the reported
+# partition. Partition quality relative to NetworkX and igraph is checked
+# by the louvain_quality measures below.
+louvain_modularity:
+  engine: {fn: louvain_modularity, resolution: 1.0, weighted: false, seed: 1}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact modularity of the engine's Louvain partition (seed 1)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+    networkx:
+      call: "nx.community.modularity(G, engine partition, weight = None)"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine returns NaN.
+
+louvain_modularity_weighted:
+  engine: {fn: louvain_modularity, resolution: 1.0, weighted: true, seed: 1}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact weighted modularity of the engine's Louvain partition (seed 1)"
+    networkx:
+      call: "nx.community.modularity(G, engine partition, weight = 'weight')"
+
+louvain_modularity_resolution:
+  engine: {fn: louvain_modularity, resolution: 0.5, weighted: false, seed: 1}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "exact modularity (resolution 1/2) of the engine's Louvain partition (seed 1)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+    networkx:
+      call: "nx.community.modularity(G, engine partition, resolution = 0.5)"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine returns NaN.
+
+# Partition quality. Each tool's Louvain implementation is run with seeds
+# 1 to 20 and the mean modularity of its partitions (evaluated on the same
+# network) is compared. Implementations visit nodes in different orders
+# and reach different local optima, so the means are not expected to be
+# equal: the tolerance of 0.02 in absolute modularity only asserts that
+# neither is meaningfully better than the other. Against NetworkX 3.7 the
+# largest observed gap is 0.007 (real_weights_und, unweighted), with the
+# engine ahead on some fixtures and behind on others.
+louvain_quality:
+  engine: {fn: louvain_quality, resolution: 1.0, weighted: false, seeds: 20}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.02}
+  oracles:
+    networkx:
+      call: "mean over seeds 1..20 of modularity(G, louvain_communities(G, weight = None, seed = s))"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine returns NaN.
+    igraph:
+      call: "mean over set.seed(1..20) of modularity(g, cluster_louvain(g, weights = NA))"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
+
+louvain_quality_weighted:
+  engine: {fn: louvain_quality, resolution: 1.0, weighted: true, seeds: 20}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 0, abs: 0.02}
+  oracles:
+    networkx:
+      call: "mean over seeds 1..20 of modularity(G, louvain_communities(G, weight = 'weight', seed = s), weight = 'weight')"
+    igraph:
+      call: "mean over set.seed(1..20) of modularity(g, cluster_louvain(g, weights = E(g)$weight), weights = E(g)$weight)"
+
+louvain_quality_resolution:
+  engine: {fn: louvain_quality, resolution: 0.5, weighted: false, seeds: 20}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.02}
+  oracles:
+    networkx:
+      call: "mean over seeds 1..20 of modularity(G, louvain_communities(G, weight = None, resolution = 0.5, seed = s), resolution = 0.5)"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a network without edges; this engine returns NaN.
+    igraph:
+      call: "mean over set.seed(1..20) of modularity(g, cluster_louvain(g, weights = NA, resolution = 0.5), resolution = 0.5)"
+      differs_when: [edge_case]
+      reason: Modularity is undefined without edges; both report NaN, which never compares equal.
