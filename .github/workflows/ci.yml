@@ -89,13 +89,28 @@ jobs:
           python validation/fixtures.py
           git diff --exit-code validation/fixtures
       - name: Regenerate golden values
-        run: python validation/run_oracles.py
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python validation/run_oracles.py 2>&1 | tee ci-logs/oracles.log
       - name: Compare
-        run: python validation/compare.py --strict
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python validation/compare.py --strict 2>&1 | tee ci-logs/compare.log
       - name: File formats against NetworkX
-        run: python -W ignore validation/io_check.py
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python -W ignore validation/io_check.py 2>&1 | tee ci-logs/io.log
       - name: QAP against exact permutation distributions
-        run: python validation/qap_check.py
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python validation/qap_check.py 2>&1 | tee ci-logs/qap.log
+      - name: Show failures
+        if: failure()
+        run: bash tools/ci_annotate.sh validation ci-logs/*.log
       - name: Upload report and golden values
         if: always()
         uses: actions/upload-artifact@v4
@@ -134,6 +149,11 @@ jobs:
           working-directory: r
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"warning"'
+      - name: Show failures
+        if: failure()
+        run: |
+          bash tools/ci_annotate.sh "R CMD check" r/check/*.Rcheck/00install.out \
+            r/check/*.Rcheck/00check.log r/check/*.Rcheck/tests/*.Rout.fail
 
   readme:
     # The README's examples show real output; this fails if they drift.
@@ -146,7 +166,15 @@ jobs:
           use-public-rspm: true
       - name: Install the package and igraph
         run: |
+          set -o pipefail
+          mkdir -p ci-logs
           Rscript -e 'install.packages("igraph", repos = "https://cloud.r-project.org")'
-          R CMD INSTALL r
+          R CMD INSTALL r 2>&1 | tee ci-logs/install.log
       - name: README output matches R
-        run: Rscript tools/check_readme.R
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          Rscript tools/check_readme.R 2>&1 | tee ci-logs/readme.log
+      - name: Show failures
+        if: failure()
+        run: bash tools/ci_annotate.sh README ci-logs/*.log
