@@ -13,6 +13,7 @@ pub mod conventions;
 pub mod error;
 pub mod graph;
 pub mod io;
+pub mod layout;
 pub mod matrix;
 pub mod metrics;
 pub mod parallel;

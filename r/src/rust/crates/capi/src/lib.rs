@@ -20,11 +20,15 @@ use engine::metrics::degree::{degree, strength, DegreeMode};
 use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
+mod descriptive;
 mod files;
+mod layout;
 mod positions;
 mod qap;
+mod spectral;
 mod subgroups;
 mod topography;
+mod twomode;
 pub use files::*;
 
 /// Opaque graph handle.
