@@ -445,7 +445,7 @@ From R, on Linux:
 | Maximal cliques | scale-free, 100,000 / 300,000 | 439 ms | 423 ms | 5.5 s (igraph) | 12x | 13x |
 | Louvain communities | scale-free, 100,000 / 300,000 | 323 ms | 323 ms | 23.7 s (igraph) | 73x | 73x |
 | Eigenvector centrality | scale-free, 100,000 / 300,000 | 537 ms | 540 ms | 172 ms (igraph) | 0.3x | 0.3x |
-| Components | scale-free, 100,000 / 300,000 | 3.9 ms | 3.9 ms | 0.6 ms (igraph) | 0.2x | 0.2x |
+| Components | scale-free, 100,000 / 300,000 | 1.2 ms | 1.2 ms | 0.4 ms (igraph) | 0.3x | 0.3x |
 | Read GraphML | random, 10,000 / 50,000 | 98 ms | 98 ms | 37 ms (igraph) | 0.4x | 0.4x |
 | Betweenness | directed random, 2,000 / 10,000 | 236 ms | 153 ms | 1.6 s (sna) | 6.9x | 11x |
 | Triad census | directed random, 2,000 / 10,000 | 6.7 ms | 5.1 ms | 239 s (sna) | 35,000x | 46,000x |
@@ -485,8 +485,8 @@ Where knappnet is slower, and what is planned:
   (10⁻¹²). igraph uses ARPACK's Lanczos-type eigensolver, and NetworKit
   stops its iteration at a looser tolerance. A Lanczos-type solver is
   planned.
-- **Components** has since been rewritten (union-find over the edge
-  list, about 2.5 times faster in local tests) and awaits re-measurement.
+- **Components** takes about a millisecond on 100,000 nodes, but igraph
+  is faster still.
 - **Reading GraphML** builds a full document tree before converting it; a
   streaming reader is planned.
 - **NetworKit**, a parallel C++ library, is faster on k-cores and maximal
