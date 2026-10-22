@@ -135,3 +135,19 @@ jobs:
           working-directory: r
           args: 'c("--no-manual", "--as-cran")'
           error-on: '"warning"'
+
+  readme:
+    # The README's examples show real output; this fails if they drift.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install the package and igraph
+        run: |
+          Rscript -e 'install.packages("igraph", repos = "https://cloud.r-project.org")'
+          R CMD INSTALL r
+      - name: README output matches R
+        run: Rscript tools/check_readme.R

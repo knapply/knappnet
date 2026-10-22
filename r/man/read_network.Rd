@@ -3,7 +3,8 @@
 \alias{write_network}
 \title{Read and write network files}
 \usage{
-read_network(file, format = NULL, directed = NULL, nodes = NULL)
+read_network(file, format = NULL, directed = NULL, nodes = NULL,
+             weight = NULL, weight_type = c("distance", "strength"))
 
 write_network(x, file, format = NULL, weight = NULL, nodes_file = NULL)
 }
@@ -17,9 +18,13 @@ lists), whether edges are directed. Defaults to \code{TRUE}.}
 \item{nodes}{For edge lists only: a data frame of nodes, or the path to a CSV
 file of nodes whose first column is the node identifier.}
 \item{x}{A \code{\link{netframe}}.}
-\item{weight}{Edge column to write as the link value in formats with a single
-positional value (Pajek, UCINET DL) and as the GEXF edge weight. Defaults to
-the network's weight column.}
+\item{weight}{When reading, the edge column holding weights; by default a
+numeric column called \code{weight} is used if there is one. When writing,
+the edge column written as the link value in formats with a single positional
+value (Pajek, UCINET DL) and as the GEXF edge weight; defaults to the
+network's weight column.}
+\item{weight_type}{When reading, what the weights mean (\code{"distance"} or
+\code{"strength"}); see \code{\link{netframe}}.}
 \item{nodes_file}{For edge lists only: optional path for a CSV file of nodes,
 so isolates and node attributes are kept.}
 }

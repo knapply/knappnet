@@ -30,9 +30,13 @@
 #' @param nodes For edge lists only: a data frame of nodes, or the path to
 #'   a CSV file of nodes whose first column is the node identifier.
 #' @param x A [netframe()].
-#' @param weight Edge column to write as the link value in formats with a
-#'   single positional value (Pajek, UCINET DL) and as the GEXF edge
-#'   weight. Defaults to the network's weight column.
+#' @param weight When reading, the edge column holding weights; by default
+#'   a numeric column called `weight` is used if there is one. When writing,
+#'   the edge column written as the link value in formats with a single
+#'   positional value (Pajek, UCINET DL) and as the GEXF edge weight;
+#'   defaults to the network's weight column.
+#' @param weight_type When reading, what the weights mean (`"distance"` or
+#'   `"strength"`); see [netframe()].
 #' @param nodes_file For edge lists only: optional path for a CSV file of
 #'   nodes, so isolates and node attributes are kept.
 #'
@@ -46,7 +50,9 @@
 #' write_network(g, path)
 #' read_network(path)
 #' @export
-read_network <- function(file, format = NULL, directed = NULL, nodes = NULL) {
+read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
+                         weight = NULL, weight_type = c("distance", "strength")) {
+  weight_type <- match.arg(weight_type)
   if (!is.character(file) || length(file) != 1L) {
     stop("`file` must be a single path.", call. = FALSE)
   }
@@ -63,9 +69,8 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL) {
       nodes <- utils::read.csv(nodes, stringsAsFactors = FALSE, check.names = FALSE,
                                encoding = "UTF-8")
     }
-    weight <- if ("weight" %in% names(edges) && is.numeric(edges$weight)) "weight"
     return(netframe(edges, nodes, directed = if (is.null(directed)) TRUE else directed,
-                    weight = weight))
+                    weight = pick_weight(edges, weight), weight_type = weight_type))
   }
 
   res <- .Call(C_read_network, path.expand(file), fmt,
@@ -76,9 +81,19 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL) {
   node_df$id <- ids[[1]]
   edge_df$from <- ids[[2]]
   edge_df$to <- ids[[3]]
-  weight <- if ("weight" %in% names(edge_df) && is.numeric(edge_df$weight)) "weight"
   netframe(edge_df, node_df, directed = res$directed, from = "from", to = "to",
-           id = "id", weight = weight, graph = res$graph)
+           id = "id", weight = pick_weight(edge_df, weight), weight_type = weight_type,
+           graph = res$graph)
+}
+
+pick_weight <- function(edges, weight) {
+  if (!is.null(weight)) {
+    if (!weight %in% names(edges)) {
+      stop(sprintf("Edge column `%s` not found in the file.", weight), call. = FALSE)
+    }
+    return(weight)
+  }
+  if ("weight" %in% names(edges) && is.numeric(edges$weight)) "weight"
 }
 
 #' @rdname read_network
@@ -93,7 +108,9 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
   if (!is.null(weight) && !weight %in% names(x$edges)) {
     stop(sprintf("Edge column `%s` not found.", weight), call. = FALSE)
   }
-  tables <- export_tables(x, weight)
+  # GEXF stores the edge weight in an attribute that must be called
+  # `weight`; every other format keeps the column's own name.
+  tables <- export_tables(x, if (fmt == "gexf") weight)
 
   if (fmt %in% c("csv", "tsv")) {
     sep <- if (fmt == "tsv") "\t" else ","
@@ -106,9 +123,9 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
     return(invisible(file))
   }
 
+  weight_col <- if (is.null(weight)) NULL else if (fmt == "gexf") "weight" else weight
   .Call(C_write_network, x$directed, tables$graph, as.list(tables$nodes),
-        as.list(tables$edges), path.expand(file), fmt,
-        if (is.null(weight)) NULL else "weight")
+        as.list(tables$edges), path.expand(file), fmt, weight_col)
   invisible(file)
 }
 
@@ -150,8 +167,8 @@ integer_ids <- function(...) {
 }
 
 # Prepares node and edge tables for the engine: structural columns first
-# under the names the engine expects, the weight column named `weight`,
-# and R-specific types converted to plain vectors.
+# under the names the engine expects, the weight column renamed to `weight`
+# when `weight` is given, and R-specific types converted to plain vectors.
 export_tables <- function(x, weight) {
   nodes <- x$nodes
   edges <- x$edges

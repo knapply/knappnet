@@ -31,6 +31,7 @@ python3 validation/oracles/networkx_oracle.py
 Rscript validation/oracles/r_oracles.R     # needs igraph, sna, yaml
 python3 validation/compare.py              # must report 0 failures
 python3 tools/rename.py --self-test        # renaming still works
+Rscript tools/check_readme.R               # README output matches R (--update to refresh)
 R CMD build r && R CMD check --as-cran knappnet_*.tar.gz
 ```
 
