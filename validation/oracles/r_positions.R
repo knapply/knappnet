@@ -79,6 +79,8 @@ sna_values <- function(spec, binary, valued, meta) {
       unname(br[, c("w_I", "w_O", "b_IO", "b_OI", "b_O", "t"), drop = FALSE])
     },
     structural_equivalence = {
+      # sna::sedist() cannot handle a single node.
+      if (meta$n < 2) return(NULL)
       m <- if (isTRUE(e$weighted)) valued else binary
       unname(as.matrix(sna::sedist(m, method = e$method)))
     },

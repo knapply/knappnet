@@ -213,7 +213,7 @@ cliques (Bron and Kerbosch 1973) list its tightest groups:
 
 ```r
 table(coreness(karate))
-#> 
+#>
 #>  1  2  3  4 
 #>  1 11 12 10 
 clique_number(karate)
@@ -221,10 +221,10 @@ clique_number(karate)
 max_cliques(karate, min_size = 5)
 #> [[1]]
 #> [1] 1 2 3 4 8
-#> 
+#>
 #> [[2]]
 #> [1]  1  2  3  4 14
-#> 
+#>
 ```
 
 Louvain community detection (Blondel et al. 2008) maximizes modularity

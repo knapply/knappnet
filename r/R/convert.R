@@ -163,7 +163,7 @@ as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   }
   keep <- v != 0
   matrix_to_netframe(i[keep], j[keep], v[keep], nrow(x), rownames(x),
-                     symmetric = isSymmetric(x), directed, weighted)
+                     symmetric = Matrix::isSymmetric(x), directed, weighted)
 }
 
 matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted) {
