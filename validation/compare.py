@@ -24,6 +24,12 @@ from common import (GOLDEN, HERE, applies, fixture_names, load_fixture,  # noqa:
 from engine import Graph, run_variant  # noqa: E402
 
 
+# Oracles that cannot run unattended (UCINET is a Windows GUI program).
+# Their golden files are produced by hand; until they exist, the missing
+# comparisons are reported separately and do not fail --strict.
+MANUAL_ORACLES = {"ucinet"}
+
+
 def close(a: float, b: float, rel: float, abs_: float) -> bool:
     return abs(a - b) <= abs_ + rel * max(abs(a), abs(b))
 
@@ -73,7 +79,7 @@ def main() -> int:
     manifest = load_manifest()
     oracles = sorted({o for spec in manifest.values() for o in spec["oracles"]})
     tally: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    failures, documented = [], []
+    failures, documented, missing = [], [], []
 
     for name in fixture_names():
         fx = load_fixture(name)
@@ -89,7 +95,10 @@ def main() -> int:
             for oracle, ospec in spec["oracles"].items():
                 theirs = read_values(oracle, name, variant)
                 if theirs is None:
-                    tally[(variant, oracle)]["not run"] += 1
+                    key = "manual" if oracle in MANUAL_ORACLES else "not run"
+                    tally[(variant, oracle)][key] += 1
+                    if key == "not run":
+                        missing.append((variant, oracle, name))
                     continue
                 theirs = canonical(theirs, mode)
                 if agree(ours, theirs, rel, abs_):
@@ -152,12 +161,15 @@ def main() -> int:
         for k, v in t.items():
             total[k] += v
     print(f"match {total['match']}, documented {total['documented']}, "
-          f"FAIL {total['FAIL']}, not run {total['not run']}")
+          f"FAIL {total['FAIL']}, not run {total['not run']}, "
+          f"awaiting a manual run {total['manual']}")
     for v, o, f, d in failures:
         print(f"FAIL {v} vs {o} on {f}: {d}")
     if failures:
         return 1
     if "--strict" in sys.argv[1:] and total["not run"]:
+        for v, o, f in missing:
+            print(f"not run: {v} vs {o} on {f}")
         print("Some oracles have not been run (--strict).")
         return 1
     return 0

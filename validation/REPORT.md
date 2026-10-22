@@ -49,10 +49,10 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `betweenness_networkx_weighted` |  |  | 6 / 0 / 0 / 0 |  |  |
 | `density` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 24 / 1 / 0 / 0 | 0 / 0 / 0 / 25 |  |
 | `density_loops` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
-| `density_simple` | 25 / 0 / 0 / 0 |  | 24 / 1 / 0 / 0 | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 25 |
-| `components_weak` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 25 |
-| `components_strong` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 25 |
-| `fragmentation` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 25 |
+| `density_simple` | 25 / 0 / 0 / 0 |  | 24 / 1 / 0 / 0 | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
+| `components_weak` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
+| `components_strong` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
+| `fragmentation` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 | `fragmentation_strong` | 9 / 0 / 0 / 0 |  |  |  |  |
 | `closeness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
 | `closeness_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
@@ -60,13 +60,13 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `closeness_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `closeness_wf` | 25 / 0 / 0 / 0 |  | 25 / 0 / 0 / 0 |  |  |
 | `closeness_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 25 |
-| `closeness_ucinet_in` | 9 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 9 |
+| `closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `closeness_ucinet_in` | 9 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 | `closeness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
 | `closeness_wf_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
 | `closeness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
 | `harmonic` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
-| `harmonic_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 25 |
+| `harmonic_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
 | `harmonic_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
 | `harmonic_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
 | `eigenvector` | 24 / 0 / 0 / 1 | 0 / 0 / 0 / 25 |  |  |  |
@@ -75,15 +75,15 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `eigenvector_weighted_networkx` | 6 / 0 / 0 / 0 |  | 5 / 0 / 0 / 1 |  |  |
 | `eigenvector_undirected` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `eigenvector_sna` | 24 / 0 / 0 / 1 |  |  | 0 / 0 / 0 / 25 |  |
-| `eigenvector_ucinet` | 24 / 0 / 0 / 1 |  |  |  | 0 / 0 / 0 / 25 |
+| `eigenvector_ucinet` | 24 / 0 / 0 / 1 |  |  |  | 0 / 0 / 0 / 0 |
 | `centralization_degree` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
 | `centralization_degree_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `centralization_degree_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `centralization_degree_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 25 |
-| `centralization_betweenness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 25 |
+| `centralization_degree_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `centralization_betweenness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
 | `centralization_closeness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
 | `centralization_closeness_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `centralization_closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 25 |
+| `centralization_closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 
 ## Documented convention differences
 
