@@ -10,20 +10,35 @@
 #' in-degree. These match igraph and NetworkX. Set `loops = FALSE` to ignore
 #' self-loops, which matches the sna default (`diag = FALSE`).
 #'
+#' `convention = "sna"` or `"ucinet"` reads the network as an adjacency
+#' matrix, as those tools do: parallel edges collapse into one tie (keeping
+#' the largest weight) and self-loops are ignored, whatever `loops` says.
+#' See [conventions].
+#'
 #' @param x A [netframe()].
 #' @param mode For directed networks, `"all"`, `"out"`, or `"in"`. Ignored
 #'   for undirected networks.
 #' @param loops Whether self-loops count.
 #' @param weighted Whether to sum edge weights.
+#' @param convention `"igraph"` (the default) and `"networkx"` count every
+#'   edge; `"sna"` and `"ucinet"` count distinct ties between distinct
+#'   nodes.
 #'
 #' @return A numeric vector aligned with the rows of `x$nodes`.
 #' @export
-degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE) {
+degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
+                   convention = c("igraph", "networkx", "sna", "ucinet")) {
   check_netframe(x)
   mode <- match.arg(mode)
+  convention <- match.arg(convention)
   if (weighted) require_weights(x)
   code <- switch(mode, out = 1L, `in` = 2L, all = 3L)
-  .Call(C_degree, engine_graph(x), code, isTRUE(loops), isTRUE(weighted))
+  ptr <- engine_graph(x)
+  if (convention %in% c("sna", "ucinet")) {
+    ptr <- engine_graph_simple(x)
+    loops <- FALSE
+  }
+  .Call(C_degree, ptr, code, isTRUE(loops), isTRUE(weighted))
 }
 
 #' @rdname degree
@@ -52,6 +67,14 @@ strength <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
 #' \eqn{(n-1)(n-2)} for directed and \eqn{(n-1)(n-2)/2} for undirected
 #' networks. These conventions match igraph and NetworkX.
 #'
+#' Tools differ on multigraphs. igraph (the default) counts each parallel
+#' edge as a distinct shortest path. NetworkX counts parallel edges once,
+#' using the shortest of them when weighted (`convention = "networkx"`).
+#' sna and UCINET read the network as a binary adjacency matrix: parallel
+#' edges collapse and weights are not used (`convention = "sna"` or
+#' `"ucinet"`). On networks without parallel edges all four agree. See
+#' [conventions].
+#'
 #' @inheritParams degree
 #' @param weighted Whether to use edge weights. `NULL` (the default) uses
 #'   them when the network has a weight column.
@@ -59,6 +82,8 @@ strength <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
 #'   `"strength"`.
 #' @param normalized Whether to normalize by the number of pairs.
 #' @param threads Number of threads; `0` uses all available cores.
+#' @param convention How parallel edges and weights are treated; see
+#'   Details.
 #'
 #' @references
 #' Freeman, L. C. (1977). A set of measures of centrality based on
@@ -71,11 +96,24 @@ strength <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
 #' @return A numeric vector aligned with the rows of `x$nodes`.
 #' @export
 betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
-                        weights_as = NULL) {
+                        weights_as = NULL,
+                        convention = c("igraph", "networkx", "sna", "ucinet")) {
   check_netframe(x)
-  w <- resolve_weighting(x, weighted, weights_as)
-  .Call(C_betweenness, engine_graph(x), w$weighted, w$code, isTRUE(normalized),
-        as.integer(threads))
+  convention <- match.arg(convention)
+  binary <- convention %in% c("sna", "ucinet")
+  if (binary && isTRUE(weighted)) {
+    stop(sprintf("The %s convention uses binary ties; use `weighted = FALSE`.", convention),
+         call. = FALSE)
+  }
+  w <- resolve_weighting(x, if (binary) FALSE else weighted, weights_as)
+  ptr <- switch(convention,
+    igraph = engine_graph(x),
+    # NetworkX keeps the shortest of several parallel edges: the smallest
+    # distance, or the largest strength.
+    networkx = engine_graph_simple(x, keep = if (w$code == 1L) "max" else "min"),
+    engine_graph_simple(x)
+  )
+  .Call(C_betweenness, ptr, w$weighted, w$code, isTRUE(normalized), as.integer(threads))
 }
 
 #' Triad census
