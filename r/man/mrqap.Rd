@@ -37,7 +37,9 @@ edges otherwise.}
 \item{tol}{Tolerance for detecting a rank-deficient design: a column that
 keeps at most this fraction of its norm after the preceding columns are
 projected out.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{
 An object of class \code{"mrqap"}: a list with \code{coefficients},

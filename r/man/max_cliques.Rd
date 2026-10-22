@@ -10,7 +10,9 @@ clique_number(x, threads = 0L)
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
 \item{min_size}{Smallest clique size to return.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{
 \code{max_cliques()}: a list of vectors of node identifiers (values of the
