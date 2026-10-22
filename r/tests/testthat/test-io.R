@@ -126,8 +126,19 @@ test_that("files written by igraph are read correctly here", {
 test_that("UCINET DL files are read the same way igraph reads them", {
   skip_if_not_installed("igraph")
   path <- tempfile(fileext = ".dl")
+  # igraph reads full matrices as binary only, so values are compared on
+  # an edge list.
   writeLines(c("dl n=4", "format = fullmatrix", "labels:", "a,b,c,d", "data:",
-               "0 1 0 0", "0 0 2 0", "1 0 0 0", "0 0 0 0"), path)
+               "0 1 0 0", "0 0 1 0", "1 0 0 0", "0 0 0 0"), path)
+  g <- read_network(path)
+  ig <- igraph::read_graph(path, format = "dl")
+  expect_equal(nrow(g$edges), igraph::ecount(ig))
+  expect_equal(g$nodes$id, igraph::V(ig)$name)
+  expect_equal(paste(g$edges$from, g$edges$to),
+               apply(igraph::as_edgelist(ig), 1, paste, collapse = " "))
+
+  writeLines(c("dl n=4", "format = edgelist1", "labels:", "a,b,c,d", "data:",
+               "1 2 1", "2 3 2.5", "3 1 1"), path)
   g <- read_network(path)
   ig <- igraph::read_graph(path, format = "dl")
   expect_equal(nrow(g$edges), igraph::ecount(ig))

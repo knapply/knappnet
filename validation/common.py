@@ -91,7 +91,8 @@ def read_values(oracle: str, fixture: str, variant: str):
     with open(p) as fh:
         next(fh)
         for line in fh:
-            parts = line.split()
+            # R writes missing values as NA; they are undefined, like NaN.
+            parts = ["nan" if x == "NA" else x for x in line.split()]
             if not parts:
                 # An empty line is an empty group (e.g. no members).
                 out.append(())

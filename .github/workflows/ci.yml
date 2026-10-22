@@ -145,16 +145,23 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
       - uses: r-lib/actions/check-r-package@v2
-        env:
-          # On Linux the Rust standard library, linked statically, contains
-          # references to abort() and exit() that R CMD check reports. The
-          # engine never calls them: every C entry point catches panics and
-          # returns an error to R. See r/cran-comments.md.
-          _R_CHECK_COMPILED_CODE_: ${{ runner.os == 'Linux' && 'false' || 'true' }}
         with:
           working-directory: r
           args: 'c("--no-manual", "--as-cran")'
-          error-on: '"warning"'
+          # On Linux the statically linked Rust standard library contains
+          # references to abort() and exit(), which R CMD check reports as a
+          # warning; the engine never calls them (see r/cran-comments.md).
+          # There, warnings are checked by the next step instead.
+          error-on: ${{ runner.os == 'Linux' && '"error"' || '"warning"' }}
+      - name: No other warnings
+        if: runner.os == 'Linux'
+        run: |
+          log=$(ls r/check/*.Rcheck/00check.log)
+          other=$(grep -E '\.\.\. (\[[^]]*\] )?WARNING$' "$log" | grep -v 'checking compiled code' || true)
+          if [ -n "$other" ]; then
+            echo "$other"
+            exit 1
+          fi
       - name: Show failures
         if: failure()
         run: |
