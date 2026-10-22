@@ -89,10 +89,7 @@ jobs:
           python validation/fixtures.py
           git diff --exit-code validation/fixtures
       - name: Regenerate golden values
-        run: |
-          python validation/oracles/definition_oracle.py
-          python validation/oracles/networkx_oracle.py
-          Rscript validation/oracles/r_oracles.R
+        run: python validation/run_oracles.py
       - name: Compare
         run: python validation/compare.py --strict
       - name: File formats against NetworkX

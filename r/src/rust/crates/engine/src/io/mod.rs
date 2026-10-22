@@ -19,6 +19,7 @@
 
 pub mod dl;
 pub mod dot;
+pub mod dynetml;
 pub mod gexf;
 pub mod gml;
 pub mod graphml;

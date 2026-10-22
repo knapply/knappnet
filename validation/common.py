@@ -13,6 +13,7 @@ HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 GOLDEN = HERE / "golden"
 MANIFEST = HERE / "manifest.yaml"
+MANIFEST_DIR = HERE / "manifest.d"
 
 
 @dataclass
@@ -46,7 +47,14 @@ def fixture_names() -> list[str]:
 
 
 def load_manifest() -> dict:
-    return yaml.safe_load(MANIFEST.read_text())
+    """The main manifest plus every file in manifest.d/, in name order."""
+    manifest = yaml.safe_load(MANIFEST.read_text()) or {}
+    for extra in sorted(MANIFEST_DIR.glob("*.yaml")):
+        for key, spec in (yaml.safe_load(extra.read_text()) or {}).items():
+            if key in manifest:
+                raise ValueError(f"measure {key!r} is defined twice (in {extra.name})")
+            manifest[key] = spec
+    return manifest
 
 
 def applies(variant: dict, fx: Fixture) -> bool:
@@ -60,19 +68,35 @@ def applies(variant: dict, fx: Fixture) -> bool:
     return True
 
 
-def write_values(oracle: str, fixture: str, variant: str, values: list[float]) -> None:
+def write_values(oracle: str, fixture: str, variant: str, values) -> None:
+    """Writes one value per line. A value may be a number or a sequence of
+    numbers (written space-separated, e.g. one clique per line)."""
     d = GOLDEN / oracle / fixture
     d.mkdir(parents=True, exist_ok=True)
     with open(d / f"{variant}.csv", "w", newline="") as fh:
         fh.write("value\n")
         for v in values:
-            fh.write(f"{float(v):.17g}\n")
+            if isinstance(v, (list, tuple)):
+                fh.write(" ".join(f"{float(x):.17g}" for x in v) + "\n")
+            else:
+                fh.write(f"{float(v):.17g}\n")
 
 
-def read_values(oracle: str, fixture: str, variant: str) -> list[float] | None:
+def read_values(oracle: str, fixture: str, variant: str):
+    """Numbers, or tuples of numbers for lines holding several values."""
     p = GOLDEN / oracle / fixture / f"{variant}.csv"
     if not p.exists():
         return None
+    out = []
     with open(p) as fh:
         next(fh)
-        return [float(line) for line in fh if line.strip()]
+        for line in fh:
+            parts = line.split()
+            if not parts:
+                # An empty line is an empty group (e.g. no members).
+                out.append(())
+            elif len(parts) == 1:
+                out.append(float(parts[0]))
+            else:
+                out.append(tuple(float(x) for x in parts))
+    return out

@@ -21,6 +21,10 @@ use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
 mod files;
+mod positions;
+mod qap;
+mod subgroups;
+mod topography;
 pub use files::*;
 
 /// Opaque graph handle.

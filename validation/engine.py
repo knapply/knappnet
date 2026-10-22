@@ -131,18 +131,62 @@ class Graph:
         return self._call(self.lib.net_triad_census, 16, threads)
 
 
-def run_variant(g: Graph, spec: dict) -> list[float]:
+# Measures are registered by name. Each runner takes the graph, the
+# manifest's engine spec, and the fixture, and returns a list of values (or
+# of tuples, for grouped results such as cliques). Area-specific runners
+# live in validation/bindings/*.py and register themselves on import.
+RUNNERS = {}
+
+
+def register(name: str):
+    def wrap(fn):
+        if name in RUNNERS:
+            raise ValueError(f"runner {name!r} registered twice")
+        RUNNERS[name] = fn
+        return fn
+    return wrap
+
+
+@register("degree")
+def _degree(g, spec, fx):
+    return g.degree(spec["mode"], spec["loops"], weighted=False)
+
+
+@register("strength")
+def _strength(g, spec, fx):
+    return g.degree(spec["mode"], spec["loops"], weighted=True)
+
+
+@register("betweenness")
+def _betweenness(g, spec, fx):
+    return g.betweenness(spec["weighted"], spec["normalized"],
+                         weights_as=spec.get("weights_as", "distance"))
+
+
+@register("triad_census")
+def _triad_census(g, spec, fx):
+    return g.triad_census()
+
+
+def _load_bindings() -> None:
+    import importlib.util
+    folder = Path(__file__).resolve().parent / "bindings"
+    for path in sorted(folder.glob("*.py")):
+        name = f"bindings_{path.stem}"
+        if name in sys.modules:
+            continue
+        spec = importlib.util.spec_from_file_location(name, path)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+
+
+def run_variant(g: Graph, spec: dict, fx=None):
+    _load_bindings()
     fn = spec["fn"]
-    if fn == "degree":
-        return g.degree(spec["mode"], spec["loops"], weighted=False)
-    if fn == "strength":
-        return g.degree(spec["mode"], spec["loops"], weighted=True)
-    if fn == "betweenness":
-        return g.betweenness(spec["weighted"], spec["normalized"],
-                             weights_as=spec.get("weights_as", "distance"))
-    if fn == "triad_census":
-        return g.triad_census()
-    raise ValueError(f"no engine binding for {fn!r}")
+    if fn not in RUNNERS:
+        raise ValueError(f"no engine binding for {fn!r}")
+    return RUNNERS[fn](g, spec, fx)
 
 
 # ---- Files ----------------------------------------------------------------

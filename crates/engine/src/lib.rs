@@ -9,11 +9,15 @@
 //! in the project's `docs/references.bib`.
 
 pub mod bitset;
+pub mod conventions;
 pub mod error;
 pub mod graph;
 pub mod io;
+pub mod matrix;
 pub mod metrics;
 pub mod parallel;
+pub mod qap;
+pub mod rng;
 pub mod weights;
 
 pub use error::{Error, Result};

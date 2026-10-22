@@ -28,6 +28,42 @@ def close(a: float, b: float, rel: float, abs_: float) -> bool:
     return abs(a - b) <= abs_ + rel * max(abs(a), abs(b))
 
 
+def canonical(values, mode: str):
+    """Puts results in a form where equal answers compare equal.
+
+    values     as given (node-aligned vectors, scalars as one-element lists)
+    sorted     order does not matter
+    partition  group labels are arbitrary: relabel by first appearance
+    sets       a collection of groups (such as cliques): order within and
+               between groups does not matter
+    """
+    if mode == "values":
+        return list(values)
+    if mode == "sorted":
+        return sorted(values)
+    if mode == "partition":
+        seen = {}
+        return [float(seen.setdefault(v, len(seen))) for v in values]
+    if mode == "sets":
+        groups = [v if isinstance(v, tuple) else (v,) for v in values]
+        return sorted(tuple(sorted(g)) for g in groups)
+    raise ValueError(f"unknown comparison mode {mode!r}")
+
+
+def agree(ours, theirs, rel: float, abs_: float) -> bool:
+    if len(ours) != len(theirs):
+        return False
+    for a, b in zip(ours, theirs):
+        if isinstance(a, tuple) or isinstance(b, tuple):
+            a = a if isinstance(a, tuple) else (a,)
+            b = b if isinstance(b, tuple) else (b,)
+            if len(a) != len(b) or not all(close(x, y, rel, abs_) for x, y in zip(a, b)):
+                return False
+        elif not close(a, b, rel, abs_):
+            return False
+    return True
+
+
 def worst_diff(xs: list[float], ys: list[float]) -> tuple[int, float, float]:
     i = max(range(len(xs)), key=lambda k: abs(xs[k] - ys[k]))
     return i, xs[i], ys[i]
@@ -46,7 +82,8 @@ def main() -> int:
         for variant, spec in manifest.items():
             if not applies(spec, fx):
                 continue
-            ours = run_variant(g, spec["engine"])
+            mode = spec.get("compare", "values")
+            ours = canonical(run_variant(g, spec["engine"], fx), mode)
             tol = spec.get("tolerance", {})
             rel, abs_ = float(tol.get("rel", 0)), float(tol.get("abs", 0))
             for oracle, ospec in spec["oracles"].items():
@@ -54,15 +91,19 @@ def main() -> int:
                 if theirs is None:
                     tally[(variant, oracle)]["not run"] += 1
                     continue
-                ok = len(theirs) == len(ours) and all(
-                    close(a, b, rel, abs_) for a, b in zip(ours, theirs))
-                if ok:
+                theirs = canonical(theirs, mode)
+                if agree(ours, theirs, rel, abs_):
                     tally[(variant, oracle)]["match"] += 1
                     continue
                 known = tags & set(ospec.get("differs_when", []))
-                if len(theirs) == len(ours):
+                numeric = all(not isinstance(v, tuple) for v in ours + theirs)
+                if len(theirs) == len(ours) and numeric:
                     i, a, b = worst_diff(ours, theirs)
                     detail = f"index {i}: engine {a!r}, {oracle} {b!r}"
+                elif len(theirs) == len(ours):
+                    i = next(k for k, (a, b) in enumerate(zip(ours, theirs))
+                             if not agree([a], [b], rel, abs_))
+                    detail = f"item {i}: engine {ours[i]!r}, {oracle} {theirs[i]!r}"
                 else:
                     detail = f"length {len(ours)} vs {len(theirs)}"
                 row = (variant, oracle, name, detail)
