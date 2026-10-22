@@ -17,6 +17,41 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
 | `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |  |
 | `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
+| `reciprocity` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  |
+| `reciprocity_ratio` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  | 0 / 0 / 0 / 8 |  |
+| `reciprocity_dyadic` | 9 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 9 |  |
+| `reciprocity_correlation` | 9 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 7 |  |
+| `transitivity` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 22 |  |  |  |
+| `transitivity_networkx` | 25 / 0 / 0 / 0 |  | 25 / 0 / 0 / 0 |  |  |
+| `clustering` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `clustering_zero` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
+| `average_clustering` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `average_clustering_zero` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
+| `clustering_barrat` | 4 / 0 / 0 / 0 | 0 / 0 / 0 / 4 |  |  |  |
+| `clustering_onnela` | 4 / 0 / 0 / 0 |  | 4 / 0 / 0 / 0 |  |  |
+| `average_clustering_onnela` | 4 / 0 / 0 / 0 |  | 4 / 0 / 0 / 0 |  |  |
+| `distances` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |
+| `distances_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `distances_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `distances_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
+| `distances_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
+| `mean_distance` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 0 / 0 / 0 |  |  |
+| `mean_distance_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `mean_distance_connected` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `mean_distance_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
+| `diameter` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
+| `diameter_connected` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `diameter_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `diameter_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
+| `eccentricity` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
+| `eccentricity_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `eccentricity_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
+| `radius` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `reachability` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
+| `reachability_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `reachability_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `cut_points` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |
+| `bridges` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 18 | 25 / 0 / 0 / 0 |  |  |
 | `constraint` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
 | `constraint_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
 | `effective_size` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |  |
