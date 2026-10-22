@@ -177,7 +177,16 @@ fn escape(s: &str) -> String {
     out
 }
 
-fn parse_list(lex: &mut Lexer, nested: bool) -> Result<Vec<(String, Gml)>> {
+/// The deepest nesting of lists accepted; files nest two or three levels.
+const MAX_DEPTH: usize = 512;
+
+fn parse_list(lex: &mut Lexer, depth: usize) -> Result<Vec<(String, Gml)>> {
+    let nested = depth > 0;
+    if depth > MAX_DEPTH {
+        return lex.err(format!(
+            "lists are nested more than {MAX_DEPTH} levels deep"
+        ));
+    }
     let mut items = Vec::new();
     loop {
         let key = match lex.next()? {
@@ -191,7 +200,7 @@ fn parse_list(lex: &mut Lexer, nested: bool) -> Result<Vec<(String, Gml)>> {
             Some(Tok::Int(i)) => Gml::Int(i),
             Some(Tok::Float(f)) => Gml::Float(f),
             Some(Tok::Str(s)) => Gml::Str(s),
-            Some(Tok::Open) => Gml::List(parse_list(lex, true)?),
+            Some(Tok::Open) => Gml::List(parse_list(lex, depth + 1)?),
             _ => return lex.err(format!("key {key:?} has no value")),
         };
         items.push((key, value));
@@ -240,7 +249,7 @@ pub fn read(text: &str) -> Result<Network> {
         pos: 0,
         line: 1,
     };
-    let top = parse_list(&mut lex, false)?;
+    let top = parse_list(&mut lex, 0)?;
     let graph = top
         .iter()
         .find_map(|(k, v)| match (k.as_str(), v) {

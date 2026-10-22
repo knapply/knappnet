@@ -83,6 +83,7 @@ pub fn read(text: &str) -> Result<Network> {
     let mut section = Section::None;
     let mut matrix_row = 0usize;
     let mut name: Option<String> = None;
+    let mut seen_vertices = false;
 
     for (i, raw) in text.lines().enumerate() {
         let line_no = i + 1;
@@ -102,11 +103,37 @@ pub fn read(text: &str) -> Result<Network> {
                     Section::None
                 }
                 "vertices" => {
+                    if seen_vertices {
+                        // Pajek project files hold several networks, each
+                        // with its own *Vertices; links already read would
+                        // refer to the wrong one.
+                        return Err(err(
+                            line_no,
+                            "a second *Vertices section; only one network per file is supported"
+                                .into(),
+                        ));
+                    }
+                    seen_vertices = true;
                     n = toks
                         .get(1)
                         .and_then(|t| t.parse().ok())
                         .ok_or_else(|| err(line_no, "*Vertices needs a count".into()))?;
+                    if n > super::MAX_DECLARED_NODES {
+                        return Err(err(
+                            line_no,
+                            format!(
+                                "*Vertices {n} declares more than the {} vertices supported",
+                                super::MAX_DECLARED_NODES
+                            ),
+                        ));
+                    }
                     n1 = toks.get(2).and_then(|t| t.parse().ok());
+                    if n1.is_some_and(|k| k > n) {
+                        return Err(err(
+                            line_no,
+                            format!("*Vertices {n} cannot have more than {n} vertices in its first mode"),
+                        ));
+                    }
                     labels = vec![None; n];
                     coords = vec![[None; 3]; n];
                     Section::Vertices
@@ -173,14 +200,24 @@ pub fn read(text: &str) -> Result<Network> {
                 }
             }
             Section::Matrix => {
-                if matrix_row >= n {
+                // Two-mode matrices are n1 x (n - n1); one-mode are n x n.
+                let (rows, cols, col_offset) = match n1 {
+                    Some(k) => (k, n - k, k),
+                    None => (n, n, 0),
+                };
+                if matrix_row >= rows {
                     return Err(err(line_no, "too many matrix rows".into()));
                 }
-                // Two-mode matrices are n1 x (n - n1); one-mode are n x n.
-                let (row, col_offset) = match n1 {
-                    Some(k) => (matrix_row, k),
-                    None => (matrix_row, 0),
-                };
+                if toks.len() > cols {
+                    return Err(err(
+                        line_no,
+                        format!(
+                            "a matrix row has {} values, but there are {cols} columns",
+                            toks.len()
+                        ),
+                    ));
+                }
+                let row = matrix_row;
                 for (j, t) in toks.iter().enumerate() {
                     let x = parse_float(t)
                         .ok_or_else(|| err(line_no, format!("invalid value {t:?}")))?;
@@ -213,9 +250,10 @@ pub fn read(text: &str) -> Result<Network> {
         b.graph.push(("name".into(), Value::Str(name)));
     }
     let has_coords = [0, 1, 2].map(|k| coords.iter().any(|c| c[k].is_some()));
+    let label_column = !use_labels && labels.iter().any(Option::is_some);
     for v in 0..n {
         let mut attrs = Vec::new();
-        if !use_labels && labels.iter().any(Option::is_some) {
+        if label_column {
             attrs.push((
                 "label".into(),
                 labels[v].clone().map(Value::Str).unwrap_or(Value::Null),

@@ -43,6 +43,13 @@ pub use table::{Column, Kind, Network, NetworkBuilder, Table, Value};
 
 use crate::error::{Error, Result};
 
+/// The largest node count a file may declare without listing the nodes
+/// (Pajek `*Vertices n`, UCINET DL `n=`). Both formats let a count alone
+/// create isolates, so a short file can ask for any number of nodes; the
+/// limit keeps a corrupt or hostile count from exhausting memory. A
+/// network this large would need tens of gigabytes as tables.
+pub const MAX_DECLARED_NODES: usize = 100_000_000;
+
 /// A supported file format.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Format {
@@ -231,13 +238,25 @@ pub fn read_file(path: &Path, format: Option<Format>, opts: &ReadOptions) -> Res
             .is_some_and(|e| e.eq_ignore_ascii_case("xml"));
     let format = resolve(path, format)?;
     let bytes = std::fs::read(path).map_err(|e| Error::Io(format!("cannot read {path:?}: {e}")))?;
-    let text = match String::from_utf8(bytes) {
-        Ok(t) => t,
-        // Older Pajek and UCINET files are often Latin-1.
-        Err(e) => e.into_bytes().iter().map(|&b| b as char).collect(),
-    };
+    let text = decode(bytes);
     let format = if sniff { sniff_xml(&text) } else { format };
     read_str(format, &text, opts)
+}
+
+/// Decodes file contents as UTF-8, or as Latin-1 when they are not valid
+/// UTF-8 (older Pajek and UCINET files are often Latin-1). Every byte
+/// sequence decodes, so readers only ever see valid text.
+pub fn decode(bytes: Vec<u8>) -> String {
+    match String::from_utf8(bytes) {
+        Ok(t) => t,
+        Err(e) => e.into_bytes().iter().map(|&b| b as char).collect(),
+    }
+}
+
+/// Parses file contents in the given format, decoding them as
+/// [`read_file`] does.
+pub fn read_bytes(format: Format, bytes: &[u8], opts: &ReadOptions) -> Result<Network> {
+    read_str(format, &decode(bytes.to_vec()), opts)
 }
 
 /// Writes a network file. The format is inferred from the extension when

@@ -33,6 +33,16 @@ impl Value {
     }
 }
 
+impl Value {
+    /// Renders the value as text without copying a string value.
+    fn into_text(self) -> Option<String> {
+        match self {
+            Value::Str(s) => Some(s),
+            other => other.to_text(),
+        }
+    }
+}
+
 /// Formats a float so it always reads back as a float (with a decimal point
 /// or exponent) and round-trips exactly.
 pub fn format_float(f: f64) -> String {
@@ -168,7 +178,7 @@ impl Column {
                     })
                     .collect::<Result<_>>()?,
             ),
-            Kind::Str => Column::Str(values.iter().map(Value::to_text).collect()),
+            Kind::Str => Column::Str(values.into_iter().map(Value::into_text).collect()),
         })
     }
 }
@@ -271,6 +281,23 @@ impl Table {
     }
 }
 
+impl Table {
+    /// Like [`Table::strings`], but borrows text values instead of copying
+    /// them.
+    pub fn texts(&self, name: &str) -> Result<Vec<std::borrow::Cow<'_, str>>> {
+        use std::borrow::Cow;
+        let missing = || Error::InvalidArgument(format!("column {name:?} has a missing value"));
+        match self.column(name) {
+            Some(Column::Str(v)) => v
+                .iter()
+                .map(|s| s.as_deref().map(Cow::Borrowed).ok_or_else(missing))
+                .collect(),
+            Some(_) => Ok(self.strings(name)?.into_iter().map(Cow::Owned).collect()),
+            None => Err(Error::InvalidArgument(format!("missing column {name:?}"))),
+        }
+    }
+}
+
 /// Accumulates rows whose columns appear over time, then builds a typed
 /// table. Columns that first appear after some rows are back-filled with
 /// missing values.
@@ -306,23 +333,28 @@ impl TableBuilder {
         let i = self.names.len();
         self.names.push(name.to_string());
         self.index.insert(name.to_string(), i);
-        self.values.push(vec![Value::Null; self.rows]);
+        // Columns are padded with missing values when they next receive a
+        // value, or when the table is built.
+        self.values.push(Vec::new());
         self.kinds.push(kind);
         i
+    }
+
+    /// Sets column `i` of the row being added. Setting a column twice keeps
+    /// the second value.
+    fn set(&mut self, i: usize, value: Value) {
+        let col = &mut self.values[i];
+        col.resize(self.rows, Value::Null);
+        col.push(value);
     }
 
     /// Appends a row. Unmentioned columns get missing values.
     pub fn push_row(&mut self, row: Vec<(String, Value)>) {
         for (name, value) in row {
             let i = self.column(&name, None);
-            let col = &mut self.values[i];
-            col.resize(self.rows, Value::Null);
-            col.push(value);
+            self.set(i, value);
         }
         self.rows += 1;
-        for col in &mut self.values {
-            col.resize(self.rows, Value::Null);
-        }
     }
 
     /// Number of rows so far.
@@ -333,7 +365,9 @@ impl TableBuilder {
     /// Builds the table.
     pub fn finish(self) -> Result<Table> {
         let mut t = Table::default();
-        for ((name, values), kind) in self.names.into_iter().zip(self.values).zip(self.kinds) {
+        let rows = self.rows;
+        for ((name, mut values), kind) in self.names.into_iter().zip(self.values).zip(self.kinds) {
+            values.resize(rows, Value::Null);
             let col = Column::from_values(values, kind)?;
             t.names.push(name);
             t.columns.push(col);
@@ -362,18 +396,18 @@ pub struct Network {
 impl Network {
     /// Checks the structural columns and that every endpoint is a node.
     pub fn validate(&self) -> Result<()> {
-        let ids = self.nodes.strings("id")?;
+        let ids = self.nodes.texts("id")?;
         let mut seen = std::collections::HashSet::with_capacity(ids.len());
         for id in &ids {
-            if !seen.insert(id.as_str()) {
+            if !seen.insert(id.as_ref()) {
                 return Err(Error::InvalidArgument(format!(
                     "node identifier {id:?} appears more than once"
                 )));
             }
         }
         for col in ["from", "to"] {
-            for v in self.edges.strings(col)? {
-                if !seen.contains(v.as_str()) {
+            for v in self.edges.texts(col)? {
+                if !seen.contains(v.as_ref()) {
                     return Err(Error::InvalidArgument(format!(
                         "edge endpoint {v:?} is not a node"
                     )));
@@ -488,13 +522,14 @@ impl NetworkBuilder {
 
     /// Declares a node attribute's type.
     pub fn node_kind(&mut self, name: &str, kind: Kind) {
-        self.nodes.column(&attr_name(name, &["id"]), Some(kind));
+        self.nodes
+            .column(&attr_name(name.to_string(), &["id"]), Some(kind));
     }
 
     /// Declares an edge attribute's type.
     pub fn edge_kind(&mut self, name: &str, kind: Kind) {
         self.edges
-            .column(&attr_name(name, &["from", "to"]), Some(kind));
+            .column(&attr_name(name.to_string(), &["from", "to"]), Some(kind));
     }
 
     /// Adds a node. Returns false if the identifier already exists.
@@ -502,10 +537,14 @@ impl NetworkBuilder {
         if self.node_rows.contains_key(id) {
             return false;
         }
-        let mut row = vec![("id".to_string(), Value::Str(id.to_string()))];
-        row.extend(attrs.into_iter().map(|(k, v)| (attr_name(&k, &["id"]), v)));
         self.node_rows.insert(id.to_string(), self.nodes.rows());
-        self.nodes.push_row(row);
+        // Column 0 is `id`.
+        self.nodes.set(0, Value::Str(id.to_string()));
+        for (k, v) in attrs {
+            let i = self.nodes.column(&attr_name(k, &["id"]), None);
+            self.nodes.set(i, v);
+        }
+        self.nodes.rows += 1;
         true
     }
 
@@ -516,21 +555,31 @@ impl NetworkBuilder {
 
     /// Adds an edge, creating missing endpoint nodes.
     pub fn add_edge(&mut self, from: &str, to: &str, attrs: Vec<(String, Value)>) {
+        self.add_edge_with(from, to, attrs, &[]);
+    }
+
+    /// Adds an edge, creating missing endpoint nodes with attributes
+    /// `node_attrs` (for example declared defaults).
+    pub fn add_edge_with(
+        &mut self,
+        from: &str,
+        to: &str,
+        attrs: Vec<(String, Value)>,
+        node_attrs: &[(String, Value)],
+    ) {
         for id in [from, to] {
             if !self.has_node(id) {
-                self.add_node(id, Vec::new());
+                self.add_node(id, node_attrs.to_vec());
             }
         }
-        let mut row = vec![
-            ("from".to_string(), Value::Str(from.to_string())),
-            ("to".to_string(), Value::Str(to.to_string())),
-        ];
-        row.extend(
-            attrs
-                .into_iter()
-                .map(|(k, v)| (attr_name(&k, &["from", "to"]), v)),
-        );
-        self.edges.push_row(row);
+        // Columns 0 and 1 are `from` and `to`.
+        self.edges.set(0, Value::Str(from.to_string()));
+        self.edges.set(1, Value::Str(to.to_string()));
+        for (k, v) in attrs {
+            let i = self.edges.column(&attr_name(k, &["from", "to"]), None);
+            self.edges.set(i, v);
+        }
+        self.edges.rows += 1;
     }
 
     /// Builds the network.
@@ -545,11 +594,11 @@ impl NetworkBuilder {
 }
 
 /// Renames attributes that would collide with structural columns.
-fn attr_name(name: &str, reserved: &[&str]) -> String {
-    if reserved.contains(&name) {
+fn attr_name(name: String, reserved: &[&str]) -> String {
+    if reserved.contains(&name.as_str()) {
         format!("{name}_attr")
     } else {
-        name.to_string()
+        name
     }
 }
 

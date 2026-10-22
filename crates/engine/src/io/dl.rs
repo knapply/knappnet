@@ -8,6 +8,11 @@
 //! Two-mode (`nr=`/`nc=`), multi-matrix, and half-matrix files are not yet
 //! supported and produce a clear error.
 //!
+//! Labels become node identifiers when they are unique. When they are not
+//! (UCINET does not require it), nodes are numbered from 1 and the labels
+//! are kept in a `label` column, as for Pajek files; reading repeated
+//! labels as identifiers would merge distinct nodes.
+//!
 //! DL files do not record direction. Networks are read as directed unless
 //! the caller says otherwise; when read as undirected, a full matrix
 //! contributes only its upper triangle (diagonal included).
@@ -80,11 +85,18 @@ pub fn read(text: &str, directed: Option<bool>) -> Result<Network> {
     while i < toks.len() {
         let t = toks[i].to_ascii_lowercase();
         if let Some(v) = t.strip_prefix("n=") {
-            n = Some(v.parse().map_err(|_| Error::Parse {
+            let count: usize = v.parse().map_err(|_| Error::Parse {
                 format: FORMAT,
                 line: None,
                 message: format!("invalid n {v:?}"),
-            })?);
+            })?;
+            if count > super::MAX_DECLARED_NODES {
+                return err(format!(
+                    "n={count} declares more than the {} nodes supported",
+                    super::MAX_DECLARED_NODES
+                ));
+            }
+            n = Some(count);
         } else if let Some(v) = t.strip_prefix("format=") {
             format = v.to_string();
         } else if t.starts_with("nr=") || t.starts_with("nc=") {
@@ -122,15 +134,19 @@ pub fn read(text: &str, directed: Option<bool>) -> Result<Network> {
                 Some(n) => n,
                 None => return err("fullmatrix data needs n="),
             };
+            // Check the size before allocating anything for it.
+            let needed = n
+                .checked_mul(n + embedded as usize)
+                .and_then(|cells| cells.checked_add(if embedded { n } else { 0 }));
+            if needed.map_or(true, |k| k > data.len()) {
+                return err("the matrix has too few values");
+            }
             let mut pos = 0;
             if embedded {
                 labels = data.get(..n).map(<[String]>::to_vec).unwrap_or_default();
                 pos = n;
             }
-            let names = node_names(&labels, n)?;
-            for name in &names {
-                b.add_node(name, Vec::new());
-            }
+            let names = add_nodes(&mut b, &labels, n)?;
             for r in 0..n {
                 if embedded {
                     pos += 1; // row label
@@ -154,12 +170,9 @@ pub fn read(text: &str, directed: Option<bool>) -> Result<Network> {
         }
         "edgelist1" | "el1" => {
             let names = match n {
-                Some(n) if !embedded => node_names(&labels, n)?,
+                Some(n) if !embedded => add_nodes(&mut b, &labels, n)?,
                 _ => Vec::new(),
             };
-            for name in &names {
-                b.add_node(name, Vec::new());
-            }
             let resolve = |t: &str| -> Result<String> {
                 if embedded {
                     return Ok(t.to_string());
@@ -193,12 +206,9 @@ pub fn read(text: &str, directed: Option<bool>) -> Result<Network> {
         }
         "nodelist1" | "nl1" => {
             let names = match n {
-                Some(n) if !embedded => node_names(&labels, n)?,
+                Some(n) if !embedded => add_nodes(&mut b, &labels, n)?,
                 _ => Vec::new(),
             };
-            for name in &names {
-                b.add_node(name, Vec::new());
-            }
             for line in text[data_at + 5..].lines() {
                 let w = words(line);
                 if w.is_empty() {
@@ -237,14 +247,31 @@ pub fn read(text: &str, directed: Option<bool>) -> Result<Network> {
     b.finish()
 }
 
-fn node_names(labels: &[String], n: usize) -> Result<Vec<String>> {
-    if labels.is_empty() {
-        return Ok((1..=n).map(|i| i.to_string()).collect());
-    }
-    if labels.len() != n {
+/// Adds the `n` declared nodes and returns their identifiers: the labels
+/// when they are unique, otherwise the numbers 1 to n with the labels as a
+/// `label` attribute.
+fn add_nodes(b: &mut NetworkBuilder, labels: &[String], n: usize) -> Result<Vec<String>> {
+    if !labels.is_empty() && labels.len() != n {
         return err(format!("{} labels given for {n} nodes", labels.len()));
     }
-    Ok(labels.to_vec())
+    let unique = {
+        let set: std::collections::HashSet<&String> = labels.iter().collect();
+        set.len() == labels.len()
+    };
+    let ids: Vec<String> = if !labels.is_empty() && unique {
+        labels.to_vec()
+    } else {
+        (1..=n).map(|i| i.to_string()).collect()
+    };
+    for (i, id) in ids.iter().enumerate() {
+        let attrs = if unique {
+            Vec::new()
+        } else {
+            vec![("label".to_string(), Value::Str(labels[i].clone()))]
+        };
+        b.add_node(id, attrs);
+    }
+    Ok(ids)
 }
 
 fn quote(s: &str) -> String {
