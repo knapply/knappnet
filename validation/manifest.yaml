@@ -122,6 +122,11 @@ betweenness_normalized:
       reason: NetworkX counts parallel edges as a single shortest path.
     igraph:
       call: "igraph::betweenness(g, weights = NA, normalized = TRUE)"
+      differs_when: [edge_case]
+      reason: >-
+        With fewer than three nodes the normalizing constant (n-1)(n-2) is
+        zero. igraph returns NaN; this engine, like NetworkX, returns 0,
+        since no node can lie between two others.
 
 betweenness_weighted:
   engine: {fn: betweenness, weighted: true, normalized: false}
@@ -169,10 +174,17 @@ triad_census:
       reason: NetworkX defines the triad census only for directed graphs.
     igraph:
       call: "igraph::triad_census(g)"
+      differs_when: [multi_edges]
+      reason: >-
+        igraph's triad census does not support multigraphs: parallel edges
+        change its counts. This engine, sna, and the definition oracle
+        classify each dyad as tied or not, so parallel edges count once.
     sna:
       call: "sna::triad.census(m, mode = 'digraph')"
-      differs_when: [undirected]
+      differs_when: [undirected, edge_case]
       reason: >-
-        For undirected graphs sna reports only the four undirected triad
+        sna returns NaN for networks with fewer than three nodes, which have
+        no triads; this engine returns zero counts. For undirected graphs sna
+        reports only the four undirected triad
         classes, while igraph and this engine report all 16 types with every
         edge treated as mutual.
