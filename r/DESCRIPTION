@@ -2,7 +2,7 @@ Package: knappnet
 Title: Fast, Validated Network Analysis
 Version: 0.0.1
 Authors@R:
-    person("Conway", "Knapp", email = "knapply@users.noreply.github.com",
+    person("Brendan", "Knapp", email = "knapply@users.noreply.github.com",
            role = c("aut", "cre", "cph"))
 Description: Network analysis on networks represented as a pair of data
     frames, one for nodes and one for edges. Algorithms run in a compiled,

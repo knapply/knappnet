@@ -71,7 +71,7 @@ def main() -> None:
                 write_values(ORACLE, name, variant, values)
                 count += 1
     print(f"networkx {nx.__version__}: wrote {count} golden files to {GOLDEN / ORACLE}")
-    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n")
+    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n", newline="")
 
 
 if __name__ == "__main__":

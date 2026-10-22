@@ -104,7 +104,7 @@ def main() -> int:
         lines += ["", "## Documented convention differences", ""]
         lines += [f"- `{v}` vs {o} on `{f}` ({tags}): {d}"
                   for v, o, f, d, tags in documented]
-    (HERE / "REPORT.md").write_text("\n".join(lines) + "\n")
+    (HERE / "REPORT.md").write_text("\n".join(lines) + "\n", newline="")
 
     total = defaultdict(int)
     for t in tally.values():

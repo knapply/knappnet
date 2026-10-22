@@ -1,7 +1,7 @@
-# Full R CMD check across platforms. Runs on demand and for release tags.
-# macOS and Windows runners use CI minutes faster, so this is not run on
-# every push.
-name: R CMD check (all platforms)
+# R CMD check against older and development versions of R. Current R on
+# Linux, macOS, and Windows is covered on every push by ci.yml; this runs on
+# demand and for release tags.
+name: R CMD check (other R versions)
 
 on:
   workflow_dispatch:
@@ -16,11 +16,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {os: ubuntu-latest, r: release}
           - {os: ubuntu-latest, r: devel}
           - {os: ubuntu-latest, r: oldrel-1}
-          - {os: macos-latest, r: release}
-          - {os: windows-latest, r: release}
+          - {os: ubuntu-latest, r: "4.1"}
+          - {os: macos-latest, r: oldrel-1}
+          - {os: windows-latest, r: devel}
+          - {os: windows-latest, r: oldrel-1}
     env:
       _R_CHECK_FORCE_SUGGESTS_: false
     steps:

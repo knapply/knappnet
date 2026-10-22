@@ -44,10 +44,14 @@ def text_files(root: Path):
             continue
         if not path.is_file():
             continue
+        # newline="" preserves line endings exactly, so rewriting a file on
+        # Windows does not convert it to CRLF.
         try:
-            yield path, path.read_text(encoding="utf-8")
+            with open(path, encoding="utf-8", newline="") as fh:
+                text = fh.read()
         except (UnicodeDecodeError, PermissionError):
             continue
+        yield path, text
 
 
 def rename(root: Path, new_name: str | None, new_repo: str | None, dry_run: bool) -> int:
@@ -72,7 +76,7 @@ def rename(root: Path, new_name: str | None, new_repo: str | None, dry_run: bool
             changed += 1
             print(f"  edit   {path.relative_to(root)}")
             if not dry_run:
-                path.write_text(new, encoding="utf-8")
+                path.write_text(new, encoding="utf-8", newline="")
 
     if new_name and new_name != old_name:
         # Deepest paths first so parents are renamed after their children.

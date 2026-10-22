@@ -182,7 +182,7 @@ def main() -> None:
             write_values(ORACLE, name, variant, values)
             count += 1
     (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text("definition (direct evaluation, exact arithmetic)\n")
+    (GOLDEN / ORACLE / "VERSION").write_text("definition (direct evaluation, exact arithmetic)\n", newline="")
     print(f"definition: wrote {count} golden files")
 
 

@@ -6,9 +6,18 @@ LIBDIR = $(TARGET_DIR)/release
 STATLIB = $(LIBDIR)/libcapi.a
 
 PKG_CPPFLAGS = -I.
+
+# System libraries the Rust standard library needs, as reported by
+# `rustc --print native-static-libs`. macOS links these implicitly.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  RUST_SYSTEM_LIBS =
+else
+  RUST_SYSTEM_LIBS = -lutil -lrt -lpthread -lm -ldl
+endif
 # Link the static archive by path: the build also emits a shared library,
 # which -lcapi would pick up instead.
-PKG_LIBS = $(STATLIB) -lpthread -ldl -lm
+PKG_LIBS = $(STATLIB) $(RUST_SYSTEM_LIBS)
 
 all: $(SHLIB) cleanup
 

@@ -1,0 +1,4 @@
+# Keep line endings identical on every platform so fixtures, golden files,
+# and the synced R sources compare byte-for-byte.
+* text=auto eol=lf
+*.bat text eol=crlf

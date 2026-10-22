@@ -1,6 +1,7 @@
-# Runs on every push and pull request. Linux only, to keep CI minutes low
-# while the repository is private. The full platform matrix is in
-# r-check.yml and runs on demand and for releases.
+# The full test suite runs on Linux, macOS, and Windows for every push and
+# pull request: engine tests, validation against every oracle, and
+# R CMD check. Older and development versions of R are covered on demand by
+# r-check.yml.
 name: CI
 
 on:
@@ -13,8 +14,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
-  engine:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,17 +30,39 @@ jobs:
         run: cargo fmt --all --check
       - name: Lint
         run: cargo clippy --workspace --all-targets -- -D warnings
+
+  engine:
+    name: engine (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Test
         run: cargo test --workspace
       - name: C ABI
+        # The smoke test links with the system C compiler; on Windows the
+        # same ABI is exercised by the validation job and by R CMD check.
+        if: runner.os != 'Windows'
         run: ./tools/check_c_abi.sh
       - name: R sources in sync
-        run: python3 tools/sync_r_sources.py --check
+        run: python tools/sync_r_sources.py --check
       - name: Rename still works
-        run: python3 tools/rename.py --self-test
+        run: python tools/rename.py --self-test
 
   validation:
-    runs-on: ubuntu-latest
+    name: validation (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -47,35 +74,44 @@ jobs:
           use-public-rspm: true
       - name: Install oracles
         run: |
-          python3 -m pip install networkx pyyaml
-          Rscript -e 'install.packages(c("igraph", "sna", "yaml"))'
+          python -m pip install networkx pyyaml
+          Rscript -e 'install.packages(c("igraph", "sna", "yaml"), repos = "https://cloud.r-project.org")'
       - name: Fixtures are reproducible
         run: |
-          python3 validation/fixtures.py
+          python validation/fixtures.py
           git diff --exit-code validation/fixtures
       - name: Regenerate golden values
         run: |
-          python3 validation/oracles/definition_oracle.py
-          python3 validation/oracles/networkx_oracle.py
+          python validation/oracles/definition_oracle.py
+          python validation/oracles/networkx_oracle.py
           Rscript validation/oracles/r_oracles.R
       - name: Compare
-        run: python3 validation/compare.py --strict
+        run: python validation/compare.py --strict
       - name: Upload report and golden values
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: validation
+          name: validation-${{ matrix.os }}
           path: |
             validation/REPORT.md
             validation/golden
 
   r-package:
-    runs-on: ubuntu-latest
+    name: R CMD check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     env:
       _R_CHECK_FORCE_SUGGESTS_: false
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Add the Windows GNU target
+        # R on Windows links with the GNU toolchain from Rtools.
+        if: runner.os == 'Windows'
+        run: rustup target add x86_64-pc-windows-gnu
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true

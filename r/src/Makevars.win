@@ -14,7 +14,7 @@ STATLIB = $(LIBDIR)/libcapi.a
 PKG_CPPFLAGS = -I.
 # Link the static archive by path rather than -lcapi, which could resolve to
 # the import library of the DLL that the build also emits.
-PKG_LIBS = $(STATLIB) -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+PKG_LIBS = $(STATLIB) -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll -lsynchronization
 
 all: $(SHLIB) cleanup
 

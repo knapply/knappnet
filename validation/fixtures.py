@@ -140,7 +140,7 @@ def write(fixtures: list[Fixture]) -> None:
                 w.writerow([a, b] + ([f.weights[i]] if f.weights is not None else []))
         meta = {"n": f.n, "directed": f.directed, "weighted": f.weights is not None,
                 "tags": f.tags, "source": f.source}
-        (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n")
+        (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", newline="")
 
 
 if __name__ == "__main__":
