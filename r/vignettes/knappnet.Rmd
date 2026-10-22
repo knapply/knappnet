@@ -1,0 +1,250 @@
+---
+title: "Getting started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+has_igraph <- requireNamespace("igraph", quietly = TRUE)
+has_network <- requireNamespace("network", quietly = TRUE)
+```
+
+knappnet works on networks stored as two data frames, one for nodes and one
+for edges. Every measure returns a vector (or a data frame) aligned with the
+rows of the node table, so results become ordinary columns that you can
+summarize, plot, or model with the tools you already use.
+
+This vignette covers the essentials: building a network, computing
+measures, weights, conversion to and from other packages, and files. If
+you already use another tool, the guides on the website map its functions
+to knappnet's:
+[igraph](https://knapply.github.io/knappnet/articles/coming-from-igraph.html),
+[statnet and sna](https://knapply.github.io/knappnet/articles/coming-from-statnet.html),
+[UCINET, ORA, Pajek, and Gephi](https://knapply.github.io/knappnet/articles/coming-from-ucinet-ora-pajek-gephi.html),
+and [NetworkX](https://knapply.github.io/knappnet/articles/coming-from-networkx.html).
+
+```{r}
+library(knappnet)
+```
+
+## Networks are two data frames
+
+Padgett's data on marriages among leading families of Renaissance Florence
+(Breiger and Pattison 1986) is a classic first network. Each row of `ties`
+is a marriage tie between two families:
+
+```{r}
+ties <- data.frame(
+  from = c("Acciaiuoli", "Medici", "Medici", "Medici", "Medici", "Medici",
+           "Castellani", "Castellani", "Castellani", "Peruzzi", "Peruzzi",
+           "Strozzi", "Strozzi", "Ridolfi", "Tornabuoni", "Albizzi", "Albizzi",
+           "Salviati", "Bischeri", "Guadagni"),
+  to   = c("Medici", "Barbadori", "Ridolfi", "Tornabuoni", "Albizzi", "Salviati",
+           "Peruzzi", "Strozzi", "Barbadori", "Strozzi", "Bischeri",
+           "Ridolfi", "Bischeri", "Tornabuoni", "Guadagni", "Ginori", "Guadagni",
+           "Pazzi", "Guadagni", "Lamberteschi")
+)
+```
+
+The Pucci family married outside this group, so it appears in no tie. A
+node table keeps it in the network as an isolate, and holds any node
+attributes:
+
+```{r}
+families <- data.frame(name = sort(unique(c(ties$from, ties$to, "Pucci"))))
+flo <- netframe(ties, nodes = families, directed = FALSE)
+flo
+```
+
+Without `nodes`, the node table is built from the edge list, in order of
+first appearance, and isolates are necessarily missing. `netframe()`
+assumes the endpoints are the first two columns of the edge table and the
+identifier is the first column of the node table; `from`, `to`, and `id`
+name other columns. Any other columns are attributes and are carried
+along untouched.
+
+The two tables are plain data frames:
+
+```{r}
+head(flo$nodes)
+head(flo$edges)
+```
+
+## Measures
+
+Each node-level measure returns one value per row of `flo$nodes`, in the
+same order, so results can be stored directly as columns:
+
+```{r}
+flo$nodes$degree <- degree(flo)
+flo$nodes$betweenness <- betweenness(flo)
+flo$nodes$harmonic <- round(harmonic_centrality(flo, normalized = TRUE), 3)
+flo$nodes$core <- coreness(flo)
+flo$nodes[order(-flo$nodes$betweenness), ]
+```
+
+The Medici lie on far more shortest paths between other families than
+anyone else, in line with Padgett and Ansell's (1993) account of the
+family's rise, which stresses its ties to families that were not tied to
+one another.
+
+Harmonic centrality is shown here instead of closeness because the Pucci
+cannot reach anyone. Closeness sums distances to the other nodes, and
+programs disagree about what to do with distances that do not exist:
+
+```{r}
+closeness(flo)[flo$nodes$name == "Pucci"]
+```
+
+Under igraph's convention, the default, a node that reaches no one gets
+`NaN`. The `convention` argument reproduces the choices of NetworkX, sna,
+or UCINET instead; `?conventions` and the
+[conventions guide](https://knapply.github.io/knappnet/articles/conventions.html)
+explain every difference.
+
+Measures of the whole network return a single number, or a list:
+
+```{r}
+graph_density(flo)
+centralization(flo, "degree")
+comp <- components(flo)
+comp$no
+comp$csize
+```
+
+Groups of nodes are returned as membership vectors aligned with the nodes,
+or as lists of node identifiers:
+
+```{r}
+max_cliques(flo, min_size = 3)
+groups <- cluster_louvain(flo, seed = 1)
+table(groups)
+```
+
+Louvain community detection visits nodes in a random order, so it takes a
+seed; the same seed gives the same result on any computer and with any
+number of threads. Without one, a seed is drawn from R's generator, so
+`set.seed()` works as usual.
+
+## Weighted networks
+
+A network without a weight column is binary, and every algorithm uses its
+fastest unweighted form. With weights, you say once what they mean.
+Distances (travel time, cost, latency) keep nodes apart:
+
+```{r}
+roads <- data.frame(
+  from    = c("a", "b", "a"),
+  to      = c("b", "c", "c"),
+  minutes = c(5, 5, 20)
+)
+trips <- netframe(roads, directed = FALSE, weight = "minutes")
+trips
+betweenness(trips)                    # a to c is quicker through b
+betweenness(trips, weighted = FALSE)  # ignoring travel time
+```
+
+Strengths (contact frequency, tie intensity) bring nodes closer, so
+path-based measures use 1/weight as the length, while measures that add up
+weights use them as given:
+
+```{r}
+calls <- data.frame(
+  from  = c("a", "b", "a"),
+  to    = c("b", "c", "c"),
+  calls = c(1, 1, 20)
+)
+phone <- netframe(calls, directed = FALSE, weight = "calls", weight_type = "strength")
+betweenness(phone)  # a and c talk directly, so b brokers nothing
+strength(phone)
+```
+
+Path-based measures take `weighted` (use the weights or not) and
+`weights_as` (read them as `"distance"` or `"strength"` for this call
+only). Measures defined only on binary ties, such as cliques, the triad
+census, and brokerage, ignore weights and say so in their help pages.
+
+## Conversion
+
+`as.matrix()` gives the adjacency matrix, and `as_netframe()` turns a
+matrix back into a network. Direction is inferred from symmetry, and
+values other than 0 and 1 become weights:
+
+```{r}
+m <- matrix(c(0, 2, 0,
+              2, 0, 1,
+              0, 1, 0), 3, byrow = TRUE,
+            dimnames = list(c("x", "y", "z"), c("x", "y", "z")))
+small <- as_netframe(m)
+small
+small$edges
+as.matrix(small, attr = "weight")
+```
+
+Networks also convert both ways with igraph, tidygraph, and statnet's
+network package, keeping node, edge, and network attributes:
+
+```{r, eval = has_igraph}
+ig <- to_igraph(flo)
+igraph::vcount(ig)
+head(igraph::vertex_attr(ig, "betweenness"))
+karate <- as_netframe(igraph::make_graph("Zachary"))
+karate
+```
+
+```{r, eval = has_network}
+net <- to_network(flo)
+network::network.size(net)
+```
+
+`to_tbl_graph()` returns a tidygraph object, and the usual generics of
+those packages, `igraph::as.igraph()`, `network::as.network()`, and
+`tidygraph::as_tbl_graph()`, also accept a netframe.
+
+## Files
+
+`read_network()` and `write_network()` handle GraphML, GEXF, GML, Pajek,
+UCINET DL, JSON node-link, ORA's DyNetML, CSV and TSV edge lists, and
+(write only) DOT. The format comes from the file extension:
+
+```{r}
+path <- tempfile(fileext = ".graphml")
+write_network(flo, path)
+back <- read_network(path)
+back
+head(back$nodes)
+```
+
+GraphML records attribute types, so the computed columns come back as they
+were. An edge list cannot record isolates or node attributes, so a CSV
+edge list is written with an optional node file alongside it:
+
+```{r}
+edges_csv <- tempfile(fileext = ".csv")
+nodes_csv <- tempfile(fileext = ".csv")
+write_network(flo, edges_csv, nodes_file = nodes_csv)
+read_network(edges_csv, nodes = nodes_csv, directed = FALSE)
+```
+
+## Next steps
+
+- `?netframe`, `?read_network`, and `?as_netframe` for the details of
+  building, reading, and converting networks.
+- `?conventions` for how igraph, NetworkX, sna, and UCINET differ, and the
+  `convention` argument that reproduces each.
+- The [reference index](https://knapply.github.io/knappnet/reference/)
+  lists every function by topic.
+
+## References
+
+Breiger, R. L., & Pattison, P. E. (1986). Cumulated social roles: The
+duality of persons and their algebras. *Social Networks*, 8(3), 215-256.
+https://doi.org/10.1016/0378-8733(86)90006-7
+
+Padgett, J. F., & Ansell, C. K. (1993). Robust action and the rise of the
+Medici, 1400-1434. *American Journal of Sociology*, 98(6), 1259-1319.
+https://doi.org/10.1086/230190

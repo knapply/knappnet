@@ -1,0 +1,159 @@
+---
+title: "Coming from NetworkX"
+description: >
+  A map from NetworkX to knappnet for Python users meeting the R package
+  first, with the conventions that differ and how to reproduce NetworkX's
+  numbers.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+knappnet's engine is written in Rust and reached through a small C
+interface, so every language runs the same code. The R package comes
+first; **a Python package is planned** and will share the engine, the
+conventions, and the validation suite described here. Until then, this
+guide is for Python users working in R, and a preview of what the Python
+package will look like.
+
+NetworkX is one of the reference tools every knappnet measure is checked
+against (see [validation](validation.html)), and `convention = "networkx"`
+reproduces its choices where they differ from the default, which follows
+igraph.
+
+```{r}
+library(knappnet)
+```
+
+## The data model
+
+In NetworkX a graph is a dictionary of dictionaries, and attributes live on
+nodes and edges as key-value pairs. In knappnet a network is two data
+frames, which is what `nx.from_pandas_edgelist()` and
+`nx.to_pandas_edgelist()` already move between:
+
+```python
+import networkx as nx
+import pandas as pd
+
+edges = pd.DataFrame({"source": ["ana", "ana", "ben", "cy", "cy"],
+                      "target": ["ben", "cy", "cy", "dee", "eli"]})
+G = nx.from_pandas_edgelist(edges)
+nx.betweenness_centrality(G, normalized=False)
+```
+
+```{r}
+edges <- data.frame(from = c("ana", "ana", "ben", "cy", "cy"),
+                    to   = c("ben", "cy", "cy", "dee", "eli"))
+g <- netframe(edges, directed = FALSE)
+betweenness(g)
+```
+
+Results are vectors in the order of `g$nodes`, not dictionaries keyed by
+node. `setNames(betweenness(g), g$nodes$name)` gives the keyed form, and
+`g$nodes$betweenness <- betweenness(g)` stores the result as a column.
+
+Two more differences matter:
+
+- **Direction is a property of the network,** set with `directed =`
+  (default `TRUE`), as with `nx.DiGraph` versus `nx.Graph`. Parallel edges
+  are always allowed, as in `nx.MultiGraph`; nothing needs to be declared.
+- **Weights are used by default.** Most NetworkX functions ignore weights
+  unless you pass `weight="weight"` (or `distance=`). A knappnet network
+  with a weight column uses it in every measure that can, and
+  `weighted = FALSE` ignores it. Weights are distances unless the network
+  is created with `weight_type = "strength"`.
+
+## Function map
+
+| NetworkX | knappnet | Notes |
+|---|---|---|
+| `nx.Graph()`, `nx.DiGraph()`, `nx.MultiGraph()` | `netframe(edges, nodes, directed)` | |
+| `nx.from_pandas_edgelist(df)` | `netframe(df)` | Endpoints are the first two columns unless `from`, `to` name others. |
+| `G.add_nodes_from(...)` with attributes | the `nodes` data frame | Isolates need a row in `nodes`. |
+| `nx.to_numpy_array(G)`, `nx.to_scipy_sparse_array(G)` | `as.matrix(g)`, `as.matrix(g, sparse = TRUE)` | |
+| `nx.from_numpy_array(A)` | `as_netframe(A)` | |
+| `nx.read_graphml()`, `read_gexf()`, `read_gml()`, `read_pajek()`, `node_link_graph()` | `read_network(file)` | Format from the extension. |
+| `nx.write_graphml()`, ... | `write_network(g, file)` | |
+| `G.degree()` | `degree(g)` | |
+| `G.degree(weight="weight")` | `strength(g)` | |
+| `nx.degree_centrality(G)` | `degree(g) / (nrow(g$nodes) - 1)` | |
+| `nx.betweenness_centrality(G)` | `betweenness(g, normalized = TRUE, convention = "networkx")` | NetworkX normalizes by default; knappnet does not. The convention matters only with parallel edges. |
+| `nx.closeness_centrality(G)` | `closeness(g, convention = "networkx")` | Wasserman-Faust scaling for disconnected networks; distances *to* the node in directed networks. |
+| `nx.harmonic_centrality(G)` | `harmonic_centrality(g, convention = "networkx")` | Not normalized; distances to the node. |
+| `nx.eigenvector_centrality_numpy(G)` | `eigenvector_centrality(g, convention = "networkx")` | Unit Euclidean norm; NetworkX refuses disconnected networks, and so does this convention. |
+| `nx.density(G)` | `graph_density(g, convention = "networkx")` | Differs from the default only for a single node. |
+| `nx.connected_components(G)` | `components(g)$membership` | A membership vector instead of a list of sets. |
+| `nx.weakly_connected_components()`, `strongly_connected_components()` | `components(g, mode = "weak" / "strong")` | |
+| `nx.core_number(G)` | `coreness(g)` | NetworkX rejects loops and multigraphs; knappnet counts them as igraph does. |
+| `nx.find_cliques(G)` | `max_cliques(g)` | |
+| `max(len(c) for c in nx.find_cliques(G))` | `clique_number(g)` | |
+| `nx.community.louvain_communities(G, seed=)` | `cluster_louvain(g, seed = )` | A membership vector with a `modularity` attribute. Partitions differ between implementations; modularity is comparable. |
+| `nx.community.modularity(G, communities)` | `modularity(g, membership)` | NetworkX returns 0 for a network without edges; knappnet returns `NaN`. |
+| `nx.constraint(G)`, `nx.effective_size(G)` | `constraint(g)`, `effective_size(g)` | NetworkX counts self-loops as ties to oneself; knappnet ignores them, as Burt's measures concern ties to others. |
+| (none) | `efficiency(g)` | Burt's efficiency, effective size over the number of contacts (not `nx.local_efficiency()`). |
+| `nx.triadic_census(G)` | `triad_census(g)` | NetworkX accepts only directed graphs. |
+| (none) | `brokerage()`, `structural_equivalence()`, `concor()` | |
+| (none) | `qap_cor()`, `mrqap()` | QAP correlation and MRQAP regression. |
+| (none) | `centralization()`, `fragmentation()` | |
+
+PageRank, Katz centrality, assortativity, ego networks, bipartite
+(two-mode) networks, and layouts are coming soon.
+
+## Reproducing NetworkX's numbers
+
+**Closeness on disconnected networks.** NetworkX scales closeness by the
+share of the network a node reaches (Wasserman and Faust 1994, p. 201), so
+a node in a small component is not mistaken for a central one:
+
+```{r}
+split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+                  directed = FALSE)
+data.frame(node     = split$nodes$name,
+           networkx = round(closeness(split, convention = "networkx"), 3),
+           igraph   = round(closeness(split, normalized = TRUE), 3))
+```
+
+**Parallel edges in betweenness.** NetworkX walks neighbor sets, so two
+parallel edges are one route; igraph and knappnet's default count each
+edge as a distinct shortest path. In this network `a` and `b` are joined
+twice:
+
+```{r}
+multi <- netframe(data.frame(from = c("a", "a", "b", "a", "d"),
+                             to   = c("b", "b", "c", "d", "c")), directed = FALSE)
+data.frame(node     = multi$nodes$name,
+           igraph   = round(betweenness(multi), 3),
+           networkx = round(betweenness(multi, convention = "networkx"), 3))
+```
+
+Between `a` and `c` there are three shortest paths under the default (two
+through `b`, one per parallel edge, and one through `d`), and two under
+NetworkX's.
+
+**Eigenvector scale.** NetworkX scales scores to unit length, igraph so
+that the largest is 1. The ranking is the same:
+
+```{r}
+kite <- netframe(data.frame(from = c(1, 1, 1, 2, 2, 3, 4),
+                            to   = c(2, 3, 4, 3, 4, 4, 5)), directed = FALSE)
+data.frame(node     = kite$nodes$name,
+           igraph   = round(eigenvector_centrality(kite), 3),
+           networkx = round(eigenvector_centrality(kite, convention = "networkx"), 3))
+```
+
+**Weighted shortest paths with ties.** Reciprocals of whole-number weights
+can give paths whose lengths are equal in exact arithmetic but differ in
+the last bit of floating point (1/3 + 1/6 versus 1/2). NetworkX compares
+lengths exactly and keeps only one of the tied paths; knappnet, like
+igraph, treats lengths within a relative 10<sup>-10</sup> as equal, and
+agrees with an exact-arithmetic evaluation of the definition. On such
+networks NetworkX's weighted betweenness can differ; the validation
+suite records the cases.
+
+## Reference
+
+Wasserman, S., & Faust, K. (1994). *Social Network Analysis: Methods and
+Applications*. Cambridge University Press.
+https://doi.org/10.1017/CBO9780511815478

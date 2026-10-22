@@ -1,0 +1,171 @@
+---
+title: "Coming from igraph"
+description: >
+  A function-by-function map from igraph to knappnet, and a worked example
+  that converts an igraph workflow and checks that the numbers agree.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+If you use igraph, you already know most of knappnet. Defaults follow
+igraph wherever tools disagree, results agree with igraph's to within
+floating-point rounding (the [validation suite](validation.html) checks
+this on every change), and networks convert in both directions without
+losing attributes. Three things are different:
+
+1. **A network is two data frames.** `g$nodes` has one row per node and
+   `g$edges` one row per edge, with attributes as ordinary columns, instead
+   of `V(g)$attr` and `E(g)$attr`.
+2. **Every measure returns a vector aligned with `g$nodes`,** so results
+   are stored with `g$nodes$score <- ...` and analyzed with any data tool.
+3. **Function names overlap with igraph's** (`degree()`, `betweenness()`,
+   `closeness()`, `components()`, ...). Whichever package is attached last
+   wins. The simplest habit is to attach knappnet and call igraph with
+   `igraph::`, as this article does.
+
+```{r}
+library(knappnet)
+```
+
+## Converting
+
+`as_netframe()` reads an igraph object (or a tidygraph `tbl_graph`), and
+`to_igraph()` converts back. Vertex names become node identifiers, other
+vertex and edge attributes become columns, and an edge attribute called
+`weight` becomes the network's weight column, read as distances for
+path-based measures, as igraph reads it.
+
+```{r}
+ig <- igraph::make_graph("Zachary")
+karate <- as_netframe(ig)
+karate
+head(karate$edges)
+```
+
+`igraph::as.igraph()` also accepts a netframe.
+
+## Function map
+
+| igraph | knappnet | Notes |
+|---|---|---|
+| `graph_from_data_frame(d, directed, vertices)` | `netframe(edges, nodes, directed)` | Both default to directed. Isolates need a row in `nodes`. |
+| `graph_from_adjacency_matrix()` | `as_netframe(m)` | Direction is inferred from symmetry unless `directed` is given; values other than 0 and 1 become weights. |
+| `as_adjacency_matrix(g, attr, sparse)` | `as.matrix(g, attr, sparse)` | knappnet returns a dense matrix unless `sparse = TRUE`. |
+| `vcount(g)`, `ecount(g)`, `is_directed(g)` | `nrow(g$nodes)`, `nrow(g$edges)`, `g$directed` | |
+| `V(g)$x`, `E(g)$x` | `g$nodes$x`, `g$edges$x` | |
+| `read_graph()`, `write_graph()` | `read_network()`, `write_network()` | GraphML, GEXF, GML, Pajek, UCINET DL, JSON, DyNetML, CSV; DOT for writing. |
+| `degree(g, mode, loops)` | `degree(g, mode, loops)` | Same conventions. For `normalized = TRUE`, divide by `nrow(g$nodes) - 1`. |
+| `strength(g, mode, loops)` | `strength(g, mode, loops)` | |
+| `betweenness(g, weights, normalized)` | `betweenness(g, weighted, normalized)` | `weights = NA` is `weighted = FALSE`. igraph returns `NaN` when normalizing with fewer than three nodes; knappnet returns 0. |
+| `closeness(g, mode, normalized)` | `closeness(g, mode, normalized)` | Same defaults (`mode = "out"`, unnormalized). |
+| `harmonic_centrality(g, mode, normalized)` | `harmonic_centrality(g, mode, normalized)` | |
+| `eigen_centrality(g, directed)$vector` | `eigenvector_centrality(g, mode)` | igraph's R default `directed = FALSE` ignores direction: use `mode = "all"`. knappnet's default for directed networks is in-ties, igraph's `directed = TRUE`. Both scale the largest score to 1. |
+| `centr_degree()`, `centr_betw()`, `centr_clo()` (`$centralization`) | `centralization(g, "degree")`, `"betweenness"`, `"closeness"` | Same theoretical maxima, including `loops = TRUE` for degree. |
+| `edge_density(g, loops)` | `graph_density(g, loops)` | Named to avoid masking `stats::density()`. |
+| `components(g, mode)` | `components(g, mode)` | Returns the same `membership`, `csize`, and `no`. |
+| `count_components(g)` | `components(g)$no` | |
+| (none) | `fragmentation(g)` | Borgatti's fragmentation, as in UCINET. |
+| `coreness(g, mode)` | `coreness(g, mode)` | |
+| `max_cliques(g, min)` | `max_cliques(g, min_size)` | Returns node identifiers instead of vertex sequences. |
+| `clique_num(g)` | `clique_number(g)` | |
+| `modularity(g, membership, weights, resolution)` | `modularity(g, membership, resolution, weighted)` | |
+| `cluster_louvain(g, resolution)` | `cluster_louvain(g, resolution, seed)` | Returns a membership vector with a `modularity` attribute. Louvain is a heuristic, so partitions differ between implementations; the validation suite checks that modularity is comparable. |
+| `constraint(g)` | `constraint(g)` | Also `effective_size()` and `efficiency()`, which igraph lacks. |
+| `triad_census(g)` | `triad_census(g)` | knappnet counts parallel edges once; igraph's census does not support multigraphs. |
+| (none) | `brokerage()`, `structural_equivalence()`, `concor()` | Gould-Fernandez brokerage, profile similarity, and CONCOR. |
+| (none) | `qap_cor()`, `mrqap()` | QAP correlation and MRQAP regression. |
+
+PageRank, Katz, and Bonacich power centrality, assortativity, ego
+networks, two-mode networks, and layouts are coming soon.
+
+### Weights
+
+As in igraph, a weighted network uses its weights by default and reads
+them as distances in path-based measures; `weighted = FALSE` ignores them
+(igraph's `weights = NA`). Unlike igraph, the meaning of the weights is a
+property of the network: declare `weight_type = "strength"` in
+`netframe()` once and path-based measures use 1/weight as the length,
+where igraph needs `weights = 1 / E(g)$weight` in every call.
+
+### The `convention` argument
+
+Without it, results follow igraph. `convention = "networkx"`, `"sna"`, or
+`"ucinet"` reproduces those tools instead, on degree, betweenness,
+closeness, harmonic and eigenvector centrality, density, and
+centralization. See the [conventions guide](conventions.html).
+
+## A worked example
+
+Here is a typical igraph analysis of Zachary's karate club:
+
+```{r}
+ig_scores <- data.frame(
+  degree      = igraph::degree(ig),
+  betweenness = igraph::betweenness(ig),
+  closeness   = igraph::closeness(ig),
+  eigenvector = igraph::eigen_centrality(ig)$vector,
+  core        = igraph::coreness(ig),
+  constraint  = igraph::constraint(ig)
+)
+```
+
+The same in knappnet, storing the results on the node table:
+
+```{r}
+karate$nodes$degree      <- degree(karate)
+karate$nodes$betweenness <- betweenness(karate)
+karate$nodes$closeness   <- closeness(karate)
+karate$nodes$eigenvector <- eigenvector_centrality(karate)
+karate$nodes$core        <- coreness(karate)
+karate$nodes$constraint  <- constraint(karate)
+head(karate$nodes)
+```
+
+Each column agrees with igraph:
+
+```{r}
+sapply(names(ig_scores), function(m) {
+  isTRUE(all.equal(karate$nodes[[m]], ig_scores[[m]], check.attributes = FALSE,
+                   tolerance = 1e-7))
+})
+```
+
+Network-level measures agree too:
+
+```{r}
+c(igraph = igraph::edge_density(ig), knappnet = graph_density(karate))
+c(igraph = igraph::centr_betw(ig)$centralization,
+  knappnet = centralization(karate, "betweenness"))
+c(igraph = igraph::clique_num(ig), knappnet = clique_number(karate))
+```
+
+Louvain partitions depend on the order in which nodes are visited, so the
+groups themselves can differ, but the modularity they reach is
+comparable:
+
+```{r}
+set.seed(1)
+ig_groups <- igraph::cluster_louvain(ig)
+kn_groups <- cluster_louvain(karate, seed = 1)
+c(igraph = igraph::modularity(ig_groups), knappnet = attr(kn_groups, "modularity"))
+```
+
+Weights behave the same way. Here every edge gets a length, and weighted
+betweenness matches igraph's:
+
+```{r}
+igraph::E(ig)$weight <- rep(c(1, 2, 3), length.out = igraph::ecount(ig))
+weighted_karate <- as_netframe(ig)
+weighted_karate
+all.equal(betweenness(weighted_karate), igraph::betweenness(ig))
+```
+
+Finally, the results go back to igraph as vertex attributes, for plotting
+or for any igraph function:
+
+```{r}
+back <- to_igraph(karate)
+head(igraph::vertex_attr(back, "betweenness"))
+```
