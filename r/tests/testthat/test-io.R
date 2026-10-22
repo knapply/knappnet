@@ -126,3 +126,98 @@ test_that("UCINET DL files are read the same way igraph reads them", {
   expect_equal(g$nodes$id, igraph::V(ig)$name)
   expect_equal(g$edges$weight, igraph::E(ig)$weight)
 })
+
+multimode_net <- function() {
+  nodes <- data.frame(id = c("ana", "bo", "acme", "kabul", "herat"),
+                      class = c("Agent", "Agent", "Organization", "Location", "Location"),
+                      title = c("Ana A.", NA, "ACME & Sons", NA, "<Herat>"),
+                      age = c(31, NA, NA, NA, NA),
+                      stringsAsFactors = FALSE)
+  edges <- data.frame(from = c("ana", "bo", "ana", "bo", "acme"),
+                      to = c("bo", "ana", "acme", "acme", "kabul"),
+                      network = c("talks", "talks", "member", "member", "based"),
+                      weight = c(2.5, 1, 1, 0.5, 1),
+                      stringsAsFactors = FALSE)
+  netframe(edges, nodes, directed = TRUE, weight = "weight")
+}
+
+test_that("DyNetML round-trips multimode networks", {
+  g <- multimode_net()
+  path <- tempfile(fileext = ".xml")
+  on.exit(unlink(path))
+  write_network(g, path, format = "dynetml")
+  expect_match(paste(readLines(path), collapse = "\n"),
+               "<nodeclass type=\"Organization\" id=\"Organization\">", fixed = TRUE)
+  # A .xml file is recognized as DyNetML from its root element.
+  back <- read_network(path)
+  expect_true(back$directed)
+  expect_equal(back$nodes$id, g$nodes$id)
+  expect_equal(back$nodes$class, g$nodes$class)
+  expect_equal(back$nodes$type, g$nodes$class)
+  expect_equal(back$nodes$title, g$nodes$title)
+  expect_equal(back$nodes$age, g$nodes$age)
+  expect_equal(back$edges$from, g$edges$from)
+  expect_equal(back$edges$to, g$edges$to)
+  expect_equal(back$edges$network, g$edges$network)
+  expect_equal(back$edges$weight, g$edges$weight)
+  expect_equal(back$roles$weight, "weight")
+  expect_identical(read_network(path, format = "ora")$edges$weight, back$edges$weight)
+})
+
+test_that("DyNetML files in ORA's layout are read", {
+  path <- tempfile(fileext = ".xml")
+  on.exit(unlink(path))
+  writeLines(c(
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',
+    '<DynamicNetwork>',
+    '  <MetaNetwork id="embassy">',
+    '    <nodes>',
+    '      <nodeclass type="Agent" id="Agent">',
+    '        <propertyIdentities>',
+    '          <propertyIdentity id="age" type="number" singleValued="true"/>',
+    '        </propertyIdentities>',
+    '        <node id="A1" title="Ann"><properties><property id="age" value="34"/></properties></node>',
+    '        <node id="Kabul"/>',
+    '      </nodeclass>',
+    '      <nodeclass type="Location" id="Location"><node id="Kabul"/></nodeclass>',
+    '    </nodes>',
+    '    <networks>',
+    '      <network sourceType="Agent" source="Agent" targetType="Agent" target="Agent"',
+    '               id="agent x agent" isDirected="true">',
+    '        <link source="A1" target="Kabul" value="2"/>',
+    '      </network>',
+    '      <network sourceType="Agent" source="Agent" targetType="Location" target="Location"',
+    '               id="agent x location" isDirected="false">',
+    '        <link source="A1" target="Kabul" value="1"/>',
+    '      </network>',
+    '    </networks>',
+    '  </MetaNetwork>',
+    '</DynamicNetwork>'), path)
+  g <- read_network(path)
+  # "Kabul" is both an agent and a location, so identifiers carry the class.
+  expect_equal(g$nodes$id, c("Agent::A1", "Agent::Kabul", "Location::Kabul"))
+  expect_equal(g$nodes$node_id, c("A1", "Kabul", "Kabul"))
+  expect_equal(g$nodes$age, c(34, NA, NA))
+  expect_equal(g$graph$name, "embassy")
+  # The undirected network's link is stored in both directions.
+  expect_true(g$directed)
+  expect_equal(g$edges$from, c("Agent::A1", "Agent::A1", "Location::Kabul"))
+  expect_equal(g$edges$directed, c(TRUE, FALSE, FALSE))
+  expect_equal(g$edges$weight, c(2, 1, 1))
+  bad <- tempfile(fileext = ".xml")
+  on.exit(unlink(bad), add = TRUE)
+  writeLines(c('<MetaNetwork>', '<nodes><nodeclass id="Agent" type="Agent">',
+               '<node id="a"><port name="p"/></node></nodeclass></nodes></MetaNetwork>'), bad)
+  expect_error(read_network(bad), "line 3.*ports")
+})
+
+test_that("writing .xml stays GraphML and reading .xml still reads GraphML", {
+  g <- rich_net()
+  path <- tempfile(fileext = ".xml")
+  on.exit(unlink(path))
+  write_network(g, path)
+  expect_match(paste(readLines(path), collapse = "\n"), "<graphml")
+  back <- read_network(path)
+  expect_equal(back$nodes$id, g$nodes$id)
+  expect_null(back$nodes$class)
+})
