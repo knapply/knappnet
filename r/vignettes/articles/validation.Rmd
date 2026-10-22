@@ -1,0 +1,186 @@
+---
+title: "How results are validated"
+description: >
+  The oracles, fixtures, manifest, and tolerances behind every knappnet
+  measure, and how documented differences with other tools are recorded.
+---
+
+A network measure is only useful if its numbers can be trusted, and in
+published work they will be checked. knappnet does not ask to be taken on
+trust. Every measure is compared, on every change to the code, with
+independent computations of the same quantity, and every disagreement
+either fails the build or is recorded with its reason. Everything
+described here lives in the
+[`validation/`](https://github.com/knapply/knappnet/tree/main/validation)
+directory of the repository and can be rerun by anyone.
+
+## Oracles
+
+An *oracle* is an independent source of the right answer. Each measure is
+checked against every oracle that implements it:
+
+- **Reference tools.** igraph and sna in R, and NetworkX in Python, run as
+  black boxes on the same networks
+  ([`validation/oracles/`](https://github.com/knapply/knappnet/tree/main/validation/oracles)).
+- **Definitions.** Slow, deliberately simple implementations written
+  directly from the textbook formula, sharing no code with the engine, and
+  using exact rational arithmetic where possible (for example, betweenness
+  by counting shortest paths with exact fractions, and eigenvector
+  centrality by a dense eigendecomposition). These are the strongest evidence of correctness: a
+  definition oracle does not inherit any tool's conventions or bugs.
+- **Exact enumeration.** QAP p-values are checked on small networks by
+  evaluating all n! relabelings, so they are compared exactly rather than
+  within simulation error
+  ([`validation/qap_check.py`](https://github.com/knapply/knappnet/blob/main/validation/qap_check.py)).
+
+UCINET runs only as a Windows program and cannot run unattended. Its
+conventions are implemented from its documentation and from the port of
+its routines by its authors; comparisons against golden files produced by
+UCINET itself are reported separately and will be added.
+
+## Fixtures
+
+The same corpus of networks
+([`validation/fixtures/`](https://github.com/knapply/knappnet/tree/main/validation/fixtures))
+goes to every oracle. It is generated deterministically by
+`validation/fixtures.py`, and CI checks that regenerating it changes
+nothing. It includes:
+
+- **Classic data:** Zachary's karate club, Padgett's Florentine families,
+  Davis's Southern women, Krackhardt's kite, and Knuth's Les Misérables
+  co-appearances (weighted).
+- **Random networks** across densities, directed and undirected.
+- **Weights of every kind the engine treats differently:** all equal
+  (which must reduce exactly to the unweighted case), small whole numbers
+  (bucket queue with exact integer distances), and arbitrary real numbers
+  (Dijkstra's algorithm).
+- **Edge cases:** an empty network, a single node, a pair, stars, paths,
+  complete graphs, directed cycles, isolates, and networks with self-loops
+  and parallel edges, where tools most often disagree.
+
+## The manifest
+
+[`validation/manifest.yaml`](https://github.com/knapply/knappnet/blob/main/validation/manifest.yaml)
+(with one file per area in `validation/manifest.d/`) lists every measure:
+the engine call being validated, the networks it applies to, the numerical
+tolerance, and each oracle's equivalent call. An entry looks like this:
+
+```yaml
+degree_all:
+  engine: {fn: degree, mode: all, loops: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+    networkx:
+      call: "MultiGraph/MultiDiGraph G.degree()"
+    igraph:
+      call: "igraph::degree(g, mode = 'all', loops = TRUE)"
+    sna:
+      call: "sna::degree(m, gmode, cmode = 'freeman' | 'indegree' for graphs)"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        sna works on adjacency matrices, so parallel edges collapse to one,
+        and it ignores the diagonal by default (diag = FALSE).
+```
+
+No measure ships without a manifest entry and at least one passing oracle.
+
+### Tolerances
+
+Counts and integer results (degree, the triad census, components, cliques,
+cores) must match exactly: the tolerance is zero. Floating-point results
+are compared with a relative and an absolute tolerance chosen for the
+computation, typically 10<sup>-9</sup> to 10<sup>-12</sup> for path-based
+measures and 10<sup>-8</sup> for iterative ones such as eigenvector
+centrality, whose reference tools stop at their own convergence
+thresholds. Partitions (community labels) are compared up to relabeling,
+and collections such as cliques as sets.
+
+### Outcomes
+
+[`validation/compare.py`](https://github.com/knapply/knappnet/blob/main/validation/compare.py)
+compares the engine with every oracle on every fixture and classifies
+each comparison:
+
+| Outcome | Meaning |
+|---|---|
+| match | Values agree within the tolerance. |
+| documented | Values differ on a network where the manifest declares a convention difference for that oracle, with the reason. |
+| FAIL | Any other disagreement. The build fails. |
+| undefined | The oracle gives no answer on that network (it raises an error, or the quantity is undefined there), as declared in the manifest. |
+| not run | No result from that oracle. In CI, every automated oracle must run. |
+
+The results are written to
+[`validation/REPORT.md`](https://github.com/knapply/knappnet/blob/main/validation/REPORT.md),
+which lists each measure against each oracle and spells out every
+documented difference.
+
+## Documented differences
+
+A documented difference is never a silent pass: it applies only on
+networks with the declared property, only for the named oracle, and only
+with a stated reason. Some examples from the manifest:
+
+- **sna, degree, on networks with loops or parallel edges.** sna works on
+  adjacency matrices, so parallel edges collapse to one and the diagonal is
+  ignored. `degree(g, convention = "sna")` reproduces sna and is validated
+  against it.
+- **NetworkX, betweenness, on multigraphs.** NetworkX traverses neighbor
+  sets, so parallel edges count as a single shortest path; igraph and
+  knappnet count each parallel edge as a distinct path.
+  `convention = "networkx"` reproduces NetworkX.
+- **igraph, normalized betweenness, with fewer than three nodes.** The
+  normalizing constant is zero. igraph returns `NaN`; knappnet, like
+  NetworkX, returns 0, since no node can lie between two others.
+- **NetworkX, weighted betweenness with reciprocal weights.** Reciprocals
+  of whole-number weights often give path lengths that tie exactly
+  (1/3 + 1/6 = 1/2) but differ in the last bit of floating point. NetworkX
+  compares lengths exactly and drops one of the tied paths. knappnet, like
+  igraph, compares with a relative tolerance, and agrees with the
+  exact-arithmetic definition oracle.
+- **NetworkX, modularity of a network without edges.** Modularity is
+  undefined there; NetworkX returns 0, knappnet and igraph `NaN`.
+
+Several documented differences, like the last two, come from the
+reference tool rather than from knappnet: the definition oracle sides with
+knappnet. The [conventions guide](conventions.html) explains the
+differences an analyst is most likely to meet.
+
+## Beyond the manifest
+
+- **Property tests** in the engine check invariants on hundreds of random
+  networks each: relabeling nodes permutes the results, unit weights reproduce
+  unweighted results, strengths w give the same results as distances 1/w,
+  every shortest-path algorithm gives the same answer on the same lengths,
+  and the number of threads changes no result beyond floating-point
+  rounding.
+- **File formats** are checked in both directions against NetworkX's and
+  igraph's own readers and writers
+  ([`validation/io_check.py`](https://github.com/knapply/knappnet/blob/main/validation/io_check.py)).
+  DyNetML, which neither reads, is tested against its specification.
+- **Benchmarks are correctness checks too.** Every timing in the
+  [performance guide](performance.html) compares the two tools' answers,
+  and the run fails if they differ.
+- **The README's examples** are rerun in R on every change, and the build
+  fails if any printed output drifts.
+- **R CMD check** runs the package's tests, which repeat key comparisons
+  against igraph and sna from R, on Linux, macOS, and Windows.
+
+## Running it yourself
+
+From the repository root, with Rust, Python (with networkx, numpy, scipy,
+and PyYAML), and R (with igraph, sna, and yaml):
+
+```sh
+python3 validation/fixtures.py           # regenerate fixtures (deterministic)
+python3 validation/run_oracles.py        # golden values from every oracle
+python3 validation/compare.py            # compare; writes validation/REPORT.md
+python3 validation/io_check.py           # file formats
+python3 validation/qap_check.py          # QAP against exact enumeration
+```
+
+Golden files are committed together with the versions of the oracles that
+produced them, and regenerated when an oracle's version changes. All of
+this runs on Linux, macOS, and Windows for every change.

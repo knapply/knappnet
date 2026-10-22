@@ -1,0 +1,81 @@
+# Builds the documentation website with pkgdown and publishes it to GitHub
+# Pages (https://knapply.github.io/knappnet/). In the repository settings,
+# Pages must use "GitHub Actions" as its source. Every article runs its
+# code while the site builds, so a broken example fails this workflow.
+name: Website
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push waits rather than cancelling a
+# deployment in progress.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: r-lib/actions/setup-pandoc@v2
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          extra-packages: |
+            any::pkgdown
+            any::knitr
+            any::rmarkdown
+            any::igraph
+            any::sna
+            any::network
+            any::tidygraph
+            any::Matrix
+          needs: website
+      - name: Install the package from source
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          R CMD INSTALL r 2>&1 | tee ci-logs/install.log
+      - name: Use the README as the home page
+        run: Rscript r/pkgdown/home.R
+      - name: Build the site
+        working-directory: r
+        run: |
+          set -o pipefail
+          Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)' \
+            2>&1 | tee ../ci-logs/pkgdown.log
+      - name: Show failures
+        if: failure()
+        run: bash tools/ci_annotate.sh "pkgdown" ci-logs/*.log
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: r/docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

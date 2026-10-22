@@ -1,0 +1,316 @@
+---
+title: "Coming from UCINET, ORA, Pajek, and Gephi"
+description: >
+  Where each menu item lives in knappnet, how to move files between the
+  programs, and how to reproduce UCINET's numbers with convention = "ucinet".
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Menu-driven programs make it easy to explore one network. A script makes
+an analysis repeatable: rerun it on next year's survey, on every team in
+an organization, or with one choice changed, and get a record of exactly
+what was done. This guide maps the menus you know to knappnet functions
+and shows how to bring your files along. You do not have to leave those
+programs behind: read their files, compute in R, and write the results
+back for drawing in NetDraw, Pajek, or Gephi.
+
+If you are new to R, the [getting started vignette](knappnet.html)
+explains the basic idea: a network is two data frames, one row per node
+and one row per edge, and every measure returns one value per node.
+
+```{r}
+library(knappnet)
+```
+
+## Files from each program
+
+| Program | Format | Read | Write | Notes |
+|---|---|---|---|---|
+| UCINET | DL (`.dl`) | yes | yes | Full matrix, `edgelist1`, and `nodelist1` layouts, with labels. Two-mode and multi-matrix DL files are not yet supported. Export UCINET's own binary datasets (`.##h`) as DL first. |
+| ORA | DyNetML (`.xml`) | yes | yes | Meta-networks with node classes and several networks, and one meta-network per time period. |
+| Pajek | `.net` | yes | yes | `*Vertices`, `*Arcs`, `*Edges`, the list forms, and `*Matrix`; two-mode files get a `mode` column. |
+| Gephi | GEXF (`.gexf`), GraphML | yes | yes | Node and edge attributes keep their types. |
+| NetDraw, Cytoscape, yEd | GraphML, GML | yes | yes | |
+
+The format comes from the file extension; `format =` overrides it.
+
+### UCINET DL
+
+A DL file holds structure, labels, and one value per tie:
+
+```{r}
+dl <- tempfile(fileext = ".dl")
+writeLines(c(
+  "dl n = 5",
+  "format = fullmatrix",
+  "labels:",
+  "ann,bob,cat,dan,eve",
+  "data:",
+  "0 1 1 0 0",
+  "1 0 1 0 0",
+  "1 1 0 1 0",
+  "0 0 1 0 1",
+  "0 0 0 1 0"
+), dl)
+team <- read_network(dl, directed = FALSE)
+team
+team$edges
+```
+
+DL files do not record direction. They are read as directed unless you
+say otherwise; read as undirected, a full matrix contributes its upper
+triangle. Writing works the same way:
+
+```{r}
+out <- tempfile(fileext = ".dl")
+write_network(team, out)
+cat(readLines(out), sep = "\n")
+```
+
+### ORA's DyNetML
+
+ORA's meta-networks hold several classes of nodes (agents, organizations,
+tasks, resources, ...) and several networks among them. In knappnet the
+whole meta-network is one netframe: node classes are the `class` and
+`type` columns of the node table, and networks are the `network` column of
+the edge table.
+
+```{r}
+org <- netframe(
+  data.frame(from    = c("ann", "bob", "ann", "bob", "cat"),
+             to      = c("bob", "cat", "sales", "sales", "eng"),
+             network = c("advice", "advice", "member", "member", "member")),
+  nodes = data.frame(name  = c("ann", "bob", "cat", "sales", "eng"),
+                     class = c("people", "people", "people", "units", "units"),
+                     type  = c("Agent", "Agent", "Agent", "Organization", "Organization"))
+)
+xml <- tempfile(fileext = ".xml")
+write_network(org, xml, format = "dynetml")
+meta <- read_network(xml)
+meta$nodes
+meta$edges
+```
+
+To analyze one network among one class of nodes, take the matching rows of
+the two tables:
+
+```{r}
+advice <- netframe(meta$edges[meta$edges$network == "advice", ],
+                   nodes = meta$nodes[meta$nodes$class == "people", ],
+                   directed = meta$directed)
+advice
+betweenness(advice)
+```
+
+Two-mode networks, such as the people-by-units `member` network, are
+coming soon.
+
+### Pajek
+
+```{r}
+net <- tempfile(fileext = ".net")
+writeLines(c(
+  "*Vertices 4",
+  '1 "ann"',
+  '2 "bob"',
+  '3 "cat"',
+  '4 "dan"',
+  "*Edges",
+  "1 2",
+  "1 3",
+  "2 3",
+  "3 4"
+), net)
+read_network(net)
+```
+
+When every vertex has a unique label, labels become node identifiers;
+otherwise vertex numbers are used. A file with `*Arcs` is directed.
+
+### Gephi
+
+Compute in R, then draw in Gephi: node columns become node attributes in
+the GEXF file, ready for sizing and coloring in Gephi's Appearance panel.
+
+```{r}
+team$nodes$betweenness <- betweenness(team)
+team$nodes$group <- as.vector(cluster_louvain(team, seed = 1))
+gexf <- tempfile(fileext = ".gexf")
+write_network(team, gexf)
+read_network(gexf)$nodes
+```
+
+## UCINET menus
+
+Menu paths are those of UCINET 6 as given by Hanneman and Riddle (2005);
+later releases have moved a few items.
+
+| UCINET | knappnet |
+|---|---|
+| Network > Centrality > Degree | `degree(g, convention = "ucinet")`, `centralization(g, "degree", convention = "ucinet")` |
+| Network > Centrality > Closeness | `closeness(g, convention = "ucinet")`; reciprocal closeness is `harmonic_centrality(g, convention = "ucinet")` |
+| Network > Centrality > Betweenness > Nodes (Freeman betweenness) | `betweenness(g, convention = "ucinet")`, `centralization(g, "betweenness", convention = "ucinet")` |
+| Network > Centrality > Eigenvector | `eigenvector_centrality(g, convention = "ucinet")` |
+| Network > Centrality > Multiple Measures | the functions above, one column each |
+| Network > Cohesion > Density | `graph_density(g, convention = "ucinet")` |
+| Network > Regions > Components | `components(g, mode)`, `fragmentation(g, mode)` |
+| Network > Regions > K-Core | `coreness(g)` |
+| Network > Subgroups > Cliques | `max_cliques(g, min_size)` |
+| Network > Ego Networks > Structural Holes | `constraint(g)`, `effective_size(g)`, `efficiency(g)` |
+| Network > Ego Networks > Brokerage | `brokerage(g, groups)`; UCINET's consultant is the `itinerant` column |
+| Network > Roles & Positions > Structural > Profile | `structural_equivalence(g, method)` |
+| Network > Roles & Positions > Structural > CONCOR | `concor(g, depth)` |
+| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Correlation | `qap_cor(y, x)` |
+| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Regression | `mrqap(y, x)` (double semi-partialling); `method = "y"` for Y-permutation |
+| Data > Import text file > DL | `read_network("file.dl")` |
+
+The E-I index, ego network measures, two-mode (affiliation) networks, and
+Bonacich power centrality are coming soon.
+
+## Reproducing UCINET's numbers
+
+UCINET reads every network as an adjacency matrix and makes its own
+choices about normalization and unreachable nodes. `convention = "ucinet"`
+applies those choices; without it, results follow igraph.
+
+**Closeness.** By default UCINET counts a missing distance as one more
+than the longest observed one. In this network `a`, `b`, and `c` form a
+path, and `d` and `e` are a separate pair, so `d` and `e` cannot reach
+three of the four other nodes:
+
+```{r}
+split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+                  directed = FALSE)
+data.frame(node   = split$nodes$name,
+           ucinet = round(closeness(split, convention = "ucinet"), 3),
+           igraph = round(closeness(split, normalized = TRUE), 3))
+```
+
+igraph's convention looks only at the nodes each node can reach, so `d`
+and `e` appear perfectly central; UCINET's penalizes them for what they
+cannot reach.
+
+**Percentages.** UCINET reports normalized scores and centralization as
+percentages in some routines and proportions in others. knappnet always
+returns proportions; multiply by 100 to compare with a percentage:
+
+```{r}
+karate <- as_netframe(igraph::make_graph("Zachary"))
+n <- nrow(karate$nodes)
+ucinet_style <- data.frame(
+  node          = karate$nodes$name,
+  degree        = degree(karate, convention = "ucinet"),
+  nDegree       = 100 * degree(karate, convention = "ucinet") / (n - 1),
+  nBetweenness  = 100 * betweenness(karate, normalized = TRUE, convention = "ucinet"),
+  nCloseness    = 100 * closeness(karate, convention = "ucinet"),
+  eigenvector   = eigenvector_centrality(karate, convention = "ucinet")
+)
+head(round(ucinet_style, 3))
+100 * centralization(karate, "degree", convention = "ucinet")
+100 * centralization(karate, "betweenness", convention = "ucinet")
+```
+
+**Centralization maxima.** UCINET's theoretical maxima for degree
+centralization are those of sna, not igraph's default. On a star, UCINET
+and sna give 1, igraph 0.667:
+
+```{r}
+star <- netframe(data.frame(from = "hub", to = c("a", "b", "c", "d", "e")),
+                 directed = FALSE)
+c(igraph = centralization(star, "degree"),
+  ucinet = centralization(star, "degree", convention = "ucinet"))
+```
+
+For directed networks, UCINET 6.849 and later divide in- and out-degree
+centralization by (n − 1)²; earlier versions used (n − 1)(n − 2), so
+results from those versions differ.
+
+**Eigenvector centrality.** UCINET symmetrizes the network and scales
+scores to unit length. When more than one component has ties, UCINET
+reports a different measure (scores computed within components), which is
+not implemented, so `convention = "ucinet"` stops with an explanation
+rather than returning something else.
+
+**Fragmentation.** `fragmentation()` is UCINET's fragmentation for
+undirected data: the proportion of pairs of nodes that cannot reach each
+other.
+
+```{r}
+fragmentation(split)
+```
+
+These conventions come from UCINET 6's documentation and from the port of
+its routines by its authors (Borgatti, Agneessens, and Everett 2026), which
+states each formula from UCINET's source and checks it against UCINET's
+output. UCINET itself runs only on Windows and is not yet part of the
+automated [validation suite](validation.html); comparisons with golden
+files produced by UCINET will be added. The full table is in the
+[conventions guide](conventions.html) and `?conventions`.
+
+## Pajek
+
+Pajek organizes results as partitions (a class for each node) and vectors
+(a number for each node). In knappnet both are vectors aligned with the
+node table.
+
+| In Pajek | knappnet |
+|---|---|
+| Degree partition (all, input, output) | `degree(g, mode = "all" / "in" / "out")` |
+| Closeness and betweenness vectors | `closeness(g, mode)`, `betweenness(g)` |
+| Weak and strong components | `components(g, mode = "weak" / "strong")$membership` |
+| k-core partition (all, input, output) | `coreness(g, mode = "all" / "in" / "out")` |
+| Louvain communities | `cluster_louvain(g, seed = 1)` |
+| Structural holes (Burt's constraint) | `constraint(g)` |
+| Triadic census | `triad_census(g)` |
+
+The triad census uses the algorithm of Batagelj and Mrvar (2001), Pajek's
+own authors, and counts the sixteen types in the standard order.
+
+## ORA
+
+ORA's reports compute measures across a meta-network. In knappnet, select
+the network and node class you want, as in the DyNetML example above, and
+apply the functions in the [reference index](../reference/index.html):
+`degree()`, `betweenness()`, `closeness()`, `eigenvector_centrality()`,
+`constraint()`, `graph_density()`, `components()`, and the rest. ORA's
+measure definitions are not yet compared automatically, so check a
+measure's help page for its conventions before matching numbers.
+
+## Gephi
+
+| Gephi statistic | knappnet |
+|---|---|
+| Average Degree | `mean(degree(g))` |
+| Avg. Weighted Degree | `mean(strength(g))` |
+| Network Diameter (betweenness, closeness, harmonic closeness) | `betweenness(g)`, `closeness(g)`, `harmonic_centrality(g)` |
+| Graph Density | `graph_density(g)` |
+| Modularity | `cluster_louvain(g, resolution, seed)` and `modularity(g, membership)` |
+| Connected Components | `components(g, mode = "weak" / "strong")` |
+| Eigenvector Centrality | `eigenvector_centrality(g)` |
+
+PageRank, the clustering coefficient, average path length, diameter, and
+layouts are coming soon. Gephi's Modularity uses the Louvain method, as
+`cluster_louvain()` does, but both depend on the order in which nodes are
+visited, so partitions can differ; compare their modularity rather than
+the group labels.
+
+## References
+
+Batagelj, V., & Mrvar, A. (2001). A subquadratic triad census algorithm
+for large sparse networks with small maximum degree. *Social Networks*,
+23(3), 237-243. https://doi.org/10.1016/S0378-8733(01)00035-1
+
+Borgatti, S. P., Agneessens, F., & Everett, M. G. (2026). xucinet:
+UCINET-style social network analysis in R, version 2.0.0.9000.
+https://github.com/StephenBorgatti/xucinet
+
+Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
+Methods*. University of California, Riverside.
+https://faculty.ucr.edu/~hanneman/nettext/
+
+Tsvetovat, M., Reminga, J., & Carley, K. M. (2004). DyNetML: Interchange
+format for rich social network data. Technical report CMU-ISRI-04-105,
+Carnegie Mellon University. https://doi.org/10.1184/R1/6622022.v1
