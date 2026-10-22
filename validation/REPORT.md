@@ -17,12 +17,43 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
 | `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |
 | `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 16 | 0 / 0 / 0 / 25 |
+| `coreness_all` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |
+| `coreness_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |
+| `coreness_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |
+| `max_cliques` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |
+| `max_cliques_min3` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |
+| `clique_number` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |
+| `modularity` | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |
+| `modularity_resolution` | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |
+| `modularity_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
+| `louvain_modularity` | 15 / 1 / 0 / 0 |  | 15 / 1 / 0 / 0 |  |
+| `louvain_modularity_weighted` | 4 / 0 / 0 / 0 |  | 4 / 0 / 0 / 0 |  |
+| `louvain_modularity_resolution` | 15 / 1 / 0 / 0 |  | 15 / 1 / 0 / 0 |  |
+| `louvain_quality` |  | 0 / 0 / 0 / 16 | 15 / 1 / 0 / 0 |  |
+| `louvain_quality_weighted` |  | 0 / 0 / 0 / 4 | 4 / 0 / 0 / 0 |  |
+| `louvain_quality_resolution` |  | 0 / 0 / 0 / 16 | 15 / 1 / 0 / 0 |  |
 
 ## Documented convention differences
 
+- `modularity` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
+- `modularity` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
+- `modularity_resolution` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
+- `modularity_resolution` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
 - `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.562335703512176, networkx 53.91666666666667
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.13907115702781336, networkx 0.15765107212475635
+- `coreness_all` vs networkx on `multi_loops_dir` (loops, multi_edges): index 18: engine 5.0, networkx 3.0
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909122, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.12111231459595977, networkx 0.14763297131718187
+- `coreness_all` vs networkx on `multi_loops_und` (loops, multi_edges): index 3: engine 5.0, networkx 3.0
+- `modularity` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
+- `modularity` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
+- `modularity_resolution` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
+- `modularity_resolution` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
+- `louvain_modularity` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
+- `louvain_modularity` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
+- `louvain_modularity_resolution` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
+- `louvain_modularity_resolution` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
+- `louvain_quality` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
+- `louvain_quality_resolution` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
 - `betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 13: engine 328.5, networkx 331.0
 - `betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 37: engine 114.16666666666666, networkx 115.25
