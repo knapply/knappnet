@@ -136,11 +136,13 @@ read_network(path, weight = "minutes")$edges
 | Pajek `.net` | yes | yes | Pajek, igraph, NetworkX |
 | UCINET DL | yes | yes | UCINET, igraph |
 | JSON node-link | yes | yes | NetworkX, D3 |
+| DyNetML (`.xml`) | yes | yes | ORA (multimode meta-networks) |
 | CSV/TSV edge lists | yes | yes | spreadsheets, any tool |
 | DOT | no | yes | Graphviz |
 
 Every format is checked in both directions against NetworkX's and igraph's
-own readers and writers.
+own readers and writers, except DyNetML, which neither reads; it is tested
+against its specification and ORA's file layout.
 
 ## Installation
 

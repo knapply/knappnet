@@ -11,8 +11,8 @@ write_network(x, file, format = NULL, weight = NULL, nodes_file = NULL)
 \arguments{
 \item{file}{Path to the file.}
 \item{format}{Format name (\code{"graphml"}, \code{"gexf"}, \code{"gml"},
-\code{"pajek"}, \code{"dl"}, \code{"json"}, \code{"csv"}, \code{"tsv"}, or
-\code{"dot"}), or \code{NULL} to use the file extension.}
+\code{"pajek"}, \code{"dl"}, \code{"json"}, \code{"dynetml"}, \code{"csv"},
+\code{"tsv"}, or \code{"dot"}), or \code{NULL} to use the file extension.}
 \item{directed}{For formats that do not record direction (UCINET DL and edge
 lists), whether edges are directed. Defaults to \code{TRUE}.}
 \item{nodes}{For edge lists only: a data frame of nodes, or the path to a CSV
@@ -21,7 +21,7 @@ file of nodes whose first column is the node identifier.}
 \item{weight}{When reading, the edge column holding weights; by default a
 numeric column called \code{weight} is used if there is one. When writing,
 the edge column written as the link value in formats with a single positional
-value (Pajek, UCINET DL) and as the GEXF edge weight; defaults to the
+value (Pajek, UCINET DL, DyNetML) and as the GEXF edge weight; defaults to the
 network's weight column.}
 \item{weight_type}{When reading, what the weights mean (\code{"distance"} or
 \code{"strength"}); see \code{\link{netframe}}.}
@@ -46,6 +46,7 @@ GML \tab .gml \tab yes \tab yes \tab igraph, NetworkX, Cytoscape \cr
 Pajek \tab .net, .paj \tab yes \tab yes \tab Pajek, igraph, NetworkX \cr
 UCINET DL \tab .dl \tab yes \tab yes \tab UCINET, igraph \cr
 JSON node-link \tab .json \tab yes \tab yes \tab NetworkX, D3 \cr
+DyNetML \tab .xml \tab yes \tab yes \tab ORA (CASOS, Carnegie Mellon) \cr
 Edge list \tab .csv, .tsv \tab yes \tab yes \tab spreadsheets, any tool \cr
 DOT \tab .dot, .gv \tab no \tab yes \tab Graphviz \cr
 }
@@ -54,6 +55,50 @@ JSON) and are inferred otherwise. Node identifiers that are all whole numbers
 are returned as integers. Formats differ in what they can hold: Pajek and
 UCINET DL store only structure, node labels, and a single edge value, and DOT
 is for drawing.
+
+GraphML and DyNetML files both use \code{.xml}. When reading a \code{.xml}
+file without \code{format}, the root element decides (\code{<graphml>} or a
+DyNetML \code{<DynamicNetwork>}, \code{<DynamicMetaNetwork>},
+\code{<MetaNetwork>}, or \code{<MetaMatrix>}). Writing a \code{.xml} file
+without \code{format} produces GraphML; use \code{format = "dynetml"} (or
+\code{"ora"}) to write DyNetML.
+}
+\section{DyNetML}{
+DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA for
+multimode meta-networks: node classes such as agents, organizations,
+locations, tasks, and resources, with several networks among them, and
+optionally one meta-network per time period. It is read into one network:
+\itemize{
+\item Nodes get \code{class} (the node class id) and \code{type} (its ORA
+type, such as \code{Agent}), \code{title}, and one column per node property,
+typed from the file's property identities (\code{number} as double;
+\code{text}, \code{categoryText}, \code{URI}, and \code{date} as text).
+\item The same node id may appear in two classes. Only when it does are
+identifiers written \code{class::id}, with the original in \code{node_id}.
+\item Edges get \code{network} (the network id) and \code{weight} (the link
+value; links without a value get 1).
+\item Each network says whether it is directed. A file mixing directed and
+undirected networks is read as directed, each undirected link stored as two
+opposite edges, with a logical \code{directed} column marking them.
+\item A file with several meta-networks (time periods) gets a \code{period}
+column on nodes and edges, and identifiers \code{period::id}; each period's
+nodes are separate rows.
+}
+Ports, survey (AnthroPac) data, and properties on networks are not supported
+and give an error naming the line. Writing produces one meta-network per
+\code{period} value, node classes from the \code{class} and \code{type}
+columns (a single \code{Agent} class without them), and one network per
+\code{network} value (or per pair of node classes); other node columns become
+node properties. Logical node columns are written as ORA category text and
+read back as text, and integer columns read back as double.
+}
+\references{
+Tsvetovat, M., Reminga, J., and Carley, K. M. (2004). DyNetML: Interchange
+format for rich social network data. Technical report CMU-ISRI-04-105,
+Carnegie Mellon University. \doi{10.1184/R1/6622022.v1}
+
+Altman, N., Carley, K. M., and Reminga, J. (2020). ORA User's Guide 2020.
+Technical report CMU-ISR-20-110, Carnegie Mellon University.
 }
 \examples{
 g <- netframe(data.frame(from = c("a", "b"), to = c("b", "c"), w = c(1, 2)),

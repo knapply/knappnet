@@ -99,7 +99,8 @@ fn kind_code(k: Kind) -> i32 {
 }
 
 /// Reads a network file. `format` may be null to infer it from the
-/// extension. `directed` is -1 (not specified), 0, or 1; it only affects
+/// extension (for `.xml`, GraphML or DyNetML from the root element).
+/// `directed` is -1 (not specified), 0, or 1; it only affects
 /// formats that do not record direction.
 ///
 /// # Safety

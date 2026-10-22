@@ -45,7 +45,9 @@ int32_t net_triad_census(const GraphHandle *h, int32_t threads, double *out,
  * A network handle holds three tables: 0 = graph attributes (one row),
  * 1 = nodes (first column "id"), 2 = edges (first columns "from", "to").
  * Column kinds: 0 = logical, 1 = integer, 2 = double, 3 = text.
- * Formats: graphml, gexf, gml, pajek, dl, json, dot (write only). */
+ * Formats: graphml, gexf, gml, pajek, dl, json, dynetml (ORA), dot (write
+ * only). Reading a .xml file without a format chooses GraphML or DyNetML
+ * from the root element; writing one produces GraphML. */
 
 typedef struct NetworkHandle NetworkHandle;
 

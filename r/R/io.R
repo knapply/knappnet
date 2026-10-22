@@ -12,6 +12,7 @@
 #' | Pajek | `.net`, `.paj` | yes | yes | Pajek, igraph, NetworkX |
 #' | UCINET DL | `.dl` | yes | yes | UCINET, igraph |
 #' | JSON node-link | `.json` | yes | yes | NetworkX, D3 |
+#' | DyNetML | `.xml` | yes | yes | ORA (CASOS, Carnegie Mellon) |
 #' | Edge list | `.csv`, `.tsv` | yes | yes | spreadsheets, any tool |
 #' | DOT | `.dot`, `.gv` | no | yes | Graphviz |
 #'
@@ -21,10 +22,55 @@
 #' hold: Pajek and UCINET DL store only structure, node labels, and a
 #' single edge value, and DOT is for drawing.
 #'
+#' GraphML and DyNetML files both use `.xml`. When reading a `.xml` file
+#' without `format`, the root element decides (`<graphml>` or a DyNetML
+#' `<DynamicNetwork>`, `<DynamicMetaNetwork>`, `<MetaNetwork>`, or
+#' `<MetaMatrix>`). Writing a `.xml` file without `format` produces GraphML;
+#' use `format = "dynetml"` (or `"ora"`) to write DyNetML.
+#'
+#' @section DyNetML:
+#' DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA
+#' for multimode meta-networks: node classes such as agents, organizations,
+#' locations, tasks, and resources, with several networks among them, and
+#' optionally one meta-network per time period. It is read into one
+#' network:
+#'
+#' * Nodes get `class` (the node class id) and `type` (its ORA type, such
+#'   as `Agent`), `title`, and one column per node property, typed from the
+#'   file's property identities (`number` as double; `text`,
+#'   `categoryText`, `URI`, and `date` as text).
+#' * The same node id may appear in two classes. Only when it does are
+#'   identifiers written `class::id`, with the original in `node_id`.
+#' * Edges get `network` (the network id) and `weight` (the link value;
+#'   links without a value get 1).
+#' * Each network says whether it is directed. A file mixing directed and
+#'   undirected networks is read as directed, each undirected link stored
+#'   as two opposite edges, with a logical `directed` column marking them.
+#' * A file with several meta-networks (time periods) gets a `period`
+#'   column on nodes and edges, and identifiers `period::id`; each period's
+#'   nodes are separate rows.
+#'
+#' Ports, survey (AnthroPac) data, and properties on networks are not
+#' supported and give an error naming the line. Writing produces one
+#' meta-network per `period` value, node classes from the `class` and
+#' `type` columns (a single `Agent` class without them), and one network
+#' per `network` value (or per pair of node classes); other node columns
+#' become node properties. Logical node columns are written as ORA
+#' category text and read back as text, and integer columns read back as
+#' double.
+#'
+#' @references
+#' Tsvetovat, M., Reminga, J., and Carley, K. M. (2004). DyNetML:
+#' Interchange format for rich social network data. Technical report
+#' CMU-ISRI-04-105, Carnegie Mellon University. \doi{10.1184/R1/6622022.v1}
+#'
+#' Altman, N., Carley, K. M., and Reminga, J. (2020). ORA User's Guide
+#' 2020. Technical report CMU-ISR-20-110, Carnegie Mellon University.
+#'
 #' @param file Path to the file.
 #' @param format Format name (`"graphml"`, `"gexf"`, `"gml"`, `"pajek"`,
-#'   `"dl"`, `"json"`, `"csv"`, `"tsv"`, or `"dot"`), or `NULL` to use the
-#'   file extension.
+#'   `"dl"`, `"json"`, `"dynetml"`, `"csv"`, `"tsv"`, or `"dot"`), or `NULL`
+#'   to use the file extension.
 #' @param directed For formats that do not record direction (UCINET DL and
 #'   edge lists), whether edges are directed. Defaults to `TRUE`.
 #' @param nodes For edge lists only: a data frame of nodes, or the path to
@@ -33,7 +79,7 @@
 #' @param weight When reading, the edge column holding weights; by default
 #'   a numeric column called `weight` is used if there is one. When writing,
 #'   the edge column written as the link value in formats with a single
-#'   positional value (Pajek, UCINET DL) and as the GEXF edge weight;
+#'   positional value (Pajek, UCINET DL, DyNetML) and as the GEXF edge weight;
 #'   defaults to the network's weight column.
 #' @param weight_type When reading, what the weights mean (`"distance"` or
 #'   `"strength"`); see [netframe()].
@@ -73,6 +119,9 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
                     weight = pick_weight(edges, weight), weight_type = weight_type))
   }
 
+  # A .xml file may be GraphML or DyNetML; the engine reads its root
+  # element to decide.
+  if (is.null(format) && identical(tolower(tools::file_ext(file)), "xml")) fmt <- NULL
   res <- .Call(C_read_network, path.expand(file), fmt,
                if (is.null(directed)) NULL else isTRUE(directed))
   node_df <- as_frame(res$nodes)
@@ -132,7 +181,8 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
 format_names <- c(
   graphml = "graphml", xml = "graphml", gexf = "gexf", gml = "gml",
   pajek = "pajek", net = "pajek", paj = "pajek", dl = "dl", ucinet = "dl",
-  json = "json", csv = "csv", tsv = "tsv", txt = "tsv", dot = "dot", gv = "dot"
+  json = "json", dynetml = "dynetml", ora = "dynetml", csv = "csv", tsv = "tsv",
+  txt = "tsv", dot = "dot", gv = "dot"
 )
 
 resolve_format <- function(format, file, write) {
