@@ -142,7 +142,10 @@ jobs:
           # The minimum version in DESCRIPTION. Suggested packages are not
           # installed: some no longer support R 4.1, and the tests skip
           # without them.
-          - {os: ubuntu-latest, r: "4.1", dependencies: '"hard"'}
+          # Without knitr the vignette cannot be built, so it is skipped.
+          - {os: ubuntu-latest, r: "4.1", dependencies: '"hard"',
+             build-args: 'c("--no-manual", "--no-build-vignettes")',
+             check-args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'}
     env:
       _R_CHECK_FORCE_SUGGESTS_: false
     steps:
@@ -166,7 +169,8 @@ jobs:
       - uses: r-lib/actions/check-r-package@v2
         with:
           working-directory: r
-          args: 'c("--no-manual", "--as-cran")'
+          build_args: ${{ matrix.build-args || 'c("--no-manual")' }}
+          args: ${{ matrix.check-args || 'c("--no-manual", "--as-cran")' }}
           # On Linux the statically linked Rust standard library contains
           # references to abort() and exit(), which R CMD check reports as a
           # warning; the engine never calls them (see r/cran-comments.md).
@@ -205,6 +209,8 @@ jobs:
       UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
     steps:
       - uses: actions/checkout@v4
+      - name: Install curl for the Rust installer
+        run: command -v curl || { apt-get update && apt-get install -y curl ca-certificates; }
       - uses: dtolnay/rust-toolchain@stable
       - name: Install testthat
         run: >-
@@ -244,6 +250,8 @@ jobs:
       VALGRIND_OPTS: --track-origins=yes --leak-check=no
     steps:
       - uses: actions/checkout@v4
+      - name: Install curl for the Rust installer
+        run: command -v curl || { apt-get update && apt-get install -y curl ca-certificates; }
       - uses: dtolnay/rust-toolchain@stable
       - name: Install valgrind and testthat
         run: |
