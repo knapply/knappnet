@@ -1,0 +1,43 @@
+{
+  "n": 32,
+  "directed": false,
+  "weighted": false,
+  "tags": [
+    "twomode"
+  ],
+  "source": "Davis, Gardner, and Gardner (1941); davis1941deep; women type 0, events type 1",
+  "type": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ]
+}
