@@ -3,7 +3,8 @@
 \alias{strength}
 \title{Degree and strength}
 \usage{
-degree(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE)
+degree(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
+       convention = c("igraph", "networkx", "sna", "ucinet"))
 
 strength(x, mode = c("all", "out", "in"), loops = TRUE)
 }
@@ -13,6 +14,9 @@ strength(x, mode = c("all", "out", "in"), loops = TRUE)
 \code{"in"}. Ignored for undirected networks.}
 \item{loops}{Whether self-loops count.}
 \item{weighted}{Whether to sum edge weights.}
+\item{convention}{\code{"igraph"} (the default) and \code{"networkx"} count
+every edge; \code{"sna"} and \code{"ucinet"} count distinct ties between
+distinct nodes.}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
@@ -26,6 +30,11 @@ Parallel edges each count. In undirected networks a self-loop adds 2 to its
 node; in directed networks it adds 1 to out-degree and 1 to in-degree. These
 match igraph and NetworkX. Set \code{loops = FALSE} to ignore self-loops,
 which matches the sna default (\code{diag = FALSE}).
+
+\code{convention = "sna"} or \code{"ucinet"} reads the network as an
+adjacency matrix, as those tools do: parallel edges collapse into one tie
+(keeping the largest weight) and self-loops are ignored, whatever
+\code{loops} says. See \code{\link{conventions}}.
 }
 \references{
 Barrat, A., Barthelemy, M., Pastor-Satorras, R., & Vespignani, A. (2004). The

@@ -23,7 +23,9 @@ networks, and for statistical models such as exponential random graph models
 and stochastic actor-oriented models.
 
 > **Status:** early development. Available now: degree, strength,
-> betweenness, the triad census, k-cores, cliques, modularity and Louvain
+> betweenness, closeness, harmonic and eigenvector centrality,
+> centralization, density, components, fragmentation, the triad census,
+> k-cores, cliques, modularity and Louvain
 > communities, Burt's structural holes, Gould-Fernandez brokerage,
 > structural equivalence, CONCOR, QAP correlation and MRQAP regression,
 > conversions to and from igraph, network, tidygraph, and matrices, and nine
@@ -32,6 +34,7 @@ and stochastic actor-oriented models.
 **Contents:** [A first network](#a-first-network) ·
 [Weighted and binary networks](#weighted-and-binary-networks) ·
 [Bring your existing work](#bring-your-existing-work) ·
+[Conventions](#one-switch-for-every-tools-conventions) ·
 [Cohesive subgroups](#cohesive-subgroups) ·
 [Brokerage and structural holes](#brokerage-and-structural-holes) ·
 [Positions and roles](#positions-and-roles) ·
@@ -151,6 +154,54 @@ round(head(betweenness(karate)), 1)
 ig <- to_igraph(karate)               # also to_network(), to_tbl_graph(), as.matrix()
 igraph::ecount(ig)
 #> [1] 78
+```
+
+## One switch for every tool's conventions
+
+igraph, NetworkX, sna, and UCINET often give different answers to the same
+question, because they make different choices that their documentation
+rarely puts side by side. Closeness on a disconnected network is the
+classic case: each tool treats unreachable nodes differently. Here `a`,
+`b`, and `c` form a path, and `d` and `e` are a separate pair:
+
+```r
+split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+                  directed = FALSE)
+data.frame(
+  node     = split$nodes$name,
+  igraph   = round(closeness(split), 3),
+  networkx = round(closeness(split, convention = "networkx"), 3),
+  sna      = closeness(split, convention = "sna"),
+  ucinet   = round(closeness(split, convention = "ucinet"), 3)
+)
+#>   node igraph networkx sna ucinet
+#> 1    a  0.333    0.333   0  0.444
+#> 2    b  0.500    0.500   0  0.500
+#> 3    d  1.000    0.250   0  0.400
+#> 4    c  0.333    0.333   0  0.444
+#> 5    e  1.000    0.250   0  0.400
+```
+
+igraph counts only the nodes each node can reach, so `d` and `e` look
+perfectly central; NetworkX scales by the share of the network reached
+(Wasserman and Faust 1994); sna gives 0 to any node that cannot reach
+everyone; UCINET counts each missing distance as one more than the longest
+observed one. None is wrong, but a published result should say which was
+used, and replicating a study done in another tool should take one
+argument, not a reimplementation. `convention` is available on degree,
+betweenness, closeness, harmonic and eigenvector centrality, density, and
+centralization, and `?conventions` tabulates every difference. Without it,
+results follow igraph.
+
+The network as a whole has measures too:
+
+```r
+round(graph_density(karate), 3)
+#> [1] 0.139
+components(split)$no
+#> [1] 2
+round(centralization(karate, "betweenness"), 3)
+#> [1] 0.406
 ```
 
 ## Cohesive subgroups
@@ -438,8 +489,10 @@ Tools disagree on details that change results: whether undirected
 betweenness counts each pair once or twice, whether self-loops add to
 degree, how isolates enter normalization, whether parallel edges count
 separately. Each help page states the choices a measure makes and which
-tools it matches, and the validation manifest records every known
-disagreement with the reason for it.
+tools it matches, `convention` reproduces each tool's choices exactly, and
+the validation manifest records every known disagreement with the reason
+for it. UCINET's conventions are taken from its documentation and checked
+against its published output.
 
 ### Validated, not trusted
 

@@ -20,6 +20,13 @@ extern SEXP C_structural_equivalence(SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_concor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_qap_cor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_mrqap(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_graph_simplify(SEXP, SEXP, SEXP);
+extern SEXP C_density(SEXP, SEXP);
+extern SEXP C_components(SEXP, SEXP);
+extern SEXP C_fragmentation(SEXP, SEXP);
+extern SEXP C_centralization(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_closeness(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_eigenvector(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -40,6 +47,13 @@ static const R_CallMethodDef call_methods[] = {
     {"C_concor", (DL_FUNC)&C_concor, 6},
     {"C_qap_cor", (DL_FUNC)&C_qap_cor, 10},
     {"C_mrqap", (DL_FUNC)&C_mrqap, 15},
+    {"C_graph_simplify", (DL_FUNC)&C_graph_simplify, 3},
+    {"C_density", (DL_FUNC)&C_density, 2},
+    {"C_components", (DL_FUNC)&C_components, 2},
+    {"C_fragmentation", (DL_FUNC)&C_fragmentation, 2},
+    {"C_centralization", (DL_FUNC)&C_centralization, 7},
+    {"C_closeness", (DL_FUNC)&C_closeness, 8},
+    {"C_eigenvector", (DL_FUNC)&C_eigenvector, 8},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

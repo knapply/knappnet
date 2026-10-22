@@ -1,0 +1,503 @@
+# Density, components, fragmentation, centralization, closeness, harmonic
+# centrality, and eigenvector centrality. Format as in ../manifest.yaml.
+#
+# Undefined results (NaN) are written as -1 by the engine runner and by
+# every oracle, since none of these measures can be negative.
+#
+# Engine options not in ../manifest.yaml:
+#   simple: true      run on the adjacency-matrix reading of the network
+#                     (parallel edges collapsed, self-loops dropped), which
+#                     is how sna and UCINET read a network.
+#   symmetrize: true  as simple, and directed ties symmetrized by maximum
+#                     (UCINET's eigenvector routine).
+#   degree_simple, betweenness_simple: degree and betweenness of the
+#                     simplified network, keeping the largest (simple: max)
+#                     or smallest (simple: min, NetworkX's shortest parallel
+#                     edge) weight of parallel edges. These validate the
+#                     `convention` argument of degree() and betweenness() in R.
+#
+# UCINET entries are "not run" until golden files generated with UCINET are
+# committed under golden/ucinet/ (see crates/engine/src/conventions.rs).
+
+degree_sna:
+  engine: {fn: degree_simple, mode: all, simple: max}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "degree in the adjacency matrix without its diagonal (convention = 'sna' or 'ucinet' in R)"
+    sna:
+      call: "sna::degree(m, gmode, cmode = 'freeman' | 'indegree')"
+
+betweenness_networkx:
+  engine: {fn: betweenness_simple, weighted: false, normalized: false, simple: min}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "Freeman betweenness with parallel edges counted once (convention = 'networkx', 'sna', or 'ucinet' in R)"
+    networkx:
+      call: "nx.betweenness_centrality(MultiGraph/MultiDiGraph, normalized = False)"
+    sna:
+      call: "sna::betweenness(m, gmode, cmode = 'directed' | 'undirected')"
+
+betweenness_networkx_weighted:
+  engine: {fn: betweenness_simple, weighted: true, normalized: false, simple: min}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    networkx:
+      call: "nx.betweenness_centrality(MultiGraph/MultiDiGraph, weight = 'weight', normalized = False), which uses the lightest parallel edge"
+
+density:
+  engine: {fn: density, loops: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "edges / possible edges, counted directly (density_definition_oracle.py)"
+    networkx:
+      call: "nx.density(MultiGraph/MultiDiGraph)"
+      differs_when: [edge_case]
+      reason: >-
+        NetworkX returns 0 for a graph with one node, where there are no
+        possible edges; igraph, sna, and this engine report the density as
+        undefined.
+    igraph:
+      call: "igraph::edge_density(g, loops = FALSE)"
+    sna:
+      call: "sna::gden(m, mode = 'digraph' | 'graph', diag = FALSE)"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        sna works on adjacency matrices, so parallel edges collapse to one
+        and self-loops are ignored; the engine's density of the simplified
+        network (density_simple) matches it.
+
+density_loops:
+  engine: {fn: density, loops: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "edges / possible edges including the n possible loops"
+    igraph:
+      call: "igraph::edge_density(g, loops = TRUE)"
+
+density_simple:
+  engine: {fn: density, loops: false, simple: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "distinct non-loop dyads (or arcs) / possible ones"
+    networkx:
+      call: "nx.density(nx.Graph/DiGraph without self-loops)"
+      differs_when: [edge_case]
+      reason: NetworkX returns 0 for a graph with one node.
+    sna:
+      call: "sna::gden(m, mode = 'digraph' | 'graph', diag = FALSE)"
+    ucinet:
+      call: "Network > Cohesion > Density > Density overall (diagonal excluded); CLI density(<dataset>)"
+
+components_weak:
+  engine: {fn: components, kind: weak}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "transitive closure of the symmetrized adjacency (density_definition_oracle.py)"
+    networkx:
+      call: "nx.weakly_connected_components / nx.connected_components"
+    igraph:
+      call: "igraph::components(g, mode = 'weak')$membership"
+    ucinet:
+      call: "Network > Regions > Components, For directed data: Weak components"
+
+components_strong:
+  engine: {fn: components, kind: strong}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "mutual reachability from the transitive closure"
+    networkx:
+      call: "nx.strongly_connected_components / nx.connected_components"
+    igraph:
+      call: "igraph::components(g, mode = 'strong')$membership"
+    ucinet:
+      call: "Network > Regions > Components, For directed data: Strong components"
+
+fragmentation:
+  engine: {fn: fragmentation, kind: weak}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "proportion of ordered pairs with no path either way, from the transitive closure (Borgatti 2006)"
+    ucinet:
+      call: "Network > Regions > Components (Normalized heterogeneity, equal to fragmentation for undirected data); or Network > Cohesion > Distance (Fragmentation) on symmetrized data"
+
+fragmentation_strong:
+  engine: {fn: fragmentation, kind: strong}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "proportion of ordered pairs not mutually reachable"
+
+closeness:
+  engine: {fn: closeness, mode: out, normalized: false, unreachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "1 / sum of exact distances to reachable nodes (closeness_definition_oracle.py)"
+    igraph:
+      call: "igraph::closeness(g, mode = 'out', weights = NA, normalized = FALSE)"
+
+closeness_normalized:
+  engine: {fn: closeness, mode: out, normalized: true, unreachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "reached / sum of exact distances"
+    igraph:
+      call: "igraph::closeness(g, mode = 'out', weights = NA, normalized = TRUE)"
+
+closeness_in:
+  engine: {fn: closeness, mode: in, normalized: true, unreachable: ignore}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "reached / sum of exact distances from other nodes"
+    igraph:
+      call: "igraph::closeness(g, mode = 'in', weights = NA, normalized = TRUE)"
+
+closeness_all:
+  engine: {fn: closeness, mode: all, normalized: true, unreachable: ignore}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "reached / sum of exact distances, direction ignored"
+    igraph:
+      call: "igraph::closeness(g, mode = 'all', weights = NA, normalized = TRUE)"
+
+closeness_wf:
+  engine: {fn: closeness, mode: in, normalized: true, unreachable: wasserman_faust}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "(reached / sum)(reached / (n - 1)), Wasserman and Faust (1994, p. 201)"
+    networkx:
+      call: "nx.closeness_centrality(G) (wf_improved = True, the default)"
+
+closeness_sna:
+  engine: {fn: closeness, mode: out, normalized: true, unreachable: zero, simple: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "(n - 1) / sum of distances, 0 if any node is unreachable"
+    sna:
+      call: "sna::closeness(m, gmode, cmode = 'directed' | 'undirected')"
+
+closeness_ucinet:
+  engine: {fn: closeness, mode: out, normalized: true, unreachable: max_plus_one, simple: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "(n - 1) / sum of distances, unreachable distances set to the largest observed distance plus 1"
+    ucinet:
+      call: "Network > Centrality > Closeness, Freeman closeness, 'Set undefined distances to: Max observed distance plus 1', 'Divide totals into N-1' (column FreeClo, or OutClose for directed data)"
+
+closeness_ucinet_in:
+  engine: {fn: closeness, mode: in, normalized: true, unreachable: max_plus_one, simple: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "as closeness_ucinet, on distances from other nodes"
+    ucinet:
+      call: "Network > Centrality > Closeness, column InClose (defaults as closeness_ucinet)"
+
+closeness_weighted:
+  engine: {fn: closeness, mode: out, weighted: true, normalized: true, unreachable: ignore}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "reached / sum of exact weighted distances"
+    igraph:
+      call: "igraph::closeness(g, mode = 'out', weights = E(g)$weight, normalized = TRUE)"
+
+closeness_wf_weighted:
+  engine: {fn: closeness, mode: in, weighted: true, normalized: true, unreachable: wasserman_faust}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Wasserman-Faust closeness on exact weighted distances from other nodes"
+    networkx:
+      call: "nx.closeness_centrality(G, distance = 'weight')"
+
+closeness_weighted_strength:
+  engine: {fn: closeness, mode: out, weighted: true, weights_as: strength, normalized: true, unreachable: ignore}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "reached / sum of exact distances with lengths 1/w"
+    igraph:
+      call: "igraph::closeness(g, mode = 'out', weights = 1 / E(g)$weight, normalized = TRUE)"
+
+harmonic:
+  engine: {fn: harmonic, mode: out, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum of 1 / exact distance over other nodes (closeness_definition_oracle.py)"
+    networkx:
+      call: "nx.harmonic_centrality(G.reverse())"
+    igraph:
+      call: "igraph::harmonic_centrality(g, mode = 'out', weights = NA, normalized = FALSE)"
+
+harmonic_normalized:
+  engine: {fn: harmonic, mode: out, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum of 1 / distance, divided by n - 1"
+    igraph:
+      call: "igraph::harmonic_centrality(g, mode = 'out', weights = NA, normalized = TRUE)"
+    sna:
+      call: "sna::closeness(m, gmode, cmode = 'suminvdir' | 'suminvundir')"
+      differs_when: [edge_case]
+      reason: >-
+        For a single node sna divides 0 by n - 1 = 0 and reports NaN; igraph
+        and this engine report 0, since there are no other nodes.
+    ucinet:
+      call: "Network > Centrality > Closeness, reciprocal closeness 'Averages' (column RecipClo, or OutRecipClo for directed data)"
+
+harmonic_in:
+  engine: {fn: harmonic, mode: in, normalized: false}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum of 1 / distance from other nodes"
+    networkx:
+      call: "nx.harmonic_centrality(G)"
+    igraph:
+      call: "igraph::harmonic_centrality(g, mode = 'in', weights = NA)"
+
+harmonic_weighted:
+  engine: {fn: harmonic, mode: out, weighted: true, normalized: false}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum of 1 / exact weighted distance"
+    networkx:
+      call: "nx.harmonic_centrality(G.reverse(), distance = 'weight')"
+    igraph:
+      call: "igraph::harmonic_centrality(g, mode = 'out', weights = E(g)$weight)"
+
+eigenvector:
+  engine: {fn: eigenvector, mode: in, scale: max, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of the adjacency matrix with numpy (eigenvector_definition_oracle.py)"
+    igraph:
+      call: "igraph::eigen_centrality(g, directed = TRUE, weights = NA)$vector"
+      differs_when: [disconnected]
+      reason: >-
+        When several components share the largest eigenvalue the principal
+        eigenvector is not unique, and the split between them depends on the
+        starting vector (all ones here, degree-based in igraph's ARPACK
+        call). Fixtures where the leading eigenvalue is simple must match.
+
+eigenvector_networkx:
+  engine: {fn: eigenvector, mode: in, scale: unit, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "dense eigendecomposition with loops counted once, unit norm"
+    networkx:
+      call: "nx.eigenvector_centrality_numpy(G); it refuses graphs that are not (strongly) connected, which are then not run"
+
+eigenvector_weighted:
+  engine: {fn: eigenvector, mode: in, weighted: true, scale: max, loops: twice}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of the weighted adjacency matrix"
+    igraph:
+      call: "igraph::eigen_centrality(g, directed = TRUE, weights = E(g)$weight)$vector"
+      differs_when: [disconnected]
+      reason: Not unique when components share the largest eigenvalue (see eigenvector).
+
+eigenvector_weighted_networkx:
+  engine: {fn: eigenvector, mode: in, weighted: true, scale: unit, loops: once}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of the weighted adjacency matrix, unit norm"
+    networkx:
+      call: "nx.eigenvector_centrality_numpy(G, weight = 'weight')"
+
+eigenvector_undirected:
+  engine: {fn: eigenvector, mode: all, scale: max, loops: twice}
+  applies_to: directed
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of A + A^T"
+    igraph:
+      call: "igraph::eigen_centrality(g, directed = FALSE, weights = NA)$vector (the R default)"
+      differs_when: [disconnected]
+      reason: Not unique when components share the largest eigenvalue (see eigenvector).
+
+eigenvector_sna:
+  engine: {fn: eigenvector, mode: out, scale: unit, loops: ignore, simple: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-7, abs: 1.0e-8}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of the binary adjacency matrix (right eigenvector), unit norm"
+    sna:
+      call: >-
+        sna::evcent(m, gmode = 'digraph', diag = FALSE) for directed networks;
+        sna::evcent(m, gmode = 'graph', diag = FALSE, use.eigen = TRUE) for
+        undirected ones, with the sign chosen so the scores sum to a positive
+        number (sna leaves the sign of the eigenvector arbitrary)
+      differs_when: [disconnected, edge_case]
+      reason: >-
+        sna's default iteration is plain power iteration on A, which does
+        not converge on periodic graphs (it alternates on bipartite ones,
+        hence use.eigen = TRUE for undirected networks), and returns NaN for
+        a graph without cycles. When several components share the largest
+        eigenvalue the eigenvector is not unique.
+
+eigenvector_ucinet:
+  engine: {fn: eigenvector, mode: all, scale: unit, loops: ignore, symmetrize: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-7, abs: 1.0e-8}
+  oracles:
+    definition:
+      call: "dense eigendecomposition of the binary adjacency matrix symmetrized by maximum, unit norm"
+    ucinet:
+      call: "Network > Centrality > Eigenvector (CLI eigencent(<dataset>)) on the dichotomized network; UCINET symmetrizes by maximum"
+      differs_when: [disconnected]
+      reason: >-
+        When more than one component has ties UCINET switches to the
+        lambda-squared scores computed within components, which this engine does not
+        implement.
+
+centralization_degree:
+  engine: {fn: centralization, measure: degree, mode: all, loops: true, convention: igraph}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Freeman's sum of differences from the maximum degree, over igraph's maximum (centralization_definition_oracle.py)"
+    igraph:
+      call: "igraph::centr_degree(g, mode = 'all', loops = TRUE, normalized = TRUE)$centralization"
+
+centralization_degree_in:
+  engine: {fn: centralization, measure: degree, mode: in, loops: true, convention: igraph}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "as centralization_degree, in-degree"
+    igraph:
+      call: "igraph::centr_degree(g, mode = 'in', loops = TRUE, normalized = TRUE)$centralization"
+
+centralization_degree_sna:
+  engine: {fn: centralization, measure: degree, mode: all, convention: sna}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Freeman centralization of adjacency-matrix degree over sna's maximum"
+    sna:
+      call: "sna::centralization(m, sna::degree, mode = gmode, cmode = 'freeman' | 'indegree')"
+
+centralization_degree_ucinet:
+  engine: {fn: centralization, measure: degree, mode: out, convention: ucinet}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Freeman centralization of adjacency-matrix out-degree (degree, if undirected) over (n-1)^2 or (n-1)(n-2)"
+    ucinet:
+      call: "Network > Centrality > Degree, 'Network Centralization (Outdegree)' or 'Network Centralization' as a proportion"
+
+centralization_betweenness:
+  engine: {fn: centralization, measure: betweenness, convention: igraph}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Freeman centralization of exact betweenness over (n-1)^2 (n-2), halved if undirected"
+    igraph:
+      call: "igraph::centr_betw(g, directed = TRUE, normalized = TRUE)$centralization"
+    sna:
+      call: "sna::centralization(m, sna::betweenness, mode = gmode)"
+      differs_when: [multi_edges]
+      reason: sna collapses parallel edges, which changes shortest-path counts.
+    ucinet:
+      call: "Network > Centrality > Freeman Betweenness > Node Betweenness, 'Network Centralization Index' divided by 100"
+      differs_when: [multi_edges]
+      reason: UCINET collapses parallel edges, which changes shortest-path counts.
+
+centralization_closeness:
+  engine: {fn: centralization, measure: closeness, mode: out, convention: igraph}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Freeman centralization of normalized reachable-only closeness over igraph's maximum; undefined if a node reaches no other"
+    igraph:
+      call: "igraph::centr_clo(g, mode = 'out', normalized = TRUE)$centralization"
+
+centralization_closeness_sna:
+  engine: {fn: centralization, measure: closeness, mode: out, convention: sna}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Freeman centralization of sna closeness (0 when any node is unreachable) over sna's maximum"
+    sna:
+      call: "sna::centralization(m, sna::closeness, mode = gmode)"
+
+centralization_closeness_ucinet:
+  engine: {fn: centralization, measure: closeness, mode: out, convention: ucinet}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Freeman centralization of closeness over (n-1)(n-2)/(2n-3); undefined unless every node reaches every other"
+    ucinet:
+      call: "UCINET's legacy Closeness routine, 'Network Centralization' (out-centralization for directed data) divided by 100"

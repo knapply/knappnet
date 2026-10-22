@@ -3,7 +3,8 @@
 \title{Betweenness centrality}
 \usage{
 betweenness(x, weighted = NULL, normalized = FALSE, threads = 0L,
-            weights_as = NULL)
+            weights_as = NULL,
+            convention = c("igraph", "networkx", "sna", "ucinet"))
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
@@ -13,6 +14,8 @@ them when the network has a weight column.}
 \item{threads}{Number of threads; \code{0} uses all available cores.}
 \item{weights_as}{Override the network's \code{weight_type}:
 \code{"distance"} or \code{"strength"}.}
+\item{convention}{How parallel edges and weights are treated; see
+Details.}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
@@ -35,6 +38,14 @@ small whole-number lengths (Dial 1969), and Dijkstra's algorithm (Dijkstra
 Normalized values divide by the number of pairs not involving the
 node: \eqn{(n-1)(n-2)} for directed and \eqn{(n-1)(n-2)/2} for undirected
 networks. These conventions match igraph and NetworkX.
+
+Tools differ on multigraphs. igraph (the default) counts each parallel edge
+as a distinct shortest path. NetworkX counts parallel edges once, using the
+shortest of them when weighted (\code{convention = "networkx"}). sna and
+UCINET read the network as a binary adjacency matrix: parallel edges
+collapse and weights are not used (\code{convention = "sna"} or
+\code{"ucinet"}). On networks without parallel edges all four agree. See
+\code{\link{conventions}}.
 }
 \references{
 Freeman, L. C. (1977). A set of measures of centrality based on betweenness.
