@@ -17,12 +17,30 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
 | `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |
 | `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 16 | 0 / 0 / 0 / 25 |
+| `constraint` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |
+| `constraint_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
+| `effective_size` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |
+| `effective_size_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |
+| `efficiency` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |
+| `brokerage` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |
+| `structural_equivalence_euclidean` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |
+| `structural_equivalence_correlation` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |
+| `structural_equivalence_hamming` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |
+| `structural_equivalence_euclidean_weighted` | 6 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 6 |
+| `concor` | 25 / 0 / 0 / 0 |  |  |  |
+| `concor_depth2` | 23 / 0 / 0 / 2 |  |  |  |
 
 ## Documented convention differences
 
 - `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.562335703512176, networkx 53.91666666666667
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.13907115702781336, networkx 0.15765107212475635
+- `constraint` vs networkx on `multi_loops_dir` (loops): index 18: engine 0.375, networkx 0.6613136574074073
+- `effective_size` vs networkx on `multi_loops_dir` (loops): index 19: engine 3.0, networkx 2.7222222222222223
+- `efficiency` vs networkx on `multi_loops_dir` (loops): index 19: engine 1.0, networkx 0.9074074074074074
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909122, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.12111231459595977, networkx 0.14763297131718187
+- `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
+- `effective_size` vs networkx on `multi_loops_und` (loops): item 0: engine 3.1666666666666665, networkx 3.0416666666666665
+- `efficiency` vs networkx on `multi_loops_und` (loops): item 0: engine 0.7916666666666666, networkx 0.7604166666666666
 - `betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 13: engine 328.5, networkx 331.0
 - `betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 37: engine 114.16666666666666, networkx 115.25

@@ -1,0 +1,147 @@
+# Brokerage and positions: Burt's structural holes, Gould-Fernandez
+# brokerage, structural equivalence, and CONCOR. Same format as
+# validation/manifest.yaml.
+#
+# Undefined values (NaN, such as the constraint of an isolate) are written
+# to golden files as empty lines, so undefined only matches undefined.
+#
+# The fixtures have no group attribute, so brokerage uses a deterministic
+# grouping: `groups: mod3` puts node index v (0-based) in group v % 3. The
+# engine runner, the definition oracle, and the sna oracle all use it.
+
+constraint:
+  engine: {fn: constraint, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Burt's formula term by term in exact arithmetic (validation/oracles/positions_definition_oracle.py)"
+    networkx:
+      call: "nx.constraint(MultiGraph | MultiDiGraph)"
+      differs_when: [loops]
+      reason: >-
+        NetworkX keeps self-loops in the adjacency matrix, so a loop adds to
+        the node's total tie volume and lowers every p_ij. Burt's measure
+        concerns ties to others; this engine and igraph ignore loops.
+    igraph:
+      call: "igraph::constraint(g) on a copy without the weight attribute"
+
+constraint_weighted:
+  engine: {fn: constraint, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Burt's formula in exact arithmetic with weights as tie strengths"
+    networkx:
+      call: "nx.constraint(G, weight = 'weight')"
+    igraph:
+      call: "igraph::constraint(g, weights = E(g)$weight)"
+
+effective_size:
+  engine: {fn: effective_size, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Burt's formula term by term in exact arithmetic (validation/oracles/positions_definition_oracle.py)"
+    networkx:
+      call: "nx.effective_size(MultiGraph | MultiDiGraph)"
+      differs_when: [loops]
+      reason: >-
+        NetworkX keeps self-loops in the adjacency matrix, so a loop adds to
+        the node's tie volume and can be its strongest tie. This engine
+        ignores loops.
+
+effective_size_weighted:
+  engine: {fn: effective_size, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Burt's formula in exact arithmetic with weights as tie strengths"
+    networkx:
+      call: "nx.effective_size(G, weight = 'weight')"
+
+efficiency:
+  engine: {fn: efficiency, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "effective size divided by the number of contacts, exact arithmetic"
+    networkx:
+      call: "nx.effective_size(G) / number of distinct neighbours other than the node"
+      differs_when: [loops]
+      reason: NetworkX keeps self-loops in the effective size (see effective_size).
+
+brokerage:
+  engine: {fn: brokerage, groups: mod3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "enumeration of every two-path i -> j -> k with no i -> k (validation/oracles/positions_definition_oracle.py)"
+    sna:
+      call: "sna::brokerage(m, cl = (0:(n - 1)) %% 3)$raw.nli"
+
+structural_equivalence_euclidean:
+  engine: {fn: structural_equivalence, method: euclidean}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "row and column profiles compared over k != i, j (validation/oracles/positions_definition_oracle.py)"
+    sna:
+      call: "sna::sedist(m, method = 'euclidean')"
+
+structural_equivalence_correlation:
+  engine: {fn: structural_equivalence, method: correlation}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of row and column profiles over k != i, j, exact moments"
+    sna:
+      call: "sna::sedist(m, method = 'correlation')"
+
+structural_equivalence_hamming:
+  engine: {fn: structural_equivalence, method: hamming}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "row and column profiles compared over k != i, j"
+    sna:
+      call: "sna::sedist(m, method = 'hamming')"
+
+structural_equivalence_euclidean_weighted:
+  engine: {fn: structural_equivalence, method: euclidean, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "valued profiles (total edge weight) compared over k != i, j"
+    sna:
+      call: "sna::sedist(valued m, method = 'euclidean')"
+
+concor:
+  engine: {fn: concor, depth: 1}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "independent numpy iteration of correlation matrices (validation/oracles/positions_definition_oracle.py)"
+
+concor_depth2:
+  engine: {fn: concor, depth: 2}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "independent numpy iteration of correlation matrices, two rounds of splits"
