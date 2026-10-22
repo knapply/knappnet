@@ -83,11 +83,17 @@ reference:
   contents:
   - netframe
 
-# INTEGRATION (descriptives and summary): network summaries and
-# descriptive statistics.
-# - title: Describing a network
-#   contents:
-#   - <new topics>
+- title: Describing a network
+  desc: >-
+    Network summaries and descriptive statistics: reciprocity,
+    transitivity, distances, and cut structure.
+  contents:
+  - summary.netframe
+  - reciprocity
+  - transitivity
+  - distances
+  - reachability
+  - cut_points
 
 - title: Conversion and files
   desc: >-
