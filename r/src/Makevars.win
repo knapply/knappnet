@@ -20,7 +20,28 @@ all: $(SHLIB) cleanup
 
 $(SHLIB): $(STATLIB)
 
+# As CRAN's notes on Rust packages suggest, cargo is also looked for in
+# ~/.cargo/bin (where rustup installs it), and a missing or outdated
+# toolchain stops the build with instructions instead of a cryptic error.
+export PATH := $(PATH):$(HOME)/.cargo/bin
+
 $(STATLIB):
+	@if ! command -v cargo >/dev/null 2>&1 || ! command -v rustc >/dev/null 2>&1; then \
+	  echo "------------------------------------------------------------------"; \
+	  echo "ERROR: this package is written partly in Rust, and building it"; \
+	  echo "needs cargo and rustc (version 1.70 or later), which were not found."; \
+	  echo "Install Rust from https://www.rust-lang.org/tools/install (rustup),"; \
+	  echo "or with your system's package manager: 'cargo' on Debian, Ubuntu,"; \
+	  echo "and Fedora, or 'rust' on Homebrew. Then install this package again."; \
+	  echo "------------------------------------------------------------------"; \
+	  exit 1; \
+	fi
+	@minor=$$(rustc --version | sed -n 's/^rustc 1\.\([0-9][0-9]*\)\..*/\1/p'); \
+	if [ -n "$$minor" ] && [ "$$minor" -lt 70 ]; then \
+	  echo "ERROR: rustc 1.70 or later is needed, but $$(rustc --version) was found."; \
+	  echo "Update Rust with 'rustup update' or your system's package manager."; \
+	  exit 1; \
+	fi
 	@echo "rustc version: $$(rustc --version)"
 	@echo "cargo version: $$(cargo --version)"
 	export CARGO_HOME="$(CURDIR)/rust/.cargo" && \

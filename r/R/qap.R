@@ -19,19 +19,24 @@
 #' @param attr For netframe inputs, the edge column that fills the matrix.
 #'   `NULL` uses the network's weight column if it has one and counts edges
 #'   otherwise.
-#' @param threads Number of threads; `0` uses all available cores.
+#' @param threads Number of threads; `0` uses all available cores (see
+#'   "Threads" in [netframe()]).
 #' @export
 qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
                     mode = c("digraph", "graph"), exact = FALSE, attr = NULL,
                     threads = 0L) {
   mode <- match.arg(mode)
+  diag <- check_flag(diag, "diag")
+  exact <- check_flag(exact, "exact")
+  threads <- resolve_threads(threads)
   m <- qap_matrices(list(y, x), attr)
   n <- m$n
   mats <- m$values
   draws <- qap_draws(n, reps, exact)
   seed <- qap_seed(seed)
-  res <- .Call(C_qap_cor, mats[[1]], mats[[2]], n, qap_mode_code(mode), isTRUE(diag),
-               isTRUE(exact), as.double(reps), seed, as.integer(threads), as.double(draws))
+  res <- engine_call("qap_cor",
+    .Call(C_qap_cor, mats[[1]], mats[[2]], n, qap_mode_code(mode), diag, exact,
+          as.double(reps), seed, threads, as.double(draws)))
   s <- res[[1]]
   counts <- c(le = s[4], ge = s[5], abs = s[6])
   valid <- s[7]
@@ -104,6 +109,13 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   method <- match.arg(method)
   mode <- match.arg(mode)
   statistic <- match.arg(statistic)
+  intercept <- check_flag(intercept, "intercept")
+  diag <- check_flag(diag, "diag")
+  exact <- check_flag(exact, "exact")
+  if (!is.numeric(tol) || length(tol) != 1L || is.na(tol)) {
+    stop("`tol` must be a single number in [0, 1).", call. = FALSE)
+  }
+  threads <- resolve_threads(threads)
   if (is.matrix(x) || inherits(x, "netframe") || is.data.frame(x)) x <- list(x)
   if (!is.list(x)) stop("`x` must be a matrix, a netframe, or a list of them.", call. = FALSE)
   k <- length(x)
@@ -116,10 +128,10 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   draws <- qap_draws(n, reps, exact)
   seed <- qap_seed(seed)
   xs <- if (k) unlist(mats[-1], use.names = FALSE) else double(0)
-  res <- .Call(C_mrqap, mats[[1]], as.double(xs), n, k, isTRUE(intercept),
-               qap_mode_code(mode), isTRUE(diag), if (method == "dsp") 0L else 1L,
-               if (statistic == "t") 0L else 1L, as.double(tol), isTRUE(exact),
-               as.double(reps), seed, as.integer(threads), as.double(draws))
+  res <- engine_call("mrqap",
+    .Call(C_mrqap, mats[[1]], as.double(xs), n, k, intercept, qap_mode_code(mode), diag,
+          if (method == "dsp") 0L else 1L, if (statistic == "t") 0L else 1L,
+          as.double(tol), exact, as.double(reps), seed, threads, as.double(draws)))
   coef_names <- c(if (isTRUE(intercept)) "(Intercept)", xnames)
   tab <- res[[1]]
   fit <- res[[2]]

@@ -129,11 +129,12 @@ test_that("set.seed() and seed make results reproducible", {
   b <- mrqap(d$y, list(d$x1, d$x2), reps = 200)
   expect_identical(a$dist, b$dist)
   expect_identical(a$seed, b$seed)
+  # CRAN allows at most two cores during checks.
   c1 <- mrqap(d$y, list(d$x1, d$x2), reps = 200, seed = 99, threads = 1)
-  c4 <- mrqap(d$y, list(d$x1, d$x2), reps = 200, seed = 99, threads = 4)
-  expect_identical(c1$dist, c4$dist)
+  c2 <- mrqap(d$y, list(d$x1, d$x2), reps = 200, seed = 99, threads = 2)
+  expect_identical(c1$dist, c2$dist)
   expect_identical(qap_cor(d$y, d$x1, reps = 100, seed = 3, threads = 1)$dist,
-                   qap_cor(d$y, d$x1, reps = 100, seed = 3, threads = 3)$dist)
+                   qap_cor(d$y, d$x1, reps = 100, seed = 3, threads = 2)$dist)
   expect_error(qap_cor(d$y, d$x1, seed = -1), "seed")
 })
 

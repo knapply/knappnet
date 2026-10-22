@@ -22,7 +22,9 @@ only).}
 \item{convention}{Whose theoretical maxima and closeness definition to use:
 \code{"igraph"}, \code{"sna"}, or \code{"ucinet"}. NetworkX has no
 centralization index, so \code{"networkx"} is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A number.}
 \description{

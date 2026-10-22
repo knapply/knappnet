@@ -56,6 +56,13 @@ are returned as integers. Formats differ in what they can hold: Pajek and
 UCINET DL store only structure, node labels, and a single edge value, and DOT
 is for drawing.
 
+Files are read and written as UTF-8, and file paths may contain any
+character, so identifiers and attributes in any script round-trip on every
+platform. The exception is writing edge lists, which uses
+\code{\link[utils]{write.table}}: in R before 4.2 on Windows, and in other
+locales that are not UTF-8, it can only write characters of the native
+encoding.
+
 GraphML and DyNetML files both use \code{.xml}. When reading a \code{.xml}
 file without \code{format}, the root element decides (\code{<graphml>} or a
 DyNetML \code{<DynamicNetwork>}, \code{<DynamicMetaNetwork>},

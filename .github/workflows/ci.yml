@@ -1,7 +1,9 @@
 # The full test suite runs on Linux, macOS, and Windows for every push and
 # pull request: engine tests, validation against every oracle, and
-# R CMD check. Older and development versions of R are covered on demand by
-# r-check.yml.
+# R CMD check --as-cran on current R everywhere and, on Linux, on R-devel,
+# the previous release, and the minimum supported version (4.1). The C glue
+# is also checked under AddressSanitizer, UndefinedBehaviorSanitizer, and
+# valgrind. Other platforms are covered on demand by r-check.yml.
 name: CI
 
 on:
@@ -126,12 +128,21 @@ jobs:
             validation/golden
 
   r-package:
-    name: R CMD check (${{ matrix.os }})
+    name: R CMD check (${{ matrix.os }}, R ${{ matrix.r }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - {os: ubuntu-latest, r: release}
+          - {os: macos-latest, r: release}
+          - {os: windows-latest, r: release}
+          - {os: ubuntu-latest, r: devel}
+          - {os: ubuntu-latest, r: oldrel-1}
+          # The minimum version in DESCRIPTION. Suggested packages are not
+          # installed: some no longer support R 4.1, and the tests skip
+          # without them.
+          - {os: ubuntu-latest, r: "4.1", dependencies: '"hard"'}
     env:
       _R_CHECK_FORCE_SUGGESTS_: false
     steps:
@@ -143,11 +154,13 @@ jobs:
         run: rustup target add x86_64-pc-windows-gnu
       - uses: r-lib/actions/setup-r@v2
         with:
+          r-version: ${{ matrix.r }}
           use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           working-directory: r
-          extra-packages: any::rcmdcheck
+          dependencies: ${{ matrix.dependencies || '"all"' }}
+          extra-packages: any::rcmdcheck, any::testthat
           needs: check
       - uses: r-lib/actions/check-r-package@v2
         with:
@@ -170,8 +183,93 @@ jobs:
       - name: Show failures
         if: failure()
         run: |
-          bash tools/ci_annotate.sh "R CMD check" r/check/*.Rcheck/00install.out \
-            r/check/*.Rcheck/00check.log r/check/*.Rcheck/tests/*.Rout.fail
+          bash tools/ci_annotate.sh "R CMD check (R ${{ matrix.r }})" \
+            r/check/*.Rcheck/00install.out r/check/*.Rcheck/00check.log \
+            r/check/*.Rcheck/tests/*.Rout.fail
+
+  sanitizers:
+    # The C glue under AddressSanitizer and UndefinedBehaviorSanitizer, with
+    # R-devel built by gcc with both (RDsan in the wch1/r-debug image), as in
+    # CRAN's additional checks. The Rust engine is linked but not
+    # instrumented. Fails on any sanitizer report in the installation log,
+    # the examples, or the tests.
+    name: R CMD check under ASan and UBSan
+    runs-on: ubuntu-latest
+    container: wch1/r-debug:latest
+    timeout-minutes: 90
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+      # R does not free everything at exit, so leak reports are only noise.
+      ASAN_OPTIONS: detect_leaks=0:abort_on_error=1:halt_on_error=1
+      UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install testthat
+        run: >-
+          RDsan -q -e 'if (!requireNamespace("testthat", quietly = TRUE))
+          install.packages("testthat", repos = "https://cloud.r-project.org")'
+      - name: Build
+        run: RDsan CMD build --no-build-vignettes --no-manual r
+      - name: Check
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          RDsan CMD check --no-manual --ignore-vignettes ./*.tar.gz 2>&1 | tee ci-logs/check.log
+      - name: No sanitizer reports
+        if: always()
+        run: |
+          files=$(ls ./*.Rcheck/00install.out ./*.Rcheck/*-Ex.Rout ./*.Rcheck/tests/*.Rout* 2>/dev/null || true)
+          if [ -z "$files" ]; then echo "No check output found"; exit 1; fi
+          if grep -nE 'runtime error:|ERROR: AddressSanitizer|SUMMARY: (Address|UndefinedBehavior)Sanitizer' $files; then
+            exit 1
+          fi
+      - name: Show failures
+        if: failure()
+        run: |
+          bash tools/ci_annotate.sh "Sanitizers" ci-logs/check.log ./*.Rcheck/00install.out \
+            ./*.Rcheck/*-Ex.Rout ./*.Rcheck/tests/*.Rout*
+
+  valgrind:
+    # Examples and tests under valgrind, with R-devel built with valgrind
+    # instrumentation level 2 (RDvalgrind in the wch1/r-debug image), as in
+    # CRAN's additional checks. Fails on any reported memory error.
+    name: R CMD check under valgrind
+    runs-on: ubuntu-latest
+    container: wch1/r-debug:latest
+    timeout-minutes: 120
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+      VALGRIND_OPTS: --track-origins=yes --leak-check=no
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install valgrind and testthat
+        run: |
+          command -v valgrind || { apt-get update && apt-get install -y valgrind; }
+          RDvalgrind -q -e 'if (!requireNamespace("testthat", quietly = TRUE)) install.packages("testthat", repos = "https://cloud.r-project.org")'
+      - name: Build
+        run: RDvalgrind CMD build --no-build-vignettes --no-manual r
+      - name: Check
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          RDvalgrind CMD check --use-valgrind --no-manual --ignore-vignettes ./*.tar.gz 2>&1 \
+            | tee ci-logs/check.log
+      - name: No valgrind errors
+        if: always()
+        run: |
+          files=$(ls ./*.Rcheck/*-Ex.Rout ./*.Rcheck/tests/*.Rout* 2>/dev/null || true)
+          if [ -z "$files" ]; then echo "No check output found"; exit 1; fi
+          grep -n 'ERROR SUMMARY' $files || { echo "valgrind did not run"; exit 1; }
+          if grep -nE 'ERROR SUMMARY: [1-9]|Invalid (read|write|free)|uninitialised|Conditional jump' $files; then
+            exit 1
+          fi
+      - name: Show failures
+        if: failure()
+        run: |
+          bash tools/ci_annotate.sh "valgrind" ci-logs/check.log ./*.Rcheck/*-Ex.Rout \
+            ./*.Rcheck/tests/*.Rout*
 
   readme:
     # The README's examples show real output; this fails if they drift.
