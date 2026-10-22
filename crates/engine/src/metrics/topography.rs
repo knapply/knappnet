@@ -6,8 +6,8 @@
 //!   Faust 1994, `wasserman1994social`, section 4.2).
 //! - Strong components use Tarjan's depth-first algorithm (Tarjan 1972,
 //!   `tarjan1972depth`), written with an explicit stack so deep graphs cannot
-//!   overflow the call stack. Weak components use breadth-first search over
-//!   both arc directions.
+//!   overflow the call stack. Weak components use union-find over the edge
+//!   list (Tarjan 1975, `tarjan1975efficiency`), ignoring direction.
 //! - Fragmentation is the proportion of ordered pairs of distinct nodes that
 //!   lie in different components (Borgatti 2006, `borgatti2006identifying`):
 //!   F = 1 - sum_k s_k (s_k - 1) / (n (n - 1)), where s_k are component
@@ -190,37 +190,33 @@ pub fn components(g: &Graph, kind: ComponentKind) -> Components {
     Components { membership, sizes }
 }
 
+/// Weak components by union-find over the edge list (Tarjan 1975,
+/// `tarjan1975efficiency`), which
+/// reads the edges sequentially rather than following neighbors around
+/// memory. Union by index (the smaller root wins) and path halving keep
+/// trees shallow. Returns each node's root; the caller relabels.
 fn weak(g: &Graph) -> Vec<u32> {
     let n = g.node_count();
-    let mut label = vec![u32::MAX; n];
-    let mut queue: Vec<u32> = Vec::new();
-    let mut next = 0u32;
-    for s in 0..n {
-        if label[s] != u32::MAX {
-            continue;
+    let mut parent: Vec<u32> = (0..n as u32).collect();
+    fn find(parent: &mut [u32], mut v: u32) -> u32 {
+        while parent[v as usize] != v {
+            let p = parent[v as usize];
+            parent[v as usize] = parent[p as usize];
+            v = parent[v as usize];
         }
-        label[s] = next;
-        queue.clear();
-        queue.push(s as u32);
-        let mut head = 0;
-        while head < queue.len() {
-            let v = queue[head] as usize;
-            head += 1;
-            let both = g.out().neighbors(v).iter().chain(if g.is_directed() {
-                g.inc().neighbors(v)
-            } else {
-                &[]
-            });
-            for &w in both {
-                if label[w as usize] == u32::MAX {
-                    label[w as usize] = next;
-                    queue.push(w);
-                }
-            }
-        }
-        next += 1;
+        v
     }
-    label
+    for (&a, &b) in g.edge_sources().iter().zip(g.edge_targets()) {
+        let (ra, rb) = (find(&mut parent, a), find(&mut parent, b));
+        if ra != rb {
+            let (lo, hi) = if ra < rb { (ra, rb) } else { (rb, ra) };
+            parent[hi as usize] = lo;
+        }
+    }
+    for v in 0..n as u32 {
+        parent[v as usize] = find(&mut parent, v);
+    }
+    parent
 }
 
 /// Tarjan's algorithm with an explicit stack. Returns a component number

@@ -33,8 +33,8 @@ directed paths. Undirected networks have one kind of component, whichever
 parallel edges, and self-loops do not matter.
 
 Strong components are found with Tarjan's (1972) algorithm, written without
-recursion, and weak components with breadth-first search, both in time
-linear in the size of the network. Components are numbered in order of their
+recursion, in time linear in the size of the network; weak components with
+union-find over the edge list (Tarjan 1975), in near-linear time. Components are numbered in order of their
 first node in \code{x$nodes}. Membership matches igraph's
 \code{components()} and NetworkX's component functions up to the numbering.
 
@@ -44,6 +44,9 @@ component sizes and its "Fragmentation" for undirected data.
 \references{
 Tarjan, R. (1972). Depth-first search and linear graph algorithms.
 \emph{SIAM Journal on Computing}, 1(2), 146-160. \doi{10.1137/0201010}
+
+Tarjan, R. E. (1975). Efficiency of a good but not linear set union
+algorithm. \emph{Journal of the ACM}, 22(2), 215-225.
 
 Borgatti, S. P. (2006). Identifying sets of key players in a social network.
 \emph{Computational and Mathematical Organization Theory}, 12(1), 21-34.

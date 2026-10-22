@@ -160,7 +160,7 @@ def nx_read(fmt: str, path: Path) -> nx.Graph:
         return nx.read_gml(path, label="label")
     if fmt == "pajek":
         return nx.read_pajek(path)
-    return nx.node_link_graph(json.loads(path.read_text()))
+    return nx.node_link_graph(json.loads(path.read_text(encoding="utf-8")))
 
 
 def nx_write(fmt: str, g: nx.Graph, path: Path) -> None:
@@ -173,7 +173,7 @@ def nx_write(fmt: str, g: nx.Graph, path: Path) -> None:
     elif fmt == "pajek":
         nx.write_pajek(g, path)
     else:
-        path.write_text(json.dumps(nx.node_link_data(g)))
+        path.write_text(json.dumps(nx.node_link_data(g)), encoding="utf-8")
 
 
 def main() -> int:

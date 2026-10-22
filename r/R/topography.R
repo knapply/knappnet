@@ -48,8 +48,9 @@ graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx",
 #' size 1. Weights, parallel edges, and self-loops do not matter.
 #'
 #' Strong components are found with Tarjan's (1972) algorithm, written
-#' without recursion, and weak components with breadth-first search, both in
-#' time linear in the size of the network. Components are numbered in order
+#' without recursion, in time linear in the size of the network; weak
+#' components with union-find over the edge list (Tarjan 1975), in
+#' near-linear time. Components are numbered in order
 #' of their first node in `x$nodes`. Membership matches igraph's
 #' `components()` and NetworkX's component functions up to the numbering.
 #'
@@ -59,6 +60,9 @@ graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx",
 #' @references
 #' Tarjan, R. (1972). Depth-first search and linear graph algorithms.
 #' *SIAM Journal on Computing*, 1(2), 146-160. \doi{10.1137/0201010}
+#'
+#' Tarjan, R. E. (1975). Efficiency of a good but not linear set union
+#' algorithm. *Journal of the ACM*, 22(2), 215-225.
 #'
 #' Borgatti, S. P. (2006). Identifying sets of key players in a social
 #' network. *Computational and Mathematical Organization Theory*, 12(1),
