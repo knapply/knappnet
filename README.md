@@ -11,7 +11,8 @@ knappnet is a network analysis engine built around three commitments:
    never silent.
 2. **Fast.** Algorithms run in a compiled, multithreaded core with a
    cache-friendly compressed sparse layout. Speed never comes at the cost of
-   accuracy: approximate methods are always opt-in and clearly labeled.
+   accuracy: approximate methods are always opt-in and clearly labeled, and
+   every [benchmark](#benchmarks) also checks that the answers agree.
 3. **Easy.** A network is just two data frames, one for nodes and one for
    edges, with any attributes you like. Installation never requires a
    compiler for end users.
@@ -39,7 +40,8 @@ and stochastic actor-oriented models.
 [Brokerage and structural holes](#brokerage-and-structural-holes) ·
 [Positions and roles](#positions-and-roles) ·
 [Testing hypotheses with QAP](#testing-hypotheses-with-qap) ·
-[Files](#files) · [How it works](#how-it-works) ·
+[Files](#files) · [Benchmarks](#benchmarks) ·
+[How it works](#how-it-works) ·
 [Installation](#installation) · [Citing](#citing)
 
 ## A first network
@@ -415,6 +417,80 @@ back$nodes
 Every format is checked in both directions against NetworkX's and igraph's
 own readers and writers, except DyNetML, which neither reads; it is tested
 against its specification and ORA's file layout.
+
+## Benchmarks
+
+Measured on GitHub's standard machines, Linux (AMD EPYC 7763, 2 cores)
+and macOS (Apple M1, 3 cores), with R 4.6.1, igraph 2.3.4, sna 2.8,
+Python 3.12, NetworkX 3.7, python-igraph 1.0.0, and NetworKit 11.2.2.
+Times are medians of repeated runs, with networks built beforehand
+(building is timed separately). igraph, sna, and NetworkX use one core,
+so the one-core column is the like-for-like comparison. Every pair of
+timings is also a correctness check: the run fails unless both tools give
+the same answer. To reproduce, run `Rscript bench/bench.R` and
+`python bench/bench.py`.
+
+From R, on Linux:
+
+| Measure | Network | knappnet, 1 core | knappnet, 2 cores | Other tool | Speedup, 1 core | Speedup, 2 cores |
+|---|---|---:|---:|---:|---:|---:|
+| Build network + degree | scale-free, 100,000 nodes, 300,000 edges | 55 ms | 55 ms | 282 ms (igraph) | 5.2x | 5.2x |
+| Betweenness | random, 10,000 nodes, 50,000 edges | 11.3 s | 7.7 s | 14.7 s (igraph) | 1.3x | 1.9x |
+| Betweenness | directed random, 10,000 / 50,000 | 6.6 s | 4.6 s | 9.8 s (igraph) | 1.5x | 2.1x |
+| Closeness | random, 10,000 / 50,000 | 2.8 s | 1.9 s | 4.8 s (igraph) | 1.7x | 2.5x |
+| Harmonic centrality | random, 10,000 / 50,000 | 2.8 s | 1.9 s | 4.7 s (igraph) | 1.7x | 2.5x |
+| Constraint | random, 10,000 / 50,000 | 6.1 ms | 4.5 ms | 12.4 ms (igraph) | 2.0x | 2.7x |
+| Triad census | directed random, 10,000 / 50,000 | 37 ms | 27 ms | 55 ms (igraph) | 1.5x | 2.1x |
+| k-cores | scale-free, 100,000 / 300,000 | 8.0 ms | 8.0 ms | 11.1 ms (igraph) | 1.4x | 1.4x |
+| Maximal cliques | scale-free, 100,000 / 300,000 | 439 ms | 423 ms | 5.5 s (igraph) | 12x | 13x |
+| Louvain communities | scale-free, 100,000 / 300,000 | 323 ms | 323 ms | 23.7 s (igraph) | 73x | 73x |
+| Eigenvector centrality | scale-free, 100,000 / 300,000 | 537 ms | 540 ms | 172 ms (igraph) | 0.3x | 0.3x |
+| Components | scale-free, 100,000 / 300,000 | 3.9 ms | 3.9 ms | 0.6 ms (igraph) | 0.2x | 0.2x |
+| Read GraphML | random, 10,000 / 50,000 | 98 ms | 98 ms | 37 ms (igraph) | 0.4x | 0.4x |
+| Betweenness | directed random, 2,000 / 10,000 | 236 ms | 153 ms | 1.6 s (sna) | 6.9x | 11x |
+| Triad census | directed random, 2,000 / 10,000 | 6.7 ms | 5.1 ms | 239 s (sna) | 35,000x | 46,000x |
+| Structural equivalence | directed random, 2,000 / 10,000 | 462 ms | 349 ms | 154 s (sna) | 332x | 440x |
+| Brokerage | directed random, 2,000 / 10,000 | 0.7 ms | 0.8 ms | 100 ms (sna) | 138x | 131x |
+| QAP correlation | 100 nodes, 1,000 permutations | 37 ms | 34 ms | 1.1 s (sna) | 30x | 33x |
+| MRQAP (double semi-partialling) | 100 nodes, 1,000 permutations | 865 ms | 699 ms | 41 s (sna) | 48x | 59x |
+
+On the 3-core Mac, single-core results are similar and the multicore
+gains grow: betweenness, closeness, and harmonic centrality run 3.7 to
+4.4 times as fast as igraph, and betweenness 155 times as fast as sna.
+
+From Python, on Linux (speedups on 1 core / 2 cores; NetworKit always
+uses every core):
+
+| Measure | vs NetworkX | vs python-igraph | vs NetworKit |
+|---|---:|---:|---:|
+| Betweenness (random, 5,000 / 25,000) | 55x / 78x | 1.2x / 1.7x | 2.5x / 3.6x |
+| Closeness | 33x / 49x | | |
+| Harmonic centrality | 39x / 58x | 1.4x / 2.2x | 6.0x / 9.0x |
+| Triad census (directed) | 96x / 132x | 1.3x / 1.8x | |
+| Constraint (2,000 / 10,000) | 16x / 17x | 1.5x / 1.6x | |
+| Louvain (scale-free, 100,000 / 300,000) | 723x | 39x | 1.7x |
+| Maximal cliques | 6.2x / 6.6x | 5.9x / 6.2x | 0.6x / 0.6x |
+| k-cores | 28x | 0.5x | 0.4x |
+| Components | 4.7x | 0.3x | 0.3x |
+| Eigenvector centrality | 1.6x / 1.7x | 0.8x / 0.9x | 0.3x / 0.3x |
+
+The Python comparisons call the engine through the test harness, which
+copies inputs and results between Python lists and the engine; that copy
+dominates the fastest, linear-time measures and will be avoided by the
+Python package.
+
+Where knappnet is slower, and what is planned:
+
+- **Eigenvector centrality** uses power iteration to a tight tolerance
+  (10⁻¹²). igraph uses ARPACK's Lanczos-type eigensolver, and NetworKit
+  stops its iteration at a looser tolerance. A Lanczos-type solver is
+  planned.
+- **Components** has since been rewritten (union-find over the edge
+  list, about 2.5 times faster in local tests) and awaits re-measurement.
+- **Reading GraphML** builds a full document tree before converting it; a
+  streaming reader is planned.
+- **NetworKit**, a parallel C++ library, is faster on k-cores and maximal
+  cliques, and close on Louvain.
 
 ## How it works
 
