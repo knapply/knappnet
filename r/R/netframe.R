@@ -13,11 +13,14 @@
 #'   position.
 #' @param id Column of `nodes` holding node identifiers, by name or position.
 #' @param weight Optional column of `edges` holding edge weights.
+#' @param graph A named list of network-level attributes (for example a
+#'   title or data source), carried through conversions and file formats
+#'   that support them.
 #'
 #' @return An object of class `netframe`.
 #' @export
 netframe <- function(edges, nodes = NULL, directed = TRUE,
-                     from = 1L, to = 2L, id = 1L, weight = NULL) {
+                     from = 1L, to = 2L, id = 1L, weight = NULL, graph = list()) {
   if (!is.data.frame(edges)) {
     stop("`edges` must be a data frame.", call. = FALSE)
   }
@@ -69,6 +72,7 @@ netframe <- function(edges, nodes = NULL, directed = TRUE,
       edges = edges,
       directed = isTRUE(directed),
       roles = list(id = id, from = from, to = to, weight = weight),
+      graph = as.list(graph),
       index = list(src = src - 1L, tgt = tgt - 1L),
       cache = new.env(parent = emptyenv())
     ),

@@ -95,6 +95,8 @@ jobs:
           Rscript validation/oracles/r_oracles.R
       - name: Compare
         run: python validation/compare.py --strict
+      - name: File formats against NetworkX
+        run: python -W ignore validation/io_check.py
       - name: Upload report and golden values
         if: always()
         uses: actions/upload-artifact@v4

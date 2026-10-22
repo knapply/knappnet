@@ -41,6 +41,18 @@ conventions are documented in `validation/manifest.yaml`.
 | hellorust | `ooms_hellorust` | Pattern for linking Rust into an R package through C. |
 | Arrow C Data Interface | `arrow_c_data_interface` | Planned zero-copy exchange of node and edge tables. |
 
+## File formats
+
+| Format | Source |
+|---|---|
+| GraphML | Brandes et al. 2002 (`brandes2002graphml`) |
+| GML | Himsolt 1997 (`himsolt1997gml`) |
+| GEXF | GEXF Working Group (`gexf2009`); Gephi (`bastian2009gephi`) |
+| Pajek | Batagelj and Mrvar 1998 (`batagelj1998pajek`); de Nooy, Mrvar, and Batagelj 2018 (`denooy2018exploratory`) |
+| UCINET DL | Borgatti, Everett, and Freeman 2002 (`borgatti2002ucinet`) |
+| JSON node-link | NetworkX (`hagberg2008exploring`); D3 (`bostock2011d3`) |
+| DOT | Gansner and North 2000 (`gansner2000open`) |
+
 ## Datasets
 
 | Fixture | Original source |

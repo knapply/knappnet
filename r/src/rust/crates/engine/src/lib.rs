@@ -10,6 +10,7 @@
 
 pub mod error;
 pub mod graph;
+pub mod io;
 pub mod metrics;
 pub mod parallel;
 

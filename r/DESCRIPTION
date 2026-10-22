@@ -16,9 +16,17 @@ URL: https://github.com/knapply/knappnet
 BugReports: https://github.com/knapply/knappnet/issues
 Encoding: UTF-8
 Depends: R (>= 4.1)
+Imports:
+    methods,
+    stats,
+    tools,
+    utils
 Suggests:
-    testthat (>= 3.0.0),
     igraph,
-    sna
+    Matrix,
+    network,
+    sna,
+    testthat (>= 3.0.0),
+    tidygraph
 Config/testthat/edition: 3
 SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.70), GNU make

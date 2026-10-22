@@ -20,6 +20,9 @@ use engine::metrics::degree::{degree, strength, DegreeMode};
 use engine::metrics::triad::triad_census;
 use engine::{Error, Graph};
 
+mod files;
+pub use files::*;
+
 /// Opaque graph handle.
 pub struct GraphHandle(Graph);
 

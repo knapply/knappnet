@@ -4,7 +4,9 @@
 \title{Create a network from node and edge data frames}
 \usage{
 netframe(edges, nodes = NULL, directed = TRUE, from = 1L, to = 2L,
-         id = 1L, weight = NULL)
+         id = 1L, weight = NULL, graph = list())
+
+\method{print}{netframe}(x, ...)
 }
 \arguments{
 \item{edges}{A data frame of edges.}
@@ -16,6 +18,11 @@ position.}
 \item{id}{Column of \code{nodes} holding node identifiers, by name or
 position.}
 \item{weight}{Optional column of \code{edges} holding edge weights.}
+\item{graph}{A named list of network-level attributes (for example a title or
+data source), carried through conversions and file formats that support
+them.}
+\item{x}{A netframe.}
+\item{...}{Ignored.}
 }
 \value{An object of class \code{netframe}.}
 \description{

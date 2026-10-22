@@ -44,6 +44,21 @@ Attributes stay in the data frames. The engine only receives what an
 algorithm needs: 0-based integer endpoints and, when relevant, weights.
 Results come back as vectors aligned with the node table.
 
+## Files and interoperability
+
+File readers and writers live in the engine (`crates/engine/src/io/`), so
+every language binding shares one implementation. Each format reads into,
+and writes from, the same neutral model: a node table starting with `id`, an
+edge table starting with `from` and `to`, typed attribute columns
+(logical, integer, double, text, each with missing values), and
+network-level attributes. The XML and JSON parsers are small, dependency-free,
+and never resolve external entities.
+
+Conversions to and from other R packages (igraph, tidygraph, network) live in
+the R package, since those objects only exist in R. Formats are validated in
+both directions against NetworkX (`validation/io_check.py`) and igraph
+(`r/tests/testthat/test-io.R`).
+
 ## Storage
 
 Graphs are stored in compressed sparse row (CSR) form. Outgoing arcs of node

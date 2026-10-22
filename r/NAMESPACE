@@ -1,8 +1,27 @@
 useDynLib(knappnet, .registration = TRUE)
 
 export(netframe)
+export(as_netframe)
+export(to_igraph)
+export(to_network)
+export(to_tbl_graph)
+export(read_network)
+export(write_network)
 export(degree)
 export(betweenness)
 export(triad_census)
 
 S3method(print, netframe)
+S3method(as.matrix, netframe)
+S3method(as_netframe, default)
+S3method(as_netframe, netframe)
+S3method(as_netframe, data.frame)
+S3method(as_netframe, igraph)
+S3method(as_netframe, network)
+S3method(as_netframe, matrix)
+S3method(as_netframe, Matrix)
+
+# Methods for generics in suggested packages, registered when they load.
+S3method(igraph::as.igraph, netframe)
+S3method(network::as.network, netframe)
+S3method(tidygraph::as_tbl_graph, netframe)

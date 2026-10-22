@@ -46,6 +46,17 @@ pub enum Error {
     MissingWeights,
     /// An argument is outside its allowed set of values.
     InvalidArgument(String),
+    /// A network file could not be parsed.
+    Parse {
+        /// The file format being read.
+        format: &'static str,
+        /// 1-based line number, when known.
+        line: Option<usize>,
+        /// What went wrong.
+        message: String,
+    },
+    /// Reading or writing a file failed.
+    Io(String),
 }
 
 impl fmt::Display for Error {
@@ -73,11 +84,28 @@ impl fmt::Display for Error {
             }
             Error::MissingWeights => write!(f, "the graph has no edge weights"),
             Error::InvalidArgument(msg) => write!(f, "{msg}"),
+            Error::Parse {
+                format,
+                line: Some(line),
+                message,
+            } => write!(f, "{format} file, line {line}: {message}"),
+            Error::Parse {
+                format,
+                line: None,
+                message,
+            } => write!(f, "{format} file: {message}"),
+            Error::Io(msg) => write!(f, "{msg}"),
         }
     }
 }
 
 impl std::error::Error for Error {}
+
+impl From<std::io::Error> for Error {
+    fn from(e: std::io::Error) -> Error {
+        Error::Io(e.to_string())
+    }
+}
 
 /// Result type used throughout the engine.
 pub type Result<T> = std::result::Result<T, Error>;

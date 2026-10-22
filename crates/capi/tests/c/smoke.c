@@ -25,6 +25,38 @@ int main(void) {
   if (net_degree(g, 7, 1, 0, deg, err, sizeof err) == 0) return 1;
   net_graph_free(g);
   net_graph_free(NULL);
+
+  /* Files: build a network, write it, read it back. */
+  NetworkHandle *n = net_network_new(1);
+  const char *ids[] = {"a", "b", "c"};
+  const char *from[] = {"a", "b"};
+  const char *to[] = {"b", "c"};
+  double w[] = {1.5, 2.0};
+  if (net_table_add_string(n, 1, "id", ids, 3, err, sizeof err) != 0) return 1;
+  if (net_table_add_string(n, 2, "from", from, 2, err, sizeof err) != 0) return 1;
+  if (net_table_add_string(n, 2, "to", to, 2, err, sizeof err) != 0) return 1;
+  if (net_table_add_numeric(n, 2, "weight", 2, w, NULL, 2, err, sizeof err) != 0) return 1;
+  const char *path = "netcapi-smoke.graphml";
+  if (net_write(n, path, NULL, NULL, err, sizeof err) != 0) {
+    fprintf(stderr, "write failed: %s\n", err);
+    return 1;
+  }
+  net_network_free(n);
+  NetworkHandle *r = NULL;
+  if (net_read(path, NULL, -1, &r, err, sizeof err) != 0) {
+    fprintf(stderr, "read failed: %s\n", err);
+    return 1;
+  }
+  remove(path);
+  if (net_table_nrow(r, 1) != 3 || net_table_nrow(r, 2) != 2) return 1;
+  if (net_table_kind(r, 2, 2) != 2) return 1;
+  double back[2];
+  int32_t na[2];
+  if (net_table_numeric(r, 2, 2, back, na, err, sizeof err) != 0 || back[1] != 2.0) return 1;
+  const char *s = net_table_string(r, 1, 0, 2);
+  if (s == NULL || s[0] != 'c') return 1;
+  net_network_free(r);
+  if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
   puts("C ABI smoke test passed");
   return 0;
 }
