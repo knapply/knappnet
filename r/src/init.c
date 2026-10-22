@@ -9,6 +9,17 @@ extern SEXP C_betweenness(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_triad_census(SEXP, SEXP);
 extern SEXP C_read_network(SEXP, SEXP, SEXP);
 extern SEXP C_write_network(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_coreness(SEXP, SEXP);
+extern SEXP C_max_cliques(SEXP, SEXP, SEXP);
+extern SEXP C_clique_number(SEXP, SEXP);
+extern SEXP C_modularity(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_louvain(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_structural_holes(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_brokerage(SEXP, SEXP, SEXP);
+extern SEXP C_structural_equivalence(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_concor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_qap_cor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_mrqap(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -18,6 +29,17 @@ static const R_CallMethodDef call_methods[] = {
     {"C_triad_census", (DL_FUNC)&C_triad_census, 2},
     {"C_read_network", (DL_FUNC)&C_read_network, 3},
     {"C_write_network", (DL_FUNC)&C_write_network, 7},
+    {"C_coreness", (DL_FUNC)&C_coreness, 2},
+    {"C_max_cliques", (DL_FUNC)&C_max_cliques, 3},
+    {"C_clique_number", (DL_FUNC)&C_clique_number, 2},
+    {"C_modularity", (DL_FUNC)&C_modularity, 4},
+    {"C_louvain", (DL_FUNC)&C_louvain, 4},
+    {"C_structural_holes", (DL_FUNC)&C_structural_holes, 4},
+    {"C_brokerage", (DL_FUNC)&C_brokerage, 3},
+    {"C_structural_equivalence", (DL_FUNC)&C_structural_equivalence, 4},
+    {"C_concor", (DL_FUNC)&C_concor, 6},
+    {"C_qap_cor", (DL_FUNC)&C_qap_cor, 10},
+    {"C_mrqap", (DL_FUNC)&C_mrqap, 15},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

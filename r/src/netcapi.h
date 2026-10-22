@@ -45,7 +45,9 @@ int32_t net_triad_census(const GraphHandle *h, int32_t threads, double *out,
  * A network handle holds three tables: 0 = graph attributes (one row),
  * 1 = nodes (first column "id"), 2 = edges (first columns "from", "to").
  * Column kinds: 0 = logical, 1 = integer, 2 = double, 3 = text.
- * Formats: graphml, gexf, gml, pajek, dl, json, dot (write only). */
+ * Formats: graphml, gexf, gml, pajek, dl, json, dynetml (ORA), dot (write
+ * only). Reading a .xml file without a format chooses GraphML or DyNetML
+ * from the root element; writing one produces GraphML. */
 
 typedef struct NetworkHandle NetworkHandle;
 
@@ -85,6 +87,125 @@ int32_t net_table_add_string(NetworkHandle *h, int32_t which, const char *name,
 /* format and weight may be NULL. */
 int32_t net_write(const NetworkHandle *h, const char *path, const char *format,
                   const char *weight, char *err, size_t err_len);
+
+/* ---- Cohesive subgroups ----------------------------------------------
+ * Cores, cliques, and communities. Declarations to be merged into
+ * netcapi.h. */
+
+/* Coreness (k-core number) of every node, written to out[0..n). mode:
+ * 1 = out, 2 = in, 3 = all; ignored for undirected graphs. */
+int32_t net_coreness(const GraphHandle *h, int32_t mode, double *out,
+                     char *err, size_t err_len);
+
+/* A collection of node groups, read in two steps: query the number of
+ * groups and members, allocate, then copy. Members of group i are
+ * members[offsets[i] .. offsets[i + 1]), 0-based and increasing. */
+typedef struct GroupsHandle GroupsHandle;
+
+int64_t net_groups_count(const GroupsHandle *h);
+int64_t net_groups_total(const GroupsHandle *h);
+/* offsets must hold count + 1 values and members total values. */
+int32_t net_groups_copy(const GroupsHandle *h, int64_t *offsets,
+                        int64_t *members, char *err, size_t err_len);
+void net_groups_free(GroupsHandle *h);
+
+/* Maximal cliques of the undirected simple graph underlying the network
+ * (directions, loops, and edge multiplicity ignored) with at least
+ * min_size members, in lexicographic order. Release the result with
+ * net_groups_free. threads == 0 uses all available cores. */
+int32_t net_max_cliques(const GraphHandle *h, int64_t min_size,
+                        int32_t threads, GroupsHandle **out, char *err,
+                        size_t err_len);
+
+/* Size of the largest clique (0 for a graph with no nodes). */
+int32_t net_clique_number(const GraphHandle *h, int32_t threads,
+                          int64_t *out, char *err, size_t err_len);
+
+/* Modularity of a partition: membership holds n non-negative labels.
+ * Weights (weighted != 0) must be non-negative. Writes NaN when the
+ * network has no edges or total weight zero. */
+int32_t net_modularity(const GraphHandle *h, const int64_t *membership,
+                       int64_t n, double resolution, int32_t weighted,
+                       double *out, char *err, size_t err_len);
+
+/* Louvain community detection on an undirected graph. Writes 0-based
+ * group labels, numbered by first appearance, to membership[0..n) and the
+ * partition's modularity to *q. The same seed gives the same result. */
+int32_t net_louvain(const GraphHandle *h, double resolution, int32_t weighted,
+                    uint64_t seed, int64_t *membership, double *q, char *err,
+                    size_t err_len);
+
+/*
+ * Brokerage and positions: Burt's structural holes, Gould-Fernandez
+ * brokerage, structural equivalence, and CONCOR. To be merged into
+ * netcapi.h.
+ */
+
+/* measure: 0 = constraint, 1 = effective size, 2 = efficiency. With
+ * weighted != 0, weights are tie strengths (strictly positive). Nodes
+ * without contacts get NaN. threads == 0 uses all available cores. */
+int32_t net_structural_holes(const GraphHandle *h, int32_t measure,
+                             int32_t weighted, int32_t threads, double *out,
+                             char *err, size_t err_len);
+
+/* groups holds one code per node (n_groups must equal n). out receives an
+ * n x 6 column-major matrix: coordinator, itinerant, representative,
+ * gatekeeper, liaison, total. */
+int32_t net_brokerage(const GraphHandle *h, const int64_t *groups,
+                      int64_t n_groups, int32_t threads, double *out,
+                      char *err, size_t err_len);
+
+/* method: 0 = Euclidean, 1 = correlation, 2 = Hamming. out receives an
+ * n x n column-major matrix. */
+int32_t net_structural_equivalence(const GraphHandle *h, int32_t method,
+                                   int32_t weighted, int32_t threads,
+                                   double *out, char *err, size_t err_len);
+
+/* out receives n block numbers starting at 1. diagnostics may be NULL; it
+ * receives two counts: splits that hit max_iter without converging, and
+ * splits in which a correlation with the reference node came within 1e-6
+ * of zero (so rounding may have decided a node's block). */
+int32_t net_concor(const GraphHandle *h, int32_t depth, int32_t weighted,
+                   double tolerance, int32_t max_iter, int32_t threads,
+                   int32_t *out, int32_t *diagnostics, char *err,
+                   size_t err_len);
+
+/* ---- Quadratic assignment procedure (QAP) ----------------------------
+ * Matrices are n-by-n doubles in column-major order (as R stores them);
+ * NaN marks a missing value and drops the dyad (listwise deletion).
+ * mode: 0 = digraph (every ordered pair), 1 = graph (each unordered pair,
+ * read from the lower triangle). diag != 0 also uses the diagonal.
+ * With exhaustive != 0 all n! relabelings are evaluated (n <= 10) and reps
+ * and seed are ignored; otherwise reps random relabelings are drawn,
+ * draw i from stream i of seed, so results do not depend on threads.
+ * threads == 0 uses all available cores. Counts are returned as doubles. */
+
+/* Correlation test. summary receives 7 values: observed r, dyads used,
+ * draws, then the number of draws with r <= observed, r >= observed,
+ * |r| >= |observed|, and with r defined. dist may be NULL; otherwise it
+ * receives every draw's r (reps values, or n! when exhaustive). */
+int32_t net_qap_cor(const double *y, const double *x, int64_t n, int32_t mode,
+                    int32_t diag, int32_t exhaustive, int64_t reps,
+                    uint64_t seed, int32_t threads, double *summary,
+                    double *dist, char *err, size_t err_len);
+
+/* Multiple regression QAP of y on k predictors stored one after another in
+ * x. The design has p = k + (intercept != 0) columns, intercept first.
+ * method: 0 = double semi-partialling, 1 = Y-permutation (always used when
+ * p == 1). statistic: 0 = t, 1 = coefficient. tol: rank tolerance (1e-7).
+ * coef receives a p-by-7 column-major table: coefficient, standard error,
+ * t, then counts of draws with stat <= observed, stat >= observed,
+ * |stat| >= |observed|, and with a defined statistic. fit receives 10
+ * values: dyads used, residual df, residual sum of squares, model sum of
+ * squares, R-squared, adjusted R-squared, residual standard error, F,
+ * method used, and draws. dist may be NULL; otherwise it receives a
+ * draws-by-p column-major table of every draw's statistics. */
+int32_t net_mrqap(const double *y, const double *x, int64_t n, int64_t k,
+                  int32_t intercept, int32_t mode, int32_t diag,
+                  int32_t method, int32_t statistic, double tol,
+                  int32_t exhaustive, int64_t reps, uint64_t seed,
+                  int32_t threads, double *coef, double *fit, double *dist,
+                  char *err, size_t err_len);
 
 #ifdef __cplusplus
 }
