@@ -1,0 +1,32 @@
+{
+  "n": 21,
+  "directed": false,
+  "weighted": false,
+  "tags": [
+    "twomode"
+  ],
+  "source": "random bipartite graph, 12 + 9 nodes, p=0.3, seed 32",
+  "type": [
+    1,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}

@@ -1,0 +1,444 @@
+# Ego networks and two-mode (bipartite) networks. Format as in
+# ../manifest.yaml.
+#
+# Undefined results (NaN) are written as -1 by the engine runner and by
+# every oracle, since none of these measures can be negative.
+#
+# Engine runners (validation/bindings/twomode.py):
+#   ego_size      neighborhood sizes (igraph's ego_size), ego counted when
+#                 mindist is 0.
+#   ego_members   every node's neighborhood as a group of node indices.
+#   ego_summary   one of size, ties, pairs, density, components, or
+#                 betweenness (ego betweenness) per node.
+#   twomode       two-mode density or centrality; needs node types.
+#   project       one-mode projection as (from, to, weight) triples in
+#                 order of from and then to; needs node types.
+#
+# Two-mode measures need node types, which only the two-mode fixtures
+# (davis_twomode, twomode_random, twomode_weighted) record. Every other
+# fixture is declared undefined for those measures through the list
+# anchored at `twomode_density`.
+
+ego_size:
+  engine: {fn: ego_size, order: 1, mode: all, mindist: 0}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes within `order` steps by repeated expansion of the adjacency sets (twomode_definition_oracle.py)"
+    networkx:
+      call: "len(nx.ego_graph(G, v, radius = 1, undirected = True))"
+    igraph:
+      call: "igraph::ego_size(g, order = 1, mode = 'all', mindist = 0)"
+
+ego_size_out:
+  engine: {fn: ego_size, order: 1, mode: out, mindist: 0}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes reached along at most one outgoing arc"
+    networkx:
+      call: "len(nx.ego_graph(G, v, radius = 1)) (successors)"
+    igraph:
+      call: "igraph::ego_size(g, order = 1, mode = 'out')"
+
+ego_size_in:
+  engine: {fn: ego_size, order: 1, mode: in, mindist: 0}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes reaching the node along at most one arc"
+    networkx:
+      call: "len(nx.ego_graph(G.reverse(), v, radius = 1))"
+    igraph:
+      call: "igraph::ego_size(g, order = 1, mode = 'in')"
+
+ego_size_order2:
+  engine: {fn: ego_size, order: 2, mode: all, mindist: 0}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes within two steps, direction ignored"
+    networkx:
+      call: "len(nx.ego_graph(G, v, radius = 2, undirected = True))"
+    igraph:
+      call: "igraph::ego_size(g, order = 2, mode = 'all')"
+
+ego_alters_order2_out:
+  engine: {fn: ego_members, order: 2, mode: out, mindist: 1}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes one or two outgoing steps away, ego excluded"
+    networkx:
+      call: "nx.ego_graph(G, v, radius = 2, center = False).nodes"
+    igraph:
+      call: "igraph::ego(g, order = 2, mode = 'out', mindist = 1)"
+
+ego_alters:
+  engine: {fn: ego_members, order: 1, mode: all, mindist: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "neighbors in either direction, ego excluded"
+    networkx:
+      call: "nx.ego_graph(G, v, undirected = True, center = False).nodes"
+    igraph:
+      call: "igraph::ego(g, order = 1, mode = 'all', mindist = 1)"
+
+ego_ties:
+  engine: {fn: ego_summary, measure: ties, order: 1, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "distinct ties between distinct alters, checked pair by pair"
+    networkx:
+      call: "nx.ego_graph(simple G, v, undirected = True, center = False).number_of_edges()"
+    igraph:
+      call: "igraph::ecount(induced_subgraph(simplify(g), ego(g, 1, v, 'all', mindist = 1)))"
+
+ego_ties_out:
+  engine: {fn: ego_summary, measure: ties, order: 1, mode: out}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "distinct arcs between distinct successors"
+    networkx:
+      call: "nx.ego_graph(simple G, v, center = False).number_of_edges()"
+    igraph:
+      call: "igraph::ecount(induced_subgraph(simplify(g), ego(g, 1, v, 'out', mindist = 1)))"
+
+ego_ties_order2:
+  engine: {fn: ego_summary, measure: ties, order: 2, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "distinct ties among the nodes within two steps, ego excluded"
+    networkx:
+      call: "nx.ego_graph(simple G, v, radius = 2, undirected = True, center = False).number_of_edges()"
+    igraph:
+      call: "igraph::ecount(induced_subgraph(simplify(g), ego(g, 2, v, 'all', mindist = 1)))"
+
+ego_density:
+  engine: {fn: ego_summary, measure: density, order: 1, mode: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "ties among alters / pairs of alters, in exact arithmetic"
+    networkx:
+      call: "nx.density(nx.ego_graph(simple G, v, undirected = True, center = False)); undefined below two alters"
+    igraph:
+      call: "igraph::edge_density(induced_subgraph(simplify(g), ego(g, 1, v, 'all', mindist = 1)))"
+
+ego_density_out:
+  engine: {fn: ego_summary, measure: density, order: 1, mode: out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "arcs among successors / ordered pairs of successors"
+    networkx:
+      call: "nx.density(nx.ego_graph(simple G, v, center = False)); undefined below two alters"
+    igraph:
+      call: "igraph::edge_density(induced_subgraph(simplify(g), ego(g, 1, v, 'out', mindist = 1)))"
+
+ego_components:
+  engine: {fn: ego_summary, measure: components, order: 1, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "components of the alters' ties by transitive closure, ego removed"
+    networkx:
+      call: "nx.number_weakly_connected_components / number_connected_components of the ego graph without its center"
+    igraph:
+      call: "igraph::count_components(induced_subgraph(g, ego(g, 1, v, 'all', mindist = 1)), mode = 'weak')"
+
+ego_components_in:
+  engine: {fn: ego_summary, measure: components, order: 1, mode: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "weak components among predecessors, ego removed"
+    networkx:
+      call: "nx.number_weakly_connected_components(nx.ego_graph(G.reverse(), v, center = False))"
+    igraph:
+      call: "igraph::count_components(induced_subgraph(g, ego(g, 1, v, 'in', mindist = 1)), mode = 'weak')"
+
+ego_betweenness:
+  engine: {fn: ego_summary, measure: betweenness, order: 1, mode: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "betweenness of ego in its ego network, counting shortest paths pair by pair with exact integers (Everett and Borgatti 2005)"
+    networkx:
+      call: "nx.betweenness_centrality(nx.ego_graph(simple G, v, undirected = True), normalized = False)[v]"
+    igraph:
+      call: "igraph::betweenness(make_ego_graph(simplify(g), 1, v, 'all')[[1]], ego)"
+
+ego_betweenness_out:
+  engine: {fn: ego_summary, measure: betweenness, order: 1, mode: out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "directed betweenness of ego in the subgraph induced by ego and its successors"
+    networkx:
+      call: "nx.betweenness_centrality(nx.ego_graph(simple G, v), normalized = False)[v]"
+    igraph:
+      call: "igraph::betweenness(make_ego_graph(simplify(g), 1, v, 'out')[[1]], ego, directed = TRUE)"
+
+ego_betweenness_order2:
+  engine: {fn: ego_summary, measure: betweenness, order: 2, mode: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "betweenness of ego in the subgraph induced by the nodes within two steps"
+    networkx:
+      call: "nx.betweenness_centrality(nx.ego_graph(simple G, v, radius = 2, undirected = True), normalized = False)[v]"
+
+twomode_density:
+  engine: {fn: twomode, measure: density}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "distinct ties / (n1 n2), counted in the incidence matrix"
+      undefined_on: &onemode [complete5_dir, complete6, cycle7_dir, empty, florentine,
+        gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, kite,
+        les_miserables, multi_loops_dir, multi_loops_und, pair, path10,
+        real_weights_dir, real_weights_und, single_node, southern_women, star8,
+        two_triangles_isolate, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: &onemode_reason one-mode fixture (no node types)
+    networkx:
+      call: "nx.bipartite.density(G, first_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_degree:
+  engine: {fn: twomode, measure: degree, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "distinct partners / size of the other mode (Borgatti and Everett 1997)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.degree_centrality(G, first_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_degree_raw:
+  engine: {fn: twomode, measure: degree, normalized: false}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "distinct partners in the incidence matrix"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::degree(simplify(g))"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_closeness:
+  engine: {fn: twomode, measure: closeness, normalized: true, unreachable: wasserman_faust}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "(n_i + 2(n_o - 1)) / S times r / (n - 1), distances by exact Floyd-Warshall"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.closeness_centrality(G, first_mode_nodes, normalized = True)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_closeness_ignore:
+  engine: {fn: twomode, measure: closeness, normalized: true, unreachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "(n_i + 2(n_o - 1)) / S over reachable nodes"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.closeness_centrality(G, first_mode_nodes, normalized = False)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_closeness_raw:
+  engine: {fn: twomode, measure: closeness, normalized: false, unreachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "1 / S"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::closeness(simplify(as.undirected(g)), normalized = FALSE)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_betweenness:
+  engine: {fn: twomode, measure: betweenness, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "betweenness by exact path counting / b_max of Borgatti and Everett (1997)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.betweenness_centrality(G, first_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_betweenness_raw:
+  engine: {fn: twomode, measure: betweenness, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "shortest paths through each node, counted pair by pair"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.betweenness_centrality(G, normalized = False)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::betweenness(simplify(as.undirected(g)))"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+twomode_eigenvector:
+  engine: {fn: twomode, measure: eigenvector}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "leading singular vectors of the incidence matrix (numpy SVD), each of unit length"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::eigen_centrality(simplify(as.undirected(g)))$vector, each mode rescaled to unit length"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_first:
+  engine: {fn: project, second: false, weight: count}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "off-diagonal of B B^T for the binary incidence matrix B (Breiger 1974)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.weighted_projected_graph(G, first_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::bipartite_projection(g, types, multiplicity = TRUE)$proj1"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_second:
+  engine: {fn: project, second: true, weight: count}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "off-diagonal of B^T B"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.weighted_projected_graph(G, second_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    igraph:
+      call: "igraph::bipartite_projection(g, types, multiplicity = TRUE)$proj2"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_first_loops:
+  engine: {fn: project, second: false, weight: count, loops: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "B B^T including its diagonal (Everett and Borgatti 2013)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_first_newman:
+  engine: {fn: project, second: false, weight: newman}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "sum over shared partners e of 1/(d_e - 1) in exact arithmetic (Newman 2001)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.collaboration_weighted_projected_graph(G, first_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_second_newman:
+  engine: {fn: project, second: true, weight: newman}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "sum over shared partners e of 1/(d_e - 1)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.collaboration_weighted_projected_graph(G, second_mode_nodes)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_first_product:
+  engine: {fn: project, second: false, weight: product}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "off-diagonal of W W^T for the valued incidence matrix W"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+    networkx:
+      call: "nx.bipartite.generic_weighted_projected_graph(G, first_mode_nodes, sum of w_ue w_ve)"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
+
+project_second_product:
+  engine: {fn: project, second: true, weight: product, loops: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "W^T W including its diagonal"
+      undefined_on: *onemode
+      undefined_reason: *onemode_reason
