@@ -237,11 +237,11 @@ groups <- cluster_louvain(karate, seed = 42)
 table(groups)
 #> groups
 #>  1  2  3  4 
-#> 12  5 11  6 
+#> 12  5 13  4 
 round(attr(groups, "modularity"), 3)
-#> [1] 0.419
+#> [1] 0.416
 round(modularity(karate, groups), 3)  # any partition can be scored
-#> [1] 0.419
+#> [1] 0.416
 ```
 
 ## Brokerage and structural holes

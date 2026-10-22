@@ -118,7 +118,7 @@ cat(sprintf("%-22s %-24s %-7s %9s %9s %9s %8s %8s\n", "graph", "measure", "tool"
 
 # ---- Building a network ------------------------------------------------
 e <- igraph::as_edgelist(pa, names = FALSE)
-edges <- data.frame(from = e[, 1], to = e[, 2])
+edges <- data.frame(from = as.integer(e[, 1]), to = as.integer(e[, 2]))
 nodes <- data.frame(name = seq_len(igraph::vcount(pa)))
 ours <- timing(function() degree(netframe(edges, nodes, directed = FALSE)))
 theirs <- timing(function() igraph::degree(igraph::graph_from_data_frame(edges, FALSE, nodes)))

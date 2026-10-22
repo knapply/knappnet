@@ -33,10 +33,17 @@
 //!   modularity and the result is NaN, as in igraph. NetworkX returns 0.
 //!
 //! [`louvain`] implements the method of Blondel, Guillaume, Lambiotte, and
-//! Lefebvre (2008, `blondel2008fast`). Each level repeatedly moves single
-//! nodes to the neighboring group that most increases Q (staying put on
-//! ties) until no move improves Q, then merges each group into one node and
-//! repeats on the merged network until a level makes no move. Conventions:
+//! Lefebvre (2008, `blondel2008fast`). Each level moves single nodes to the
+//! neighboring group that most increases Q (staying put on ties) until no
+//! move improves Q, then merges each group into one node and repeats on the
+//! merged network until a level makes no move. Within a level, nodes are
+//! processed from a queue rather than in repeated full sweeps: after a node
+//! moves, only its neighbors outside its new group are queued again, since
+//! only nodes whose neighborhood changed can have a better move (the "fast
+//! local move" procedure of Traag, Waltman, and van Eck 2019,
+//! `traag2019louvain`). The level still ends only when no single move
+//! improves Q, so the result is a local optimum of the same kind, found with
+//! far less work on networks where sweeps converge slowly. Conventions:
 //! - Undirected networks only, as in igraph's `cluster_louvain()`; directed
 //!   networks are rejected so that no silent symmetrization takes place.
 //!   (NetworkX optimizes directed modularity instead.)
@@ -240,56 +247,61 @@ fn move_nodes(level: &Level, comm: &mut [usize], gamma: f64, two_m: f64, rng: &m
     let mut total = strength.clone();
     let mut order = vec![0usize; n];
     rng.permutation(&mut order);
+    // Every node starts in the queue, in random order; a node is queued at
+    // most once at a time.
+    let mut queue: std::collections::VecDeque<usize> = order.into_iter().collect();
+    let mut queued = vec![true; n];
     let mut link = vec![0.0; n];
     let mut touched_flag = vec![false; n];
     let mut touched = Vec::new();
     let mut any = false;
-    loop {
-        let mut moved = false;
-        for &v in &order {
-            let cv = comm[v];
-            let kv = strength[v];
-            let (t, x) = level.row(v);
-            for (&u, &x) in t.iter().zip(x) {
-                if u == v {
-                    continue;
-                }
-                let c = comm[u];
-                if !touched_flag[c] {
-                    touched_flag[c] = true;
-                    touched.push(c);
-                }
-                link[c] += x;
+    while let Some(v) = queue.pop_front() {
+        queued[v] = false;
+        let cv = comm[v];
+        let kv = strength[v];
+        let (t, x) = level.row(v);
+        for (&u, &x) in t.iter().zip(x) {
+            if u == v {
+                continue;
             }
-            total[cv] -= kv;
-            // Gain (up to a positive factor) of joining group c.
-            let gain = |c: usize| link[c] - gamma * total[c] * kv / two_m;
-            let mut best = cv;
-            let mut best_gain = gain(cv);
-            let tol = 1e-12 * kv.max(f64::MIN_POSITIVE);
-            for &c in &touched {
-                let g = gain(c);
-                if g > best_gain + tol {
-                    best = c;
-                    best_gain = g;
-                }
+            let c = comm[u];
+            if !touched_flag[c] {
+                touched_flag[c] = true;
+                touched.push(c);
             }
-            total[best] += kv;
-            comm[v] = best;
-            if best != cv {
-                moved = true;
-            }
-            for &c in &touched {
-                link[c] = 0.0;
-                touched_flag[c] = false;
-            }
-            touched.clear();
+            link[c] += x;
         }
-        if !moved {
-            return any;
+        total[cv] -= kv;
+        // Gain (up to a positive factor) of joining group c.
+        let gain = |c: usize| link[c] - gamma * total[c] * kv / two_m;
+        let mut best = cv;
+        let mut best_gain = gain(cv);
+        let tol = 1e-12 * kv.max(f64::MIN_POSITIVE);
+        for &c in &touched {
+            let g = gain(c);
+            if g > best_gain + tol {
+                best = c;
+                best_gain = g;
+            }
         }
-        any = true;
+        total[best] += kv;
+        comm[v] = best;
+        for &c in &touched {
+            link[c] = 0.0;
+            touched_flag[c] = false;
+        }
+        touched.clear();
+        if best != cv {
+            any = true;
+            for &u in t {
+                if u != v && !queued[u] && comm[u] != best {
+                    queued[u] = true;
+                    queue.push_back(u);
+                }
+            }
+        }
     }
+    any
 }
 
 /// Louvain community detection on an undirected network. See the module

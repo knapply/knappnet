@@ -96,6 +96,9 @@ structural_equivalence_euclidean:
       call: "row and column profiles compared over k != i, j (validation/oracles/positions_definition_oracle.py)"
     sna:
       call: "sna::sedist(m, method = 'euclidean')"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        sna::sedist() fails on a network with one node.
 
 structural_equivalence_correlation:
   engine: {fn: structural_equivalence, method: correlation}
@@ -106,6 +109,9 @@ structural_equivalence_correlation:
       call: "Pearson correlation of row and column profiles over k != i, j, exact moments"
     sna:
       call: "sna::sedist(m, method = 'correlation')"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        sna::sedist() fails on a network with one node.
 
 structural_equivalence_hamming:
   engine: {fn: structural_equivalence, method: hamming}
@@ -116,6 +122,9 @@ structural_equivalence_hamming:
       call: "row and column profiles compared over k != i, j"
     sna:
       call: "sna::sedist(m, method = 'hamming')"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        sna::sedist() fails on a network with one node.
 
 structural_equivalence_euclidean_weighted:
   engine: {fn: structural_equivalence, method: euclidean, weighted: true}
@@ -145,3 +154,8 @@ concor_depth2:
   oracles:
     definition:
       call: "independent numpy iteration of correlation matrices, two rounds of splits"
+      undefined_on: [cycle7_dir, kite]
+      undefined_reason: >-
+        The second split is numerically fragile on these networks
+        (correlations within rounding error of zero), so the definition
+        oracle declines to give an answer.

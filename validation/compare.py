@@ -10,6 +10,11 @@ Outcomes per (fixture, measure, oracle):
                the manifest declares for that oracle
   FAIL         any other disagreement (CI fails)
   not run      no golden file (oracle not available when goldens were made)
+  undefined    no golden file because the oracle gives no answer on that
+               fixture (manifest: undefined_on / undefined_when)
+  manual       no golden file yet for an oracle run by hand (UCINET)
+
+--strict fails only on "not run".
 """
 
 from __future__ import annotations
@@ -95,6 +100,12 @@ def main() -> int:
             for oracle, ospec in spec["oracles"].items():
                 theirs = read_values(oracle, name, variant)
                 if theirs is None:
+                    if (name in ospec.get("undefined_on", [])
+                            or tags & set(ospec.get("undefined_when", []))):
+                        # The oracle gives no answer here, for the reason
+                        # recorded in the manifest.
+                        tally[(variant, oracle)]["undefined"] += 1
+                        continue
                     key = "manual" if oracle in MANUAL_ORACLES else "not run"
                     tally[(variant, oracle)][key] += 1
                     if key == "not run":
@@ -162,7 +173,8 @@ def main() -> int:
             total[k] += v
     print(f"match {total['match']}, documented {total['documented']}, "
           f"FAIL {total['FAIL']}, not run {total['not run']}, "
-          f"awaiting a manual run {total['manual']}")
+          f"awaiting a manual run {total['manual']}, "
+          f"undefined for the oracle {total['undefined']}")
     for v, o, f, d in failures:
         print(f"FAIL {v} vs {o} on {f}: {d}")
     if failures:

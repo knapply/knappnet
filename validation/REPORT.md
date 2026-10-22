@@ -16,19 +16,19 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `betweenness_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
 | `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
 | `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |  |
-| `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 16 | 0 / 0 / 0 / 25 |  |
+| `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
 | `constraint` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
 | `constraint_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
 | `effective_size` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |  |
 | `effective_size_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
 | `efficiency` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |  |
 | `brokerage` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `structural_equivalence_euclidean` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `structural_equivalence_correlation` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `structural_equivalence_hamming` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
+| `structural_equivalence_euclidean` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
+| `structural_equivalence_correlation` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
+| `structural_equivalence_hamming` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
 | `structural_equivalence_euclidean_weighted` | 6 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 6 |  |
 | `concor` | 25 / 0 / 0 / 0 |  |  |  |  |
-| `concor_depth2` | 23 / 0 / 0 / 2 |  |  |  |  |
+| `concor_depth2` | 23 / 0 / 0 / 0 |  |  |  |  |
 | `coreness_all` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
 | `coreness_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `coreness_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
@@ -69,13 +69,13 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 | `harmonic_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
 | `harmonic_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
 | `harmonic_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `eigenvector` | 24 / 0 / 0 / 1 | 0 / 0 / 0 / 25 |  |  |  |
-| `eigenvector_networkx` | 24 / 0 / 0 / 1 |  | 16 / 0 / 0 / 9 |  |  |
+| `eigenvector` | 24 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `eigenvector_networkx` | 24 / 0 / 0 / 0 |  | 16 / 0 / 0 / 0 |  |  |
 | `eigenvector_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
-| `eigenvector_weighted_networkx` | 6 / 0 / 0 / 0 |  | 5 / 0 / 0 / 1 |  |  |
+| `eigenvector_weighted_networkx` | 6 / 0 / 0 / 0 |  | 5 / 0 / 0 / 0 |  |  |
 | `eigenvector_undirected` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
-| `eigenvector_sna` | 24 / 0 / 0 / 1 |  |  | 0 / 0 / 0 / 25 |  |
-| `eigenvector_ucinet` | 24 / 0 / 0 / 1 |  |  |  | 0 / 0 / 0 / 0 |
+| `eigenvector_sna` | 24 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 23 |  |
+| `eigenvector_ucinet` | 24 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 | `centralization_degree` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
 | `centralization_degree_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `centralization_degree_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |

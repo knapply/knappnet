@@ -11,6 +11,11 @@
 # reason. On those fixtures a mismatch is reported as a documented
 # convention difference rather than a failure. Any other mismatch fails CI.
 #
+# An oracle that gives no answer on some fixtures (it raises an error, or
+# the answer is undefined) declares them with `undefined_on` (fixture
+# names) or `undefined_when` (tags) and an `undefined_reason`, so a missing
+# golden file is never silently accepted.
+#
 # No measure ships without an entry here and at least one passing oracle.
 
 degree_all:
@@ -170,6 +175,9 @@ triad_census:
       call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
     networkx:
       call: "nx.triadic_census(DiGraph(G))"
+      undefined_when: [undirected]
+      undefined_reason: >-
+        NetworkX's triadic_census accepts only directed graphs.
       differs_when: [undirected]
       reason: NetworkX defines the triad census only for directed graphs.
     igraph:
@@ -181,6 +189,10 @@ triad_census:
         classify each dyad as tied or not, so parallel edges count once.
     sna:
       call: "sna::triad.census(m, mode = 'digraph')"
+      undefined_when: [undirected]
+      undefined_reason: >-
+        sna's undirected triad census has four classes, not sixteen, so no
+        golden values are written for undirected fixtures.
       differs_when: [undirected, edge_case]
       reason: >-
         sna returns NaN for networks with fewer than three nodes, which have

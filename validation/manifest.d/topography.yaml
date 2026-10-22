@@ -323,6 +323,10 @@ eigenvector:
   oracles:
     definition:
       call: "dense eigendecomposition of the adjacency matrix with numpy (eigenvector_definition_oracle.py)"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: >-
+        Two components share the largest eigenvalue, so there is no unique
+        leading eigenvector.
     igraph:
       call: "igraph::eigen_centrality(g, directed = TRUE, weights = NA)$vector"
       differs_when: [disconnected]
@@ -339,8 +343,17 @@ eigenvector_networkx:
   oracles:
     definition:
       call: "dense eigendecomposition with loops counted once, unit norm"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: >-
+        Two components share the largest eigenvalue, so there is no unique
+        leading eigenvector.
     networkx:
       call: "nx.eigenvector_centrality_numpy(G); it refuses graphs that are not (strongly) connected, which are then not run"
+      undefined_on: [empty, gnp_dir_sparse, gnp_und_sparse, multi_loops_dir, multi_loops_und, pair, single_node, two_triangles_isolate, weighted_dir]
+      undefined_reason: >-
+        NetworkX raises an error: its power iteration does not converge on
+        these networks (disconnected, or without a unique leading
+        eigenvector).
 
 eigenvector_weighted:
   engine: {fn: eigenvector, mode: in, weighted: true, scale: max, loops: twice}
@@ -365,6 +378,9 @@ eigenvector_weighted_networkx:
       call: "dense eigendecomposition of the weighted adjacency matrix, unit norm"
     networkx:
       call: "nx.eigenvector_centrality_numpy(G, weight = 'weight')"
+      undefined_on: [weighted_dir]
+      undefined_reason: >-
+        NetworkX's power iteration does not converge on this network.
 
 eigenvector_undirected:
   engine: {fn: eigenvector, mode: all, scale: max, loops: twice}
@@ -385,12 +401,20 @@ eigenvector_sna:
   oracles:
     definition:
       call: "dense eigendecomposition of the binary adjacency matrix (right eigenvector), unit norm"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: >-
+        Two components share the largest eigenvalue, so there is no unique
+        leading eigenvector.
     sna:
       call: >-
         sna::evcent(m, gmode = 'digraph', diag = FALSE) for directed networks;
         sna::evcent(m, gmode = 'graph', diag = FALSE, use.eigen = TRUE) for
         undirected ones, with the sign chosen so the scores sum to a positive
         number (sna leaves the sign of the eigenvector arbitrary)
+      undefined_on: [empty, pair]
+      undefined_reason: >-
+        sna returns missing values when the leading eigenvector is
+        undefined.
       differs_when: [disconnected, edge_case]
       reason: >-
         sna's default iteration is plain power iteration on A, which does
@@ -406,6 +430,10 @@ eigenvector_ucinet:
   oracles:
     definition:
       call: "dense eigendecomposition of the binary adjacency matrix symmetrized by maximum, unit norm"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: >-
+        Two components share the largest eigenvalue, so there is no unique
+        leading eigenvector.
     ucinet:
       call: "Network > Centrality > Eigenvector (CLI eigencent(<dataset>)) on the dichotomized network; UCINET symmetrizes by maximum"
       differs_when: [disconnected]

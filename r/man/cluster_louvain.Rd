@@ -25,7 +25,12 @@ method of Blondel, Guillaume, Lambiotte, and Lefebvre (2008).
 Each level repeatedly moves single nodes to the neighboring group that
 most increases modularity (staying put on ties) until no move improves it,
 then merges each group into one node and repeats on the merged network,
-until a level makes no move. Nodes are visited in a random order drawn
+until a level makes no move. Within a level, nodes are processed from a
+queue: after a node moves, only its neighbors outside its new group are
+revisited, as in the fast local move procedure of Traag, Waltman, and van
+Eck (2019). This finds the same kind of local optimum as repeated sweeps
+over every node, with far less work on large networks. Nodes are first
+queued in a random order drawn
 from a counter-based generator (Philox; Salmon et al. 2011), so the same
 \code{seed} gives the same result on every platform.
 
@@ -48,6 +53,10 @@ Blondel, V. D., Guillaume, J.-L., Lambiotte, R., & Lefebvre, E. (2008).
 Fast unfolding of communities in large networks. \emph{Journal of
 Statistical Mechanics: Theory and Experiment}, 2008(10), P10008.
 \doi{10.1088/1742-5468/2008/10/P10008}
+
+Traag, V. A., Waltman, L., & van Eck, N. J. (2019). From Louvain to
+Leiden: Guaranteeing well-connected communities. \emph{Scientific
+Reports}, 9, 5233. \doi{10.1038/s41598-019-41695-z}
 
 Newman, M. E. J., & Girvan, M. (2004). Finding and evaluating community
 structure in networks. \emph{Physical Review E}, 69(2), 026113.
