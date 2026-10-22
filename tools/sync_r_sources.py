@@ -24,6 +24,8 @@ FILES = [
     ("Cargo.toml", "Cargo.toml"),
     ("Cargo.lock", "Cargo.lock"),
     ("crates/engine/Cargo.toml", "crates/engine/Cargo.toml"),
+    # The crate docs include README.md at compile time.
+    ("crates/engine/README.md", "crates/engine/README.md"),
     ("crates/capi/Cargo.toml", "crates/capi/Cargo.toml"),
 ]
 DIRS = [

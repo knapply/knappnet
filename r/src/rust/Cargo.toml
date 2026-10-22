@@ -7,6 +7,8 @@ version = "0.0.1"
 edition = "2021"
 rust-version = "1.70"
 license = "MIT"
+repository = "https://github.com/knapply/knappnet"
+homepage = "https://github.com/knapply/knappnet"
 
 [profile.release]
 opt-level = 3

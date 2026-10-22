@@ -38,6 +38,7 @@ impl Csr {
             .map(|w| &w[self.offsets[v]..self.offsets[v + 1]])
     }
 
+    /// Number of arcs in `v`'s row (parallel arcs included).
     #[inline]
     pub fn degree(&self, v: usize) -> usize {
         self.offsets[v + 1] - self.offsets[v]
@@ -207,21 +208,25 @@ impl Graph {
         })
     }
 
+    /// Number of nodes.
     #[inline]
     pub fn node_count(&self) -> usize {
         self.n
     }
 
+    /// Number of edges as supplied (parallel edges and loops included).
     #[inline]
     pub fn edge_count(&self) -> usize {
         self.sources.len()
     }
 
+    /// Whether edges are directed.
     #[inline]
     pub fn is_directed(&self) -> bool {
         self.directed
     }
 
+    /// Whether the graph carries edge weights.
     #[inline]
     pub fn is_weighted(&self) -> bool {
         self.weights.is_some()

@@ -10,14 +10,21 @@
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 
+/// Which edge endpoints to count in a directed graph. Undirected graphs
+/// ignore the mode.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DegreeMode {
+    /// Edges leaving the node.
     Out,
+    /// Edges entering the node.
     In,
+    /// Both.
     All,
 }
 
 impl DegreeMode {
+    /// Decodes the integer codes used by the C interface: 1 = out, 2 = in,
+    /// 3 = all.
     pub fn from_code(code: i32) -> Result<DegreeMode> {
         match code {
             1 => Ok(DegreeMode::Out),

@@ -1,12 +1,22 @@
 [package]
-name = "engine"
-description = "Core graph storage and network analysis algorithms"
+# Published to crates.io under the project name. The directory stays
+# `crates/engine` and other crates in this workspace refer to it as `engine`,
+# so a rename only touches this line (see tools/rename.py).
+name = "knappnet"
+description = "Fast, validated network analysis: betweenness, triad census, degree, and more on compressed sparse graphs"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-publish = false
+repository.workspace = true
+homepage.workspace = true
+documentation = "https://docs.rs/knappnet"
+readme = "README.md"
+keywords = ["graph", "network", "centrality", "betweenness", "social-network"]
+categories = ["algorithms", "data-structures", "science", "mathematics"]
+include = ["src/**/*.rs", "README.md"]
 
 # The engine deliberately has no dependencies. This keeps CRAN builds simple
-# (nothing to vendor) and keeps every algorithm auditable in one place.
+# (nothing to vendor), compiles to WebAssembly unchanged, and keeps every
+# algorithm auditable in one place.
 [dependencies]

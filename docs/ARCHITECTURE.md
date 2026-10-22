@@ -7,6 +7,7 @@ correct, fast, and maintainable as it grows.
 
 ```
 crates/engine     Rust. Graph storage and algorithms. No dependencies.
+                  Published to crates.io under the project name.
 crates/capi       Rust. A small C ABI over the engine (crates/capi/include/netcapi.h).
 r/                The R package. C glue (r/src/glue.c) calls the C ABI.
 validation/       Fixtures, golden results from reference tools, comparison.
@@ -99,9 +100,10 @@ checked with randomized tests in `crates/engine/tests/properties.rs`.
 2. Every algorithm cites its source in a comment at the top of its file.
 3. The engine stays dependency-free unless a dependency is clearly worth its
    cost for CRAN builds.
-4. The project name never appears in identifiers, C symbols, crate names, or
-   R function names. It lives in `project.toml` and the few metadata files
-   that `tools/rename.py` rewrites.
+4. The project name never appears in identifiers, C symbols, or R function
+   names. It lives in `project.toml`, the package metadata (including the
+   published crate name, which workspace code imports as `engine`), and the
+   docs, all of which `tools/rename.py` rewrites.
 5. Approximate algorithms are opt-in, named as such, and report their error
    guarantees.
 

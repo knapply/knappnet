@@ -34,14 +34,20 @@ use crate::parallel;
 
 const EPSILON: f64 = 1e-10;
 
+/// Options for [`betweenness`].
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BetweennessOptions {
+    /// Use edge weights as distances (they must be strictly positive).
     pub weighted: bool,
+    /// Divide by the number of pairs not involving the node.
     pub normalized: bool,
     /// Worker threads; 0 uses all available cores.
     pub threads: usize,
 }
 
+/// Shortest-path betweenness of every node, in node order.
+///
+/// See the module documentation for conventions.
 pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
     let n = g.node_count();
     if opts.weighted {

@@ -1,6 +1,10 @@
 //! Randomized property tests. These check invariants that must hold for
 //! every graph, complementing the oracle comparisons in `validation/`.
 
+// The crate is published under the project name; `engine` keeps that name
+// out of the code so renaming the project only touches Cargo.toml.
+extern crate knappnet as engine;
+
 use engine::metrics::betweenness::{betweenness, BetweennessOptions};
 use engine::metrics::degree::{degree, DegreeMode};
 use engine::metrics::triad::triad_census;

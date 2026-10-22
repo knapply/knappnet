@@ -10,4 +10,5 @@ publish = false
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [dependencies]
-engine = { path = "../engine" }
+# Imported as `engine` so the project name never appears in Rust code.
+engine = { package = "knappnet", path = "../engine" }

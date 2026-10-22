@@ -22,6 +22,7 @@
 use crate::graph::Graph;
 use crate::parallel;
 
+/// Triad type labels in the order returned by [`triad_census`].
 pub const TRIAD_NAMES: [&str; 16] = [
     "003", "012", "102", "021D", "021U", "021C", "111D", "111U", "030T", "030C", "201", "120D",
     "120U", "120C", "210", "300",

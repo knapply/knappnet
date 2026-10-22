@@ -8,6 +8,11 @@
 
 /// Resolves a requested thread count. Zero means "use all available cores".
 pub fn resolve_threads(requested: usize, items: usize) -> usize {
+    // WebAssembly targets without thread support cannot spawn threads, so
+    // all work runs on the calling thread there.
+    if cfg!(target_family = "wasm") {
+        return 1;
+    }
     let available = std::thread::available_parallelism()
         .map(|n| n.get())
         .unwrap_or(1);

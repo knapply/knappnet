@@ -30,6 +30,14 @@ jobs:
         run: cargo fmt --all --check
       - name: Lint
         run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Docs build without warnings
+        run: RUSTDOCFLAGS="-D warnings" cargo doc -p knappnet --no-deps
+      - name: Crate packages for crates.io
+        run: cargo package -p knappnet
+      - name: Builds for WebAssembly
+        run: |
+          rustup target add wasm32-unknown-unknown
+          cargo build -p knappnet --target wasm32-unknown-unknown --release
 
   engine:
     name: engine (${{ matrix.os }})

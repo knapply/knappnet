@@ -1,3 +1,5 @@
+//! Error types.
+
 use std::fmt;
 
 /// Errors produced while building a graph or running an algorithm.
@@ -5,18 +7,41 @@ use std::fmt;
 pub enum Error {
     /// Source and target arrays have different lengths.
     LengthMismatch {
+        /// Which input is the wrong length.
         what: &'static str,
+        /// The required length.
         expected: usize,
+        /// The length supplied.
         found: usize,
     },
     /// An edge endpoint is negative or not less than the node count.
-    NodeOutOfRange { edge: usize, node: i64, n: usize },
+    NodeOutOfRange {
+        /// Index of the offending edge.
+        edge: usize,
+        /// The invalid endpoint.
+        node: i64,
+        /// The node count.
+        n: usize,
+    },
     /// A weight is NaN or infinite.
-    NonFiniteWeight { edge: usize },
+    NonFiniteWeight {
+        /// Index of the offending edge.
+        edge: usize,
+    },
     /// An algorithm requires strictly positive weights.
-    NonPositiveWeight { edge: usize, weight: f64 },
+    NonPositiveWeight {
+        /// Index of the offending edge.
+        edge: usize,
+        /// Its weight.
+        weight: f64,
+    },
     /// The graph is too large for the index type.
-    TooLarge { what: &'static str, value: usize },
+    TooLarge {
+        /// Which quantity is too large.
+        what: &'static str,
+        /// Its value.
+        value: usize,
+    },
     /// The algorithm needs edge weights but the graph has none.
     MissingWeights,
     /// An argument is outside its allowed set of values.
@@ -54,4 +79,5 @@ impl fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+/// Result type used throughout the engine.
 pub type Result<T> = std::result::Result<T, Error>;

@@ -6,9 +6,9 @@ version = 3
 name = "capi"
 version = "0.0.1"
 dependencies = [
- "engine",
+ "knappnet",
 ]
 
 [[package]]
-name = "engine"
+name = "knappnet"
 version = "0.0.1"
