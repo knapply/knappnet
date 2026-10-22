@@ -13,6 +13,7 @@ pub mod ego;
 pub mod eigenvector;
 pub mod equivalence;
 pub mod mixing;
+pub mod resilience;
 pub mod spectral;
 pub mod topography;
 pub mod triad;

@@ -10,15 +10,18 @@
 
 pub mod bitset;
 pub mod conventions;
+pub mod dynamics;
 pub mod error;
 pub mod graph;
 pub mod io;
 pub mod layout;
+pub mod logs;
 pub mod matrix;
 pub mod metrics;
 pub mod parallel;
 pub mod qap;
 pub mod rng;
+pub mod temporal;
 pub mod weights;
 
 pub use error::{Error, Result};
