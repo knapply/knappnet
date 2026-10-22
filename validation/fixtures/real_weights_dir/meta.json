@@ -1,0 +1,9 @@
+{
+  "n": 45,
+  "directed": true,
+  "weighted": true,
+  "tags": [
+    "weighted"
+  ],
+  "source": "G(n=45, p=0.1), seed 22, real weights in [0.1, 3]"
+}

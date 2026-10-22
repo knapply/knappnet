@@ -34,8 +34,11 @@ test_that("igraph round trip keeps structure and attributes", {
     expect_equal(back$roles$weight, "weight")
     expect_equal(back$nodes$member, g$nodes$member)
     expect_equal(back$graph$title, "sample")
-    # Measures agree across the conversion.
-    expect_equal(betweenness(back), unname(igraph::betweenness(ig, weights = NA)))
+    # Measures agree across the conversion, weighted (igraph's default when a
+    # weight attribute exists) and unweighted.
+    expect_equal(betweenness(back), unname(igraph::betweenness(ig)))
+    expect_equal(betweenness(back, weighted = FALSE),
+                 unname(igraph::betweenness(ig, weights = NA)))
   }
   expect_s3_class(igraph::as.igraph(sample_net()), "igraph")
 })

@@ -136,6 +136,26 @@ betweenness_weighted:
     igraph:
       call: "igraph::betweenness(g, weights = E(g)$weight, normalized = FALSE)"
 
+betweenness_weighted_strength:
+  engine: {fn: betweenness, weighted: true, normalized: false, weights_as: strength}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "direct evaluation with exact lengths 1/w"
+    networkx:
+      call: "nx.betweenness_centrality(G, weight = 1/w, normalized = False)"
+      differs_when: [integer_weights]
+      reason: >-
+        Reciprocals of whole-number weights often give path lengths that tie
+        exactly (1/3 + 1/6 = 1/2) but differ in the last bit of floating
+        point. NetworkX compares lengths exactly and drops one of the tied
+        paths; this engine (like igraph) compares with a relative tolerance
+        and agrees with the exact-arithmetic definition oracle.
+    igraph:
+      call: "igraph::betweenness(g, weights = 1 / E(g)$weight, normalized = FALSE)"
+
 triad_census:
   engine: {fn: triad_census}
   applies_to: any

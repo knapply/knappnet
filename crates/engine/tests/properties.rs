@@ -176,3 +176,75 @@ fn undirected_betweenness_matches_symmetric_directed() {
         assert!(close(&bu, &bd), "{bu:?} vs {bd:?}");
     }
 }
+
+fn random_weights(rng: &mut Rng, m: usize, max: u64) -> Vec<f64> {
+    (0..m).map(|_| (1 + rng.below(max)) as f64).collect()
+}
+
+#[test]
+fn every_path_algorithm_agrees() {
+    use engine::{PathAlgorithm, WeightKind};
+    let mut rng = Rng(6);
+    for _ in 0..CASES {
+        let c = random_case(&mut rng);
+        let w = random_weights(&mut rng, c.src.len(), 6);
+        let g = Graph::from_edges(c.n, &c.src, &c.tgt, Some(&w), c.directed).unwrap();
+        let run = |algorithm, weights_as| {
+            let opts = BetweennessOptions {
+                weighted: true,
+                algorithm,
+                weights_as,
+                ..Default::default()
+            };
+            betweenness(&g, opts).unwrap()
+        };
+        let dial = run(PathAlgorithm::Dial, WeightKind::Distance);
+        let heap = run(PathAlgorithm::Dijkstra, WeightKind::Distance);
+        assert!(close(&dial, &heap), "{dial:?} vs {heap:?}");
+        assert!(close(
+            &dial,
+            &run(PathAlgorithm::Auto, WeightKind::Distance)
+        ));
+
+        // Strengths w are the same as distances 1/w.
+        let inv: Vec<f64> = w.iter().map(|x| 1.0 / x).collect();
+        let h = Graph::from_edges(c.n, &c.src, &c.tgt, Some(&inv), c.directed).unwrap();
+        let as_distance = betweenness(
+            &h,
+            BetweennessOptions {
+                weighted: true,
+                ..Default::default()
+            },
+        )
+        .unwrap();
+        assert!(close(
+            &run(PathAlgorithm::Auto, WeightKind::Strength),
+            &as_distance
+        ));
+    }
+}
+
+#[test]
+fn uniform_weights_match_unweighted_under_every_algorithm() {
+    use engine::PathAlgorithm;
+    let mut rng = Rng(7);
+    for _ in 0..CASES {
+        let c = random_case(&mut rng);
+        let k = (1 + rng.below(9)) as f64;
+        let w = vec![k; c.src.len()];
+        let g = Graph::from_edges(c.n, &c.src, &c.tgt, Some(&w), c.directed).unwrap();
+        let plain = betweenness(&g, BetweennessOptions::default()).unwrap();
+        for algorithm in [
+            PathAlgorithm::Auto,
+            PathAlgorithm::Dial,
+            PathAlgorithm::Dijkstra,
+        ] {
+            let opts = BetweennessOptions {
+                weighted: true,
+                algorithm,
+                ..Default::default()
+            };
+            assert!(close(&plain, &betweenness(&g, opts).unwrap()));
+        }
+    }
+}

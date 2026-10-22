@@ -14,7 +14,7 @@ int main(void) {
     return 1;
   }
   double bc[4], deg[4], census[16];
-  if (net_betweenness(g, 0, 0, 1, bc, err, sizeof err) != 0) return 1;
+  if (net_betweenness(g, 0, 0, 0, 1, bc, err, sizeof err) != 0) return 1;
   if (net_degree(g, 3, 1, 0, deg, err, sizeof err) != 0) return 1;
   if (net_triad_census(g, 1, census, err, sizeof err) != 0) return 1;
   if (bc[1] != 2.0 || bc[2] != 2.0 || deg[0] != 1.0 || deg[1] != 2.0) return 1;

@@ -26,13 +26,15 @@ ORACLE = "definition"
 MAX_NODES = 80
 
 
-def arcs(fx, weighted: bool):
+def arcs(fx, weighted: bool, strength: bool = False):
     """Adjacency list of (target, length) with parallel arcs kept."""
     adj = [[] for _ in range(fx.n)]
     for i, (a, b) in enumerate(zip(fx.src, fx.tgt)):
         if a == b:
             continue
         w = Fraction(fx.weights[i]) if weighted else Fraction(1)
+        if weighted and strength:
+            w = 1 / w
         adj[a].append((b, w))
         if not fx.directed:
             adj[b].append((a, w))
@@ -67,8 +69,8 @@ def shortest(adj, s):
     return dist, sigma
 
 
-def betweenness(fx, weighted: bool, normalized: bool) -> list[float]:
-    adj = arcs(fx, weighted)
+def betweenness(fx, weighted: bool, normalized: bool, strength: bool = False) -> list[float]:
+    adj = arcs(fx, weighted, strength)
     n = fx.n
     table = [shortest(adj, s) for s in range(n)]
     bc = [Fraction(0)] * n
@@ -172,7 +174,8 @@ def main() -> None:
                 continue
             e = spec["engine"]
             if e["fn"] == "betweenness":
-                values = betweenness(fx, e["weighted"], e["normalized"])
+                values = betweenness(fx, e["weighted"], e["normalized"],
+                                     e.get("weights_as") == "strength")
             elif e["fn"] == "degree":
                 values = degree(fx, e["mode"], e["loops"])
             elif e["fn"] == "triad_census":

@@ -29,10 +29,12 @@ int64_t net_graph_node_count(const GraphHandle *h);
 int32_t net_degree(const GraphHandle *h, int32_t mode, int32_t loops,
                    int32_t weighted, double *out, char *err, size_t err_len);
 
-/* threads == 0 uses all available cores. */
+/* weights_as: 0 = distance, 1 = strength (lengths 1/w); only used when
+ * weighted != 0. threads == 0 uses all available cores. */
 int32_t net_betweenness(const GraphHandle *h, int32_t weighted,
-                        int32_t normalized, int32_t threads, double *out,
-                        char *err, size_t err_len);
+                        int32_t weights_as, int32_t normalized,
+                        int32_t threads, double *out, char *err,
+                        size_t err_len);
 
 /* Writes 16 counts in MAN order: 003 012 102 021D 021U 021C 111D 111U
  * 030T 030C 201 120D 120U 120C 210 300. */

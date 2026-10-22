@@ -18,7 +18,7 @@ use std::panic::{catch_unwind, AssertUnwindSafe};
 use engine::metrics::betweenness::{betweenness, BetweennessOptions};
 use engine::metrics::degree::{degree, strength, DegreeMode};
 use engine::metrics::triad::triad_census;
-use engine::{Error, Graph};
+use engine::{Error, Graph, WeightKind};
 
 mod files;
 pub use files::*;
@@ -165,7 +165,9 @@ pub unsafe extern "C" fn net_degree(
     })
 }
 
-/// Shortest-path betweenness. `threads == 0` uses all cores.
+/// Shortest-path betweenness. `weights_as` is 0 (distance) or 1 (strength)
+/// and only matters when `weighted` is non-zero. `threads == 0` uses all
+/// cores.
 ///
 /// # Safety
 /// `h` must be a live handle; `out` must hold `n` doubles.
@@ -173,6 +175,7 @@ pub unsafe extern "C" fn net_degree(
 pub unsafe extern "C" fn net_betweenness(
     h: *const GraphHandle,
     weighted: i32,
+    weights_as: i32,
     normalized: i32,
     threads: i32,
     out: *mut f64,
@@ -183,8 +186,10 @@ pub unsafe extern "C" fn net_betweenness(
         let g = handle(h)?;
         let opts = BetweennessOptions {
             weighted: weighted != 0,
+            weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
             threads: threads.max(0) as usize,
+            ..Default::default()
         };
         let values = betweenness(g, opts)?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);

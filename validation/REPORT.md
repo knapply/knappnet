@@ -7,15 +7,16 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 
 | Measure | definition | igraph | networkx | sna |
 |---|---|---|---|---|
-| `degree_all` | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 |
-| `degree_all_noloops` | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 |  | 0 / 0 / 0 / 22 |
-| `degree_out` | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |
-| `degree_in` | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |
-| `strength_all` |  | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |
-| `betweenness` | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 | 20 / 2 / 0 / 0 | 0 / 0 / 0 / 22 |
-| `betweenness_normalized` | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 | 20 / 2 / 0 / 0 |  |
-| `betweenness_weighted` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |
-| `triad_census` | 22 / 0 / 0 / 0 | 0 / 0 / 0 / 22 | 8 / 0 / 0 / 14 | 0 / 0 / 0 / 22 |
+| `degree_all` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |
+| `degree_all_noloops` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 |
+| `degree_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
+| `degree_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
+| `strength_all` |  | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
+| `betweenness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 |
+| `betweenness_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |
+| `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |
+| `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |
+| `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 16 | 0 / 0 / 0 / 25 |
 
 ## Documented convention differences
 
@@ -23,3 +24,5 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.13907115702781336, networkx 0.15765107212475635
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909122, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.12111231459595977, networkx 0.14763297131718187
+- `betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 13: engine 328.5, networkx 331.0
+- `betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 37: engine 114.16666666666666, networkx 115.25

@@ -40,6 +40,8 @@ class Fixture:
         tags = set(self.tags)
         if self.weights is not None:
             tags.add("weighted")
+            if all(float(w).is_integer() for w in self.weights):
+                tags.add("integer_weights")
         if any(a == b for a, b in self.edges):
             tags.add("loops")
         seen = set()
@@ -85,6 +87,24 @@ def gnp(name: str, n: int, p: float, directed: bool, seed: int,
                    f"G(n={n}, p={p}), seed {seed}").finalize()
 
 
+def uniform(name: str, n: int, p: float, directed: bool, seed: int, w: float) -> Fixture:
+    """Every edge has the same weight, which must give unweighted results."""
+    base = gnp(name, n, p, directed, seed)
+    base.weights = [w] * len(base.edges)
+    base.source += f", every weight {w}"
+    return base.finalize()
+
+
+def real_weights(name: str, n: int, p: float, directed: bool, seed: int) -> Fixture:
+    """Non-integer weights, which take the general (Dijkstra) path."""
+    base = gnp(name, n, p, directed, seed)
+    rng = random.Random(seed + 1000)
+    # Distinct-looking reals with few exact ties between path sums.
+    base.weights = [round(rng.uniform(0.1, 3.0), 6) for _ in base.edges]
+    base.source += ", real weights in [0.1, 3]"
+    return base.finalize()
+
+
 def messy(name: str, n: int, m: int, directed: bool, seed: int) -> Fixture:
     """Random multigraph with self-loops and repeated edges."""
     rng = random.Random(seed)
@@ -110,6 +130,9 @@ def build() -> list[Fixture]:
         gnp("gnp_und_dense", 30, 0.6, False, 14),
         gnp("weighted_dir", 50, 0.1, True, 15, weighted=True),
         gnp("weighted_und", 50, 0.1, False, 16, weighted=True),
+        uniform("uniform_weights", 40, 0.12, False, 21, 2.5),
+        real_weights("real_weights_dir", 45, 0.1, True, 22),
+        real_weights("real_weights_und", 45, 0.1, False, 23),
         messy("multi_loops_dir", 20, 60, True, 17),
         messy("multi_loops_und", 20, 60, False, 18),
         Fixture("empty", 5, [], True, tags=["edge_case"]).finalize(),

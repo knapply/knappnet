@@ -70,6 +70,35 @@ with two stable counting sorts in O(n + m).
 Node indices are 32-bit, which supports roughly four billion nodes. Offsets
 are machine words. A 64-bit index option is planned for very large graphs.
 
+## Weighted and binary networks
+
+Whether a network is weighted is a property of the network (`weight =` in
+`netframe()`), not something each function guesses. Measures follow it by
+default and can be overridden per call.
+
+- **Binary networks** (an edge exists or it does not) never touch weight
+  arrays. Path-based measures use breadth-first search with exact integer
+  hop counts. Dense binary networks use a bit matrix (`engine::bitset`) for
+  constant-time arc tests when it is no larger than adjacency lists.
+- **Weight meaning** is declared once: `weight_type = "distance"` (cost,
+  length, latency; the igraph and NetworkX convention) or `"strength"`
+  (contact frequency, tie intensity), which path-based measures convert to
+  lengths 1/w (`newman2001scientific`, `opsahl2010node`). Additive measures
+  such as strength (`barrat2004architecture`) use weights as given.
+- **Algorithm choice** follows the weights (`engine::weights`): uniform
+  weights reduce exactly to the binary case; positive integer lengths up to
+  1024 use Dial's bucket queue with exact integer distances
+  (`dial1969algorithm`); anything else uses Dijkstra's algorithm
+  (`dijkstra1959note`) with a relative tolerance for ties.
+- Measures defined only on binary ties (the triad census) ignore weights and
+  say so in their documentation.
+
+Property tests check that every algorithm returns the same results on the
+same lengths, that uniform weights reproduce unweighted results, and that
+strengths w give the same results as distances 1/w. The validation corpus
+includes uniform-weight, integer-weight, and real-weight networks so each
+path is exercised against the oracles.
+
 ## Conventions
 
 Every algorithm documents its conventions in its source file and in the R

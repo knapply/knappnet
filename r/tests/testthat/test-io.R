@@ -109,8 +109,9 @@ test_that("files written by igraph are read correctly here", {
     expect_equal(nrow(g$nodes), igraph::vcount(ig), info = fmt)
     expect_equal(nrow(g$edges), igraph::ecount(ig), info = fmt)
     expect_equal(g$edges$weight, igraph::E(ig)$weight, info = fmt)
-    expect_equal(betweenness(g), unname(igraph::betweenness(ig, weights = NA)),
-                 info = fmt)
+    expect_equal(betweenness(g, weighted = FALSE),
+                 unname(igraph::betweenness(ig, weights = NA)), info = fmt)
+    expect_equal(betweenness(g), unname(igraph::betweenness(ig)), info = fmt)
   }
 })
 

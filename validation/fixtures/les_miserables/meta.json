@@ -3,6 +3,7 @@
   "directed": false,
   "weighted": true,
   "tags": [
+    "integer_weights",
     "weighted"
   ],
   "source": "Knuth (1993); knuth1993stanford"

@@ -1,7 +1,9 @@
 #' Degree and strength
 #'
-#' Counts edge endpoints at each node. With `weighted = TRUE`, sums edge
-#' weights instead (often called strength).
+#' `degree()` counts edge endpoints at each node; it is the same for
+#' weighted and unweighted networks. `strength()` sums the weights of those
+#' edges instead (Barrat et al. 2004). `degree(x, weighted = TRUE)` is the
+#' same as `strength(x)`.
 #'
 #' Parallel edges each count. In undirected networks a self-loop adds 2 to
 #' its node; in directed networks it adds 1 to out-degree and 1 to
@@ -24,20 +26,37 @@ degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FAL
   .Call(C_degree, engine_graph(x), code, isTRUE(loops), isTRUE(weighted))
 }
 
+#' @rdname degree
+#' @export
+strength <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
+  degree(x, mode = match.arg(mode), loops = loops, weighted = TRUE)
+}
+
 #' Betweenness centrality
 #'
 #' Shortest-path betweenness (Freeman 1977), computed with the algorithm of
 #' Brandes (2001) in parallel.
 #'
 #' Endpoints are excluded and, in undirected networks, each pair of nodes is
-#' counted once. Parallel edges count as distinct shortest paths. With
-#' `weighted = TRUE`, weights are treated as distances and must be positive.
+#' counted once. Parallel edges count as distinct shortest paths.
+#'
+#' By default, weighted networks use their weights and binary networks do
+#' not. Weights are read as the network declares them (see `weight_type` in
+#' [netframe()]): distances as given, or strengths converted to lengths
+#' 1/weight. They must be positive. The fastest exact algorithm is chosen
+#' automatically: breadth-first search for binary networks and for weights
+#' that are all equal, a bucket queue with exact integer arithmetic for
+#' small whole-number lengths (Dial 1969), and Dijkstra's algorithm
+#' otherwise.
 #' Normalized values divide by the number of pairs not involving the node:
 #' \eqn{(n-1)(n-2)} for directed and \eqn{(n-1)(n-2)/2} for undirected
 #' networks. These conventions match igraph and NetworkX.
 #'
 #' @inheritParams degree
-#' @param weighted Whether to use edge weights as distances.
+#' @param weighted Whether to use edge weights. `NULL` (the default) uses
+#'   them when the network has a weight column.
+#' @param weights_as Override the network's `weight_type`: `"distance"` or
+#'   `"strength"`.
 #' @param normalized Whether to normalize by the number of pairs.
 #' @param threads Number of threads; `0` uses all available cores.
 #'
@@ -51,10 +70,11 @@ degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FAL
 #'
 #' @return A numeric vector aligned with the rows of `x$nodes`.
 #' @export
-betweenness <- function(x, weighted = FALSE, normalized = FALSE, threads = 0L) {
+betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
+                        weights_as = NULL) {
   check_netframe(x)
-  if (weighted) require_weights(x)
-  .Call(C_betweenness, engine_graph(x), isTRUE(weighted), isTRUE(normalized),
+  w <- resolve_weighting(x, weighted, weights_as)
+  .Call(C_betweenness, engine_graph(x), w$weighted, w$code, isTRUE(normalized),
         as.integer(threads))
 }
 
@@ -65,7 +85,8 @@ betweenness <- function(x, weighted = FALSE, normalized = FALSE, threads = 0L) {
 #' and Mrvar (2001).
 #'
 #' Self-loops are ignored and parallel edges are counted once. In an
-#' undirected network every edge is treated as mutual, as in igraph.
+#' undirected network every edge is treated as mutual, as in igraph. Weights
+#' are ignored: the census is defined on binary ties.
 #'
 #' @inheritParams betweenness
 #'
@@ -85,6 +106,17 @@ triad_census <- function(x, threads = 0L) {
   names(out) <- c("003", "012", "102", "021D", "021U", "021C", "111D", "111U",
                   "030T", "030C", "201", "120D", "120U", "120C", "210", "300")
   out
+}
+
+# Decides whether and how a path-based measure uses weights.
+resolve_weighting <- function(x, weighted, weights_as) {
+  has <- !is.null(x$roles$weight)
+  weighted <- if (is.null(weighted)) has else isTRUE(weighted)
+  if (weighted) require_weights(x)
+  kind <- if (is.null(weights_as)) x$roles$weight_type else weights_as
+  if (is.null(kind)) kind <- "distance"
+  kind <- match.arg(kind, c("distance", "strength"))
+  list(weighted = weighted, code = if (kind == "strength") 1L else 0L)
 }
 
 require_weights <- function(x) {

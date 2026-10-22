@@ -62,6 +62,9 @@ igraph_values <- function(variant, g, meta) {
     betweenness_weighted = igraph::betweenness(g, directed = directed,
                                                weights = igraph::E(g)$weight,
                                                normalized = FALSE),
+    betweenness_weighted_strength = igraph::betweenness(g, directed = directed,
+                                                        weights = 1 / igraph::E(g)$weight,
+                                                        normalized = FALSE),
     triad_census = suppressWarnings(igraph::triad_census(g)),
     NULL
   )

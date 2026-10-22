@@ -38,6 +38,25 @@ impl Csr {
             .map(|w| &w[self.offsets[v]..self.offsets[v + 1]])
     }
 
+    /// Positions of `v`'s arcs in the arrays returned by
+    /// [`Csr::all_weights`] and in per-arc arrays derived from them.
+    #[inline]
+    pub fn arc_range(&self, v: usize) -> std::ops::Range<usize> {
+        self.offsets[v]..self.offsets[v + 1]
+    }
+
+    /// Weights of every arc, in CSR order, if the graph is weighted.
+    #[inline]
+    pub fn all_weights(&self) -> Option<&[f64]> {
+        self.weights.as_deref()
+    }
+
+    /// Total number of arcs stored.
+    #[inline]
+    pub fn arc_count(&self) -> usize {
+        self.targets.len()
+    }
+
     /// Number of arcs in `v`'s row (parallel arcs included).
     #[inline]
     pub fn degree(&self, v: usize) -> usize {

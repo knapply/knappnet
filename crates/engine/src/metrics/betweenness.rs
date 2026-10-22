@@ -17,10 +17,16 @@
 //! - Self-loops never lie on a shortest path and are ignored.
 //! - In undirected graphs each unordered pair is counted once (the raw sum is
 //!   halved), matching igraph and NetworkX.
-//! - Weights are distances and must be strictly positive. Two path lengths
-//!   are considered equal when they agree to a relative tolerance of 1e-10,
-//!   the same policy igraph uses, so floating-point rounding does not drop
-//!   tied shortest paths.
+//! - Without weights, every edge has length 1 and the search is plain
+//!   breadth-first search with exact integer hop counts.
+//! - With weights, they are distances by default or strengths (converted to
+//!   lengths 1/w) on request; see [`crate::weights`]. They must be strictly
+//!   positive. The cheapest exact algorithm is chosen automatically: uniform
+//!   weights reduce to breadth-first search, small integer lengths use
+//!   Dial's bucket queue with exact integer distances, and other lengths use
+//!   Dijkstra's algorithm. In the last case two path lengths are considered
+//!   equal when they agree to a relative tolerance of 1e-10, the policy
+//!   igraph uses, so floating-point rounding does not drop tied paths.
 //! - Normalization divides by the number of ordered (directed) or unordered
 //!   (undirected) pairs of nodes other than the focal node:
 //!   (n - 1)(n - 2) or (n - 1)(n - 2) / 2.
@@ -28,17 +34,22 @@
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::graph::Graph;
 use crate::parallel;
+use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
 
 const EPSILON: f64 = 1e-10;
 
 /// Options for [`betweenness`].
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BetweennessOptions {
-    /// Use edge weights as distances (they must be strictly positive).
+    /// Use edge weights (they must be strictly positive).
     pub weighted: bool,
+    /// Whether weights are distances (the default) or strengths.
+    pub weights_as: WeightKind,
+    /// Shortest-path algorithm; `Auto` picks the cheapest exact one.
+    pub algorithm: PathAlgorithm,
     /// Divide by the number of pairs not involving the node.
     pub normalized: bool,
     /// Worker threads; 0 uses all available cores.
@@ -50,26 +61,16 @@ pub struct BetweennessOptions {
 /// See the module documentation for conventions.
 pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
     let n = g.node_count();
-    if opts.weighted {
-        let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-        if let Some(edge) = w.iter().position(|&x| x <= 0.0) {
-            return Err(Error::NonPositiveWeight {
-                edge,
-                weight: w[edge],
-            });
-        }
-    }
+    let lengths = path_lengths(g, opts.weighted, opts.weights_as, opts.algorithm)?;
 
     let partials = parallel::for_each_item(
         n,
         opts.threads,
         || Workspace::new(n),
-        |ws, s| {
-            if opts.weighted {
-                ws.single_source_weighted(g, s);
-            } else {
-                ws.single_source_unweighted(g, s);
-            }
+        |ws, s| match &lengths {
+            Lengths::Uniform => ws.single_source_bfs(g, s),
+            Lengths::Integer(lens, max) => ws.single_source_dial(g, lens, *max, s),
+            Lengths::Real(lens) => ws.single_source_dijkstra(g, lens, s),
         },
     );
 
@@ -109,6 +110,8 @@ struct Workspace {
     delta: Vec<f64>,
     hops: Vec<u32>,
     dist: Vec<f64>,
+    idist: Vec<u64>,
+    buckets: Vec<Vec<u32>>,
     /// Position at which each node was settled; u32::MAX if not yet settled.
     rank: Vec<u32>,
     /// Nodes in the order they were settled (non-decreasing distance).
@@ -124,13 +127,15 @@ impl Workspace {
             delta: vec![0.0; n],
             hops: vec![u32::MAX; n],
             dist: vec![f64::INFINITY; n],
+            idist: vec![u64::MAX; n],
+            buckets: Vec::new(),
             rank: vec![u32::MAX; n],
             order: Vec::with_capacity(n),
             heap: BinaryHeap::new(),
         }
     }
 
-    fn single_source_unweighted(&mut self, g: &Graph, s: usize) {
+    fn single_source_bfs(&mut self, g: &Graph, s: usize) {
         let adj = g.out();
         self.order.clear();
         self.hops[s] = 0;
@@ -180,7 +185,88 @@ impl Workspace {
         }
     }
 
-    fn single_source_weighted(&mut self, g: &Graph, s: usize) {
+    /// Dial's algorithm: a circular array of buckets indexed by distance
+    /// modulo (max + 1). Distances are exact integers, so ties are exact.
+    fn single_source_dial(&mut self, g: &Graph, lens: &[u32], max: u32, s: usize) {
+        let adj = g.out();
+        let width = max as usize + 1;
+        if self.buckets.len() != width {
+            self.buckets = vec![Vec::new(); width];
+        }
+        self.order.clear();
+        self.idist[s] = 0;
+        self.sigma[s] = 1.0;
+        self.buckets[0].push(s as u32);
+        let mut pending = 1usize;
+        let mut touched: Vec<u32> = vec![s as u32];
+        let mut cur: u64 = 0;
+
+        while pending > 0 {
+            let slot = (cur % width as u64) as usize;
+            let v = match self.buckets[slot].pop() {
+                Some(v) => v as usize,
+                None => {
+                    cur += 1;
+                    continue;
+                }
+            };
+            pending -= 1;
+            // Stale entries: the node was settled or later found closer.
+            if self.rank[v] != u32::MAX || self.idist[v] != cur {
+                continue;
+            }
+            self.rank[v] = self.order.len() as u32;
+            self.order.push(v as u32);
+            for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
+                let w = w as usize;
+                if self.rank[w] != u32::MAX {
+                    continue;
+                }
+                let alt = cur + lens[k] as u64;
+                let d = self.idist[w];
+                if d == u64::MAX || alt < d {
+                    if d == u64::MAX {
+                        touched.push(w as u32);
+                    }
+                    self.idist[w] = alt;
+                    self.sigma[w] = self.sigma[v];
+                    self.buckets[(alt % width as u64) as usize].push(w as u32);
+                    pending += 1;
+                } else if alt == d {
+                    self.sigma[w] += self.sigma[v];
+                }
+            }
+        }
+
+        for i in (0..self.order.len()).rev() {
+            let v = self.order[i] as usize;
+            let (rank_v, dist_v) = (self.rank[v], self.idist[v]);
+            let mut dv = 0.0;
+            for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
+                let w = w as usize;
+                if self.rank[w] != u32::MAX
+                    && self.rank[w] > rank_v
+                    && dist_v + lens[k] as u64 == self.idist[w]
+                {
+                    dv += (1.0 + self.delta[w]) / self.sigma[w];
+                }
+            }
+            self.delta[v] = self.sigma[v] * dv;
+            if v != s {
+                self.bc[v] += self.delta[v];
+            }
+        }
+
+        for &v in &touched {
+            let v = v as usize;
+            self.idist[v] = u64::MAX;
+            self.sigma[v] = 0.0;
+            self.delta[v] = 0.0;
+            self.rank[v] = u32::MAX;
+        }
+    }
+
+    fn single_source_dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize) {
         let adj = g.out();
         self.order.clear();
         self.heap.clear();
@@ -201,13 +287,12 @@ impl Workspace {
             }
             self.rank[v] = self.order.len() as u32;
             self.order.push(v as u32);
-            let weights = adj.weights(v).expect("weighted graph");
-            for (&w, &len) in adj.neighbors(v).iter().zip(weights) {
+            for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
                 let w = w as usize;
                 if self.rank[w] != u32::MAX {
                     continue;
                 }
-                let alt = d + len;
+                let alt = d + lens[k];
                 let cur = self.dist[w];
                 if cur.is_infinite() {
                     touched.push(w as u32);
@@ -237,14 +322,12 @@ impl Workspace {
             let v = self.order[i] as usize;
             let rank_v = self.rank[v];
             let dist_v = self.dist[v];
-            let weights = adj.weights(v).expect("weighted graph");
             let mut dv = 0.0;
-            for (&w, &len) in adj.neighbors(v).iter().zip(weights) {
+            for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
                 let w = w as usize;
-                let dist_w = self.dist[w];
                 if self.rank[w] > rank_v
                     && self.rank[w] != u32::MAX
-                    && approx_eq(dist_v + len, dist_w)
+                    && approx_eq(dist_v + lens[k], self.dist[w])
                 {
                     dv += (1.0 + self.delta[w]) / self.sigma[w];
                 }
@@ -401,7 +484,43 @@ mod tests {
         };
         assert!(matches!(
             betweenness(&g, opts),
-            Err(Error::NonPositiveWeight { .. })
+            Err(crate::Error::NonPositiveWeight { .. })
         ));
+    }
+
+    #[test]
+    fn every_algorithm_agrees_on_integer_weights() {
+        let (s, t) = (&[0, 0, 1, 2, 1, 3, 4][..], &[1, 2, 3, 3, 4, 5, 5][..]);
+        let w = [2.0, 1.0, 1.0, 2.0, 3.0, 2.0, 1.0];
+        let g = Graph::from_edges(6, s, t, Some(&w), false).unwrap();
+        let run = |algorithm| {
+            let opts = BetweennessOptions {
+                weighted: true,
+                algorithm,
+                ..Default::default()
+            };
+            betweenness(&g, opts).unwrap()
+        };
+        let dial = run(PathAlgorithm::Dial);
+        assert_eq!(dial, run(PathAlgorithm::Dijkstra));
+        assert_eq!(dial, run(PathAlgorithm::Auto));
+    }
+
+    #[test]
+    fn strengths_are_inverted() {
+        // A strong tie 0-2 (strength 4, length 0.25) beats the path via 1.
+        let g =
+            Graph::from_edges(3, &[0, 1, 0], &[1, 2, 2], Some(&[1.0, 1.0, 4.0]), false).unwrap();
+        let strength = BetweennessOptions {
+            weighted: true,
+            weights_as: WeightKind::Strength,
+            ..Default::default()
+        };
+        assert_eq!(betweenness(&g, strength).unwrap(), vec![0.0, 0.0, 0.0]);
+        let distance = BetweennessOptions {
+            weighted: true,
+            ..Default::default()
+        };
+        assert_eq!(betweenness(&g, distance).unwrap(), vec![0.0, 1.0, 0.0]);
     }
 }

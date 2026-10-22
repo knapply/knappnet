@@ -46,7 +46,7 @@ def load() -> ctypes.CDLL:
                                f64p, ctypes.c_char_p, ctypes.c_size_t]
     lib.net_degree.restype = ctypes.c_int32
     lib.net_betweenness.argtypes = [handle, ctypes.c_int32, ctypes.c_int32, ctypes.c_int32,
-                                    f64p, ctypes.c_char_p, ctypes.c_size_t]
+                                    ctypes.c_int32, f64p, ctypes.c_char_p, ctypes.c_size_t]
     lib.net_betweenness.restype = ctypes.c_int32
     lib.net_triad_census.argtypes = [handle, ctypes.c_int32, f64p, ctypes.c_char_p,
                                      ctypes.c_size_t]
@@ -121,9 +121,11 @@ class Graph:
         code = {"out": 1, "in": 2, "all": 3}[mode]
         return self._call(self.lib.net_degree, self.n, code, int(loops), int(weighted))
 
-    def betweenness(self, weighted: bool = False, normalized: bool = False, threads: int = 0):
-        return self._call(self.lib.net_betweenness, self.n, int(weighted), int(normalized),
-                          threads)
+    def betweenness(self, weighted: bool = False, normalized: bool = False, threads: int = 0,
+                    weights_as: str = "distance"):
+        kind = {"distance": 0, "strength": 1}[weights_as]
+        return self._call(self.lib.net_betweenness, self.n, int(weighted), kind,
+                          int(normalized), threads)
 
     def triad_census(self, threads: int = 0):
         return self._call(self.lib.net_triad_census, 16, threads)
@@ -136,7 +138,8 @@ def run_variant(g: Graph, spec: dict) -> list[float]:
     if fn == "strength":
         return g.degree(spec["mode"], spec["loops"], weighted=True)
     if fn == "betweenness":
-        return g.betweenness(spec["weighted"], spec["normalized"])
+        return g.betweenness(spec["weighted"], spec["normalized"],
+                             weights_as=spec.get("weights_as", "distance"))
     if fn == "triad_census":
         return g.triad_census()
     raise ValueError(f"no engine binding for {fn!r}")

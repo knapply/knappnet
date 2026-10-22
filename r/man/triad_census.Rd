@@ -16,7 +16,8 @@ of Holland and Leinhardt (1976), using the algorithm of Batagelj and Mrvar
 }
 \details{
 Self-loops are ignored and parallel edges are counted once. In an undirected
-network every edge is treated as mutual, as in igraph.
+network every edge is treated as mutual, as in igraph. Weights are ignored:
+the census is defined on binary ties.
 }
 \references{
 Holland, P. W., & Leinhardt, S. (1976). Local structure in social networks.

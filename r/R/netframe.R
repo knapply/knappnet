@@ -12,7 +12,16 @@
 #' @param from,to Columns of `edges` holding the endpoints, by name or
 #'   position.
 #' @param id Column of `nodes` holding node identifiers, by name or position.
-#' @param weight Optional column of `edges` holding edge weights.
+#' @param weight Optional column of `edges` holding edge weights. Without
+#'   one, the network is binary: an edge either exists or it does not, and
+#'   algorithms use their faster unweighted forms.
+#' @param weight_type What the weights mean. `"distance"` (the default, and
+#'   the convention of igraph and NetworkX) means larger weights keep nodes
+#'   farther apart, as with travel time, cost, or latency. `"strength"` means
+#'   larger weights bring nodes closer, as with contact frequency or tie
+#'   intensity; path-based measures then use 1/weight as the length (Newman
+#'   2001; Opsahl, Agneessens, and Skvoretz 2010). Measures that add up
+#'   weights, such as strength, use them as given either way.
 #' @param graph A named list of network-level attributes (for example a
 #'   title or data source), carried through conversions and file formats
 #'   that support them.
@@ -20,7 +29,9 @@
 #' @return An object of class `netframe`.
 #' @export
 netframe <- function(edges, nodes = NULL, directed = TRUE,
-                     from = 1L, to = 2L, id = 1L, weight = NULL, graph = list()) {
+                     from = 1L, to = 2L, id = 1L, weight = NULL,
+                     weight_type = c("distance", "strength"), graph = list()) {
+  weight_type <- match.arg(weight_type)
   if (!is.data.frame(edges)) {
     stop("`edges` must be a data frame.", call. = FALSE)
   }
@@ -71,7 +82,8 @@ netframe <- function(edges, nodes = NULL, directed = TRUE,
       nodes = nodes,
       edges = edges,
       directed = isTRUE(directed),
-      roles = list(id = id, from = from, to = to, weight = weight),
+      roles = list(id = id, from = from, to = to, weight = weight,
+                   weight_type = if (!is.null(weight)) weight_type),
       graph = as.list(graph),
       index = list(src = src - 1L, tgt = tgt - 1L),
       cache = new.env(parent = emptyenv())
@@ -86,7 +98,8 @@ print.netframe <- function(x, ...) {
     "<netframe> %s network with %d nodes and %d edges%s\n",
     if (x$directed) "directed" else "undirected",
     nrow(x$nodes), nrow(x$edges),
-    if (is.null(x$roles$weight)) "" else sprintf(" (weights: `%s`)", x$roles$weight)
+    if (is.null(x$roles$weight)) ", unweighted"
+    else sprintf(", weighted by `%s` (%ss)", x$roles$weight, x$roles$weight_type)
   ))
   invisible(x)
 }

@@ -14,6 +14,8 @@ where each source is used. Full citations are in
 | Betweenness variants | Brandes 2008 (`brandes2008variants`) | Successor-based accumulation without predecessor lists; future variants (endpoints, stress, load). |
 | Triad types | Holland and Leinhardt 1976 (`holland1976local`) | The 16 triad types and MAN labels. |
 | Triad census algorithm | Batagelj and Mrvar 2001 (`batagelj2001subquadratic`) | Subquadratic census and arc-code table used by `metrics/triad.rs`. |
+| Shortest paths | Dijkstra 1959 (`dijkstra1959note`), Dial 1969 (`dial1969algorithm`) | Weighted searches; Dial's bucket queue for small integer lengths. |
+| Weighted networks | Newman 2001 (`newman2001scientific`), Opsahl, Agneessens, and Skvoretz 2010 (`opsahl2010node`), Barrat et al. 2004 (`barrat2004architecture`) | Strength weights as lengths 1/w; node strength. |
 | Random testing | Steele, Lea, and Flood 2014 (`steele2014fast`) | SplitMix64 generator in property tests. |
 | Sparse linear algebra | Kepner et al. 2016 (`kepner2016mathematical`), Davis 2019 (`davis2019algorithm`) | Semiring formulation guiding the planned kernel layer. |
 | Traversal | Beamer, Asanović, and Patterson 2012 (`beamer2012direction`) | Direction-optimizing search planned for BFS-based measures. |

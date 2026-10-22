@@ -43,6 +43,11 @@ def compute(variant: str, fx) -> list[float] | None:
     if variant == "strength_all":
         d = dict(g.degree(weight="weight"))
         return [d[v] for v in nodes]
+    if variant == "betweenness_weighted_strength":
+        for _, _, d in g.edges(data=True):
+            d["length"] = 1.0 / d["weight"]
+        b = nx.betweenness_centrality(g, normalized=False, weight="length")
+        return [b[v] for v in nodes]
     if variant in ("betweenness", "betweenness_normalized", "betweenness_weighted"):
         b = nx.betweenness_centrality(
             g,

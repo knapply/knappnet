@@ -8,6 +8,7 @@ export(to_tbl_graph)
 export(read_network)
 export(write_network)
 export(degree)
+export(strength)
 export(betweenness)
 export(triad_census)
 

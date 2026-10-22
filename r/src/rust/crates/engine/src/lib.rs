@@ -8,14 +8,17 @@
 //! packages. Every algorithm documents its conventions and cites its source
 //! in the project's `docs/references.bib`.
 
+pub mod bitset;
 pub mod error;
 pub mod graph;
 pub mod io;
 pub mod metrics;
 pub mod parallel;
+pub mod weights;
 
 pub use error::{Error, Result};
 pub use graph::Graph;
 pub use metrics::betweenness::{betweenness, BetweennessOptions};
 pub use metrics::degree::{degree, strength, DegreeMode};
 pub use metrics::triad::{triad_census, TRIAD_NAMES};
+pub use weights::{PathAlgorithm, WeightKind};

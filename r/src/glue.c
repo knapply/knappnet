@@ -72,12 +72,13 @@ SEXP C_degree(SEXP ptr, SEXP mode, SEXP loops, SEXP weighted) {
   return out;
 }
 
-SEXP C_betweenness(SEXP ptr, SEXP weighted, SEXP normalized, SEXP threads) {
+SEXP C_betweenness(SEXP ptr, SEXP weighted, SEXP weights_as, SEXP normalized, SEXP threads) {
   GraphHandle *h = graph_from_ptr(ptr);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)net_graph_node_count(h)));
   char err[ERR_LEN] = {0};
-  int status = net_betweenness(h, Rf_asLogical(weighted), Rf_asLogical(normalized),
-                               Rf_asInteger(threads), REAL(out), err, ERR_LEN);
+  int status = net_betweenness(h, Rf_asLogical(weighted), Rf_asInteger(weights_as),
+                               Rf_asLogical(normalized), Rf_asInteger(threads), REAL(out),
+                               err, ERR_LEN);
   if (status != 0) {
     UNPROTECT(1);
     Rf_error("%s", err);

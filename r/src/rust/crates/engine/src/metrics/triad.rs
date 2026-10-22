@@ -14,11 +14,15 @@
 //! - An undirected graph is treated as a directed graph in which every edge
 //!   is mutual, as in igraph. Only types 003, 102, 201, and 300 can then be
 //!   non-zero.
+//! - Weights are ignored: the census is defined on binary ties. Dense
+//!   networks use a bit matrix for constant-time arc tests
+//!   ([`crate::bitset`]); sparse networks use sorted adjacency lists.
 //!
 //! Output order is the standard MAN labeling:
 //! 003, 012, 102, 021D, 021U, 021C, 111D, 111U,
 //! 030T, 030C, 201, 120D, 120U, 120C, 210, 300.
 
+use crate::bitset::BitMatrix;
 use crate::graph::Graph;
 use crate::parallel;
 
@@ -43,10 +47,12 @@ struct Simple {
     succ: Vec<Vec<u32>>,
     /// Union of in- and out-neighbors of each node.
     nbrs: Vec<Vec<u32>>,
+    /// Arc membership as bits, for dense networks.
+    bits: Option<BitMatrix>,
 }
 
 impl Simple {
-    fn new(g: &Graph) -> Simple {
+    fn new(g: &Graph, use_bits: Option<bool>) -> Simple {
         let n = g.node_count();
         let clean = |v: usize, xs: &[u32]| -> Vec<u32> {
             let mut out: Vec<u32> = xs.iter().copied().filter(|&x| x as usize != v).collect();
@@ -64,17 +70,35 @@ impl Simple {
         } else {
             succ.clone()
         };
-        Simple { succ, nbrs }
+        let arcs: usize = succ.iter().map(Vec::len).sum();
+        let bits = use_bits
+            .unwrap_or_else(|| BitMatrix::worthwhile(n, arcs))
+            .then(|| {
+                let mut m = BitMatrix::new(n);
+                for (v, row) in succ.iter().enumerate() {
+                    for &w in row {
+                        m.set(v, w as usize);
+                    }
+                }
+                m
+            });
+        Simple { succ, nbrs, bits }
     }
 
     #[inline]
     fn arc(&self, a: usize, b: u32) -> bool {
-        self.succ[a].binary_search(&b).is_ok()
+        match &self.bits {
+            Some(m) => m.get(a, b as usize),
+            None => self.succ[a].binary_search(&b).is_ok(),
+        }
     }
 
     #[inline]
     fn adjacent(&self, a: usize, b: u32) -> bool {
-        self.nbrs[a].binary_search(&b).is_ok()
+        match &self.bits {
+            Some(m) => m.get(a, b as usize) || m.get(b as usize, a),
+            None => self.nbrs[a].binary_search(&b).is_ok(),
+        }
     }
 }
 
@@ -107,8 +131,12 @@ fn merge_union(a: &[u32], b: &[u32]) -> Vec<u32> {
 /// is computed in 128-bit arithmetic and returned as f64, which is exact up
 /// to 2^53 and correctly rounded beyond that.
 pub fn triad_census(g: &Graph, threads: usize) -> [f64; 16] {
+    census_impl(g, threads, None)
+}
+
+fn census_impl(g: &Graph, threads: usize, use_bits: Option<bool>) -> [f64; 16] {
     let n = g.node_count();
-    let s = Simple::new(g);
+    let s = Simple::new(g, use_bits);
 
     let partials = parallel::for_each_item(
         n,
@@ -219,6 +247,28 @@ mod tests {
         assert_eq!(c.iter().sum::<f64>(), 35.0);
         let simple = census(7, &[0, 1, 2, 3, 4, 4, 5], &[1, 2, 0, 4, 0, 5, 1], true);
         assert_eq!(c, simple);
+    }
+
+    #[test]
+    fn bit_matrix_and_lists_agree() {
+        // A dense random digraph, counted both ways.
+        let mut state = 12345u64;
+        let mut next = || {
+            state = state
+                .wrapping_mul(6364136223846793005)
+                .wrapping_add(1442695040888963407);
+            (state >> 33) % 40
+        };
+        let (mut s, mut t) = (Vec::new(), Vec::new());
+        for _ in 0..600 {
+            s.push(next() as i64);
+            t.push(next() as i64);
+        }
+        let g = Graph::from_edges(40, &s, &t, None, true).unwrap();
+        assert_eq!(
+            census_impl(&g, 1, Some(true)),
+            census_impl(&g, 1, Some(false))
+        );
     }
 
     #[test]
