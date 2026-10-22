@@ -101,6 +101,8 @@ sna_values <- function(variant, m, meta) {
         v <- sna::evcent(m, gmode = "graph", diag = FALSE, use.eigen = TRUE)
       }
       v <- Re(v)
+      # sna returns NA where the leading eigenvector is undefined.
+      if (anyNA(v) || all(v == 0)) return(NULL)
       if (sum(v) < 0) v <- -v
       v / sqrt(sum(v^2))
     },

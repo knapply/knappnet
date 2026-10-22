@@ -2,3 +2,4 @@
 ^src/rust/\.cargo$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^cran-comments\.md$

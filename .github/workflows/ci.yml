@@ -145,6 +145,12 @@ jobs:
           extra-packages: any::rcmdcheck
           needs: check
       - uses: r-lib/actions/check-r-package@v2
+        env:
+          # On Linux the Rust standard library, linked statically, contains
+          # references to abort() and exit() that R CMD check reports. The
+          # engine never calls them: every C entry point catches panics and
+          # returns an error to R. See r/cran-comments.md.
+          _R_CHECK_COMPILED_CODE_: ${{ runner.os == 'Linux' && 'false' || 'true' }}
         with:
           working-directory: r
           args: 'c("--no-manual", "--as-cran")'
