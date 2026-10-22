@@ -552,7 +552,11 @@ handles 64 nodes per machine word.
 Most measures repeat independent work for every node (one shortest-path
 search per source, one neighborhood per node), which the engine spreads
 over all cores; `threads` limits it. Partial results are combined in a
-fixed order, so the output is identical with 1 thread or 64. Randomized
+fixed order, so a given thread count reproduces its output bit for bit.
+Counts (triads, paths, components) are identical with any number of
+threads; sums of floating-point numbers can differ in the last few bits
+between thread counts, because addition in a different order rounds
+differently, always far inside the validation tolerances. Randomized
 methods (Louvain, QAP permutations) use a counter-based random number
 generator (Philox; Salmon et al. 2011): every task gets its own stream,
 computed from the seed and the task's number, so results do not depend on
