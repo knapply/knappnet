@@ -1,0 +1,91 @@
+# Runs on every push and pull request. Linux only, to keep CI minutes low
+# while the repository is private. The full platform matrix is in
+# r-check.yml and runs on demand and for releases.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Lint
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Test
+        run: cargo test --workspace
+      - name: C ABI
+        run: ./tools/check_c_abi.sh
+      - name: R sources in sync
+        run: python3 tools/sync_r_sources.py --check
+      - name: Rename still works
+        run: python3 tools/rename.py --self-test
+
+  validation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install oracles
+        run: |
+          python3 -m pip install networkx pyyaml
+          Rscript -e 'install.packages(c("igraph", "sna", "yaml"))'
+      - name: Fixtures are reproducible
+        run: |
+          python3 validation/fixtures.py
+          git diff --exit-code validation/fixtures
+      - name: Regenerate golden values
+        run: |
+          python3 validation/oracles/definition_oracle.py
+          python3 validation/oracles/networkx_oracle.py
+          Rscript validation/oracles/r_oracles.R
+      - name: Compare
+        run: python3 validation/compare.py --strict
+      - name: Upload report and golden values
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation
+          path: |
+            validation/REPORT.md
+            validation/golden
+
+  r-package:
+    runs-on: ubuntu-latest
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          extra-packages: any::rcmdcheck
+          needs: check
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: r
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"warning"'

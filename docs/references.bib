@@ -1,0 +1,340 @@
+% References for algorithms, conventions, and software that informed this
+% project. Every algorithm implementation cites its entry here in a source
+% comment, and docs/references.md explains how each one is used.
+
+% ---------------------------------------------------------------------------
+% Algorithms and measures
+% ---------------------------------------------------------------------------
+
+@article{freeman1977set,
+  author  = {Freeman, Linton C.},
+  title   = {A Set of Measures of Centrality Based on Betweenness},
+  journal = {Sociometry},
+  year    = {1977},
+  volume  = {40},
+  number  = {1},
+  pages   = {35--41},
+  doi     = {10.2307/3033543}
+}
+
+@article{freeman1978centrality,
+  author  = {Freeman, Linton C.},
+  title   = {Centrality in Social Networks: Conceptual Clarification},
+  journal = {Social Networks},
+  year    = {1978},
+  volume  = {1},
+  number  = {3},
+  pages   = {215--239},
+  doi     = {10.1016/0378-8733(78)90021-7}
+}
+
+@article{brandes2001faster,
+  author  = {Brandes, Ulrik},
+  title   = {A Faster Algorithm for Betweenness Centrality},
+  journal = {Journal of Mathematical Sociology},
+  year    = {2001},
+  volume  = {25},
+  number  = {2},
+  pages   = {163--177},
+  doi     = {10.1080/0022250X.2001.9990249}
+}
+
+@article{brandes2008variants,
+  author  = {Brandes, Ulrik},
+  title   = {On Variants of Shortest-Path Betweenness Centrality and Their Generic Computation},
+  journal = {Social Networks},
+  year    = {2008},
+  volume  = {30},
+  number  = {2},
+  pages   = {136--145},
+  doi     = {10.1016/j.socnet.2007.11.001}
+}
+
+@article{holland1976local,
+  author  = {Holland, Paul W. and Leinhardt, Samuel},
+  title   = {Local Structure in Social Networks},
+  journal = {Sociological Methodology},
+  year    = {1976},
+  volume  = {7},
+  pages   = {1--45},
+  doi     = {10.2307/270703}
+}
+
+@article{batagelj2001subquadratic,
+  author  = {Batagelj, Vladimir and Mrvar, Andrej},
+  title   = {A Subquadratic Triad Census Algorithm for Large Sparse Networks with Small Maximum Degree},
+  journal = {Social Networks},
+  year    = {2001},
+  volume  = {23},
+  number  = {3},
+  pages   = {237--243},
+  doi     = {10.1016/S0378-8733(01)00035-1}
+}
+
+@inproceedings{beamer2012direction,
+  author    = {Beamer, Scott and Asanovi{\'c}, Krste and Patterson, David},
+  title     = {Direction-Optimizing Breadth-First Search},
+  booktitle = {Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis (SC '12)},
+  year      = {2012},
+  doi       = {10.1109/SC.2012.50}
+}
+
+@inproceedings{kepner2016mathematical,
+  author    = {Kepner, Jeremy and Aaltonen, Peter and Bader, David and Bulu{\c{c}}, Ayd{\i}n and Franchetti, Franz and Gilbert, John and Hutchison, Dylan and Kumar, Manoj and Lumsdaine, Andrew and Meyerhenke, Henning and McMillan, Scott and Moreira, Jose and Owens, John D. and Yang, Carl and Zalewski, Marcin and Mattson, Timothy},
+  title     = {Mathematical Foundations of the {GraphBLAS}},
+  booktitle = {2016 IEEE High Performance Extreme Computing Conference (HPEC)},
+  year      = {2016},
+  doi       = {10.1109/HPEC.2016.7761646}
+}
+
+@article{davis2019algorithm,
+  author  = {Davis, Timothy A.},
+  title   = {Algorithm 1000: {SuiteSparse:GraphBLAS}: Graph Algorithms in the Language of Sparse Linear Algebra},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2019},
+  volume  = {45},
+  number  = {4},
+  pages   = {44:1--44:25},
+  doi     = {10.1145/3322125}
+}
+
+@article{krackhardt1988predicting,
+  author  = {Krackhardt, David},
+  title   = {Predicting with Networks: Nonparametric Multiple Regression Analysis of Dyadic Data},
+  journal = {Social Networks},
+  year    = {1988},
+  volume  = {10},
+  number  = {4},
+  pages   = {359--381},
+  doi     = {10.1016/0378-8733(88)90004-4}
+}
+
+@article{dekker2007sensitivity,
+  author  = {Dekker, David and Krackhardt, David and Snijders, Tom A. B.},
+  title   = {Sensitivity of {MRQAP} Tests to Collinearity and Autocorrelation Conditions},
+  journal = {Psychometrika},
+  year    = {2007},
+  volume  = {72},
+  number  = {4},
+  pages   = {563--581},
+  doi     = {10.1007/s11336-007-9016-1}
+}
+
+@article{snijders2006new,
+  author  = {Snijders, Tom A. B. and Pattison, Philippa E. and Robins, Garry L. and Handcock, Mark S.},
+  title   = {New Specifications for Exponential Random Graph Models},
+  journal = {Sociological Methodology},
+  year    = {2006},
+  volume  = {36},
+  number  = {1},
+  pages   = {99--153},
+  doi     = {10.1111/j.1467-9531.2006.00176.x}
+}
+
+@article{snijders2001statistical,
+  author  = {Snijders, Tom A. B.},
+  title   = {The Statistical Evaluation of Social Network Dynamics},
+  journal = {Sociological Methodology},
+  year    = {2001},
+  volume  = {31},
+  number  = {1},
+  pages   = {361--395},
+  doi     = {10.1111/0081-1750.00099}
+}
+
+% ---------------------------------------------------------------------------
+% Reference software (used as validation oracles or design influences)
+% ---------------------------------------------------------------------------
+
+@article{csardi2006igraph,
+  author  = {Csardi, Gabor and Nepusz, Tamas},
+  title   = {The igraph Software Package for Complex Network Research},
+  journal = {InterJournal, Complex Systems},
+  year    = {2006},
+  pages   = {1695}
+}
+
+@article{butts2008sna,
+  author  = {Butts, Carter T.},
+  title   = {Social Network Analysis with {sna}},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {6},
+  pages   = {1--51},
+  doi     = {10.18637/jss.v024.i06}
+}
+
+@article{butts2008network,
+  author  = {Butts, Carter T.},
+  title   = {network: A Package for Managing Relational Data in {R}},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {2},
+  pages   = {1--36},
+  doi     = {10.18637/jss.v024.i02}
+}
+
+@inproceedings{hagberg2008exploring,
+  author    = {Hagberg, Aric A. and Schult, Daniel A. and Swart, Pieter J.},
+  title     = {Exploring Network Structure, Dynamics, and Function using {NetworkX}},
+  booktitle = {Proceedings of the 7th Python in Science Conference (SciPy 2008)},
+  year      = {2008},
+  pages     = {11--15}
+}
+
+@article{hunter2008ergm,
+  author  = {Hunter, David R. and Handcock, Mark S. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
+  title   = {{ergm}: A Package to Fit, Simulate and Diagnose Exponential-Family Models for Networks},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {3},
+  pages   = {1--29},
+  doi     = {10.18637/jss.v024.i03}
+}
+
+@article{handcock2008statnet,
+  author  = {Handcock, Mark S. and Hunter, David R. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
+  title   = {{statnet}: Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {1},
+  pages   = {1--11},
+  doi     = {10.18637/jss.v024.i01}
+}
+
+@article{batagelj1998pajek,
+  author  = {Batagelj, Vladimir and Mrvar, Andrej},
+  title   = {Pajek: Program for Large Network Analysis},
+  journal = {Connections},
+  year    = {1998},
+  volume  = {21},
+  number  = {2},
+  pages   = {47--57}
+}
+
+@misc{borgatti2002ucinet,
+  author       = {Borgatti, Stephen P. and Everett, Martin G. and Freeman, Linton C.},
+  title        = {{UCINET} for Windows: Software for Social Network Analysis},
+  howpublished = {Analytic Technologies, Harvard, MA},
+  year         = {2002}
+}
+
+@inproceedings{bastian2009gephi,
+  author    = {Bastian, Mathieu and Heymann, Sebastien and Jacomy, Mathieu},
+  title     = {Gephi: An Open Source Software for Exploring and Manipulating Networks},
+  booktitle = {Proceedings of the International AAAI Conference on Web and Social Media},
+  year      = {2009},
+  volume    = {3},
+  number    = {1},
+  pages     = {361--362},
+  doi       = {10.1609/icwsm.v3i1.13937}
+}
+
+@misc{peixoto2014graphtool,
+  author       = {Peixoto, Tiago P.},
+  title        = {The graph-tool python library},
+  howpublished = {figshare},
+  year         = {2014},
+  doi          = {10.6084/m9.figshare.1164194}
+}
+
+@article{staudt2016networkit,
+  author  = {Staudt, Christian L. and Sazonovs, Aleksejs and Meyerhenke, Henning},
+  title   = {{NetworKit}: A Tool Suite for Large-Scale Complex Network Analysis},
+  journal = {Network Science},
+  year    = {2016},
+  volume  = {4},
+  number  = {4},
+  pages   = {508--530},
+  doi     = {10.1017/nws.2016.20}
+}
+
+@misc{ooms_hellorust,
+  author       = {Ooms, Jeroen},
+  title        = {hellorust: Minimal Example of Calling Rust from {R}},
+  howpublished = {\url{https://github.com/r-rust/hellorust}},
+  note         = {Pattern for linking a Rust static library into an R package through C}
+}
+
+@misc{arrow_c_data_interface,
+  author       = {{Apache Arrow Developers}},
+  title        = {The {Arrow} {C} Data Interface},
+  howpublished = {\url{https://arrow.apache.org/docs/format/CDataInterface.html}}
+}
+
+@inproceedings{steele2014fast,
+  author    = {Steele, Guy L., Jr. and Lea, Doug and Flood, Christine H.},
+  title     = {Fast Splittable Pseudorandom Number Generators},
+  booktitle = {Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages \& Applications (OOPSLA '14)},
+  year      = {2014},
+  pages     = {453--472},
+  doi       = {10.1145/2660193.2660195}
+}
+
+% ---------------------------------------------------------------------------
+% Datasets used as validation fixtures
+% ---------------------------------------------------------------------------
+
+@article{zachary1977information,
+  author  = {Zachary, Wayne W.},
+  title   = {An Information Flow Model for Conflict and Fission in Small Groups},
+  journal = {Journal of Anthropological Research},
+  year    = {1977},
+  volume  = {33},
+  number  = {4},
+  pages   = {452--473},
+  doi     = {10.1086/jar.33.4.3629752}
+}
+
+@article{breiger1986cumulated,
+  author  = {Breiger, Ronald L. and Pattison, Philippa E.},
+  title   = {Cumulated Social Roles: The Duality of Persons and Their Algebras},
+  journal = {Social Networks},
+  year    = {1986},
+  volume  = {8},
+  number  = {3},
+  pages   = {215--256},
+  doi     = {10.1016/0378-8733(86)90006-7}
+}
+
+@article{padgett1993robust,
+  author  = {Padgett, John F. and Ansell, Christopher K.},
+  title   = {Robust Action and the Rise of the {Medici}, 1400--1434},
+  journal = {American Journal of Sociology},
+  year    = {1993},
+  volume  = {98},
+  number  = {6},
+  pages   = {1259--1319},
+  doi     = {10.1086/230190}
+}
+
+@book{davis1941deep,
+  author    = {Davis, Allison and Gardner, Burleigh B. and Gardner, Mary R.},
+  title     = {Deep South: A Social Anthropological Study of Caste and Class},
+  publisher = {University of Chicago Press},
+  address   = {Chicago},
+  year      = {1941}
+}
+
+@article{krackhardt1990assessing,
+  author  = {Krackhardt, David},
+  title   = {Assessing the Political Landscape: Structure, Cognition, and Power in Organizations},
+  journal = {Administrative Science Quarterly},
+  year    = {1990},
+  volume  = {35},
+  number  = {2},
+  pages   = {342--369},
+  doi     = {10.2307/2393394}
+}
+
+@book{knuth1993stanford,
+  author    = {Knuth, Donald E.},
+  title     = {The {Stanford GraphBase}: A Platform for Combinatorial Computing},
+  publisher = {Addison-Wesley},
+  address   = {Reading, MA},
+  year      = {1993}
+}

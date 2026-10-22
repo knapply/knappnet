@@ -1,0 +1,6 @@
+src/rust/target/
+src/rust/.cargo/
+src/*.o
+src/*.so
+src/*.dll
+.Rproj.user/

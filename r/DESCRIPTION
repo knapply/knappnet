@@ -1,0 +1,24 @@
+Package: knappnet
+Title: Fast, Validated Network Analysis
+Version: 0.0.1
+Authors@R:
+    person("Conway", "Knapp", email = "knapply@users.noreply.github.com",
+           role = c("aut", "cre", "cph"))
+Description: Network analysis on networks represented as a pair of data
+    frames, one for nodes and one for edges. Algorithms run in a compiled,
+    multithreaded engine and every measure is validated against established
+    reference implementations. Betweenness uses the algorithm of Brandes
+    (2001) <doi:10.1080/0022250X.2001.9990249> and the triad census uses the
+    algorithm of Batagelj and Mrvar (2001)
+    <doi:10.1016/S0378-8733(01)00035-1>.
+License: MIT + file LICENSE
+URL: https://github.com/knapply/knappnet
+BugReports: https://github.com/knapply/knappnet/issues
+Encoding: UTF-8
+Depends: R (>= 4.1)
+Suggests:
+    testthat (>= 3.0.0),
+    igraph,
+    sna
+Config/testthat/edition: 3
+SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.70), GNU make

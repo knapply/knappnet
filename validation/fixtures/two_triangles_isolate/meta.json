@@ -1,0 +1,10 @@
+{
+  "n": 7,
+  "directed": false,
+  "weighted": false,
+  "tags": [
+    "disconnected",
+    "edge_case"
+  ],
+  "source": "synthetic"
+}

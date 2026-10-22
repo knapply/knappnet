@@ -1,0 +1,9 @@
+{
+  "n": 80,
+  "directed": false,
+  "weighted": false,
+  "tags": [
+    "disconnected"
+  ],
+  "source": "G(n=80, p=0.04), seed 13"
+}

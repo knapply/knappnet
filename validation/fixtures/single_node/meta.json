@@ -1,0 +1,9 @@
+{
+  "n": 1,
+  "directed": false,
+  "weighted": false,
+  "tags": [
+    "edge_case"
+  ],
+  "source": "synthetic"
+}

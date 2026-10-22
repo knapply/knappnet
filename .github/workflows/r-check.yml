@@ -1,0 +1,45 @@
+# Full R CMD check across platforms. Runs on demand and for release tags.
+# macOS and Windows runners use CI minutes faster, so this is not run on
+# every push.
+name: R CMD check (all platforms)
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+jobs:
+  check:
+    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} (R ${{ matrix.r }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, r: release}
+          - {os: ubuntu-latest, r: devel}
+          - {os: ubuntu-latest, r: oldrel-1}
+          - {os: macos-latest, r: release}
+          - {os: windows-latest, r: release}
+    env:
+      _R_CHECK_FORCE_SUGGESTS_: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Add the Windows GNU target
+        if: runner.os == 'Windows'
+        run: rustup target add x86_64-pc-windows-gnu
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          extra-packages: any::rcmdcheck
+          needs: check
+      - uses: r-lib/actions/check-r-package@v2
+        with:
+          working-directory: r
+          args: 'c("--no-manual", "--as-cran")'
+          error-on: '"warning"'

@@ -1,0 +1,8 @@
+useDynLib(knappnet, .registration = TRUE)
+
+export(netframe)
+export(degree)
+export(betweenness)
+export(triad_census)
+
+S3method(print, netframe)

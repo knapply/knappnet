@@ -1,0 +1,7 @@
+{
+  "n": 40,
+  "directed": true,
+  "weighted": false,
+  "tags": [],
+  "source": "G(n=40, p=0.5), seed 12"
+}

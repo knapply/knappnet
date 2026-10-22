@@ -1,0 +1,35 @@
+# Windows build. R's toolchain (Rtools) uses the GNU ABI, so the engine is
+# compiled for the matching *-pc-windows-gnu (or gnullvm) target.
+
+ifeq ($(R_ARCH),/aarch64)
+  RUST_TARGET = aarch64-pc-windows-gnullvm
+else
+  RUST_TARGET = x86_64-pc-windows-gnu
+endif
+
+TARGET_DIR = $(CURDIR)/rust/target
+LIBDIR = $(TARGET_DIR)/$(RUST_TARGET)/release
+STATLIB = $(LIBDIR)/libcapi.a
+
+PKG_CPPFLAGS = -I.
+# Link the static archive by path rather than -lcapi, which could resolve to
+# the import library of the DLL that the build also emits.
+PKG_LIBS = $(STATLIB) -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+
+all: $(SHLIB) cleanup
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	@echo "rustc version: $$(rustc --version)"
+	@echo "cargo version: $$(cargo --version)"
+	export CARGO_HOME="$(CURDIR)/rust/.cargo" && \
+	  cargo build --release --offline --locked -j 2 -p capi --lib \
+	    --target=$(RUST_TARGET) \
+	    --manifest-path="$(CURDIR)/rust/Cargo.toml" --target-dir="$(TARGET_DIR)"
+
+cleanup: $(SHLIB)
+	rm -Rf "$(LIBDIR)/build" "$(LIBDIR)/deps" "$(LIBDIR)/incremental" \
+	  "$(CURDIR)/rust/.cargo"
+
+.PHONY: all cleanup

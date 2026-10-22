@@ -1,0 +1,28 @@
+# Builds the Rust engine as a static library and links it into the package.
+# The engine has no external crates, so the build never touches the network.
+
+TARGET_DIR = $(CURDIR)/rust/target
+LIBDIR = $(TARGET_DIR)/release
+STATLIB = $(LIBDIR)/libcapi.a
+
+PKG_CPPFLAGS = -I.
+# Link the static archive by path: the build also emits a shared library,
+# which -lcapi would pick up instead.
+PKG_LIBS = $(STATLIB) -lpthread -ldl -lm
+
+all: $(SHLIB) cleanup
+
+$(SHLIB): $(STATLIB)
+
+$(STATLIB):
+	@echo "rustc version: $$(rustc --version)"
+	@echo "cargo version: $$(cargo --version)"
+	export CARGO_HOME="$(CURDIR)/rust/.cargo" && \
+	  cargo build --release --offline --locked -j 2 -p capi --lib \
+	    --manifest-path="$(CURDIR)/rust/Cargo.toml" --target-dir="$(TARGET_DIR)"
+
+cleanup: $(SHLIB)
+	rm -Rf "$(TARGET_DIR)/release/build" "$(TARGET_DIR)/release/deps" \
+	  "$(TARGET_DIR)/release/incremental" "$(CURDIR)/rust/.cargo"
+
+.PHONY: all cleanup

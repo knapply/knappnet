@@ -1,0 +1,12 @@
+[package]
+name = "engine"
+description = "Core graph storage and network analysis algorithms"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+# The engine deliberately has no dependencies. This keeps CRAN builds simple
+# (nothing to vendor) and keeps every algorithm auditable in one place.
+[dependencies]

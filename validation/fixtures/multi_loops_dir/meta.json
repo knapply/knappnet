@@ -1,0 +1,10 @@
+{
+  "n": 20,
+  "directed": true,
+  "weighted": false,
+  "tags": [
+    "loops",
+    "multi_edges"
+  ],
+  "source": "random multigraph n=20, m=72, seed 17"
+}
