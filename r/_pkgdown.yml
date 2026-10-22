@@ -137,13 +137,22 @@ reference:
   - structural_equivalence
   - concor
 
-# INTEGRATION (ego and two-mode networks).
-# - title: Ego networks
-#   contents:
-#   - <new topics>
-# - title: Two-mode networks
-#   contents:
-#   - <new topics>
+- title: Ego networks
+  desc: >-
+    Each node's neighborhood as a network of its own, and egocentric
+    measures computed for every node at once.
+  contents:
+  - ego_network
+  - ego_summary
+
+- title: Two-mode networks
+  desc: >-
+    People-by-event and people-by-organization data: construction,
+    projections, and two-mode centrality.
+  contents:
+  - twomode
+  - project
+  - twomode_degree
 
 - title: Topography
   desc: Measures of the network as a whole.

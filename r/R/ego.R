@@ -72,7 +72,7 @@ ego_networks <- function(x, nodes = NULL, order = 1L, mode = c("all", "out", "in
   order <- check_count(order, "order")
   egos <- if (is.null(nodes)) seq_len(nrow(x$nodes)) else node_positions(x, nodes)
   members <- .Call(C_ego_members, engine_graph(x), as.integer(egos - 1L), order,
-                   mode_code(mode), if (isTRUE(include_ego)) 0L else 1L, as.integer(threads))
+                   mode_code(mode), if (isTRUE(include_ego)) 0L else 1L, resolve_threads(threads))
   out <- lapply(members, function(keep) induced_netframe(x, keep))
   names(out) <- as.character(x$nodes[[x$roles$id]][egos])
   out
@@ -169,7 +169,7 @@ ego_size <- function(x, order = 1L, mode = c("all", "out", "in"), include_ego = 
   mode <- match.arg(mode)
   order <- check_count(order, "order")
   .Call(C_ego_sizes, engine_graph(x), NULL, order, mode_code(mode),
-        if (isTRUE(include_ego)) 0L else 1L, as.integer(threads))
+        if (isTRUE(include_ego)) 0L else 1L, resolve_threads(threads))
 }
 
 #' @rdname ego_summary
@@ -190,7 +190,7 @@ ego_measures <- function(x, order, mode, betweenness, threads) {
   order <- check_count(order, "order")
   if (order < 1L) stop("`order` must be at least 1.", call. = FALSE)
   .Call(C_ego_summary, engine_graph(x), order, mode_code(mode), betweenness,
-        as.integer(threads))
+        resolve_threads(threads))
 }
 
 # Positions (1-based) of node identifiers in x$nodes.

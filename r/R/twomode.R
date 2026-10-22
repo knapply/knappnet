@@ -258,7 +258,7 @@ project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
   second <- which == "second"
   code <- switch(method, count = 0L, newman = 1L, product = 2L)
   res <- .Call(C_project, engine_graph(x), twomode_types(x), second, code, isTRUE(loops),
-               as.integer(threads))
+               resolve_threads(threads))
   in_mode <- x$nodes[[x$roles$type]] == second
   nodes <- x$nodes[in_mode, , drop = FALSE]
   rownames(nodes) <- NULL
@@ -397,7 +397,7 @@ twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L)
     stop("`max_iter` must be a positive whole number.", call. = FALSE)
   }
   res <- .Call(C_twomode_eigenvector, engine_graph(x), twomode_types(x), as.double(tol),
-               as.double(max_iter), as.integer(threads))
+               as.double(max_iter), resolve_threads(threads))
   if (!res[[3]] && nrow(x$edges) > 0L) {
     warning("The network is not connected, so eigenvector scores are zero outside the ",
             "dominant component(s) and may not be unique.", call. = FALSE)
@@ -415,7 +415,7 @@ twomode_density <- function(x) {
 twomode_centrality <- function(x, measure, normalized, unreachable, threads) {
   check_twomode(x)
   .Call(C_twomode_centrality, engine_graph(x), twomode_types(x), measure,
-        isTRUE(normalized), unreachable, as.integer(threads))
+        isTRUE(normalized), unreachable, resolve_threads(threads))
 }
 
 check_twomode <- function(x) {
