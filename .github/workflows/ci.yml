@@ -1,9 +1,22 @@
-# The full test suite runs on Linux, macOS, and Windows for every push and
-# pull request: engine tests, validation against every oracle, and
-# R CMD check --as-cran on current R everywhere and, on Linux, on R-devel,
-# the previous release, and the minimum supported version (4.1). The C glue
-# is also checked under AddressSanitizer, UndefinedBehaviorSanitizer, and
-# valgrind. Other platforms are covered on demand by r-check.yml.
+# The full test suite, on every push to main and every pull request:
+#
+#   lint         format, clippy, docs, crate packaging, WebAssembly build,
+#                bibliography, manifest, scaffold, R sources in sync
+#   engine       cargo test and the C ABI smoke test on Linux, macOS, Windows
+#   validation   every oracle regenerated and compared with the engine on
+#                Linux, macOS, Windows, plus the checks outside the manifest
+#   r-package    R CMD check --as-cran on current R everywhere and, on Linux,
+#                on R-devel, the previous release, and the minimum (4.1)
+#   sanitizers   the C glue under AddressSanitizer and UBSan
+#   valgrind     examples and tests under valgrind
+#   readme       the README's printed output matches R; quick benchmarks
+#                agree with igraph and sna
+#
+# Other platforms run on demand in r-check.yml; full benchmarks and the
+# validation at scale in bench.yml. Typical durations are noted on each job
+# (with warm caches; the first run after a dependency change is longer).
+# Logs of failed steps are shown as annotations by tools/ci_annotate.sh;
+# tools/ci_log.sh keeps the copy it reads.
 name: CI
 
 on:
@@ -22,28 +35,44 @@ defaults:
 
 jobs:
   lint:
+    # About 5 minutes.
+    name: lint and static checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - name: No R function defined twice
-        run: python3 tools/check_r_functions.py
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Format
         run: cargo fmt --all --check
-      - name: Lint
+      - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Docs build without warnings
         run: RUSTDOCFLAGS="-D warnings" cargo doc -p knappnet --no-deps
       - name: Crate packages for crates.io
         run: cargo package -p knappnet
       - name: Builds for WebAssembly
+        run: cargo build -p knappnet --target wasm32-unknown-unknown --release
+      - name: Bibliography is well-formed and docs/references.md is current
+        run: python tools/check_bib.py
+      - name: No R function defined twice
+        run: python tools/check_r_functions.py
+      - name: R sources in sync
+        run: python tools/sync_r_sources.py --check
+      - name: Validation manifest is well-formed
         run: |
-          rustup target add wasm32-unknown-unknown
-          cargo build -p knappnet --target wasm32-unknown-unknown --release
+          python -m pip install pyyaml
+          python validation/check_manifest.py
+      - name: Measure scaffold runs
+        run: python tools/new_measure.py probe probe_measure --dry-run
 
   engine:
+    # About 5 minutes per platform.
     name: engine (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -53,9 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - uses: Swatinem/rust-cache@v2
       - name: Test
         run: cargo test --workspace
       - name: C ABI
@@ -63,14 +90,17 @@ jobs:
         # same ABI is exercised by the validation job and by R CMD check.
         if: runner.os != 'Windows'
         run: ./tools/check_c_abi.sh
-      - name: R sources in sync
-        run: python tools/sync_r_sources.py --check
-      - name: Rename still works
-        run: python tools/rename.py --self-test
 
   validation:
+    # About 15 minutes per platform with cached R packages (the cache is
+    # keyed on the package list below; a change to it rebuilds the cache,
+    # which takes 20 to 40 minutes).
     name: validation (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    env:
+      # pak installs homophily from GitHub; unauthenticated requests are
+      # rate-limited.
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     strategy:
       fail-fast: false
       matrix:
@@ -78,62 +108,51 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: validation/requirements.txt
+      - name: Install Python oracles
+        run: python -m pip install -r validation/requirements.txt
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-      - name: Install oracles
-        env:
-          # remotes uses the GitHub API to install homophily; unauthenticated
-          # requests are rate-limited.
-          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python -m pip install networkx numpy scipy pyyaml
-          Rscript -e 'install.packages(c("igraph", "keyplayer", "sna", "tsna", "yaml"), repos = "https://cloud.r-project.org")'
-          Rscript -e 'install.packages(c("remotes", "network", "Matrix"), repos = "https://cloud.r-project.org")'
-          Rscript -e 'remotes::install_github("knapply/homophily", upgrade = "never")'
-          Rscript -e 'install.packages(c("ergm", "btergm", "RSiena"), repos = "https://cloud.r-project.org")'
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        # The R oracles (validation/oracles/r_*.R). Installed through pak
+        # and cached between runs; homophily comes from GitHub.
+        with:
+          packages: |
+            any::igraph
+            any::sna
+            any::yaml
+            any::network
+            any::Matrix
+            any::keyplayer
+            any::tsna
+            any::ergm
+            any::btergm
+            any::RSiena
+            knapply/homophily
       - name: Fixtures are reproducible
         run: |
           python validation/fixtures.py
           git diff --exit-code validation/fixtures
       - name: Regenerate golden values
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python validation/run_oracles.py 2>&1 | tee ci-logs/oracles.log
+        run: bash tools/ci_log.sh oracles python validation/run_oracles.py
       - name: Compare
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python validation/compare.py --strict 2>&1 | tee ci-logs/compare.log
+        run: bash tools/ci_log.sh compare python validation/compare.py --strict
       - name: File formats against NetworkX
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python -W ignore validation/io_check.py 2>&1 | tee ci-logs/io.log
+        run: bash tools/ci_log.sh io python -W ignore validation/io_check.py
       - name: QAP against exact permutation distributions
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python validation/qap_check.py 2>&1 | tee ci-logs/qap.log
+        run: bash tools/ci_log.sh qap python validation/qap_check.py
       - name: Random networks and CUG tests
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python validation/cug_check.py 2>&1 | tee ci-logs/cug.log
+        run: bash tools/ci_log.sh cug python validation/cug_check.py
       - name: Layout properties
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python validation/layout_check.py 2>&1 | tee ci-logs/layout.log
+        run: bash tools/ci_log.sh layout python validation/layout_check.py
       - name: Benchmarks agree with NetworkX (small networks)
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python bench/bench.py --quick 2>&1 | tee ci-logs/bench.log
+        run: bash tools/ci_log.sh bench python bench/bench.py --quick
       - name: Show failures
         if: failure()
         run: bash tools/ci_annotate.sh validation ci-logs/*.log
@@ -147,6 +166,8 @@ jobs:
             validation/golden
 
   r-package:
+    # About 15 minutes per entry with cached R packages. The engine is
+    # compiled by R CMD build and is not cached.
     name: R CMD check (${{ matrix.os }}, R ${{ matrix.r }})
     runs-on: ${{ matrix.os }}
     strategy:
@@ -159,9 +180,8 @@ jobs:
           - {os: ubuntu-latest, r: devel}
           - {os: ubuntu-latest, r: oldrel-1}
           # The minimum version in DESCRIPTION. Suggested packages are not
-          # installed: some no longer support R 4.1, and the tests skip
-          # without them.
-          # Without knitr the vignette cannot be built, so it is skipped.
+          # installed (some no longer support R 4.1; the tests skip without
+          # them), and without knitr the vignette cannot be built.
           - {os: ubuntu-latest, r: "4.1", dependencies: '"hard"',
              build-args: 'c("--no-manual", "--no-build-vignettes")',
              check-args: 'c("--no-manual", "--as-cran", "--ignore-vignettes")'}
@@ -190,20 +210,13 @@ jobs:
           working-directory: r
           build_args: ${{ matrix.build-args || 'c("--no-manual")' }}
           args: ${{ matrix.check-args || 'c("--no-manual", "--as-cran")' }}
-          # On Linux the statically linked Rust standard library contains
-          # references to abort() and exit(), which R CMD check reports as a
-          # warning; the engine never calls them (see r/cran-comments.md).
-          # There, warnings are checked by the next step instead.
+          # On Linux a known warning about compiled code is expected (see
+          # tools/ci_check_warnings.sh), so only errors stop the check
+          # there and the next step rejects every other warning.
           error-on: ${{ runner.os == 'Linux' && '"error"' || '"warning"' }}
       - name: No other warnings
         if: runner.os == 'Linux'
-        run: |
-          log=$(ls r/check/*.Rcheck/00check.log)
-          other=$(grep -E '\.\.\. (\[[^]]*\] )?WARNING$' "$log" | grep -v 'checking compiled code' || true)
-          if [ -n "$other" ]; then
-            echo "$other"
-            exit 1
-          fi
+        run: bash tools/ci_check_warnings.sh r/check/*.Rcheck/00check.log
       - name: Show failures
         if: failure()
         run: |
@@ -212,11 +225,11 @@ jobs:
             r/check/*.Rcheck/tests/*.Rout.fail r/check/*.Rcheck/*-Ex.Rout
 
   sanitizers:
-    # The C glue under AddressSanitizer and UndefinedBehaviorSanitizer, with
-    # R-devel built by gcc with both (RDsan in the wch1/r-debug image), as in
-    # CRAN's additional checks. The Rust engine is linked but not
-    # instrumented. Fails on any sanitizer report in the installation log,
-    # the examples, or the tests.
+    # About 45 minutes. The C glue under AddressSanitizer and
+    # UndefinedBehaviorSanitizer, with R-devel built by gcc with both
+    # (RDsan in the wch1/r-debug image), as in CRAN's additional checks.
+    # The Rust engine is linked but not instrumented. Fails on any
+    # sanitizer report in the installation log, the examples, or the tests.
     name: R CMD check under ASan and UBSan
     runs-on: ubuntu-latest
     container: wch1/r-debug:latest
@@ -238,10 +251,7 @@ jobs:
       - name: Build
         run: RDsan CMD build --no-build-vignettes --no-manual r
       - name: Check
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          RDsan CMD check --no-manual --ignore-vignettes ./*.tar.gz 2>&1 | tee ci-logs/check.log
+        run: bash tools/ci_log.sh check RDsan CMD check --no-manual --ignore-vignettes ./*.tar.gz
       - name: No sanitizer reports
         if: always()
         run: |
@@ -257,9 +267,10 @@ jobs:
             ./*.Rcheck/*-Ex.Rout ./*.Rcheck/tests/*.Rout*
 
   valgrind:
-    # Examples and tests under valgrind, with R-devel built with valgrind
-    # instrumentation level 2 (RDvalgrind in the wch1/r-debug image), as in
-    # CRAN's additional checks. Fails on any reported memory error.
+    # About 60 to 90 minutes. Examples and tests under valgrind, with
+    # R-devel built with valgrind instrumentation level 2 (RDvalgrind in the
+    # wch1/r-debug image), as in CRAN's additional checks. Fails on any
+    # reported memory error.
     name: R CMD check under valgrind
     runs-on: ubuntu-latest
     container: wch1/r-debug:latest
@@ -279,11 +290,7 @@ jobs:
       - name: Build
         run: RDvalgrind CMD build --no-build-vignettes --no-manual r
       - name: Check
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          RDvalgrind CMD check --use-valgrind --no-manual --ignore-vignettes ./*.tar.gz 2>&1 \
-            | tee ci-logs/check.log
+        run: bash tools/ci_log.sh check RDvalgrind CMD check --use-valgrind --no-manual --ignore-vignettes ./*.tar.gz
       - name: No valgrind errors
         if: always()
         run: |
@@ -300,30 +307,31 @@ jobs:
             ./*.Rcheck/tests/*.Rout*
 
   readme:
-    # The README's examples show real output; this fails if they drift.
-    # Quick benchmarks also check that results agree with igraph and sna.
+    # About 10 minutes with cached R packages. The README's examples show
+    # real output; this fails if they drift. The quick benchmarks also
+    # check that results agree with igraph and sna.
+    name: README output and quick R benchmarks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: r/src/rust -> target
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-      - name: Install the package, igraph, and sna
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          Rscript -e 'install.packages(c("igraph", "sna"), repos = "https://cloud.r-project.org")'
-          R CMD INSTALL r 2>&1 | tee ci-logs/install.log
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          dependencies: '"hard"'
+          extra-packages: any::igraph, any::sna
+      - name: Install the package
+        run: bash tools/ci_log.sh install R CMD INSTALL r
       - name: README output matches R
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          Rscript tools/check_readme.R 2>&1 | tee ci-logs/readme.log
+        run: bash tools/ci_log.sh readme Rscript tools/check_readme.R
       - name: Benchmarks agree with igraph and sna (small networks)
-        run: |
-          set -o pipefail
-          Rscript bench/bench.R --quick 2>&1 | tee ci-logs/bench.log
+        run: bash tools/ci_log.sh bench Rscript bench/bench.R --quick
       - name: Show failures
         if: failure()
         run: bash tools/ci_annotate.sh README ci-logs/*.log

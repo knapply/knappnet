@@ -1,5 +1,6 @@
 # Publishes the engine crate to crates.io when a release tag is pushed.
 # Requires a repository secret CARGO_REGISTRY_TOKEN (crates.io API token).
+# About 5 minutes.
 name: Publish crate
 
 on:
