@@ -38,8 +38,6 @@ jobs:
           bash tools/ci_log.sh graphbase python3 data-raw/graphbase.py /tmp/sgb
           bash tools/ci_log.sh natural_earth python3 data-raw/natural_earth.py /tmp/natural-earth-vector
           bash tools/ci_log.sh sociopatterns python3 data-raw/sociopatterns.py /tmp/sociopatterns
-      - name: Build data sets awaiting redistribution permission (not committed)
-        run: bash tools/ci_log.sh knecht python3 data-raw/knecht.py /tmp/knecht && rm -r r/inst/extdata/knecht
       - name: Show log
         if: always()
         run: LEVEL=notice bash tools/ci_annotate.sh "Example data" ci-logs/*.log
