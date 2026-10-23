@@ -125,7 +125,7 @@ test_that("group centrality in directed networks", {
   # To 1: 4 at 1, 2 at 2; 3 cannot reach 1 and is left out.
   expect_equal(group_centrality(d, 1, "closeness", mode = "in"), 3 / 3)
   expect_error(group_centrality(d, 1, "degree", weighted = TRUE), "binary")
-  expect_error(group_centrality(d, integer(), "degree"), "node identifiers")
+  expect_error(group_centrality(d, integer(), "degree"), "at least one node")
 })
 
 test_that("flow betweenness matches hand calculations", {

@@ -21,6 +21,18 @@ docs/             Architecture notes, the release checklist, and the
                   bibliography with its generated index.
 ```
 
+Inside the engine, shared machinery lives in its own modules: `graph`
+(CSR storage and derived views such as `Graph::simple_undirected`),
+`matrix` (`Dense`), `linalg` (all dense linear algebra, one implementation
+per operation), `union_find`, `rng`, `parallel`, `weights` (path lengths
+and weight checks), and `conventions`. Measures live in `metrics`,
+statistical models in `qap`, `ergm`, and `saom`, and dynamics, space,
+drawing, and generation in `temporal`, `spatial`, `layout`, and
+`generate`. The crate documentation (`lib.rs`) and `metrics/mod.rs` carry
+the full map. The C ABI header `netcapi.h` is divided into commented
+sections by area after a preamble on return codes, ownership, and buffer
+sizes, and the R glue shares its helpers through `r/src/glue.h`.
+
 Each area of functionality (descriptive statistics, positions, spectral
 measures, ...) is one module per layer with the same name: an engine
 module, a C ABI module, a C glue file, an R file, a test file, a manifest

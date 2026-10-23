@@ -32,7 +32,14 @@ checks to run. `--dry-run` only prints. The steps, in order:
    every convention (see "Conventions" below). Unit tests with hand-checked
    values go in the module. Use `crate::parallel` for per-node work,
    `crate::rng::Stream` for randomness, `crate::matrix::Dense` for dense
-   matrices, and `crate::weights` for path lengths.
+   matrices, `crate::linalg` for every dense linear-algebra operation
+   (Cholesky and SPD solves, inverses, pseudo-inverses, symmetric
+   eigendecomposition; add new operations there, never in a measure's
+   module), `crate::union_find::UnionFind` for disjoint sets,
+   `Graph::simple_undirected` for the simple undirected neighbour lists,
+   `crate::weights` for path lengths and `weights::additive_weights` for
+   weights that are added as given. `crates/engine/src/lib.rs` and
+   `metrics/mod.rs` carry a map of where each kind of code lives.
 2. **Property tests** in `crates/engine/tests/<area>_properties.rs`:
    randomized invariants (relabeling nodes permutes results, the thread
    count does not change them, unit weights reproduce the unweighted
@@ -44,9 +51,15 @@ checks to run. `--dry-run` only prints. The steps, in order:
    `#[no_mangle] pub unsafe extern "C"`, has a `# Safety` section, returns
    0 on success, and writes its error message through `guard`. Options are
    small integer codes documented at the top of the module.
-4. **C glue** `C_<name>` in `r/src/<area>.c` (include `"netcapi.h"`; raise
-   R errors only after the engine call has returned), registered in
-   `r/src/init.c` (an `extern` line and a `R_CallMethodDef` row).
+4. **C glue** `C_<name>` in `r/src/<area>.c`. Include `"glue.h"`, which
+   brings in `netcapi.h` and the shared helpers (`graph_from_ptr()` for the
+   graph handle, `as_count()`, `as_seed()`, `as_int64()`, `check_status()`
+   to turn an engine error into an R error after unprotecting,
+   `vector_result()` and `scalar_result()`); raise R errors only after the
+   engine call has returned. Register it in `r/src/init.c`: an `extern`
+   line and a `R_CallMethodDef` row in the group for its file, sorted by
+   name. `netcapi.h` is organized in commented sections; add the
+   declaration to its area's section.
 5. **R function** in `r/R/<area>.R`, its help page `r/man/<name>.Rd`,
    tests in `r/tests/testthat/test-<area>.R`, `export(<name>)` in
    `r/NAMESPACE`, and the help topic in the reference index of

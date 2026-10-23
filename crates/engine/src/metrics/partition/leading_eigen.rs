@@ -1,6 +1,6 @@
 //! Newman's leading eigenvector method.
 //!
-//! Newman (2006, `newman2006finding`) divides a network in two by the
+//! Newman (2006, `newman2006modularity`) divides a network in two by the
 //! signs of the leading eigenvector of the modularity matrix
 //! B = A - k k' / (2m), and divides each group again using the
 //! generalized modularity matrix of the group, B(g)_ij = B_ij -

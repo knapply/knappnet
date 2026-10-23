@@ -100,7 +100,7 @@ test_that("modularity matches hand-computed values", {
   expect_equal(modularity(g, c(1, 1, 1, 2, 2, 2)), 5 / 14, tolerance = 1e-14)
   expect_equal(modularity(g, c("x", "x", "x", "y", "y", "y")), 5 / 14, tolerance = 1e-14)
   expect_equal(modularity(g, rep(1, 6), resolution = 0.25), 0.75, tolerance = 1e-14)
-  expect_error(modularity(g, 1:5), "length")
+  expect_error(modularity(g, 1:5), "one value per node")
   expect_error(modularity(g, c(1, 1, 1, 2, 2, NA)), "missing")
   expect_error(modularity(g, rep(1, 6), resolution = -1), "non-negative")
   empty <- netframe(data.frame(from = integer(), to = integer()),
