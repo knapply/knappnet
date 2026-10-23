@@ -18,6 +18,7 @@ import csv
 import json
 import random
 import shutil
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -213,6 +214,9 @@ def write(fixtures: list[Fixture]) -> None:
 
 
 if __name__ == "__main__":
+    if {"-h", "--help"} & set(sys.argv[1:]):
+        print(__doc__.strip())
+        sys.exit(0)
     fixtures = build()
     write(fixtures)
     print(f"Wrote {len(fixtures)} fixtures to {OUT}")

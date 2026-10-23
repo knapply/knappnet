@@ -2,6 +2,14 @@
 \alias{max_cliques}
 \alias{clique_number}
 \title{Maximal cliques and the clique number}
+\description{
+A clique is a set of nodes that are all pairwise adjacent; it is maximal
+when no other node is adjacent to every member. \code{max_cliques()} lists
+the maximal cliques with the Bron-Kerbosch algorithm (Bron and Kerbosch
+1973) using the pivot rule of Tomita, Tanaka, and Takahashi (2006) over a
+degeneracy ordering (Eppstein, Loffler, and Strash 2010).
+\code{clique_number()} is the size of the largest clique.
+}
 \usage{
 max_cliques(x, min_size = 1L, threads = 0L)
 
@@ -13,20 +21,6 @@ clique_number(x, threads = 0L)
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-\code{max_cliques()}: a list of vectors of node identifiers (values of the
-identifier column of \code{x$nodes}), one per clique, each in node order;
-the cliques are in lexicographic order of node positions.
-\code{clique_number()}: a single integer, the size of the largest clique.
-}
-\description{
-A clique is a set of nodes that are all pairwise adjacent; it is maximal
-when no other node is adjacent to every member. \code{max_cliques()} lists
-the maximal cliques with the Bron-Kerbosch algorithm (Bron and Kerbosch
-1973) using the pivot rule of Tomita, Tanaka, and Takahashi (2006) over a
-degeneracy ordering (Eppstein, Loffler, and Strash 2010).
-\code{clique_number()} is the size of the largest clique.
 }
 \details{
 Cliques are found in the undirected simple graph underlying the network:
@@ -41,6 +35,12 @@ smaller subsets of larger cliques.
 These conventions match \code{igraph::max_cliques()} and
 \code{igraph::clique_num()}, and NetworkX's \code{find_cliques()} applied
 to the undirected simple graph.
+}
+\value{
+\code{max_cliques()}: a list of vectors of node identifiers (values of the
+identifier column of \code{x$nodes}), one per clique, each in node order;
+the cliques are in lexicographic order of node positions.
+\code{clique_number()}: a single integer, the size of the largest clique.
 }
 \references{
 Bron, C., & Kerbosch, J. (1973). Algorithm 457: Finding all cliques of an

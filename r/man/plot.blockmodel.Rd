@@ -1,6 +1,13 @@
 \name{plot.blockmodel}
 \alias{plot.blockmodel}
 \title{Plot a blockmodel}
+\description{
+Draws the block densities of a \code{\link{blockmodel}} as a heat map,
+with the 1-blocks of the image matrix outlined, and, when the network is
+given, its adjacency matrix permuted so that nodes of the same block are
+adjacent, with lines at the block boundaries: the two displays used to
+present blockmodels since White, Boorman, and Breiger (1976).
+}
 \usage{
 \method{plot}{blockmodel}(x, network = NULL, which = c("both", "density", "matrix"),
      values = TRUE, ...)
@@ -16,14 +23,6 @@ for the permuted adjacency matrix. \code{NULL} draws only the densities.}
 both panels, such as \code{main} (which replaces the panel titles) or
 \code{cex_labels}.}
 }
-\value{\code{x}, invisibly.}
-\description{
-Draws the block densities of a \code{\link{blockmodel}} as a heat map,
-with the 1-blocks of the image matrix outlined, and, when the network is
-given, its adjacency matrix permuted so that nodes of the same block are
-adjacent, with lines at the block boundaries: the two displays used to
-present blockmodels since White, Boorman, and Breiger (1976).
-}
 \details{
 Densities are shaded from light (0) to dark (1, or the largest mean tie
 value for a weighted blockmodel); blocks whose density reaches the cutoff
@@ -31,6 +30,7 @@ value for a weighted blockmodel); blocks whose density reaches the cutoff
 one-node block without loops) are blank. With both panels, the permuted
 adjacency matrix is drawn on the left and the densities on the right.
 }
+\value{\code{x}, invisibly.}
 \references{
 White, H. C., Boorman, S. A., & Breiger, R. L. (1976). Social structure
 from multiple networks. I. Blockmodels of roles and positions.

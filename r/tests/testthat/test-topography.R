@@ -1,20 +1,15 @@
-# Density, components, fragmentation, closeness, harmonic and eigenvector
-# centrality, centralization, and the convention switch. Hand-checked values
-# first, then spot checks against igraph, sna, and (through published
-# numbers) UCINET. The full comparison lives in validation/.
+# Density, average degree and the degree distribution, components and
+# fragmentation, the triad census, centralization, compactness, the
+# small-world quotient, and core-periphery structure (R/topography.R).
+# Hand-checked values first, then spot checks against igraph and sna. The
+# full comparison lives in validation/.
 
-kite <- function() {
-  e <- data.frame(
-    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
-  )
-  netframe(e, nodes = data.frame(id = 1:10), directed = FALSE)
-}
-
-# A path 1 - 2 - 3, an edge 4 - 5, and an isolate 6.
-pieces <- function() {
-  netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 5)),
-           nodes = data.frame(id = 1:6), directed = FALSE)
+# Node 2 ties to 1, 4, 5, 6, 7; 5 ties to 2, 3, 4, 7; 7 ties to 1, 2, 5.
+# The core {2, 5, 7} is a triangle and the periphery has no ties among
+# itself, so the fit with core-periphery pairs left out is perfect.
+cp_net <- function() {
+  netframe(data.frame(from = c(1, 1, 2, 2, 2, 2, 3, 4, 5), to = c(2, 7, 4, 5, 6, 7, 5, 5, 7)),
+           directed = FALSE)
 }
 
 test_that("density counts edges over possible edges", {
@@ -28,6 +23,25 @@ test_that("density counts edges over possible edges", {
   one <- netframe(data.frame(from = 1, to = 1))
   expect_true(is.nan(graph_density(one)))
   expect_equal(graph_density(one, convention = "networkx"), 0)
+})
+
+test_that("average degree and degree distribution", {
+  g <- netframe(data.frame(from = c(1, 1, 1, 2), to = c(2, 3, 4, 3)), directed = FALSE)
+  expect_equal(average_degree(g), 2)
+  expect_equal(average_degree(g, mode = "out"), 2)
+  dd <- degree_distribution(g, cumulative = TRUE)
+  expect_equal(dd$degree, c(1, 2, 3))
+  expect_equal(dd$count, c(1, 2, 1))
+  expect_equal(dd$proportion, c(0.25, 0.5, 0.25))
+  expect_equal(dd$at_least, c(1, 0.75, 0.25))
+  expect_null(degree_distribution(g)$at_least)
+  d <- netframe(data.frame(from = c(1, 1), to = c(2, 3)))
+  expect_equal(average_degree(d, mode = "out"), 2 / 3)
+  expect_equal(average_degree(d, mode = "in"), 2 / 3)
+  expect_equal(average_degree(d), 4 / 3)
+  empty <- netframe(data.frame(from = integer(), to = integer()),
+                    nodes = data.frame(id = integer()))
+  expect_true(is.nan(average_degree(empty)))
 })
 
 test_that("components and fragmentation", {
@@ -44,61 +58,20 @@ test_that("components and fragmentation", {
   expect_equal(fragmentation(d, "strong"), 6 / 12)
 })
 
-test_that("closeness conventions on a disconnected network", {
-  g <- pieces()
-  expect_equal(closeness(g), c(1 / 3, 1 / 2, 1 / 3, 1, 1, NaN))
-  expect_equal(closeness(g, normalized = TRUE), c(2 / 3, 1, 2 / 3, 1, 1, NaN))
-  wf <- (2 / 3) * (2 / 5)
-  expect_equal(closeness(g, convention = "networkx"), c(wf, 2 / 5, wf, 1 / 5, 1 / 5, 0))
-  expect_equal(closeness(g, convention = "sna"), rep(0, 6))
-  # The longest path has length 2, so missing lengths count as 3.
-  expect_equal(closeness(g, convention = "ucinet"),
-               c(5 / 12, 5 / 11, 5 / 12, 5 / 13, 5 / 13, 5 / 15))
-  expect_error(closeness(g, normalized = FALSE, convention = "networkx"), "normalized")
-  expect_equal(harmonic_centrality(g), c(1.5, 2, 1.5, 1, 1, 0))
-  expect_equal(harmonic_centrality(g, convention = "sna"), c(1.5, 2, 1.5, 1, 1, 0) / 5)
-})
+test_that("triad census matches igraph and sna", {
+  skip_if_not_installed("igraph")
+  set.seed(1)
+  e <- data.frame(from = sample(30, 120, TRUE), to = sample(30, 120, TRUE))
+  e <- e[e$from != e$to, ]
+  e <- e[!duplicated(e), ]
+  g <- netframe(e, nodes = data.frame(id = 1:30))
+  ig <- igraph::graph_from_data_frame(e, vertices = data.frame(id = 1:30))
+  expect_equal(unname(triad_census(g)), igraph::triad_census(ig))
 
-test_that("closeness reproduces UCINET's published output", {
-  # UCINET 6.849's Closeness report for its g9_disc example (a star, a path,
-  # and a triangle), printed to three decimals, as published with the
-  # authors' xucinet package (inst/goldens/centrality/log_menu.txt).
-  e <- data.frame(from = c(1, 1, 1, 1, 6, 7, 8, 10, 11, 10),
-                  to   = c(2, 3, 4, 5, 7, 8, 9, 11, 12, 12))
-  g <- netframe(e, nodes = data.frame(id = 1:12), directed = FALSE)
-  free <- c(0.344, 0.314, 0.314, 0.314, 0.314, 0.289, 0.306, 0.306, 0.289, 0.289,
-            0.289, 0.289)
-  recip <- c(0.364, 0.227, 0.227, 0.227, 0.227, 0.167, 0.227, 0.227, 0.167, 0.182,
-             0.182, 0.182)
-  # Within half a unit in the last printed place.
-  expect_true(all(abs(closeness(g, convention = "ucinet") - free) <= 5e-4))
-  expect_true(all(abs(harmonic_centrality(g, convention = "ucinet") - recip) <= 5e-4))
-})
-
-test_that("directed closeness modes and weights", {
-  d <- netframe(data.frame(from = c(1, 2), to = c(2, 3), w = c(2, 3)), weight = "w")
-  expect_equal(closeness(d), c(1 / 7, 1 / 3, NaN))
-  expect_equal(closeness(d, weighted = FALSE), c(1 / 3, 1, NaN))
-  expect_equal(closeness(d, mode = "in"), c(NaN, 1 / 2, 1 / 8))
-  expect_equal(closeness(d, weights_as = "strength"), c(1 / (1 / 2 + 5 / 6), 3, NaN))
-  expect_error(closeness(d, weighted = TRUE, convention = "ucinet"), "binary")
-})
-
-test_that("eigenvector centrality closed forms and conventions", {
-  star <- netframe(data.frame(from = 1, to = 2:5), directed = FALSE)
-  expect_equal(eigenvector_centrality(star), c(1, 0.5, 0.5, 0.5, 0.5), tolerance = 1e-10)
-  u <- eigenvector_centrality(star, convention = "networkx")
-  expect_equal(sum(u^2), 1, tolerance = 1e-12)
-  expect_equal(u / max(u), c(1, 0.5, 0.5, 0.5, 0.5), tolerance = 1e-10)
-  path <- netframe(data.frame(from = 1:3, to = 2:4), directed = FALSE)
-  phi <- (1 + sqrt(5)) / 2
-  expect_equal(eigenvector_centrality(path), c(1 / phi, 1, 1, 1 / phi), tolerance = 1e-10)
-  expect_warning(eigenvector_centrality(pieces()), "not connected")
-  expect_error(eigenvector_centrality(pieces(), convention = "networkx"), "connected")
-  expect_error(eigenvector_centrality(pieces(), convention = "ucinet"), "lambda-squared")
-  dag <- netframe(data.frame(from = c(1, 2), to = c(2, 3)))
-  expect_equal(suppressWarnings(eigenvector_centrality(dag)), c(0, 0, 1))
-  expect_error(eigenvector_centrality(star, max_iter = 0), "max_iter")
+  skip_if_not_installed("sna")
+  m <- matrix(0, 30, 30)
+  m[cbind(e$from, e$to)] <- 1
+  expect_equal(unname(triad_census(g)), unname(drop(sna::triad.census(m))))
 })
 
 test_that("centralization of a star is 1 under every convention", {
@@ -114,64 +87,179 @@ test_that("centralization of a star is 1 under every convention", {
   expect_equal(centralization(ring), 0)
 })
 
-test_that("conventions leave defaults of degree and betweenness unchanged", {
-  e <- data.frame(from = c(1, 1, 2, 3, 3), to = c(2, 2, 3, 3, 1))
-  g <- netframe(e, nodes = data.frame(id = 1:3))
-  expect_equal(degree(g), c(3, 3, 4))
-  expect_equal(degree(g, convention = "sna"), c(2, 2, 2))
-  expect_equal(degree(g, convention = "networkx"), degree(g))
-  # From 1 to 4 there are two shortest paths through 2 (parallel edges) and
-  # one through 3 under igraph's convention, and one of each under the others.
-  diamond <- netframe(data.frame(from = c(1, 1, 2, 1, 3), to = c(2, 2, 4, 3, 4)),
-                      nodes = data.frame(id = 1:4))
-  expect_equal(betweenness(diamond), c(0, 2 / 3, 1 / 3, 0))
-  expect_equal(betweenness(diamond, convention = "networkx"), c(0, 1 / 2, 1 / 2, 0))
-  expect_equal(betweenness(diamond, convention = "sna"), c(0, 1 / 2, 1 / 2, 0))
+test_that("eigenvector centralization follows igraph's definition", {
+  star10 <- netframe(data.frame(from = 1, to = 2:10), directed = FALSE)
+  expect_equal(centralization(star10, "eigenvector"), 0.75, tolerance = 1e-9)
+  expect_equal(centralization(star10, "eigenvector", normalized = FALSE), 6, tolerance = 1e-9)
+  one <- netframe(data.frame(from = 1, to = 2), nodes = data.frame(id = 1:10),
+                  directed = FALSE)
+  expect_equal(centralization(one, "eigenvector"), 1, tolerance = 1e-9)
+  cycle <- netframe(data.frame(from = 1:5, to = c(2:5, 1)), directed = FALSE)
+  expect_equal(centralization(cycle, "eigenvector"), 0, tolerance = 1e-9)
+  expect_true(is.nan(centralization(netframe(data.frame(from = 1, to = 2), directed = FALSE),
+                                    "eigenvector")))
+  expect_error(centralization(star10, "eigenvector", convention = "sna"), "igraph")
+  expect_error(centralization(star10, "eigenvector", convention = "ucinet"), "igraph")
+  d <- netframe(data.frame(from = c(1, 2), to = c(2, 3)))
+  expect_error(centralization(d, "eigenvector", mode = "in"), "direction ignored")
+  two <- netframe(data.frame(from = c(1, 3), to = c(2, 4)), directed = FALSE)
+  expect_warning(centralization(two, "eigenvector"), "component")
 })
 
-test_that("results match igraph", {
+test_that("centralize() applies Freeman's index to any scores", {
+  star <- netframe(data.frame(from = 1, to = 2:5), directed = FALSE)
+  expect_equal(centralize(degree(star), 4 * 3), 1)
+  # Freeman's maximum (n - 1)(n - 2) is igraph's without self-loops.
+  expect_equal(centralize(degree(star), 4 * 3), centralization(star, loops = FALSE))
+  expect_equal(centralize(degree(star)), 12)
+  expect_equal(centralize(c(2, 2, 2)), 0)
+  expect_true(is.nan(centralize(numeric(0))))
+  expect_true(is.nan(centralize(c(1, NaN))))
+  expect_error(centralize("a"), "numeric")
+  expect_error(centralize(1:3, theoretical_max = 0), "positive")
+})
+
+test_that("compactness and distance-weighted fragmentation", {
+  g <- netframe(data.frame(from = c(1, 2), to = c(2, 3)), nodes = data.frame(id = 1:4),
+                directed = FALSE)
+  expect_equal(compactness(g), (4 + 2 * 0.5) / 12)
+  expect_equal(distance_weighted_fragmentation(g), 1 - 5 / 12)
+  d <- netframe(data.frame(from = c(1, 2), to = c(2, 3)))
+  expect_equal(compactness(d), (2 + 0.5) / 6)
+  expect_equal(compactness(d, mode = "in"), (2 + 0.5) / 6)
+  expect_equal(compactness(d, mode = "all"), 5 / 6)
+  w <- netframe(data.frame(from = c(1, 2), to = c(2, 3), w = c(2, 2)), directed = FALSE,
+                weight = "w")
+  expect_equal(compactness(w), (4 / 2 + 2 / 4) / 6)
+  expect_equal(compactness(w, weighted = FALSE), 5 / 6)
+  expect_equal(compactness(w, weights_as = "strength"), (4 * 2 + 2 * 1) / 6)
+  one <- netframe(data.frame(from = integer(), to = integer()), nodes = data.frame(id = 1))
+  expect_true(is.nan(compactness(one)))
+})
+
+test_that("small-world quotient is a ratio of ratios", {
+  g <- example_network("karate")
+  sw <- small_world(g, reps = 20, seed = 1, threads = 2)
+  expect_s3_class(sw, "small_world")
+  expect_equal(sw$clustering, transitivity(g))
+  expect_equal(sw$mean_distance, mean_distance(g))
+  expect_equal(sw$quotient,
+               (sw$clustering / sw$random_clustering) /
+                 (sw$mean_distance / sw$random_mean_distance))
+  expect_true(sw$quotient > 1)
+  expect_equal(small_world(g, reps = 20, seed = 1, threads = 1), sw)
+  local <- small_world(g, local = TRUE, reps = 20, seed = 1, threads = 2)
+  # Nodes with fewer than two neighbours count as 0, as in NetworkX.
+  expect_equal(local$clustering, average_clustering(g, convention = "networkx"))
+  expect_false(isTRUE(all.equal(local$quotient, sw$quotient)))
+  expect_output(print(sw), "quotient")
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  expect_invisible(plot(sw))
+  expect_error(small_world(g, reps = 0), "at least 1")
+})
+
+test_that("discrete core-periphery fits by every link rule", {
+  g <- cp_net()
+  cp <- core_periphery(g, seed = 1, threads = 2)
+  expect_s3_class(cp, "core_periphery")
+  expect_equal(g$nodes$name[cp$core], c(2, 5, 7))
+  expect_equal(cp$correlation, 1)
+  expect_equal(core_periphery(g, seed = 1, threads = 1)$core, cp$core)
+  # Exhaustive optima for the other rules (see validation/).
+  expect_equal(g$nodes$name[core_periphery(g, links = "ones", seed = 1, threads = 2)$core],
+               c(2, 5))
+  expect_equal(g$nodes$name[core_periphery(g, links = "zeros", seed = 1, threads = 2)$core],
+               c(1, 2, 4, 5, 7))
+  expect_equal(core_periphery(g, links = "ones", seed = 1, threads = 2)$correlation,
+               0.6330542, tolerance = 1e-6)
+  expect_output(print(cp), "Correlation")
+  # No structure to fit.
+  complete <- netframe(data.frame(from = c(1, 1, 2), to = c(2, 3, 3)), directed = FALSE)
+  expect_error(core_periphery(complete, seed = 1), "different values")
+})
+
+test_that("continuous core-periphery fits", {
+  g <- cp_net()
+  cc <- core_periphery(g, method = "continuous", threads = 2)
+  expect_equal(cc$method, "continuous")
+  expect_equal(cc$fit, "minres")
+  expect_true(all(cc$coreness >= 0))
+  expect_equal(sum(cc$coreness^2), 1, tolerance = 1e-9)
+  expect_equal(cc$correlation, 0.6957548, tolerance = 1e-6)
+  expect_equal(cc$residual, 2.669288, tolerance = 1e-6)
+  expect_equal(which.max(cc$coreness), 2)
+  # The reported correlation is that of the pattern c_i c_j, and the
+  # residual that of the least-squares scaling of the pattern.
+  a <- as.matrix(g)
+  iu <- upper.tri(a)
+  pattern <- outer(cc$coreness, cc$coreness)
+  expect_equal(cor(a[iu], pattern[iu]), cc$correlation, tolerance = 1e-8)
+  scale <- sum(a[iu] * pattern[iu]) / sum(pattern[iu]^2)
+  expect_equal(sum((a[iu] - scale * pattern[iu])^2), cc$residual, tolerance = 1e-6)
+  expect_output(print(cc), "MINRES")
+
+  # The correlation fit: also unit norm, with its own correlation.
+  cr <- core_periphery(g, method = "continuous", fit = "correlation", seed = 1, threads = 2)
+  expect_equal(cr$fit, "correlation")
+  expect_true(is.nan(cr$residual))
+  expect_equal(sum(cr$coreness^2), 1, tolerance = 1e-9)
+  pattern <- outer(cr$coreness, cr$coreness)
+  expect_equal(cor(a[iu], pattern[iu]), cr$correlation, tolerance = 1e-6)
+  expect_true(cr$correlation >= cc$correlation - 1e-9)
+  expect_equal(core_periphery(g, method = "continuous", fit = "correlation", seed = 1,
+                              threads = 1)$coreness, cr$coreness)
+
+  # A star: the center is the core and the leaves are symmetric under both.
+  star <- netframe(data.frame(from = 1, to = 2:6), directed = FALSE)
+  for (fit in c("minres", "correlation")) {
+    s <- core_periphery(star, method = "continuous", fit = fit, seed = 1, threads = 2)
+    expect_equal(which.max(s$coreness), 1)
+    expect_equal(diff(range(s$coreness[-1])), 0, tolerance = 1e-6)
+    expect_equal(s$correlation, 1, tolerance = 1e-6)
+  }
+  expect_error(core_periphery(g, method = "continuous", tol = -1), "tol")
+})
+
+test_that("core-periphery plots draw", {
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  g <- cp_net()
+  cp <- core_periphery(g, seed = 1, threads = 2)
+  cc <- core_periphery(g, method = "continuous", threads = 2)
+  expect_invisible(plot(cp))
+  expect_invisible(plot(cp, what = "network", seed = 1))
+  expect_invisible(plot(cc, seed = 1))
+  expect_invisible(plot(cc, what = "matrix", main = "coreness"))
+  expect_error(plot(cp, what = "x"), "what")
+})
+
+test_that("density, components, and centralization match igraph", {
   skip_if_not_installed("igraph")
   g <- kite()
   ig <- igraph::graph_from_data_frame(g$edges, directed = FALSE, vertices = g$nodes)
   expect_equal(graph_density(g), igraph::edge_density(ig))
   expect_equal(components(g)$membership, unname(igraph::components(ig)$membership))
-  expect_equal(closeness(g), unname(igraph::closeness(ig)))
-  expect_equal(closeness(g, normalized = TRUE), unname(igraph::closeness(ig, normalized = TRUE)))
-  expect_equal(harmonic_centrality(g), unname(igraph::harmonic_centrality(ig)))
-  expect_equal(eigenvector_centrality(g), unname(igraph::eigen_centrality(ig)$vector),
-               tolerance = 1e-8)
   expect_equal(centralization(g), igraph::centr_degree(ig, loops = TRUE)$centralization)
   expect_equal(centralization(g, "betweenness"), igraph::centr_betw(ig)$centralization)
   expect_equal(centralization(g, "closeness"), igraph::centr_clo(ig)$centralization)
+  expect_equal(centralization(g, "eigenvector"), igraph::centr_eigen(ig)$centralization,
+               tolerance = 1e-8)
 
-  set.seed(3)
-  e <- data.frame(from = sample(25, 80, TRUE), to = sample(25, 80, TRUE))
-  e$w <- round(runif(nrow(e), 0.5, 4), 2)
-  e <- e[e$from != e$to, ]
-  d <- netframe(e, nodes = data.frame(id = 1:25), weight = "w")
-  id <- igraph::graph_from_data_frame(e, vertices = d$nodes)
+  e <- random_digraph(25, 80, 3)
+  nodes <- data.frame(id = 1:25)
+  d <- netframe(e, nodes)
+  id <- igraph::graph_from_data_frame(e, vertices = nodes)
   expect_equal(components(d, "strong")$no, igraph::components(id, "strong")$no)
-  for (m in c("out", "in", "all")) {
-    expect_equal(closeness(d, mode = m, normalized = TRUE),
-                 unname(igraph::closeness(id, mode = m, weights = e$w, normalized = TRUE)))
-    expect_equal(harmonic_centrality(d, mode = m),
-                 unname(igraph::harmonic_centrality(id, mode = m, weights = e$w)))
-  }
   expect_equal(centralization(d, mode = "in"),
                igraph::centr_degree(id, mode = "in", loops = TRUE)$centralization)
 })
 
-test_that("results match sna", {
+test_that("density and centralization match sna", {
   skip_if_not_installed("sna")
   g <- kite()
   m <- as.matrix(g)
   expect_equal(graph_density(g, convention = "sna"), unname(sna::gden(m, mode = "graph")))
-  expect_equal(closeness(g, convention = "sna"),
-               unname(sna::closeness(m, gmode = "graph", cmode = "undirected")))
-  expect_equal(harmonic_centrality(g, convention = "sna"),
-               unname(sna::closeness(m, gmode = "graph", cmode = "suminvundir")))
-  ev <- sna::evcent(m, gmode = "graph", use.eigen = TRUE)
-  expect_equal(eigenvector_centrality(g, convention = "sna"), abs(unname(ev)), tolerance = 1e-8)
   expect_equal(centralization(g, "degree", convention = "sna"),
                sna::centralization(m, sna::degree, mode = "graph"))
   expect_equal(centralization(g, "closeness", convention = "sna"),

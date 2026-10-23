@@ -1,6 +1,11 @@
 \name{pagerank}
 \alias{pagerank}
 \title{PageRank}
+\description{
+The stationary distribution of a random walk that, at each step, follows one
+of the current node's out-ties with probability \code{damping} and otherwise
+jumps to a node chosen at random (Brin and Page 1998).
+}
 \usage{
 pagerank(x, damping = 0.85, personalized = NULL, directed = TRUE, weighted = NULL,
          dangling = c("personalized", "uniform"),
@@ -17,9 +22,9 @@ value per node (aligned with \code{x$nodes}), or the name of such a column of
 with equal probability.}
 \item{directed}{Whether to follow the direction of ties in directed networks.
 \code{FALSE} treats every tie as reciprocal.}
-\item{weighted}{Whether to choose ties in proportion to their weights, used
-as given whatever the network's \code{weight_type}. \code{NULL} uses weights
-when the network has a weight column. They must not be negative.}
+\item{weighted}{Whether to choose ties in proportion to their weights, used as
+given whatever the network's \code{weight_type}. \code{NULL} (the default)
+uses weights when the network has a weight column. They must not be negative.}
 \item{dangling}{Where a walker at a node without out-ties (or whose out-ties
 all have weight 0) jumps: \code{"personalized"} by the personalization
 vector, as igraph and NetworkX do, or \code{"uniform"} to any node with equal
@@ -32,13 +37,6 @@ to 1, change by at most \code{tol} in total.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}, summing to
-1.}
-\description{
-The stationary distribution of a random walk that, at each step, follows one
-of the current node's out-ties with probability \code{damping} and otherwise
-jumps to a node chosen at random (Brin and Page 1998).
 }
 \details{
 Scores are computed by power iteration from equal scores. The error after
@@ -55,6 +53,8 @@ those conventions are not available.
 Results match igraph's \code{page_rank()} and NetworkX's \code{pagerank()} to
 within their convergence tolerances.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}, summing to
+1.}
 \references{
 Brin, S., & Page, L. (1998). The anatomy of a large-scale hypertextual Web
 search engine. \emph{Computer Networks and ISDN Systems}, 30(1-7), 107-117.

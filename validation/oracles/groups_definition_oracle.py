@@ -60,8 +60,8 @@ import numpy as np
 from scipy.optimize import minimize
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, applies, fixture_names, load_fixture, write_values  # noqa: E402
-from common import load_manifest  # noqa: E402
+from common import (DEFINITION_VERSION, applies, fixture_names, load_fixture,
+                    load_manifest, write_values, write_version)  # noqa: E402
 
 ORACLE = "definition"
 MEASURES = {"n_cliques", "n_clans", "k_plexes", "lambda_connectivity", "lambda_sets",
@@ -578,9 +578,29 @@ def minres_cp(fx, weighted, output):
                        options={"ftol": 1e-15, "gtol": 1e-12, "maxiter": 20000})
         if best is None or res.fun < best.fun:
             best = res
-    c = best.x
+    # Polish the best point with exact coordinate minimization, c_i =
+    # max(0, sum_j (a_ij + a_ji) c_j / (k sum_j c_j^2)) over j != i, with k = 2
+    # for directed and 1 for undirected networks, which makes the result independent of where the
+    # quasi-Newton iterations stopped (they differ across platforms on flat
+    # objectives such as path10's).
+    c = best.x.copy()
+    full = np.zeros((fx.n, fx.n))
+    full[mask] = x
+    for _ in range(200000):
+        change = 0.0
+        for i in range(fx.n):
+            others = np.arange(fx.n) != i
+            num = float(full[i, others] @ c[others] + full[others, i] @ c[others])
+            # Each ordered pair is a term when directed, each unordered
+            # pair when undirected.
+            den = (2.0 if fx.directed else 1.0) * float(c[others] @ c[others])
+            new = max(0.0, num / den) if den > 0 else 0.0
+            change = max(change, abs(new - c[i]))
+            c[i] = new
+        if change < 1e-15:
+            break
     if output == "residual":
-        return [float(best.fun)]
+        return [float(objective(c)[0])]
     norm = np.linalg.norm(c)
     return list(c / norm) if norm > 0 else [-1.0] * fx.n
 
@@ -737,9 +757,7 @@ def main() -> None:
                 continue
             write_values(ORACLE, name, variant, values)
             count += 1
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(
-        "definition (direct evaluation, exact arithmetic)\n", newline="")
+    write_version(ORACLE, DEFINITION_VERSION)
     print(f"definition (groups): wrote {count} golden files")
     for variant, name in skipped:
         print(f"  no answer: {variant} on {name}")

@@ -106,99 +106,13 @@ use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
 use crate::error::{Error, Result};
-use crate::graph::Graph;
+use crate::graph::{Csr, Graph};
 use crate::matrix::Dense;
 use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::topography::{components, ComponentKind};
 use crate::parallel;
 use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
-
-// ---- The simple undirected reading ------------------------------------------
-
-/// For every node, its distinct neighbors other than itself, sorted, and
-/// optionally the total weight of the edges joining them in either
-/// direction.
-struct Simple {
-    offsets: Vec<usize>,
-    targets: Vec<u32>,
-    weights: Option<Vec<f64>>,
-}
-
-impl Simple {
-    fn new(g: &Graph, weighted: bool) -> Simple {
-        let n = g.node_count();
-        let out = g.out();
-        let inc = g.inc();
-        let mut offsets = Vec::with_capacity(n + 1);
-        offsets.push(0);
-        let mut targets: Vec<u32> = Vec::with_capacity(out.arc_count());
-        let mut weights = (weighted && g.is_weighted()).then(Vec::new);
-        for v in 0..n {
-            let a = out.neighbors(v);
-            let aw = out.weights(v);
-            let (b, bw) = if g.is_directed() {
-                (inc.neighbors(v), inc.weights(v))
-            } else {
-                (&[][..], None)
-            };
-            let row_start = targets.len();
-            let (mut i, mut j) = (0, 0);
-            loop {
-                let (u, w) = if i < a.len() && (j >= b.len() || a[i] <= b[j]) {
-                    i += 1;
-                    (a[i - 1], aw.map_or(1.0, |x| x[i - 1]))
-                } else if j < b.len() {
-                    j += 1;
-                    (b[j - 1], bw.map_or(1.0, |x| x[j - 1]))
-                } else {
-                    break;
-                };
-                if u as usize == v {
-                    continue;
-                }
-                if targets.len() > row_start && targets[targets.len() - 1] == u {
-                    if let Some(ws) = weights.as_mut() {
-                        let last = ws.len() - 1;
-                        ws[last] += w;
-                    }
-                } else {
-                    targets.push(u);
-                    if let Some(ws) = weights.as_mut() {
-                        ws.push(w);
-                    }
-                }
-            }
-            offsets.push(targets.len());
-        }
-        Simple {
-            offsets,
-            targets,
-            weights,
-        }
-    }
-
-    #[inline]
-    fn node_count(&self) -> usize {
-        self.offsets.len() - 1
-    }
-
-    #[inline]
-    fn neighbors(&self, v: usize) -> &[u32] {
-        &self.targets[self.offsets[v]..self.offsets[v + 1]]
-    }
-
-    #[inline]
-    fn weights(&self, v: usize) -> &[f64] {
-        let w = self.weights.as_ref().expect("weights were requested");
-        &w[self.offsets[v]..self.offsets[v + 1]]
-    }
-
-    #[inline]
-    fn degree(&self, v: usize) -> usize {
-        self.offsets[v + 1] - self.offsets[v]
-    }
-}
 
 // ---- Reciprocity ---------------------------------------------------------------
 
@@ -241,8 +155,7 @@ fn dyad_counts(g: &Graph) -> (u128, u128) {
     let n = g.node_count();
     let (mut arcs, mut reciprocated) = (0u128, 0u128);
     if !g.is_directed() {
-        let s = Simple::new(g, false);
-        let l = s.targets.len() as u128;
+        let l = g.simple_undirected(false).arc_count() as u128;
         return (l, l);
     }
     let (out, inc) = (g.out(), g.inc());
@@ -388,10 +301,10 @@ pub struct ClusteringOptions {
 /// Number of triangles at each node of the simple undirected reading of
 /// the network.
 pub fn triangles(g: &Graph, threads: usize) -> Vec<u64> {
-    triangles_of(&Simple::new(g, false), threads)
+    triangles_of(&g.simple_undirected(false), threads)
 }
 
-fn triangles_of(s: &Simple, threads: usize) -> Vec<u64> {
+fn triangles_of(s: &Csr, threads: usize) -> Vec<u64> {
     let n = s.node_count();
     // Orient every edge toward the endpoint later in (degree, index) order;
     // each triangle is then found once, from its earliest node, and no node
@@ -399,7 +312,7 @@ fn triangles_of(s: &Simple, threads: usize) -> Vec<u64> {
     let later = |a: usize, b: usize| (s.degree(a), a) < (s.degree(b), b);
     let mut off = Vec::with_capacity(n + 1);
     off.push(0usize);
-    let mut fwd: Vec<u32> = Vec::with_capacity(s.targets.len() / 2);
+    let mut fwd: Vec<u32> = Vec::with_capacity(s.arc_count() / 2);
     for v in 0..n {
         fwd.extend(
             s.neighbors(v)
@@ -446,7 +359,7 @@ fn triangles_of(s: &Simple, threads: usize) -> Vec<u64> {
 /// of connected triples. `weighting` is ignored. See the module
 /// documentation.
 pub fn transitivity(g: &Graph, opts: ClusteringOptions) -> f64 {
-    let s = Simple::new(g, false);
+    let s = g.simple_undirected(false);
     let t = triangles_of(&s, opts.threads);
     let closed: u128 = t.iter().map(|&x| x as u128).sum();
     let triples: u128 = (0..s.node_count())
@@ -496,7 +409,7 @@ pub fn average_clustering(g: &Graph, opts: ClusteringOptions) -> Result<f64> {
 /// Local coefficients with NaN for nodes with fewer than two neighbors.
 fn raw_clustering(g: &Graph, opts: ClusteringOptions) -> Result<Vec<f64>> {
     if opts.weighting == Weighting::None {
-        let s = Simple::new(g, false);
+        let s = g.simple_undirected(false);
         let t = triangles_of(&s, opts.threads);
         return Ok((0..s.node_count())
             .map(|v| {
@@ -516,16 +429,16 @@ fn raw_clustering(g: &Graph, opts: ClusteringOptions) -> Result<Vec<f64>> {
             raw[e]
         )));
     }
-    let s = Simple::new(g, true);
+    let s = g.simple_undirected(true);
     Ok(weighted_clustering(&s, opts.weighting, opts.threads))
 }
 
 /// Barrat or Onnela coefficients, NaN where k < 2. Each node's sum is
 /// accumulated by one thread in a fixed order, so results do not depend on
 /// the number of threads.
-fn weighted_clustering(s: &Simple, weighting: Weighting, threads: usize) -> Vec<f64> {
+fn weighted_clustering(s: &Csr, weighting: Weighting, threads: usize) -> Vec<f64> {
     let n = s.node_count();
-    let all = s.weights.as_deref().unwrap_or(&[]);
+    let all = s.all_weights().unwrap_or(&[]);
     let top = all.iter().copied().fold(0.0f64, f64::max);
     let parts = parallel::for_each_item(
         n,
@@ -538,14 +451,17 @@ fn weighted_clustering(s: &Simple, weighting: Weighting, threads: usize) -> Vec<
                 found.push((i, f64::NAN));
                 return;
             }
-            let wsi = s.weights(i);
+            let wsi = s.weights(i).unwrap_or(&[]);
             for (&j, &w) in ni.iter().zip(wsi) {
                 stamp[j as usize] = i as u32;
                 wi[j as usize] = w;
             }
             let mut sum = 0.0;
             for (&j, &wij) in ni.iter().zip(wsi) {
-                let (nj, wj) = (s.neighbors(j as usize), s.weights(j as usize));
+                let (nj, wj) = (
+                    s.neighbors(j as usize),
+                    s.weights(j as usize).unwrap_or(&[]),
+                );
                 let start = nj.partition_point(|&h| h <= j);
                 for (&h, &wjh) in nj[start..].iter().zip(&wj[start..]) {
                     if stamp[h as usize] != i as u32 {

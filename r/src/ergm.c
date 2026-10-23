@@ -10,14 +10,7 @@
  * and integer vectors with one block per attribute. See ergm.h for the
  * codes. Matrices are returned in R's column-major layout.
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
+#include "glue.h"
 
 static void ergm_finalizer(SEXP ptr) {
   ErgmHandle *h = (ErgmHandle *)R_ExternalPtrAddr(ptr);
@@ -49,15 +42,6 @@ static ErgmSample *sample_from_ptr(SEXP ptr) {
   return (ErgmSample *)R_ExternalPtrAddr(ptr);
 }
 
-static int64_t *as_int64(SEXP x) {
-  if (TYPEOF(x) != INTSXP) Rf_error("indices must be an integer vector (internal error)");
-  R_xlen_t n = XLENGTH(x);
-  int64_t *out = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
-  const int *src = INTEGER(x);
-  for (R_xlen_t i = 0; i < n; i++) out[i] = (int64_t)src[i];
-  return out;
-}
-
 static const int32_t *as_int32(SEXP x) {
   if (TYPEOF(x) != INTSXP) Rf_error("expected an integer vector (internal error)");
   return (const int32_t *)INTEGER(x);
@@ -68,9 +52,6 @@ static const double *as_double(SEXP x) {
   return REAL(x);
 }
 
-/* Seeds arrive as doubles holding whole numbers in [0, 2^53), checked in R. */
-static uint64_t as_seed(SEXP seed) { return (uint64_t)Rf_asReal(seed); }
-
 static int ergm_width(ErgmHandle *h) {
   int64_t p = net_ergm_width(h);
   if (p < 0) Rf_error("invalid model handle (internal error)");
@@ -79,8 +60,8 @@ static int ergm_width(ErgmHandle *h) {
 
 SEXP C_ergm_new(SEXP n, SEXP src, SEXP tgt, SEXP directed, SEXP term_code, SEXP term_param,
                 SEXP term_attr, SEXP term_levels_off, SEXP term_levels_len, SEXP term_levels,
-                SEXP numeric, SEXP k_numeric, SEXP categorical, SEXP k_categorical,
-                SEXP dyadic, SEXP k_dyadic, SEXP fixed) {
+                SEXP numeric, SEXP k_numeric, SEXP categorical, SEXP k_categorical, SEXP dyadic,
+                SEXP k_dyadic, SEXP fixed) {
   if (TYPEOF(src) != INTSXP || TYPEOF(tgt) != INTSXP || XLENGTH(src) != XLENGTH(tgt)) {
     Rf_error("edge indices must be integer vectors of equal length (internal error)");
   }
@@ -92,17 +73,14 @@ SEXP C_ergm_new(SEXP n, SEXP src, SEXP tgt, SEXP directed, SEXP term_code, SEXP 
   R_RegisterCFinalizerEx(ptr, ergm_finalizer, TRUE);
   ErgmHandle *h = NULL;
   char err[ERR_LEN] = {0};
-  int status = net_ergm_new(
-      (int64_t)Rf_asInteger(n), s, t, (int64_t)m, Rf_asLogical(directed), as_int32(term_code),
-      as_double(term_param), as_int32(term_attr), as_int32(term_levels_off),
-      as_int32(term_levels_len), as_int32(term_levels), nterms, as_double(numeric),
-      Rf_asInteger(k_numeric), as_int32(categorical), Rf_asInteger(k_categorical),
-      as_double(dyadic), Rf_asInteger(k_dyadic),
-      Rf_isNull(fixed) ? NULL : as_int32(fixed), &h, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status =
+      net_ergm_new((int64_t)Rf_asInteger(n), s, t, (int64_t)m, Rf_asLogical(directed),
+                   as_int32(term_code), as_double(term_param), as_int32(term_attr),
+                   as_int32(term_levels_off), as_int32(term_levels_len), as_int32(term_levels),
+                   nterms, as_double(numeric), Rf_asInteger(k_numeric), as_int32(categorical),
+                   Rf_asInteger(k_categorical), as_double(dyadic), Rf_asInteger(k_dyadic),
+                   Rf_isNull(fixed) ? NULL : as_int32(fixed), &h, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(ptr, h);
   UNPROTECT(1);
   return ptr;
@@ -128,12 +106,8 @@ SEXP C_ergm_stats(SEXP ptr) {
   int p = ergm_width(h);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, p));
   char err[ERR_LEN] = {0};
-  if (net_ergm_stats(h, REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_ergm_stats(h, REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* list(x = dyads-by-width matrix, y, tail, head) with 1-based endpoints. */
@@ -149,10 +123,8 @@ SEXP C_ergm_changestats(SEXP ptr) {
   int64_t *t = (int64_t *)R_alloc(d > 0 ? (size_t)d : 1, sizeof(int64_t));
   int64_t *hd = (int64_t *)R_alloc(d > 0 ? (size_t)d : 1, sizeof(int64_t));
   char err[ERR_LEN] = {0};
-  if (net_ergm_changestats(h, REAL(x), REAL(y), t, hd, err, ERR_LEN) != 0) {
-    UNPROTECT(4);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_changestats(h, REAL(x), REAL(y), t, hd, err, ERR_LEN);
+  check_status(status, err, 4);
   for (int64_t i = 0; i < d; i++) {
     INTEGER(tail)[i] = (int)t[i] + 1;
     INTEGER(head)[i] = (int)hd[i] + 1;
@@ -174,11 +146,9 @@ SEXP C_ergm_mple(SEXP ptr, SEXP max_iter, SEXP tol) {
   SEXP cov = PROTECT(Rf_allocMatrix(REALSXP, p, p));
   SEXP fit = PROTECT(Rf_allocVector(REALSXP, 6));
   char err[ERR_LEN] = {0};
-  if (net_ergm_mple(h, Rf_asInteger(max_iter), Rf_asReal(tol), REAL(coef), REAL(cov), REAL(fit),
-                    err, ERR_LEN) != 0) {
-    UNPROTECT(3);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_mple(h, Rf_asInteger(max_iter), Rf_asReal(tol), REAL(coef), REAL(cov),
+                             REAL(fit), err, ERR_LEN);
+  check_status(status, err, 3);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, coef);
   SET_VECTOR_ELT(out, 1, cov);
@@ -205,15 +175,11 @@ SEXP C_ergm_simulate(SEXP ptr, SEXP theta, SEXP burnin, SEXP interval, SEXP nsim
   R_RegisterCFinalizerEx(sptr, sample_finalizer, TRUE);
   ErgmSample *s = NULL;
   char err[ERR_LEN] = {0};
-  int status = net_ergm_simulate(h, REAL(theta), (int64_t)Rf_asReal(burnin),
-                                 (int64_t)Rf_asReal(interval), (int64_t)ns, nchains,
-                                 Rf_asInteger(proposal), as_seed(seed), Rf_asInteger(threads),
-                                 keep_networks, Rf_asLogical(start_empty), REAL(stats), REAL(rate),
-                                 keep_networks ? &s : NULL, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(3);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_simulate(
+      h, REAL(theta), (int64_t)Rf_asReal(burnin), (int64_t)Rf_asReal(interval), (int64_t)ns,
+      nchains, Rf_asInteger(proposal), as_seed(seed), Rf_asInteger(threads), keep_networks,
+      Rf_asLogical(start_empty), REAL(stats), REAL(rate), keep_networks ? &s : NULL, err, ERR_LEN);
+  check_status(status, err, 3);
   if (keep_networks) R_SetExternalPtrAddr(sptr, s);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, stats);
@@ -240,10 +206,8 @@ SEXP C_ergm_sample_networks(SEXP ptr) {
     int64_t *t = (int64_t *)R_alloc(m > 0 ? (size_t)m : 1, sizeof(int64_t));
     int64_t *hd = (int64_t *)R_alloc(m > 0 ? (size_t)m : 1, sizeof(int64_t));
     char err[ERR_LEN] = {0};
-    if (net_ergm_sample_edges(s, k, t, hd, err, ERR_LEN) != 0) {
-      UNPROTECT(2);
-      Rf_error("%s", err);
-    }
+    int status = net_ergm_sample_edges(s, k, t, hd, err, ERR_LEN);
+    check_status(status, err, 2);
     for (int64_t i = 0; i < m; i++) {
       INTEGER(mat)[i] = (int)t[i] + 1;
       INTEGER(mat)[m + i] = (int)hd[i] + 1;
@@ -264,24 +228,16 @@ SEXP C_ergm_gof_sample(SEXP ptr, SEXP which, SEXP len) {
   int l = Rf_asInteger(len);
   SEXP out = PROTECT(Rf_allocMatrix(REALSXP, (int)count, l));
   char err[ERR_LEN] = {0};
-  if (net_ergm_gof_sample(s, Rf_asInteger(which), REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_ergm_gof_sample(s, Rf_asInteger(which), REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 SEXP C_ergm_gof_observed(SEXP ptr, SEXP which, SEXP len) {
   ErgmHandle *h = ergm_from_ptr(ptr);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, Rf_asInteger(len)));
   char err[ERR_LEN] = {0};
-  if (net_ergm_gof_observed(h, Rf_asInteger(which), REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_ergm_gof_observed(h, Rf_asInteger(which), REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* list(theta, cov, mcmc_cov, info, stats). */
@@ -291,7 +247,8 @@ SEXP C_ergm_mcmle(SEXP ptr, SEXP theta0, SEXP burnin, SEXP interval, SEXP nsim, 
   ErgmHandle *h = ergm_from_ptr(ptr);
   int p = ergm_width(h);
   if (TYPEOF(theta0) != REALSXP || XLENGTH(theta0) != p) {
-    Rf_error("starting values must be a double vector with one value per statistic (internal error)");
+    Rf_error(
+        "starting values must be a double vector with one value per statistic (internal error)");
   }
   double ns = Rf_asReal(nsim);
   int nchains = Rf_asInteger(chains);
@@ -302,16 +259,12 @@ SEXP C_ergm_mcmle(SEXP ptr, SEXP theta0, SEXP burnin, SEXP interval, SEXP nsim, 
   SEXP info = PROTECT(Rf_allocVector(REALSXP, 5));
   SEXP stats = PROTECT(Rf_allocMatrix(REALSXP, (int)rows, p));
   char err[ERR_LEN] = {0};
-  int status = net_ergm_mcmle(h, REAL(theta0), (int64_t)Rf_asReal(burnin),
-                              (int64_t)Rf_asReal(interval), (int64_t)ns, nchains,
-                              Rf_asInteger(proposal), as_seed(seed), Rf_asInteger(threads),
-                              Rf_asInteger(max_iter), Rf_asReal(margin), Rf_asReal(critical),
-                              REAL(theta), REAL(cov), REAL(mc), REAL(info), REAL(stats), err,
-                              ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(5);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_mcmle(
+      h, REAL(theta0), (int64_t)Rf_asReal(burnin), (int64_t)Rf_asReal(interval), (int64_t)ns,
+      nchains, Rf_asInteger(proposal), as_seed(seed), Rf_asInteger(threads), Rf_asInteger(max_iter),
+      Rf_asReal(margin), Rf_asReal(critical), REAL(theta), REAL(cov), REAL(mc), REAL(info),
+      REAL(stats), err, ERR_LEN);
+  check_status(status, err, 5);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 5));
   SET_VECTOR_ELT(out, 0, theta);
   SET_VECTOR_ELT(out, 1, cov);
@@ -333,10 +286,8 @@ SEXP C_ergm_exact(SEXP ptr, SEXP theta) {
   SEXP mean = PROTECT(Rf_allocVector(REALSXP, p));
   SEXP cov = PROTECT(Rf_allocMatrix(REALSXP, p, p));
   char err[ERR_LEN] = {0};
-  if (net_ergm_exact(h, REAL(theta), REAL(ll), REAL(mean), REAL(cov), err, ERR_LEN) != 0) {
-    UNPROTECT(3);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_exact(h, REAL(theta), REAL(ll), REAL(mean), REAL(cov), err, ERR_LEN);
+  check_status(status, err, 3);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, ll);
   SET_VECTOR_ELT(out, 1, mean);
@@ -350,17 +301,16 @@ SEXP C_ergm_exact_mle(SEXP ptr, SEXP start, SEXP max_iter) {
   ErgmHandle *h = ergm_from_ptr(ptr);
   int p = ergm_width(h);
   if (TYPEOF(start) != REALSXP || XLENGTH(start) != p) {
-    Rf_error("starting values must be a double vector with one value per statistic (internal error)");
+    Rf_error(
+        "starting values must be a double vector with one value per statistic (internal error)");
   }
   SEXP theta = PROTECT(Rf_allocVector(REALSXP, p));
   SEXP cov = PROTECT(Rf_allocMatrix(REALSXP, p, p));
   SEXP info = PROTECT(Rf_allocVector(REALSXP, 2));
   char err[ERR_LEN] = {0};
-  if (net_ergm_exact_mle(h, REAL(start), Rf_asInteger(max_iter), REAL(theta), REAL(cov),
-                         REAL(info), err, ERR_LEN) != 0) {
-    UNPROTECT(3);
-    Rf_error("%s", err);
-  }
+  int status = net_ergm_exact_mle(h, REAL(start), Rf_asInteger(max_iter), REAL(theta), REAL(cov),
+                                  REAL(info), err, ERR_LEN);
+  check_status(status, err, 3);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, theta);
   SET_VECTOR_ELT(out, 1, cov);
@@ -379,15 +329,11 @@ SEXP C_ergm_loglik(SEXP ptr, SEXP theta, SEXP steps, SEXP burnin, SEXP interval,
   }
   SEXP out = PROTECT(Rf_allocVector(REALSXP, 2));
   char err[ERR_LEN] = {0};
-  if (net_ergm_loglik(h, REAL(theta), Rf_asInteger(steps), (int64_t)Rf_asReal(burnin),
-                      (int64_t)Rf_asReal(interval), (int64_t)Rf_asReal(nsim),
-                      Rf_asInteger(chains), Rf_asInteger(proposal), as_seed(seed),
-                      Rf_asInteger(threads), REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_ergm_loglik(h, REAL(theta), Rf_asInteger(steps), (int64_t)Rf_asReal(burnin),
+                               (int64_t)Rf_asReal(interval), (int64_t)Rf_asReal(nsim),
+                               Rf_asInteger(chains), Rf_asInteger(proposal), as_seed(seed),
+                               Rf_asInteger(threads), REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Pooled pseudolikelihood with bootstrap: list(coef, cov, fit, boot). x is
@@ -399,7 +345,8 @@ SEXP C_tergm_mple(SEXP x, SEXP y, SEXP period, SEXP periods, SEXP reps, SEXP see
     Rf_error("the design and response must be double vectors (internal error)");
   }
   SEXP dim = Rf_getAttrib(x, R_DimSymbol);
-  if (Rf_isNull(dim) || Rf_length(dim) != 2) Rf_error("the design must be a matrix (internal error)");
+  if (Rf_isNull(dim) || Rf_length(dim) != 2)
+    Rf_error("the design must be a matrix (internal error)");
   int m = INTEGER(dim)[0];
   int p = INTEGER(dim)[1];
   if (XLENGTH(y) != m || XLENGTH(period) != m) {
@@ -411,13 +358,11 @@ SEXP C_tergm_mple(SEXP x, SEXP y, SEXP period, SEXP periods, SEXP reps, SEXP see
   SEXP fit = PROTECT(Rf_allocVector(REALSXP, 5));
   SEXP boot = PROTECT(Rf_allocMatrix(REALSXP, (int)nreps, p));
   char err[ERR_LEN] = {0};
-  if (net_tergm_mple(REAL(x), REAL(y), as_int32(period), (int64_t)m, (int64_t)p,
-                     Rf_asInteger(periods), (int64_t)nreps, as_seed(seed), Rf_asInteger(threads),
-                     Rf_asInteger(max_iter), Rf_asReal(tol), REAL(coef), REAL(cov), REAL(fit),
-                     REAL(boot), err, ERR_LEN) != 0) {
-    UNPROTECT(4);
-    Rf_error("%s", err);
-  }
+  int status = net_tergm_mple(REAL(x), REAL(y), as_int32(period), (int64_t)m, (int64_t)p,
+                              Rf_asInteger(periods), (int64_t)nreps, as_seed(seed),
+                              Rf_asInteger(threads), Rf_asInteger(max_iter), Rf_asReal(tol),
+                              REAL(coef), REAL(cov), REAL(fit), REAL(boot), err, ERR_LEN);
+  check_status(status, err, 4);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 4));
   SET_VECTOR_ELT(out, 0, coef);
   SET_VECTOR_ELT(out, 1, cov);

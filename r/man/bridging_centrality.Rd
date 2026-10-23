@@ -2,6 +2,15 @@
 \alias{bridging_centrality}
 \alias{bridging_coefficient}
 \title{Bridging centrality}
+\description{
+Hwang et al.'s (2008) bridging centrality finds nodes that lie between
+densely connected regions: it is betweenness times the bridging
+coefficient
+\deqn{BC(v) = \frac{1 / d(v)}{\sum_{u \in N(v)} 1 / d(u)},}{BC(v) = (1 / d(v)) / sum_u 1 / d(u),}
+where \eqn{d} is the number of distinct neighbours and the sum runs over
+the neighbours of \eqn{v}. The coefficient is large for nodes of low
+degree whose neighbours have high degree.
+}
 \usage{
 bridging_centrality(x, threads = 0L)
 
@@ -13,16 +22,6 @@ bridging_coefficient(x)
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Hwang et al.'s (2008) bridging centrality finds nodes that lie between
-densely connected regions: it is betweenness times the bridging
-coefficient
-\deqn{BC(v) = \frac{1 / d(v)}{\sum_{u \in N(v)} 1 / d(u)},}{BC(v) = (1 / d(v)) / sum_u 1 / d(u),}
-where \eqn{d} is the number of distinct neighbours and the sum runs over
-the neighbours of \eqn{v}. The coefficient is large for nodes of low
-degree whose neighbours have high degree.
-}
 \details{
 The bridging coefficient ignores direction, weights, self-loops, and
 parallel edges, and is \code{NaN} for isolated nodes.
@@ -32,6 +31,7 @@ betweenness computed on binary ties (\code{\link{betweenness}} with
 as Hwang et al. define it on the undirected networks they study. Neither
 igraph, NetworkX, nor sna implements the measure.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Hwang, W., Kim, T., Ramanathan, M., & Zhang, A. (2008). Bridging
 centrality: Graph mining from element level to group level. In

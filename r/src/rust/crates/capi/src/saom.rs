@@ -25,7 +25,7 @@ use engine::saom::simulate::simulate_panel;
 use engine::saom::Panel;
 use engine::Error;
 
-use crate::{guard, slice, slice_mut};
+use crate::{count, deref, guard, slice, slice_mut, thread_count};
 
 /// Opaque panel handle.
 pub struct SaomHandle(Panel);
@@ -76,11 +76,8 @@ pub const SAOM_FIT_AUX_OBSERVED: i32 = 16;
 pub const SAOM_FIT_META: i32 = 17;
 
 fn panel<'a>(h: *const SaomHandle) -> Result<&'a Panel, Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument("panel handle is null".into()));
-    }
     // SAFETY: non-null handles are only created by `net_saom_new`.
-    Ok(unsafe { &(*h).0 })
+    unsafe { deref(h, "panel") }.map(|p| &p.0)
 }
 
 fn panel_mut<'a>(h: *mut SaomHandle) -> Result<&'a mut Panel, Error> {
@@ -93,18 +90,8 @@ fn panel_mut<'a>(h: *mut SaomHandle) -> Result<&'a mut Panel, Error> {
 }
 
 fn fit<'a>(h: *const SaomFit) -> Result<&'a Fit, Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument("fit handle is null".into()));
-    }
     // SAFETY: non-null fit handles are only created by `net_saom_estimate`.
-    Ok(unsafe { &(*h).0 })
-}
-
-fn count(v: i64, what: &str) -> Result<usize, Error> {
-    if v < 0 {
-        return Err(Error::InvalidArgument(format!("negative {what}")));
-    }
-    Ok(v as usize)
+    unsafe { deref(h, "fit") }.map(|f| &f.0)
 }
 
 /// # Safety
@@ -495,7 +482,7 @@ pub unsafe extern "C" fn net_saom_estimate(
             truncation: o[7],
             theta_bound: o[8],
             seed,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             keep_aux: o[9] != 0.0,
             initial,
         };

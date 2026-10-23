@@ -1,8 +1,8 @@
 # Full benchmarks against igraph, sna, NetworkX, python-igraph, and
 # NetworKit, and the scale tier of the validation corpus
-# (validation/scale/). Run on demand and weekly; results appear as
-# annotations on the run and as CSV artifacts. The quick benchmarks run in
-# ci.yml on every change.
+# (validation/scale/). Runs on demand and weekly; results appear as
+# annotations on the run and as CSV artifacts (bench/results/). The quick
+# benchmarks run in ci.yml on every change.
 name: Benchmarks
 
 on:
@@ -16,6 +16,8 @@ defaults:
 
 jobs:
   bench:
+    # About 60 minutes per platform; the budget is bench.R's and bench.py's
+    # per-measurement time limit times the number of measurements.
     name: benchmarks (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
@@ -26,32 +28,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            . -> target
+            r/src/rust -> target
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-      - name: Install tools
+          cache: pip
+          cache-dependency-path: validation/requirements.txt
+      - name: Install Python tools
         run: |
-          python -m pip install networkx numpy scipy igraph pyyaml
+          python -m pip install -r validation/requirements.txt igraph
           # NetworKit has no wheel for every platform; its comparisons are
           # skipped where it does not install.
           python -m pip install networkit || echo "NetworKit is not available here."
-          Rscript -e 'install.packages(c("igraph", "sna"), repos = "https://cloud.r-project.org")'
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          dependencies: '"hard"'
+          extra-packages: any::igraph, any::sna
+      - name: Build
+        run: |
           R CMD INSTALL r
           cargo build --release -p capi
       - name: R benchmarks
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          Rscript bench/bench.R 2>&1 | tee ci-logs/r.log
+        run: bash tools/ci_log.sh r Rscript bench/bench.R
       - name: Python benchmarks
         if: always()
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          python bench/bench.py 2>&1 | tee ci-logs/python.log
+        run: bash tools/ci_log.sh python python bench/bench.py
       - name: Show results
         if: always()
         run: LEVEL=notice bash tools/ci_annotate.sh Benchmarks ci-logs/*.log
@@ -62,25 +71,34 @@ jobs:
           path: bench/results
 
   scale:
+    # About 30 minutes.
     name: validation at scale
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: validation/requirements.txt
+      - name: Install Python tools
+        run: python -m pip install -r validation/requirements.txt
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
-      - name: Install tools
-        run: |
-          python -m pip install networkx numpy scipy pyyaml
-          Rscript -e 'install.packages(c("igraph", "sna", "yaml"), repos = "https://cloud.r-project.org")'
-          cargo build --release -p capi
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::igraph, any::sna, any::yaml
+      - name: Build
+        run: cargo build --release -p capi
       - name: Engine against NetworkX
-        run: python validation/scale/check_scale.py
+        run: bash tools/ci_log.sh networkx python validation/scale/check_scale.py
       - name: Engine against igraph and sna
         if: always()
-        run: Rscript validation/scale/check_scale.R
+        run: bash tools/ci_log.sh r Rscript validation/scale/check_scale.R
+      - name: Show failures
+        if: failure()
+        run: bash tools/ci_annotate.sh "Validation at scale" ci-logs/*.log

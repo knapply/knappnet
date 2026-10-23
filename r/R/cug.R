@@ -1,65 +1,7 @@
-#' Conditional uniform graph tests
-#'
-#' Compares a network statistic with its distribution over random networks
-#' that share some feature of the observed network (Anderson, Butts, and
-#' Carley 1999), as sna's `cug.test()` does. The null model is uniform over
-#' networks with the same number of nodes (`conditioning = "size"`, that is
-#' \eqn{G(n, 1/2)}), the same number of edges (`"edges"`, \eqn{G(n, m)}),
-#' or the same dyad census (`"dyad.census"`, the U|MAN distribution of
-#' Holland and Leinhardt 1976: the same numbers of mutual, asymmetric, and
-#' null dyads).
-#'
-#' @details
-#' `statistic` is any function that takes a netframe (and `...`) and returns
-#' a single number, such as [transitivity()], [centralization()], or
-#' `function(g) mean(degree(g))`. It is applied to the observed network as
-#' given and to `reps` random networks on `1, 2, ..., n` nodes, drawn in
-#' parallel with the generators of [random_gnp()], [random_gnm()], and
-#' [random_uman()] from a seeded counter-based generator, so the null
-#' distribution for a given `seed` does not depend on `threads`; the
-#' statistic itself runs in R, one network at a time.
-#'
-#' The random networks are simple and directed if and only if the observed
-#' network is. The observed network's number of edges and dyad census are
-#' counted on its simple reading (parallel edges once, self-loops ignored),
-#' as sna does on an adjacency matrix with `diag = FALSE`; a network with
-#' self-loops or parallel edges gets a warning, since the statistic sees
-#' them while the null networks never have them. In an undirected network
-#' every tie is a mutual dyad, so conditioning on the dyad census is the
-#' same as conditioning on the number of edges and is treated so. Weights
-#' and attributes are not carried to the random networks.
-#'
-#' The p-values are the proportions of random networks whose statistic is
-#' at least (`p_greater`) and at most (`p_less`) the observed one, as sna
-#' reports them (`Pr(X >= Obs)` and `Pr(X <= Obs)`). A statistic that is
-#' `NA` or `NaN` on some random networks is dropped from the distribution
-#' for those networks, and the number dropped is reported.
-#'
-#' @inheritParams betweenness
-#' @param statistic A function of a netframe returning one number.
-#' @param conditioning What the random networks share with the observed one:
-#'   `"size"`, `"edges"`, or `"dyad.census"`.
-#' @param reps Number of random networks.
-#' @param ... Further arguments passed to `statistic`.
-#' @param seed Seed for the random networks, a whole number between 0 and
-#'   \eqn{2^{53}}; `NULL` draws one from R's random number generator, so
-#'   [set.seed()] makes results reproducible.
-#' @param object A `cug_test`.
-#'
-#' @references
-#' Anderson, B. S., Butts, C., & Carley, K. (1999). The interaction of size
-#' and density with graph-level indices. *Social Networks*, 21(3), 239-267.
-#' \doi{10.1016/S0378-8733(99)00011-8}
-#'
-#' Holland, P. W., & Leinhardt, S. (1976). Local structure in social
-#' networks. *Sociological Methodology*, 7, 1-45. \doi{10.2307/270703}
-#'
-#' @return An object of class `cug_test`: a list with `observed` (the
-#'   statistic on `x`), `null` (its values on the random networks),
-#'   `p_greater` and `p_less`, `conditioning`, `reps`, `dropped` (random
-#'   networks on which the statistic was undefined), and `statistic` (the
-#'   expression given). `summary()` adds quantiles of the null distribution.
-#' @export
+# Conditional uniform graph tests: the test, its print, summary, and plot
+# methods.
+
+# Conditional uniform graph tests (man/cug_test.Rd).
 cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
                      reps = 1000L, ..., seed = NULL, threads = 0L) {
   check_netframe(x)
@@ -67,9 +9,8 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
     stop("`statistic` must be a function of a netframe returning one number.", call. = FALSE)
   }
   conditioning <- match.arg(conditioning)
-  reps <- check_count(reps, "reps")
-  if (reps < 1L) stop("`reps` must be at least 1.", call. = FALSE)
-  seed <- groups_seed(seed)
+  reps <- check_count(reps, "reps", min = 1L)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   label <- deparse(substitute(statistic))[[1L]]
 
@@ -143,8 +84,7 @@ simple_dyads <- function(x) {
   }
 }
 
-#' @rdname cug_test
-#' @export
+# See man/cug_test.Rd.
 print.cug_test <- function(x, ...) {
   cat("Conditional uniform graph test\n\n")
   cat(sprintf("Statistic: %s\n", x$statistic))
@@ -159,8 +99,7 @@ print.cug_test <- function(x, ...) {
   invisible(x)
 }
 
-#' @rdname cug_test
-#' @export
+# See man/cug_test.Rd.
 summary.cug_test <- function(object, ...) {
   q <- if (length(object$null)) {
     stats::quantile(object$null, c(0, 0.025, 0.25, 0.5, 0.75, 0.975, 1), names = TRUE)
@@ -172,11 +111,33 @@ summary.cug_test <- function(object, ...) {
             class = "summary.cug_test")
 }
 
-#' @export
 print.summary.cug_test <- function(x, ...) {
   print.cug_test(structure(x, class = "cug_test"))
   cat("\nNull distribution:\n")
   cat(sprintf("  mean %s, sd %s\n", format(x$mean, digits = 6), format(x$sd, digits = 6)))
   print(x$quantiles, digits = 6)
+  invisible(x)
+}
+
+# See man/cug_test.Rd.
+plot.cug_test <- function(x, ..., breaks = "Sturges") {
+  pal <- plot_qualitative(8L)
+  null <- x$null
+  if (!length(null)) stop("The null distribution is empty; nothing to plot.", call. = FALSE)
+  dots <- list(...)
+  if (is.null(dots$main)) dots$main <- sprintf("CUG test of %s (conditioning on %s)",
+                                               x$statistic, x$conditioning)
+  if (is.null(dots$xlab)) dots$xlab <- x$statistic
+  xlim <- range(c(null, x$observed), finite = TRUE)
+  xlim <- xlim + c(-1, 1) * 0.05 * max(diff(xlim), 1e-8)
+  h <- graphics::hist(null, breaks = breaks, plot = FALSE)
+  do.call(graphics::plot, c(list(h, col = pal[[2L]], border = "white", xlim = xlim), dots))
+  graphics::abline(v = x$observed, col = pal[[5L]], lwd = 2.5)
+  graphics::legend(if (x$observed > stats::median(null)) "topleft" else "topright",
+                   bty = "n", cex = 0.85, lty = c(1, NA, NA), lwd = c(2.5, NA, NA),
+                   col = c(pal[[5L]], NA, NA),
+                   legend = c(sprintf("observed = %s", format(x$observed, digits = 4)),
+                              sprintf("Pr(X >= obs) = %s", format(x$p_greater, digits = 3)),
+                              sprintf("Pr(X <= obs) = %s", format(x$p_less, digits = 3))))
   invisible(x)
 }

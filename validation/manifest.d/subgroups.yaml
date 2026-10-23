@@ -1,5 +1,5 @@
 # Cohesive subgroups: cores, cliques, and communities.
-# Format as in validation/manifest.yaml.
+# Format: see ../README.md.
 
 coreness_all:
   engine: {fn: coreness, mode: all}

@@ -2,6 +2,7 @@
 # Pages (https://knapply.github.io/knappnet/). In the repository settings,
 # Pages must use "GitHub Actions" as its source. Every article runs its
 # code while the site builds, so a broken example fails this workflow.
+# About 15 minutes with cached R packages.
 name: Website
 
 on:
@@ -50,18 +51,14 @@ jobs:
             any::Matrix
           needs: website
       - name: Install the package from source
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          R CMD INSTALL r 2>&1 | tee ci-logs/install.log
+        run: bash tools/ci_log.sh install R CMD INSTALL r
       - name: Use the README as the home page
         run: Rscript r/pkgdown/home.R
       - name: Build the site
         working-directory: r
-        run: |
-          set -o pipefail
-          Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)' \
-            2>&1 | tee ../ci-logs/pkgdown.log
+        run: >-
+          CI_LOG_DIR=../ci-logs bash ../tools/ci_log.sh pkgdown
+          Rscript -e 'pkgdown::build_site_github_pages(new_process = FALSE, install = FALSE)'
       - name: Show failures
         if: failure()
         run: bash tools/ci_annotate.sh "pkgdown" ci-logs/*.log

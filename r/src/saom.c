@@ -11,14 +11,7 @@
  * parameters. Seeds arrive as doubles holding whole numbers in [0, 2^53),
  * checked in R.
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
+#include "glue.h"
 
 static void saom_finalizer(SEXP ptr) {
   SaomHandle *h = (SaomHandle *)R_ExternalPtrAddr(ptr);
@@ -43,8 +36,6 @@ static SaomHandle *saom_from_ptr(SEXP ptr) {
   return (SaomHandle *)R_ExternalPtrAddr(ptr);
 }
 
-static uint64_t as_u64(SEXP x) { return (uint64_t)Rf_asReal(x); }
-
 /* The effect specification: codes and covariates integer, parameters
  * double, all of the same length k. */
 typedef struct {
@@ -57,8 +48,9 @@ typedef struct {
 static Spec spec_of(SEXP codes, SEXP covariates, SEXP parameters) {
   if (TYPEOF(codes) != INTSXP || TYPEOF(covariates) != INTSXP || TYPEOF(parameters) != REALSXP ||
       XLENGTH(covariates) != XLENGTH(codes) || XLENGTH(parameters) != XLENGTH(codes)) {
-    Rf_error("effects must be integer codes, integer covariates, and double parameters of one "
-             "length (internal error)");
+    Rf_error(
+        "effects must be integer codes, integer covariates, and double parameters of one "
+        "length (internal error)");
   }
   Spec s;
   s.k = (int64_t)XLENGTH(codes);
@@ -83,19 +75,13 @@ SEXP C_saom_new(SEXP n, SEXP waves, SEXP adjacency, SEXP actor, SEXP dyadic) {
   SaomHandle *h = NULL;
   char err[ERR_LEN] = {0};
   int status = net_saom_new((int64_t)nn, (int64_t)w, REAL(adjacency), &h, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(ptr, h);
   for (R_xlen_t i = 0; i < Rf_xlength(actor); i++) {
     SEXP v = VECTOR_ELT(actor, i);
     if (TYPEOF(v) != REALSXP) Rf_error("actor covariates must be double vectors (internal error)");
     status = net_saom_add_actor_covariate(h, REAL(v), (int64_t)XLENGTH(v), err, ERR_LEN);
-    if (status != 0) {
-      UNPROTECT(1);
-      Rf_error("%s", err);
-    }
+    check_status(status, err, 1);
   }
   for (R_xlen_t i = 0; i < Rf_xlength(dyadic); i++) {
     SEXP v = VECTOR_ELT(dyadic, i);
@@ -103,10 +89,7 @@ SEXP C_saom_new(SEXP n, SEXP waves, SEXP adjacency, SEXP actor, SEXP dyadic) {
       Rf_error("dyadic covariates must be double vectors of length n * n (internal error)");
     }
     status = net_saom_add_dyadic_covariate(h, REAL(v), err, ERR_LEN);
-    if (status != 0) {
-      UNPROTECT(1);
-      Rf_error("%s", err);
-    }
+    check_status(status, err, 1);
   }
   UNPROTECT(1);
   return ptr;
@@ -121,12 +104,8 @@ SEXP C_saom_distances(SEXP ptr) {
   int64_t periods = net_saom_period_count(h);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)periods));
   char err[ERR_LEN] = {0};
-  if (net_saom_distances(h, REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_saom_distances(h, REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns k * (M - 1) values, period-major. */
@@ -136,31 +115,23 @@ SEXP C_saom_targets(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters) {
   int64_t periods = net_saom_period_count(h);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)(s.k * periods)));
   char err[ERR_LEN] = {0};
-  if (net_saom_targets(h, s.k, s.codes, s.covariates, s.parameters, REAL(out), err, ERR_LEN) !=
-      0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status =
+      net_saom_targets(h, s.k, s.codes, s.covariates, s.parameters, REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns n * k values, alter-major; wave, period, and actor are 0-based. */
-SEXP C_saom_contributions(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEXP n,
-                          SEXP wave, SEXP period, SEXP actor) {
+SEXP C_saom_contributions(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEXP n, SEXP wave,
+                          SEXP period, SEXP actor) {
   SaomHandle *h = saom_from_ptr(ptr);
   Spec s = spec_of(codes, covariates, parameters);
   R_xlen_t nn = (R_xlen_t)Rf_asInteger(n);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, nn * (R_xlen_t)s.k));
   char err[ERR_LEN] = {0};
-  if (net_saom_contributions(h, s.k, s.codes, s.covariates, s.parameters,
-                             (int64_t)Rf_asInteger(wave), (int64_t)Rf_asInteger(period),
-                             (int64_t)Rf_asInteger(actor), REAL(out), err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_saom_contributions(h, s.k, s.codes, s.covariates, s.parameters,
+                                      (int64_t)Rf_asInteger(wave), (int64_t)Rf_asInteger(period),
+                                      (int64_t)Rf_asInteger(actor), REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 SEXP C_saom_initial(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEXP conditional) {
@@ -170,13 +141,9 @@ SEXP C_saom_initial(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEXP
   int64_t p = s.k + (cond ? 0 : net_saom_period_count(h));
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)p));
   char err[ERR_LEN] = {0};
-  if (net_saom_initial(h, s.k, s.codes, s.covariates, s.parameters, cond, REAL(out), err,
-                       ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status =
+      net_saom_initial(h, s.k, s.codes, s.covariates, s.parameters, cond, REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns list(networks, statistics, times): networks holds the M - 1
@@ -198,12 +165,10 @@ SEXP C_saom_simulate(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEX
   SEXP statistics = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)(s.k * periods)));
   SEXP times = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)periods));
   char err[ERR_LEN] = {0};
-  if (net_saom_simulate(h, s.k, s.codes, s.covariates, s.parameters, REAL(theta),
-                        cond ? NULL : REAL(rates), cond, as_u64(seed), as_u64(index),
-                        REAL(networks), REAL(statistics), REAL(times), err, ERR_LEN) != 0) {
-    UNPROTECT(3);
-    Rf_error("%s", err);
-  }
+  int status = net_saom_simulate(h, s.k, s.codes, s.covariates, s.parameters, REAL(theta),
+                                 cond ? NULL : REAL(rates), cond, as_seed(seed), as_seed(index),
+                                 REAL(networks), REAL(statistics), REAL(times), err, ERR_LEN);
+  check_status(status, err, 3);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, networks);
   SET_VECTOR_ELT(out, 1, statistics);
@@ -231,12 +196,10 @@ SEXP C_saom_estimate(SEXP ptr, SEXP codes, SEXP covariates, SEXP parameters, SEX
   R_RegisterCFinalizerEx(holder, fit_finalizer, TRUE);
   SaomFit *fit = NULL;
   char err[ERR_LEN] = {0};
-  if (net_saom_estimate(h, s.k, s.codes, s.covariates, s.parameters, REAL(options),
-                        Rf_isNull(initial) ? NULL : REAL(initial), as_u64(seed),
-                        Rf_asInteger(threads), &fit, err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status = net_saom_estimate(h, s.k, s.codes, s.covariates, s.parameters, REAL(options),
+                                 Rf_isNull(initial) ? NULL : REAL(initial), as_seed(seed),
+                                 Rf_asInteger(threads), &fit, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, fit);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, FIT_ITEMS));
   for (int which = 0; which < FIT_ITEMS; which++) {

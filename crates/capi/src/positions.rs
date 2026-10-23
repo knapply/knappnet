@@ -12,7 +12,7 @@ use engine::metrics::equivalence::{
 };
 use engine::Error;
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// Burt's structural-hole measures. `measure`: 0 = constraint, 1 =
 /// effective size, 2 = efficiency, 3 = hierarchy (NaN for nodes with
@@ -36,7 +36,7 @@ pub unsafe extern "C" fn net_structural_holes(
         let g = handle(h)?;
         let opts = StructuralHoleOptions {
             weighted: weighted != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let values = match measure {
             0 => constraint(g, opts)?,
@@ -77,7 +77,7 @@ pub unsafe extern "C" fn net_brokerage(
         if n_groups < 0 {
             return Err(Error::InvalidArgument("negative group count".into()));
         }
-        let m = brokerage(g, slice(groups, n_groups as usize), threads.max(0) as usize)?;
+        let m = brokerage(g, slice(groups, n_groups as usize), thread_count(threads))?;
         slice_mut(out, 6 * g.node_count()).copy_from_slice(&m.to_col_major());
         Ok(())
     })
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn net_structural_equivalence(
         let opts = EquivalenceOptions {
             method: EquivalenceMethod::from_code(method)?,
             weighted: weighted != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let m = structural_equivalence(g, opts)?;
         let n = g.node_count();
@@ -147,7 +147,7 @@ pub unsafe extern "C" fn net_concor(
             weighted: weighted != 0,
             tolerance,
             max_iter: max_iter as usize,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let r = concor(g, opts)?;
         let dst = slice_mut(out, g.node_count());

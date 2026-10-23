@@ -1,10 +1,10 @@
 # Density, components, fragmentation, centralization, closeness, harmonic
-# centrality, and eigenvector centrality. Format as in ../manifest.yaml.
+# centrality, and eigenvector centrality. Format: see ../README.md.
 #
 # Undefined results (NaN) are written as -1 by the engine runner and by
 # every oracle, since none of these measures can be negative.
 #
-# Engine options not in ../manifest.yaml:
+# Engine options beyond the common keys:
 #   simple: true      run on the adjacency-matrix reading of the network
 #                     (parallel edges collapsed, self-loops dropped), which
 #                     is how sna and UCINET read a network.

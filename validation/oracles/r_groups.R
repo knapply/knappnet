@@ -92,7 +92,12 @@ mean_reciprocal <- function(g, weights) {
 }
 
 # igraph uses an edge attribute called `weight` unless told otherwise, so
-# unweighted variants pass weights = NA explicitly.
+# unweighted variants pass weights = NA explicitly or drop the attribute.
+unweighted <- function(g) {
+  if ("weight" %in% igraph::edge_attr_names(g)) g <- igraph::delete_edge_attr(g, "weight")
+  g
+}
+
 igraph_values <- function(spec, g, meta) {
   e <- spec$engine
   su <- simple_undirected(g)
@@ -109,14 +114,16 @@ igraph_values <- function(spec, g, meta) {
       max(cl$modularity)
     },
     leading_eigen = {
-      w <- if (isTRUE(e$weighted)) igraph::E(g)$weight else NA
-      cl <- tryCatch(igraph::cluster_leading_eigen(g, weights = w), error = function(err) NULL)
+      # Without weights the weight attribute is removed, so that no igraph
+      # routine can pick it up.
+      gl <- if (isTRUE(e$weighted)) g else unweighted(g)
+      w <- if (isTRUE(e$weighted)) igraph::E(g)$weight else NULL
+      cl <- tryCatch(igraph::cluster_leading_eigen(gl, weights = w), error = function(err) NULL)
       if (is.null(cl)) return(NULL)
       if (identical(e$output, "membership")) {
         as.integer(igraph::membership(cl)) - 1L
       } else {
-        igraph::modularity(g, igraph::membership(cl),
-                           weights = if (isTRUE(e$weighted)) igraph::E(g)$weight else NA)
+        igraph::modularity(gl, igraph::membership(cl), weights = w)
       }
     },
     fast_greedy = {

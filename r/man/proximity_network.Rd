@@ -1,6 +1,14 @@
 \name{proximity_network}
 \alias{proximity_network}
 \title{Proximity networks from locations}
+\description{
+Builds a network that joins located points to the points near them: every
+pair within a distance (a fixed-radius or disk network), or each point to
+its \code{k} nearest neighbours. Neighbours are found with a k-d tree
+(Bentley 1975; Friedman, Bentley, and Finkel 1977), so networks of 100,000
+points take seconds, and every candidate's distance is then computed
+exactly, so the tree changes the speed but never the result.
+}
 \usage{
 proximity_network(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                   radius = 6371008.7714, within = NULL, k = NULL,
@@ -40,16 +48,6 @@ that touch are at distance 0) rather than between their representative
 points. Exact distances with \code{k} compute every pair, so they are
 limited to 5000 features.}
 }
-\value{A spatial netframe (see \code{\link{spatial_network}}) with edge
-columns \code{from}, \code{to}, and \code{distance}.}
-\description{
-Builds a network that joins located points to the points near them: every
-pair within a distance (a fixed-radius or disk network), or each point to
-its \code{k} nearest neighbours. Neighbours are found with a k-d tree
-(Bentley 1975; Friedman, Bentley, and Finkel 1977), so networks of 100,000
-points take seconds, and every candidate's distance is then computed
-exactly, so the tree changes the speed but never the result.
-}
 \details{
 Within-distance networks are undirected, contain one edge per pair at
 distance at most \code{within} (so coincident points are joined), and
@@ -74,6 +72,8 @@ sphere, where the chord between two points increases with their
 great-circle distance, so it finds the same neighbours as the exact
 metric.
 }
+\value{A spatial netframe (see \code{\link{spatial_network}}) with edge
+columns \code{from}, \code{to}, and \code{distance}.}
 \references{
 Bentley, J. L. (1975). Multidimensional binary search trees used for
 associative searching. \emph{Communications of the ACM}, 18(9), 509-517.

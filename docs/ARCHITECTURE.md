@@ -9,12 +9,41 @@ correct, fast, and maintainable as it grows.
 crates/engine     Rust. Graph storage and algorithms. No dependencies.
                   Published to crates.io under the project name.
 crates/capi       Rust. A small C ABI over the engine (crates/capi/include/netcapi.h).
-r/                The R package. C glue (r/src/glue.c) calls the C ABI.
-validation/       Fixtures, golden results from reference tools, comparison.
-bench/            Benchmarks against other tools.
-tools/            Maintenance scripts (renaming, syncing sources, ABI check).
-docs/             Architecture notes and the bibliography.
+r/                The R package. C glue (r/src/*.c) calls the C ABI.
+validation/       Fixtures, golden results from reference tools, comparison
+                  (validation/README.md).
+bench/            Benchmarks against other tools (bench.yml; the quick tier
+                  runs in ci.yml).
+data-raw/         Scripts that rebuild the bundled example data from its
+                  published sources (data-raw.yml).
+tools/            Maintenance scripts, listed in CONTRIBUTING.md.
+docs/             Architecture notes, the release checklist, and the
+                  bibliography with its generated index.
 ```
+
+Inside the engine, shared machinery lives in its own modules: `graph`
+(CSR storage and derived views such as `Graph::simple_undirected`),
+`matrix` (`Dense`), `linalg` (all dense linear algebra, one implementation
+per operation), `union_find`, `rng`, `parallel`, `weights` (path lengths
+and weight checks), and `conventions`. Measures live in `metrics`,
+statistical models in `qap`, `ergm`, and `saom`, and dynamics, space,
+drawing, and generation in `temporal`, `spatial`, `layout`, and
+`generate`. The crate documentation (`lib.rs`) and `metrics/mod.rs` carry
+the full map. The C ABI header `netcapi.h` is divided into commented
+sections by area after a preamble on return codes, ownership, and buffer
+sizes, and the R glue shares its helpers through `r/src/glue.h`.
+
+Each area of functionality (descriptive statistics, positions, spectral
+measures, ...) is one module per layer with the same name: an engine
+module, a C ABI module, a C glue file, an R file, a test file, a manifest
+file, a runner, and oracle scripts. `tools/new_measure.py` creates them.
+
+The R package (`r/`) keeps user-facing functions in `r/R/<area>.R`,
+shared helpers in `r/R/utils-*.R` (argument checks, the engine handle and
+error rewriting, node lookups), and plotting in `r/R/plot-*.R`. Help pages
+are hand-written Rd files in `r/man/`, the only source of documentation
+(there are no roxygen comments); `tools/check_r_docs.py` keeps them, the
+function signatures, `NAMESPACE`, and the pkgdown index consistent.
 
 Language bindings never call the engine directly; they go through the C ABI.
 Python bindings will use the same ABI, so every language shares one tested
@@ -118,36 +147,42 @@ some CRAN build machines).
 
 ## Validation
 
-`validation/manifest.yaml` lists every measure, its engine call, its
-tolerance, and its equivalent in each reference tool. Oracles:
+`validation/manifest.d/<area>.yaml` lists every measure, its engine call,
+its tolerance, and its equivalent in each reference tool, with every known
+convention difference and its reason. Oracles:
 
 | Oracle | Where it runs | Notes |
 |---|---|---|
-| definition | locally and CI | Direct evaluation of the definition with exact arithmetic on small fixtures. Shares no code with anything else. |
-| networkx | locally and CI | `validation/oracles/networkx_oracle.py` |
-| igraph, sna | CI | `validation/oracles/r_oracles.R` |
-| UCINET, Pajek, Gephi | manual | Golden files generated once per release on Windows and committed. |
+| definition | locally and CI | Direct evaluation of the definition with exact arithmetic on small fixtures (`validation/oracles/<area>_definition_oracle.py`). Shares no code with anything else. |
+| networkx | locally and CI | `validation/oracles/<area>_networkx_oracle.py` |
+| igraph, sna, and other R packages | CI | `validation/oracles/r_<area>.R` |
+| UCINET | manual | Golden files produced by hand on Windows (`validation/UCINET.md`) and committed. |
 
 `validation/compare.py` classifies each comparison as a match, a documented
 convention difference, or a failure, and writes `validation/REPORT.md`.
 Golden files are committed along with the oracle versions that produced
-them, and are regenerated when an oracle version changes.
+them, and are regenerated when an oracle version changes. Checks that do
+not fit the manifest (file formats, QAP, random graphs, layouts) have their
+own scripts, and `validation/scale/` repeats the comparison on larger
+networks. `validation/README.md` has the details.
 
 Engine invariants (relabeling nodes permutes results, unit weights match
-unweighted results, thread count does not change results, census totals) are
-checked with randomized tests in `crates/engine/tests/properties.rs`.
+unweighted results, thread count does not change results, census totals)
+are checked with randomized tests in `crates/engine/tests/*_properties.rs`.
 
 ## Rules
 
 1. No measure is exported without a manifest entry, at least one passing
-   oracle, and a citation in `docs/references.bib`.
-2. Every algorithm cites its source in a comment at the top of its file.
+   oracle, and a citation in `docs/references.bib` (`tools/check_bib.py`
+   checks the bibliography and generates `docs/references.md` from it).
+2. Every algorithm cites its source in a comment at the top of its file and
+   is implemented from the published source, never from the code of a
+   copyleft reference tool (see CONTRIBUTING.md, "Licensing").
 3. The engine stays dependency-free unless a dependency is clearly worth its
    cost for CRAN builds.
 4. The project name never appears in identifiers, C symbols, or R function
-   names. It lives in `project.toml`, the package metadata (including the
-   published crate name, which workspace code imports as `engine`), and the
-   docs, all of which `tools/rename.py` rewrites.
+   names; it lives in the package metadata (including the published crate
+   name, which workspace code imports as `engine`) and the docs.
 5. Approximate algorithms are opt-in, named as such, and report their error
    guarantees.
 

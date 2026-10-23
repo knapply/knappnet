@@ -1,6 +1,13 @@
 \name{plot.netframe}
 \alias{plot.netframe}
 \title{Plot a network}
+\description{
+Draws a network with base R graphics. With no arguments beyond the
+network, nodes are placed by \code{\link{layout_network}}, sized by degree,
+and labelled when the network is small; edges are semi-transparent, with
+arrows when the network is directed. Node and edge appearance can be set
+from columns of \code{x$nodes} and \code{x$edges}.
+}
 \usage{
 \method{plot}{netframe}(x, layout = NULL, node_size = NULL, node_color = NULL,
      node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
@@ -31,17 +38,6 @@ as \code{main}.}
 \item{seed}{Seed for the layout, as in \code{\link{layout_network}}, when
 \code{layout} is \code{NULL} or a method name.}
 }
-\value{The layout used, invisibly: a matrix with columns \code{x} and
-\code{y} and one row per node, which can be passed back as \code{layout}.
-For a spatial network drawn at its locations, \code{x} invisibly, as
-\code{\link{plot_spatial}} returns.}
-\description{
-Draws a network with base R graphics. With no arguments beyond the
-network, nodes are placed by \code{\link{layout_network}}, sized by degree,
-and labelled when the network is small; edges are semi-transparent, with
-arrows when the network is directed. Node and edge appearance can be set
-from columns of \code{x$nodes} and \code{x$edges}.
-}
 \details{
 Defaults:
 \itemize{
@@ -60,12 +56,18 @@ Defaults:
 }
 
 Mapping: numeric values give sizes and widths that grow with the value
-(node area grows linearly) and colors from the sequential palette
-\code{grDevices::hcl.colors(, "viridis")}. Factors, character vectors, and
-logical vectors give colors from the qualitative palette
-\code{grDevices::hcl.colors(, "Dark 3")}, in the order of the factor levels
-or of the sorted values. Missing values are drawn in light gray (colors) or
-at the smallest size or width. Sizes and widths must be numeric.
+(node area grows linearly) and colors from the sequential viridis palette
+(\code{grDevices::hcl.colors(, "viridis")}; light for small and dark for
+large values). Factors, character vectors, and logical vectors give colors
+from the qualitative palette of Okabe and Ito (2008), as
+\code{grDevices::palette.colors(, "Okabe-Ito")} ships it with black left
+out, in the order of the factor levels or of the sorted values; beyond
+eight categories the HCL palette \code{"Dark 3"} of Zeileis et al. (2020)
+is used instead, which stays distinguishable in sequence but is not
+guaranteed to be safe for every kind of color vision deficiency. Every
+plot in the package uses these two palettes, so a category keeps its color
+from one plot to the next. Missing values are drawn in light gray (colors)
+or at the smallest size or width. Sizes and widths must be numeric.
 
 Legends are drawn in the right margin. Coordinates keep their aspect
 ratio, so distances in the plot are proportional to distances in the
@@ -82,6 +84,20 @@ recorded by \code{\link{spatial_network}} or
 \code{"geo"}, with the same appearance arguments; any other \code{layout}
 draws them like any network. \code{"geo"} is an error for a network without
 locations.
+}
+\value{The layout used, invisibly: a matrix with columns \code{x} and
+\code{y} and one row per node, which can be passed back as \code{layout}.
+For a spatial network drawn at its locations, \code{x} invisibly, as
+\code{\link{plot_spatial}} returns.}
+\references{
+Okabe, M., & Ito, K. (2008). Color Universal Design (CUD): How to make
+figures and presentations that are friendly to colorblind people.
+\url{https://jfly.uni-koeln.de/color/}
+
+Zeileis, A., Fisher, J. C., Hornik, K., Ihaka, R., McWhite, C. D., Murrell,
+P., Stauffer, R., & Wilke, C. O. (2020). colorspace: A toolbox for
+manipulating and assessing colors and palettes. \emph{Journal of
+Statistical Software}, 96(1), 1-49. \doi{10.18637/jss.v096.i01}
 }
 \seealso{\code{\link{layout_network}}, \code{\link{plot_spatial}}, and the
 other plotting functions: \code{\link{plot_matrix}},

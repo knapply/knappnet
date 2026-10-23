@@ -53,6 +53,9 @@ difference.
 
 * `plot()` draws a netframe with a stress layout and appearance mapped from
   node and edge columns; spatial networks are drawn at their locations.
+  Every plot uses one colour scheme: Okabe and Ito's colour-blind-safe
+  palette for categories (HCL "Dark 3" beyond eight), viridis for scores,
+  and a single-hue blue scale for matrices.
 * Overlays on the network: `plot_centrality()` (nodes sized and colored by
   a score), `plot_partition()` (colored by a grouping, with modularity),
   `plot_coreness()` (concentric k-core shells), and `plot_ego()`.
@@ -81,8 +84,11 @@ difference.
   results never depend on it. `threads = 0` uses all cores, but only 2
   when `_R_CHECK_LIMIT_CORES_` is set (as by `R CMD check --as-cran`) and
   at most `OMP_THREAD_LIMIT` when that is set.
-* Inputs are checked before any computation, and errors name the argument
-  and say how to fix the problem. Missing or empty identifiers, duplicated
+* Inputs are checked before any computation by one set of shared checks,
+  so the same kind of mistake gives the same message everywhere; errors
+  name the argument and say how to fix the problem. A `seed` means the
+  same thing in every function: a whole number between 0 and 2^53, or
+  `NULL` to draw one from R's generator. Missing or empty identifiers, duplicated
   node identifiers, and edges to unknown nodes are errors naming the rows.
   Missing or non-finite weights are kept in the data but stop every
   measure, and zero or negative weights are checked by each measure that

@@ -125,7 +125,7 @@ test_that("group centrality in directed networks", {
   # To 1: 4 at 1, 2 at 2; 3 cannot reach 1 and is left out.
   expect_equal(group_centrality(d, 1, "closeness", mode = "in"), 3 / 3)
   expect_error(group_centrality(d, 1, "degree", weighted = TRUE), "binary")
-  expect_error(group_centrality(d, integer(), "degree"), "node identifiers")
+  expect_error(group_centrality(d, integer(), "degree"), "at least one node")
 })
 
 test_that("flow betweenness matches hand calculations", {
@@ -160,14 +160,6 @@ test_that("flow betweenness uses capacities when asked", {
   neg <- netframe(transform(e, w = -w), directed = FALSE, weight = "w")
   expect_error(flow_betweenness(neg, capacity = TRUE), "non-negative")
 })
-
-# Krackhardt's kite as an undirected edge list.
-kite_edges <- function() {
-  data.frame(
-    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
-  )
-}
 
 test_that("flow betweenness matches sna", {
   skip_if_not_installed("sna")

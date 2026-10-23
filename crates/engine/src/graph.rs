@@ -57,6 +57,12 @@ impl Csr {
         self.targets.len()
     }
 
+    /// Number of rows (nodes).
+    #[inline]
+    pub fn node_count(&self) -> usize {
+        self.offsets.len() - 1
+    }
+
     /// Number of arcs in `v`'s row (parallel arcs included).
     #[inline]
     pub fn degree(&self, v: usize) -> usize {
@@ -277,6 +283,68 @@ impl Graph {
     pub fn inc(&self) -> &Csr {
         self.inc.as_ref().unwrap_or(&self.out)
     }
+
+    /// The simple undirected graph underlying this one, as one CSR: for
+    /// every node, its distinct neighbors other than itself, sorted
+    /// ascending, direction ignored. With `weighted` (on a weighted graph)
+    /// each neighbor carries the total weight of the edges joining the two
+    /// nodes in either direction; otherwise the result has no weights.
+    ///
+    /// Measures defined on the simple graph (clustering, cliques, triads,
+    /// reach, cohesive subgroups) build their adjacency with this.
+    pub fn simple_undirected(&self, weighted: bool) -> Csr {
+        let n = self.n;
+        let out = self.out();
+        let inc = self.inc();
+        let mut offsets = Vec::with_capacity(n + 1);
+        offsets.push(0);
+        let mut targets: Vec<u32> = Vec::with_capacity(out.arc_count());
+        let mut weights = (weighted && self.is_weighted()).then(Vec::new);
+        for v in 0..n {
+            let a = out.neighbors(v);
+            let aw = out.weights(v);
+            let (b, bw) = if self.directed {
+                (inc.neighbors(v), inc.weights(v))
+            } else {
+                (&[][..], None)
+            };
+            // Merge two sorted rows, skipping v itself and adding up
+            // repeats.
+            let row_start = targets.len();
+            let (mut i, mut j) = (0, 0);
+            loop {
+                let (u, w) = if i < a.len() && (j >= b.len() || a[i] <= b[j]) {
+                    i += 1;
+                    (a[i - 1], aw.map_or(1.0, |x| x[i - 1]))
+                } else if j < b.len() {
+                    j += 1;
+                    (b[j - 1], bw.map_or(1.0, |x| x[j - 1]))
+                } else {
+                    break;
+                };
+                if u as usize == v {
+                    continue;
+                }
+                if targets.len() > row_start && targets[targets.len() - 1] == u {
+                    if let Some(ws) = weights.as_mut() {
+                        let last = ws.len() - 1;
+                        ws[last] += w;
+                    }
+                } else {
+                    targets.push(u);
+                    if let Some(ws) = weights.as_mut() {
+                        ws.push(w);
+                    }
+                }
+            }
+            offsets.push(targets.len());
+        }
+        Csr {
+            offsets,
+            targets,
+            weights,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -301,6 +369,30 @@ mod tests {
         assert_eq!(g.out().weights(1).unwrap(), &[1.0, 2.0]);
         assert_eq!(g.out().neighbors(2), &[1, 2]);
         assert_eq!(g.out().weights(2).unwrap(), &[2.0, 3.0]);
+    }
+
+    #[test]
+    fn simple_undirected_merges_directions_and_drops_loops() {
+        // 0 -> 1 twice, 1 -> 0, 0 -> 0, 2 -> 1.
+        let g = Graph::from_edges(
+            3,
+            &[0, 0, 1, 0, 2],
+            &[1, 1, 0, 0, 1],
+            Some(&[1.0, 2.0, 4.0, 8.0, 16.0]),
+            true,
+        )
+        .unwrap();
+        let s = g.simple_undirected(true);
+        assert_eq!(s.neighbors(0), &[1]);
+        assert_eq!(s.weights(0).unwrap(), &[7.0]);
+        assert_eq!(s.neighbors(1), &[0, 2]);
+        assert_eq!(s.weights(1).unwrap(), &[7.0, 16.0]);
+        assert_eq!(s.neighbors(2), &[1]);
+        assert!(g.simple_undirected(false).all_weights().is_none());
+        let u = Graph::from_edges(2, &[0, 0, 1], &[1, 1, 1], None, false).unwrap();
+        let s = u.simple_undirected(true);
+        assert_eq!(s.neighbors(1), &[0]);
+        assert!(s.all_weights().is_none());
     }
 
     #[test]

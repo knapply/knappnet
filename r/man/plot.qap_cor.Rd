@@ -1,6 +1,13 @@
 \name{plot.qap_cor}
 \alias{plot.qap_cor}
 \title{Plot a QAP correlation test}
+\description{
+Draws the permutation (reference) distribution of the correlation as a
+histogram, marks the observed correlation, and reports the p-values, so
+that the test can be read the way Krackhardt (1987) presents it: where the
+observed value falls among the correlations the relabelled networks
+produce.
+}
 \usage{
 \method{plot}{qap_cor}(x, breaks = "Sturges", ...)
 }
@@ -10,14 +17,6 @@
 \item{...}{Further arguments passed to \code{\link[graphics]{hist}}, such
 as \code{main}.}
 }
-\value{\code{x}, invisibly.}
-\description{
-Draws the permutation (reference) distribution of the correlation as a
-histogram, marks the observed correlation, and reports the p-values, so
-that the test can be read the way Krackhardt (1987) presents it: where the
-observed value falls among the correlations the relabelled networks
-produce.
-}
 \details{
 The histogram shows the finite correlations among the draws
 (\code{x$dist}); draws whose correlation is undefined are left out and
@@ -25,6 +24,7 @@ counted in the subtitle. The vertical line is the observed correlation
 \code{x$statistic} and the subtitle gives \code{Pr(>=|r|)}, the two-sided
 p-value, together with the number of permutations.
 }
+\value{\code{x}, invisibly.}
 \references{
 Krackhardt, D. (1987). QAP partialling as a test of spuriousness.
 \emph{Social Networks}, 9(2), 171-186. \doi{10.1016/0378-8733(87)90012-8}

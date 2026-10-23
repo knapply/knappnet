@@ -152,8 +152,8 @@ agrees with an exact-arithmetic evaluation of the definition. On such
 networks NetworkX's weighted betweenness can differ; the validation
 suite records the cases.
 
-## Reference
+## References
 
 Wasserman, S., & Faust, K. (1994). *Social Network Analysis: Methods and
 Applications*. Cambridge University Press.
-https://doi.org/10.1017/CBO9780511815478
+<https://doi.org/10.1017/CBO9780511815478>

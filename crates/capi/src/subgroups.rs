@@ -14,7 +14,7 @@ use engine::metrics::cores::coreness;
 use engine::metrics::degree::DegreeMode;
 use engine::Error;
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// Opaque collection of node groups.
 pub struct GroupsHandle(Vec<Vec<u32>>);
@@ -63,7 +63,7 @@ pub unsafe extern "C" fn net_max_cliques(
         if out.is_null() {
             return Err(Error::InvalidArgument("output pointer is null".into()));
         }
-        let groups = max_cliques(g, min_size.max(0) as usize, threads.max(0) as usize);
+        let groups = max_cliques(g, min_size.max(0) as usize, thread_count(threads));
         *out = Box::into_raw(Box::new(GroupsHandle(groups)));
         Ok(())
     })
@@ -155,7 +155,7 @@ pub unsafe extern "C" fn net_clique_number(
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        slice_mut(out, 1)[0] = clique_number(g, threads.max(0) as usize) as i64;
+        slice_mut(out, 1)[0] = clique_number(g, thread_count(threads)) as i64;
         Ok(())
     })
 }

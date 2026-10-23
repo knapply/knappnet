@@ -1,7 +1,7 @@
 # Reach, proximity prestige, edge betweenness, information centrality,
 # bridging, Burt's hierarchy, eigenvector centralization, regular and
 # automorphic equivalence, blockmodels, classical scaling, and geospatial
-# networks. Format as in ../manifest.yaml.
+# networks. Format: see ../README.md.
 #
 # Undefined values (NaN) are written as empty lines by the engine runner
 # (validation/bindings/roles.py) and by every oracle, except inside a block

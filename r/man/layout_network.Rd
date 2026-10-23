@@ -2,6 +2,11 @@
 \alias{layout_network}
 \alias{layout_stress}
 \title{Node coordinates for drawing a network}
+\description{
+\code{layout_network()} places the nodes of a network in the plane.
+\code{layout_stress()} measures how well a layout represents the network's
+shortest-path distances.
+}
 \usage{
 layout_network(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
                              "star", "grid", "tree", "twomode"),
@@ -15,13 +20,14 @@ layout_stress(x, layout, weighted = NULL, weights_as = NULL, threads = 0L)
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
 \item{method}{The layout algorithm; see Details.}
-\item{seed}{Seed for the random parts of a layout, a whole number in
-[0, 2^53). \code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes layouts reproducible.}
-\item{weighted}{Whether to use edge weights (stress and force-directed
-layouts only). \code{NULL} uses them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
+\item{seed}{Seed for the random parts of a layout, a whole number between 0
+and \eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
+\item{weighted}{Whether to use edge weights (stress and force-directed layouts
+only). \code{NULL} (the default) uses them when the network has a weight
+column.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{types}{For \code{method = "twomode"}: which mode each node belongs
 to, as the name of a column of \code{x$nodes} or a vector with one value
 per node, with at most two distinct values. \code{NULL} uses the node type
@@ -45,18 +51,11 @@ defaults.}
 exactly for components of up to 1,000 nodes and with a Barnes-Hut quadtree
 beyond, \code{"exact"} always computes it exactly, and \code{"barnes_hut"}
 always approximates it.}
-\item{threads}{Number of threads; \code{0} uses all available cores.
-Results do not depend on the number of threads.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}). Results do not depend on the number of threads.}
 \item{layout}{A layout of \code{x}: a numeric matrix or data frame with two
 columns and one row per node.}
-}
-\value{\code{layout_network()} returns a numeric matrix with columns
-\code{x} and \code{y} and one row per node, aligned with the rows of
-\code{x$nodes}. \code{layout_stress()} returns a number.}
-\description{
-\code{layout_network()} places the nodes of a network in the plane.
-\code{layout_stress()} measures how well a layout represents the network's
-shortest-path distances.
 }
 \details{
 Methods:
@@ -132,6 +131,9 @@ Stress layouts of the validation networks have stress no higher than
 NetworkX's \code{kamada_kawai_layout()} (within 2\%, and usually lower);
 see \file{validation/layout_check.py} in the source repository.
 }
+\value{\code{layout_network()} returns a numeric matrix with columns
+\code{x} and \code{y} and one row per node, aligned with the rows of
+\code{x$nodes}. \code{layout_stress()} returns a number.}
 \references{
 Gansner, E. R., Koren, Y., & North, S. (2005). Graph drawing by stress
 majorization. In \emph{Graph Drawing (GD 2004)}, Lecture Notes in Computer

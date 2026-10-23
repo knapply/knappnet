@@ -1,6 +1,14 @@
 \name{to_sfnetwork}
 \alias{to_sfnetwork}
+\alias{as_sfnetwork.netframe}
 \title{Convert to and from sfnetworks}
+\description{
+\code{to_sfnetwork()} turns a spatial netframe into an \code{sfnetwork}
+object of the sfnetworks package (van der Meer et al. 2026);
+\code{\link{as_netframe}} on an \code{sfnetwork} converts back, and so does
+\code{sfnetworks::as_sfnetwork()} on a netframe. Node, edge, and
+network-level attributes are carried across.
+}
 \usage{
 to_sfnetwork(x, edges_as_lines = NULL, ...)
 }
@@ -11,16 +19,6 @@ to_sfnetwork(x, edges_as_lines = NULL, ...)
 straight-line geometries; \code{NULL} keeps the edge table as it is.}
 \item{...}{Further arguments to \code{sfnetworks::sfnetwork()}, such as
 \code{force = TRUE}.}
-}
-\value{\code{to_sfnetwork()} returns an \code{sfnetwork};
-\code{\link{as_netframe}} on an \code{sfnetwork} a netframe whose node table
-(and edge table, when edges are spatially explicit) is an sf data frame.}
-\description{
-\code{to_sfnetwork()} turns a spatial netframe into an \code{sfnetwork}
-object of the sfnetworks package (van der Meer et al. 2026);
-\code{\link{as_netframe}} on an \code{sfnetwork} converts back, and so does
-\code{sfnetworks::as_sfnetwork()} on a netframe. Node, edge, and
-network-level attributes are carried across.
 }
 \details{
 The weight column and its type are stored in the graph attributes
@@ -42,6 +40,9 @@ meet it (knappnet does not require it; see \code{\link{check_geometry}}).
 Columns of class \code{units}, such as sfnetworks' \code{weight}, are
 converted to plain numbers on the way back.
 }
+\value{\code{to_sfnetwork()} returns an \code{sfnetwork};
+\code{\link{as_netframe}} on an \code{sfnetwork} a netframe whose node table
+(and edge table, when edges are spatially explicit) is an sf data frame.}
 \references{
 van der Meer, L., Abad, L., Gilardi, A., & Lovelace, R. (2026). sfnetworks:
 Tidy geospatial networks. R package.

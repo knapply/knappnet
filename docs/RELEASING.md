@@ -31,17 +31,16 @@ or the place to look. A release is cut from `main` with CI green.
 
 ## 2. Local checks
 
-Run from the repository root (see `CONTRIBUTING.md` for what each does):
+Run every check listed under "Checks" in `CONTRIBUTING.md` from the
+repository root; the ones that matter most for a release are:
 
 ```sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-RUSTDOCFLAGS="-D warnings" cargo doc -p knappnet --no-deps
-./tools/check_c_abi.sh
-python3 tools/sync_r_sources.py --check
-python3 validation/run_oracles.py          # needs R with igraph, sna, yaml
-python3 validation/compare.py --strict     # 0 failures
+python3 tools/check_bib.py                 # every citation resolves
+python3 tools/check_r_docs.py              # help pages match the functions
+python3 tools/sync_r_sources.py --check    # r/src/rust/ is current
+python3 validation/run_oracles.py          # needs R with the oracle packages
+python3 validation/compare.py --strict     # 0 FAIL, nothing "not run"
 Rscript tools/check_readme.R               # README output matches R
 R CMD build r
 R CMD check --as-cran knappnet_*.tar.gz

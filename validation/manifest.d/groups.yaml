@@ -1,7 +1,7 @@
 # Cohesive subsets (bicomponents, n-cliques, n-clans, k-plexes, lambda
 # sets, factions), community partitions (Girvan-Newman, leading
 # eigenvector, greedy modularity), and topography (core-periphery,
-# compactness, small-world inputs). Format as in ../manifest.yaml.
+# compactness, small-world inputs). Format: see ../README.md.
 #
 # Undefined results (NaN, or an engine error for an input the method does
 # not accept, such as a core-periphery fit of a network whose ties are all
@@ -212,7 +212,7 @@ leading_eigen:
         and the division, are not unique
 
     igraph:
-      call: "modularity of igraph::cluster_leading_eigen(g, weights = NA)"
+      call: "modularity of igraph::cluster_leading_eigen(g) with the weight attribute removed"
       undefined_on: [kite, two_triangles_isolate]
       undefined_when: [loops, multi_edges, edge_case]
       undefined_reason: >-
@@ -237,7 +237,7 @@ leading_eigen_membership:
         and the division, are not unique
 
     igraph:
-      call: "igraph::membership(cluster_leading_eigen(g, weights = NA))"
+      call: "igraph::membership(cluster_leading_eigen(g)) with the weight attribute removed"
       undefined_on: [kite, two_triangles_isolate]
       undefined_when: [loops, multi_edges, edge_case]
       undefined_reason: as for leading_eigen
@@ -265,6 +265,8 @@ leading_eigen_weighted:
 
     igraph:
       call: "modularity of igraph::cluster_leading_eigen(g, weights = E(g)$weight)"
+      undefined_on: [les_miserables, real_weights_und, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: as for the definition oracle (a degenerate eigenvalue or a sign that is not determined)
 
 fast_greedy:
   engine: {fn: fast_greedy, resolution: 1.0, weighted: false}
@@ -418,12 +420,14 @@ core_periphery_minres_coreness:
   oracles:
     definition:
       call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; unit-norm coreness"
-      undefined_on: [star8, pair]
+      undefined_on: [star8, pair, path10]
       undefined_reason: >-
         star8 has no minimizer (see core_periphery_minres), so the leaves'
         coreness depends on where the iterations stop; pair has one arc, so
         only the product c_1 c_2 = 1/2 is determined and the coreness
-        direction is not unique
+        direction is not unique; on path10 the minimizer is not symmetric,
+        so its mirror image (nodes in reverse order) is a second minimizer
+        with the same residual, and which one is found depends on the start
 
 core_periphery_correlation:
   engine: {fn: core_periphery_continuous, fit: correlation, output: fit}

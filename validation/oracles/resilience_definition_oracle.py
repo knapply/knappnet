@@ -27,11 +27,10 @@ from collections import deque
 from fractions import Fraction
 from pathlib import Path
 
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, MANIFEST_DIR, applies, fixture_names, load_fixture  # noqa: E402
-from common import write_values  # noqa: E402
+from common import (GOLDEN, applies, fixture_names, load_area, load_fixture,
+                    write_values)  # noqa: E402
 
 ORACLE = "definition"
 UNDEFINED = -1.0
@@ -39,7 +38,7 @@ INF = None
 
 
 def manifest() -> dict:
-    return yaml.safe_load((MANIFEST_DIR / "resilience.yaml").read_text())
+    return load_area("resilience")
 
 
 def group_members(n):

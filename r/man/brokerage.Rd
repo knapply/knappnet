@@ -1,6 +1,10 @@
 \name{brokerage}
 \alias{brokerage}
 \title{Gould-Fernandez brokerage roles}
+\description{
+Counts, for each node, the ordered pairs of other nodes it brokers in each
+of the five roles of Gould and Fernandez (1989).
+}
 \usage{
 brokerage(x, groups, threads = 0L)
 }
@@ -12,13 +16,6 @@ values matters. Missing values are not allowed.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A data frame with one row per node: \code{node} (the identifier),
-then the counts \code{coordinator}, \code{itinerant}, \code{representative},
-\code{gatekeeper}, \code{liaison}, and \code{total}.}
-\description{
-Counts, for each node, the ordered pairs of other nodes it brokers in each
-of the five roles of Gould and Fernandez (1989).
 }
 \details{
 Node j brokers the ordered pair (i, k) when \eqn{i \to j \to k}{i -> j -> k}
@@ -42,6 +39,9 @@ brokers is counted twice, once in each direction. The counts match
 \code{raw.nli} from \code{sna::brokerage()} (columns \code{w_I}, \code{w_O},
 \code{b_IO}, \code{b_OI}, \code{b_O}, \code{t}).
 }
+\value{A data frame with one row per node: \code{node} (the identifier),
+then the counts \code{coordinator}, \code{itinerant}, \code{representative},
+\code{gatekeeper}, \code{liaison}, and \code{total}.}
 \references{
 Gould, R. V., & Fernandez, R. M. (1989). Structures of mediation: A formal
 approach to brokerage in transaction networks. \emph{Sociological

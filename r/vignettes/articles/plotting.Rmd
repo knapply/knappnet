@@ -17,9 +17,11 @@ base graphics only, so they work wherever R does and compose with `par()`,
 `layout()`, and the usual devices; every function accepts `...` for the
 underlying graphics call (`main`, `xlab`, colors) and returns its input or
 the data it drew, invisibly, so a plot can sit in the middle of a pipeline.
-Colors come from the color-blind-safe palettes of `grDevices::hcl.colors()`:
-`"Dark 3"` for categories, `"viridis"` for scores, and the single-hue
-`"Blues 3"` for matrices.
+Colors follow one scheme across every plot: the color-blind-safe palette
+of Okabe and Ito (2008) for categories (eight hues; beyond that the HCL
+`"Dark 3"` palette of Zeileis et al. 2020), viridis for numeric scores, and
+the single-hue `"Blues 3"` palette for matrices, so a category or a score
+looks the same from one plot to the next.
 
 ```{r setup}
 library(knappnet)
@@ -184,3 +186,14 @@ plot_rolling(rolling(g, degree, width = 6, step = 3), main = "Degree in sliding 
 
 Networks with node locations are drawn as maps by `plot_spatial()`, which
 `plot()` calls automatically for them; see the article on spatial networks.
+
+## References
+
+Okabe, M., & Ito, K. (2008). Color Universal Design (CUD): How to make
+figures and presentations that are friendly to colorblind people.
+<https://jfly.uni-koeln.de/color/>
+
+Zeileis, A., Fisher, J. C., Hornik, K., Ihaka, R., McWhite, C. D., Murrell,
+P., Stauffer, R., & Wilke, C. O. (2020). colorspace: A toolbox for
+manipulating and assessing colors and palettes. *Journal of Statistical
+Software*, 96(1), 1-49. <https://doi.org/10.18637/jss.v096.i01>

@@ -1,6 +1,6 @@
 # Key players (Borgatti 2006), group centrality (Everett and Borgatti
-# 1999), and flow betweenness (Freeman, Borgatti, and White 1991). Format as
-# in ../manifest.yaml; engine runners in ../bindings/resilience.py.
+# 1999), and flow betweenness (Freeman, Borgatti, and White 1991). Format: see
+# ../README.md; engine runners in ../bindings/resilience.py.
 #
 # Undefined results (NaN) are written as -1 by the engine runner and by
 # every oracle, since none of these measures can be negative.

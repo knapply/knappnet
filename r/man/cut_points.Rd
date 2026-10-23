@@ -2,6 +2,10 @@
 \alias{cut_points}
 \alias{bridges}
 \title{Cut points and bridges}
+\description{
+A cut point (articulation point) is a node whose removal increases the
+number of components; a bridge is an edge whose removal does.
+}
 \usage{
 cut_points(x)
 
@@ -9,16 +13,6 @@ bridges(x)
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
-}
-\value{
-\code{cut_points()} returns the identifiers (values of
-\code{x$nodes[[id]]}) of the cut points, in the order of \code{x$nodes}.
-\code{bridges()} returns the row numbers of the bridges in \code{x$edges},
-in increasing order.
-}
-\description{
-A cut point (articulation point) is a node whose removal increases the
-number of components; a bridge is an edge whose removal does.
 }
 \details{
 Both use the undirected reading of the network in which every edge stays an
@@ -35,6 +29,12 @@ an undirected multigraph, igraph's \code{articulation_points()}, and sna's
 validation suite. igraph's \code{bridges()} agrees on every validation
 network whose undirected reading has no parallel edges; its documentation
 does not say how it treats parallel edges.
+}
+\value{
+\code{cut_points()} returns the identifiers (values of
+\code{x$nodes[[id]]}) of the cut points, in the order of \code{x$nodes}.
+\code{bridges()} returns the row numbers of the bridges in \code{x$edges},
+in increasing order.
 }
 \references{
 Hopcroft, J., & Tarjan, R. (1973). Algorithm 447: Efficient algorithms for

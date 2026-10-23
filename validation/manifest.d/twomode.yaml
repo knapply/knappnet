@@ -1,5 +1,5 @@
-# Ego networks and two-mode (bipartite) networks. Format as in
-# ../manifest.yaml.
+# Ego networks and two-mode (bipartite) networks. Format: see
+# ../README.md.
 #
 # Undefined results (NaN) are written as -1 by the engine runner and by
 # every oracle, since none of these measures can be negative.

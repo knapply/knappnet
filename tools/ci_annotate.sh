@@ -7,6 +7,7 @@
 #   tools/ci_annotate.sh "R CMD check" check/*.Rcheck/00check.log
 #   LEVEL=notice tools/ci_annotate.sh Benchmarks bench.log
 set -u
+case "${1:-}" in -h|--help|"") sed -n '2,8p' "$0" | sed 's/^# \{0,1\}//'; exit 0;; esac
 title="$1"
 shift
 for f in "$@"; do

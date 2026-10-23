@@ -33,8 +33,8 @@ from pathlib import Path
 import networkx as nx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import (GOLDEN, applies, fixture_names, load_fixture,  # noqa: E402
-                    load_manifest, write_values)
+from common import (applies, fixture_names, load_fixture, load_manifest,
+                    write_values, write_version)  # noqa: E402
 
 ORACLE = "networkx"
 FUNCTIONS = {"constraint", "effective_size", "efficiency"}
@@ -88,8 +88,7 @@ def main() -> None:
             write_values(ORACLE, name, variant, compute(e["fn"], fx, e["weighted"]))
             count += 1
     print(f"networkx {nx.__version__} (positions): wrote {count} golden files")
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n", newline="")
+    write_version(ORACLE, f"networkx {nx.__version__}")
 
 
 if __name__ == "__main__":

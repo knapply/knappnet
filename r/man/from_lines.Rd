@@ -2,6 +2,15 @@
 \alias{from_lines}
 \alias{from_polygons}
 \title{Spatial networks from lines and polygons}
+\description{
+\code{from_lines()} builds a network from LINESTRING features such as
+roads, rivers, or pipelines: each line becomes an edge, and its two
+endpoints become nodes, shared with every other line that ends at the same
+place. \code{from_polygons()} builds the contiguity network of regions:
+each polygon becomes a node, and two polygons are joined when they share a
+boundary. Both are standard constructions in spatial analysis (Barthelemy
+2011; Bivand, Pebesma, and Gomez-Rubio 2013).
+}
 \usage{
 from_lines(lines, tolerance = 0, directed = FALSE)
 
@@ -24,15 +33,6 @@ column \code{id} (an existing \code{id} column is renamed \code{id_attr}).}
 }
 \value{A netframe whose node table is an sf data frame; see
 \code{\link{to_sf}}.}
-\description{
-\code{from_lines()} builds a network from LINESTRING features such as
-roads, rivers, or pipelines: each line becomes an edge, and its two
-endpoints become nodes, shared with every other line that ends at the same
-place. \code{from_polygons()} builds the contiguity network of regions:
-each polygon becomes a node, and two polygons are joined when they share a
-boundary. Both are standard constructions in spatial analysis (Barthelemy
-2011; Bivand, Pebesma, and Gomez-Rubio 2013).
-}
 \section{Snapping rule of from_lines()}{
 The first and last vertex of every line are collected, in the order of the
 lines (start, then end). With \code{tolerance = 0}, two endpoints are the

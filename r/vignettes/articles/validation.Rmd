@@ -60,7 +60,7 @@ nothing. It includes:
 
 ## The manifest
 
-[`validation/manifest.yaml`](https://github.com/knapply/knappnet/blob/main/validation/manifest.yaml)
+[`validation/manifest.d/`](https://github.com/knapply/knappnet/tree/main/validation/manifest.d)
 (with one file per area in `validation/manifest.d/`) lists every measure:
 the engine call being validated, the networks it applies to, the numerical
 tolerance, and each oracle's equivalent call. An entry looks like this:
@@ -72,7 +72,7 @@ degree_all:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (validation/oracles/core_definition_oracle.py)"
     networkx:
       call: "MultiGraph/MultiDiGraph G.degree()"
     igraph:

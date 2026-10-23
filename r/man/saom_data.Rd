@@ -2,6 +2,12 @@
 \alias{saom_data}
 \alias{print.saom_data}
 \title{Network panel data for stochastic actor-oriented models}
+\description{
+Collects two or more observations of a directed network on the same
+actors, with actor and dyadic covariates, into the data object that
+\code{\link{saom_fit}} estimates stochastic actor-oriented models from
+(Snijders 2001; Snijders, van de Bunt, and Steglich 2010).
+}
 \usage{
 saom_data(networks, covariates = NULL, dyadic = NULL)
 }
@@ -18,34 +24,33 @@ wave is a constant covariate; one that changes is a changing covariate
 whose value during a period is its value at the start of that period), or
 a named list of numeric vectors (one value per actor, in the order of the
 first network's nodes) and matrices with one row per actor and one column
-per wave. Values must not be missing.}
+per period (one fewer than the waves; a column for the last wave may be
+given and is ignored, as in RSiena). Changing covariates need at least
+three waves. Values must not be missing.}
 \item{dyadic}{Dyadic covariates: \code{NULL} or a named list of square
 numeric matrices (rows and columns in the order of the first network's
 nodes; the diagonal is ignored) or netframes on the same nodes, read as
 adjacency matrices of their weights (or of ties when unweighted).}
+}
+\details{
+Covariates are centered as RSiena centers them (Ripley et al. 2026, section
+5.3.2): actor covariates by their mean over all actors and all periods,
+dyadic covariates by the mean of their off-diagonal cells, and the
+similarity scores of \code{simX} by their mean over all ordered pairs of
+distinct actors and periods. \code{sameX} is not centered. For changing
+covariates RSiena computes the similarity mean differently (its definition
+is not documented), so \code{simX} of a changing covariate can differ
+slightly from RSiena's.
+
+Missing tie or covariate values, structural zeros and ones, and changes of
+composition (actors joining or leaving) are not supported; see
+\sQuote{Not implemented} in \code{\link{saom_fit}}.
 }
 \value{
 An object of class \code{"saom_data"}: a list with \code{n} (the number of
 actors), \code{waves} (a list of logical adjacency matrices), \code{nodes}
 (the node table of the first network), \code{covariates}, and
 \code{dyadic}.
-}
-\description{
-Collects two or more observations of a directed network on the same
-actors, with actor and dyadic covariates, into the data object that
-\code{\link{saom_fit}} estimates stochastic actor-oriented models from
-(Snijders 2001; Snijders, van de Bunt, and Steglich 2010).
-}
-\details{
-Covariates are centered as RSiena centers them (Ripley et al. 2026, section
-5.3.2): actor covariates by their mean over all actors and all waves
-supplied, dyadic covariates by the mean of their off-diagonal cells, and the
-similarity scores of \code{simX} by their mean over all ordered pairs of
-distinct actors and waves. \code{sameX} is not centered.
-
-Missing tie or covariate values, structural zeros and ones, and changes of
-composition (actors joining or leaving) are not supported; see
-\sQuote{Not implemented} in \code{\link{saom_fit}}.
 }
 \references{
 Snijders, T. A. B. (2001). The statistical evaluation of social network

@@ -47,7 +47,7 @@ use engine::ergm::{
 use engine::matrix::Dense;
 use engine::Error;
 
-use crate::{guard, slice, slice_mut};
+use crate::{count, deref, guard, slice, slice_mut, thread_count};
 
 /// Opaque model handle.
 pub struct ErgmHandle(Model);
@@ -63,28 +63,13 @@ pub const LOGIT_FIT_LEN: usize = 5;
 pub const ERGM_MCMLE_INFO_LEN: usize = 5;
 
 fn model<'a>(h: *const ErgmHandle) -> Result<&'a Model, Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument("model handle is null".into()));
-    }
     // SAFETY: non-null handles are only created by `net_ergm_new`.
-    Ok(unsafe { &(*h).0 })
+    unsafe { deref(h, "model") }.map(|m| &m.0)
 }
 
 fn sample<'a>(s: *const ErgmSample) -> Result<&'a Sample, Error> {
-    if s.is_null() {
-        return Err(Error::InvalidArgument("sample handle is null".into()));
-    }
     // SAFETY: non-null handles are only created by `net_ergm_simulate`.
-    Ok(unsafe { &(*s).0 })
-}
-
-fn count(v: i64, what: &str) -> Result<usize, Error> {
-    if v < 0 {
-        return Err(Error::InvalidArgument(format!(
-            "{what} must be non-negative"
-        )));
-    }
-    Ok(v as usize)
+    unsafe { deref(s, "sample") }.map(|s| &s.0)
 }
 
 fn attr(a: i32) -> Result<usize, Error> {
@@ -201,7 +186,7 @@ fn sample_options(
         proposal: Proposal::from_code(proposal)?,
         seed,
         stream_offset: 0,
-        threads: threads.max(0) as usize,
+        threads: thread_count(threads),
         keep_networks: false,
         start_empty: false,
     })
@@ -906,7 +891,7 @@ pub unsafe extern "C" fn net_tergm_mple(
             count(periods as i64, "periods")?,
             reps,
             seed,
-            threads.max(0) as usize,
+            thread_count(threads),
             logit_opts(max_iter, tol),
         )?;
         slice_mut(coef, p).copy_from_slice(&f.fit.coef);

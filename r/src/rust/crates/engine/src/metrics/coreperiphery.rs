@@ -17,8 +17,9 @@ pub use continuous::{
 pub use discrete::{core_periphery, CoreLinks, CorePeriphery, CorePeripheryOptions};
 pub use small_world::{small_world, SmallWorld, SmallWorldOptions};
 
-use crate::error::{Error, Result};
+use crate::error::Result;
 use crate::graph::Graph;
+use crate::weights::additive_weights;
 
 /// The adjacency matrix as the core-periphery fits read it: for every node
 /// v, its other endpoints u with s1 = the sum of the values of the pairs
@@ -40,19 +41,7 @@ pub(crate) struct PairRows {
 impl PairRows {
     pub fn new(g: &Graph, weighted: bool) -> Result<PairRows> {
         let n = g.node_count();
-        let w = if weighted {
-            let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-            if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-                return Err(Error::InvalidArgument(format!(
-                    "edge {edge} has negative weight {}; core-periphery fits require \
-                     non-negative weights",
-                    w[edge]
-                )));
-            }
-            Some(w)
-        } else {
-            None
-        };
+        let w = additive_weights(g, weighted, "a core-periphery fit")?;
         let directed = g.is_directed();
         // Value of each ordered (directed) or unordered pair.
         let mut values: Vec<(u32, u32, f64)> = Vec::with_capacity(g.edge_count());

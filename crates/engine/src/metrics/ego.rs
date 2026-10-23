@@ -52,6 +52,7 @@ use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
+use crate::union_find::UnionFind;
 
 /// Which nodes form a neighborhood.
 #[derive(Debug, Clone, Copy)]
@@ -289,7 +290,7 @@ struct EgoWork {
     local: Vec<u32>,
     offsets: Vec<usize>,
     adj: Vec<u32>,
-    parent: Vec<u32>,
+    sets: UnionFind,
     hops: Vec<u32>,
     sigma: Vec<f64>,
     delta: Vec<f64>,
@@ -305,7 +306,7 @@ impl EgoWork {
             local: vec![u32::MAX; n],
             offsets: Vec::new(),
             adj: Vec::new(),
-            parent: Vec::new(),
+            sets: UnionFind::new(0),
             hops: Vec::new(),
             sigma: Vec::new(),
             delta: Vec::new(),
@@ -367,16 +368,7 @@ impl EgoWork {
         let density = if pairs > 0.0 { ties / pairs } else { f64::NAN };
 
         // Weak components among alters by union-find (ego excluded).
-        self.parent.clear();
-        self.parent.extend(0..s as u32);
-        fn find(parent: &mut [u32], mut v: u32) -> u32 {
-            while parent[v as usize] != v {
-                let p = parent[v as usize];
-                parent[v as usize] = parent[p as usize];
-                v = parent[v as usize];
-            }
-            v
-        }
+        self.sets.reset(s);
         let mut components = s.saturating_sub(1);
         for a in 1..s {
             for idx in self.offsets[a]..self.offsets[a + 1] {
@@ -384,10 +376,7 @@ impl EgoWork {
                 if b == 0 {
                     continue;
                 }
-                let (ra, rb) = (find(&mut self.parent, a as u32), find(&mut self.parent, b));
-                if ra != rb {
-                    let (lo, hi) = if ra < rb { (ra, rb) } else { (rb, ra) };
-                    self.parent[hi as usize] = lo;
+                if self.sets.union(a, b as usize).is_some() {
                     components -= 1;
                 }
             }

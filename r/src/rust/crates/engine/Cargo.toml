@@ -1,7 +1,7 @@
 [package]
 # Published to crates.io under the project name. The directory stays
 # `crates/engine` and other crates in this workspace refer to it as `engine`,
-# so a rename only touches this line (see tools/rename.py).
+# so a rename only touches this line.
 name = "knappnet"
 description = "Fast, validated network analysis: betweenness, triad census, degree, and more on compressed sparse graphs"
 version.workspace = true

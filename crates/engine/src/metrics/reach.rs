@@ -77,6 +77,7 @@ use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::descriptive::{distance_rows, PathOptions};
 use crate::parallel;
+use crate::union_find::UnionFind;
 use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
 
 const EPSILON: f64 = 1e-10;
@@ -530,24 +531,11 @@ pub fn information_centrality(g: &Graph, weighted: bool) -> Result<Vec<f64>> {
     }
 
     // Connectivity of the kept nodes, by union-find.
-    let mut parent: Vec<usize> = (0..k).collect();
-    fn find(p: &mut [usize], mut v: usize) -> usize {
-        while p[v] != v {
-            p[v] = p[p[v]];
-            v = p[v];
-        }
-        v
-    }
+    let mut sets = UnionFind::new(k);
     for &(s, t) in ties.keys() {
-        let (a, b) = (
-            find(&mut parent, index[s as usize]),
-            find(&mut parent, index[t as usize]),
-        );
-        if a != b {
-            parent[a.max(b)] = a.min(b);
-        }
+        sets.union(index[s as usize], index[t as usize]);
     }
-    let connected = (0..k).all(|v| find(&mut parent, v) == find(&mut parent, 0));
+    let connected = (0..k).all(|v| sets.same(v, 0));
     if !connected {
         for &v in &kept {
             out[v] = f64::NAN;
@@ -652,17 +640,9 @@ pub fn bridging_coefficient(g: &Graph) -> Vec<f64> {
 
 /// Distinct neighbors of every node other than itself, direction ignored.
 fn distinct_neighbors(g: &Graph) -> Vec<Vec<u32>> {
+    let s = g.simple_undirected(false);
     (0..g.node_count())
-        .map(|v| {
-            let mut nb: Vec<u32> = g.out().neighbors(v).to_vec();
-            if g.is_directed() {
-                nb.extend_from_slice(g.inc().neighbors(v));
-            }
-            nb.retain(|&u| u as usize != v);
-            nb.sort_unstable();
-            nb.dedup();
-            nb
-        })
+        .map(|v| s.neighbors(v).to_vec())
         .collect()
 }
 

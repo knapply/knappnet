@@ -1,6 +1,6 @@
 # Rebuilds the bundled example data from its published sources (see
 # data-raw/) and pushes the result to the `data-raw-output` branch for
-# review. Run on demand only.
+# review. Runs on demand only; about 5 minutes.
 name: Rebuild example data
 
 on:
@@ -24,10 +24,7 @@ jobs:
           git clone --depth 1 https://github.com/schochastics/networkdata /tmp/networkdata
           git clone --depth 1 https://github.com/cran/manet /tmp/manet
       - name: Build
-        run: |
-          set -o pipefail
-          mkdir -p ci-logs
-          Rscript data-raw/noordin.R /tmp/networkdata /tmp/manet 2>&1 | tee ci-logs/noordin.log
+        run: bash tools/ci_log.sh noordin Rscript data-raw/noordin.R /tmp/networkdata /tmp/manet
       - name: Show log
         if: always()
         run: LEVEL=notice bash tools/ci_annotate.sh "Example data" ci-logs/*.log

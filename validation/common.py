@@ -1,4 +1,13 @@
-"""Shared helpers for loading fixtures, golden files, and the manifest."""
+"""Shared helpers for fixtures, golden files, and the manifest.
+
+Every Python oracle and engine binding imports from here, so the layout of
+the corpus is defined once:
+
+    fixtures/<name>/edges.csv, meta.json   the corpus (validation/fixtures.py)
+    manifest.d/<area>.yaml                 what is compared, and how
+    golden/<oracle>/<fixture>/<variant>.csv  one oracle's answers
+    golden/<oracle>/VERSION                the oracle version that wrote them
+"""
 
 from __future__ import annotations
 
@@ -12,8 +21,16 @@ import yaml
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 GOLDEN = HERE / "golden"
-MANIFEST = HERE / "manifest.yaml"
 MANIFEST_DIR = HERE / "manifest.d"
+
+# Fixture tags that manifest entries may name in `differs_when` and
+# `undefined_when`. `directed` and `undirected` are added from meta.json;
+# the rest are written by validation/fixtures.py.
+TAGS = {"directed", "undirected", "weighted", "integer_weights", "loops",
+        "multi_edges", "disconnected", "edge_case", "twomode"}
+
+# Comparison modes a manifest entry may ask for (see compare.py).
+COMPARE_MODES = {"values", "sorted", "partition", "sets"}
 
 
 @dataclass
@@ -46,15 +63,39 @@ def fixture_names() -> list[str]:
     return sorted(p.name for p in FIXTURES.iterdir() if (p / "meta.json").exists())
 
 
+def manifest_files() -> list[Path]:
+    """Every manifest file, in name order."""
+    return sorted(MANIFEST_DIR.glob("*.yaml"))
+
+
+def load_area(area: str) -> dict:
+    """The manifest entries of one area (manifest.d/<area>.yaml)."""
+    return yaml.safe_load((MANIFEST_DIR / f"{area}.yaml").read_text()) or {}
+
+
 def load_manifest() -> dict:
-    """The main manifest plus every file in manifest.d/, in name order."""
-    manifest = yaml.safe_load(MANIFEST.read_text()) or {}
-    for extra in sorted(MANIFEST_DIR.glob("*.yaml")):
-        for key, spec in (yaml.safe_load(extra.read_text()) or {}).items():
+    """Every manifest entry, in file order; a key may appear only once."""
+    manifest: dict = {}
+    for path in manifest_files():
+        for key, spec in (yaml.safe_load(path.read_text()) or {}).items():
             if key in manifest:
-                raise ValueError(f"measure {key!r} is defined twice (in {extra.name})")
+                raise ValueError(f"measure {key!r} is defined twice (in {path.name})")
             manifest[key] = spec
     return manifest
+
+
+def load_manifest_by_area() -> dict[str, dict]:
+    """Area (manifest file stem) -> its entries, in file order."""
+    areas: dict[str, dict] = {}
+    seen: set[str] = set()
+    for path in manifest_files():
+        entries = yaml.safe_load(path.read_text()) or {}
+        for key in entries:
+            if key in seen:
+                raise ValueError(f"measure {key!r} is defined twice (in {path.name})")
+            seen.add(key)
+        areas[path.stem] = entries
+    return areas
 
 
 def applies(variant: dict, fx: Fixture) -> bool:
@@ -80,6 +121,16 @@ def write_values(oracle: str, fixture: str, variant: str, values) -> None:
                 fh.write(" ".join(f"{float(x):.17g}" for x in v) + "\n")
             else:
                 fh.write(f"{float(v):.17g}\n")
+
+
+def write_version(oracle: str, version: str) -> None:
+    """Records which oracle version produced golden/<oracle>/ (shown in
+    REPORT.md). Every oracle script calls this once, after writing."""
+    (GOLDEN / oracle).mkdir(parents=True, exist_ok=True)
+    (GOLDEN / oracle / "VERSION").write_text(version.rstrip("\n") + "\n", newline="")
+
+
+DEFINITION_VERSION = "definition (direct evaluation, exact arithmetic)"
 
 
 def read_values(oracle: str, fixture: str, variant: str):
