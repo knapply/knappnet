@@ -15,7 +15,7 @@
 //! | transitive triplets (`transTrip`) | sum_{j,h} x_ij x_ih x_hj |
 //! | transitive ties (`transTies`) | sum_j x_ij max_h (x_ih x_hj) |
 //! | transitive reciprocated triplets (`transRecTrip`) | sum_{j,h} x_ij x_ji x_ih x_hj |
-//! | 3-cycles (`cycle3`) | sum_{j,h} x_ij x_jh x_hi |
+//! | 3-cycles (`cycle3`) | sum_{j,h} x_ij x_jh x_hi (the network statistic, the number of 3-cycles, is the sum over actors divided by 3, as RSiena reports it) |
 //! | GWESP (`gwespFF`, `gwespFB`, `gwespBF`, `gwespBB`) | sum_j x_ij e^a {1 - (1 - e^-a)^esp_ij} |
 //! | in-degree popularity (`inPop`) | sum_j x_ij x_+j |
 //! | in-degree popularity sqrt (`inPopSqrt`) | sum_j x_ij sqrt(x_+j) |
@@ -358,7 +358,10 @@ impl Model {
     }
 
     /// Statistics sum_i s_ik(x) of every effect on `net`, with the
-    /// covariates in force during `period`.
+    /// covariates in force during `period`. For `cycle3` the sum counts
+    /// every 3-cycle once per actor on it, and RSiena reports the number of
+    /// 3-cycles, so the sum is divided by 3 (a constant factor, which leaves
+    /// estimates and standard errors unchanged).
     pub fn statistics(&self, panel: &Panel, period: usize, net: &Network) -> Vec<f64> {
         let mut out = vec![0.0; self.effects.len()];
         let mut ctx = ActorContext::new(net.n());
@@ -366,6 +369,11 @@ impl Model {
             ctx.prepare(self, net, i);
             for (k, e) in self.effects.iter().enumerate() {
                 out[k] += actor_statistic(e, panel, period, net, &ctx, i);
+            }
+        }
+        for (k, e) in self.effects.iter().enumerate() {
+            if e.kind == EffectKind::Cycle3 {
+                out[k] /= 3.0;
             }
         }
         out
@@ -821,10 +829,11 @@ mod tests {
         )
         .unwrap();
         let s = targets(&m, &p);
-        // cycle3: each actor's s_i counts the cycle through it once: 3.
+        // cycle3: each actor's s_i counts the cycle through it once, and the
+        // statistic is the number of cycles: 1.
         // inPop: sum_j indeg_j^2 = 1 + 1 + 4 = 6. outAct: 4 + 1 + 1 = 6.
         // gwespFF with a = log 2: tie 0 -> 2 has esp 1, weight 1.
-        assert_eq!(s, vec![4.0, 2.0, 1.0, 1.0, 3.0, 6.0, 6.0, 1.0]);
+        assert_eq!(s, vec![4.0, 2.0, 1.0, 1.0, 1.0, 6.0, 6.0, 1.0]);
     }
 
     #[test]

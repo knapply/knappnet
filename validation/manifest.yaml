@@ -7,8 +7,8 @@
 #   oracles      - each reference implementation's equivalent call
 #
 # An oracle entry may declare `differs_when`, a list of fixture tags under
-# which that oracle is known to follow a different convention, with the
-# reason. On those fixtures a mismatch is reported as a documented
+# which that oracle is known to follow a different convention, or
+# `differs_on`, a list of fixture names, with the reason. On those fixtures a mismatch is reported as a documented
 # convention difference rather than a failure. Any other mismatch fails CI.
 #
 # An oracle that gives no answer on some fixtures (it raises an error, or

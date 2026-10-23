@@ -2,11 +2,20 @@
 //!
 //! Centering follows the RSiena manual (Ripley et al. 2026,
 //! `ripley2026manual`, section 5.3.2): actor covariates are centered by the
-//! mean over all actors and, for changing covariates, over all waves
-//! supplied; dyadic covariates by the mean of their off-diagonal cells; the
+//! mean over all actors and, for changing covariates, over all periods;
+//! dyadic covariates by the mean of their off-diagonal cells; the
 //! similarity sim_ij = 1 - |v_i - v_j| / range by its mean over all ordered
-//! pairs of distinct actors (and waves). Here `range` is the difference
-//! between the largest and smallest value over all actors and waves.
+//! pairs of distinct actors (and periods). Here `range` is the difference
+//! between the largest and smallest value over all actors and periods.
+//!
+//! A changing covariate has one value per actor and period, the value in
+//! effect during period m (from wave m to wave m + 1), so M waves give
+//! M - 1 columns. Values for the last wave may be supplied and are then
+//! ignored, as RSiena ignores them, and a changing covariate needs at least
+//! three waves. RSiena centers the similarity of changing covariates by a
+//! mean computed differently (not documented in the manual), so the `simX`
+//! effect of a changing covariate can differ from RSiena's; see
+//! validation/manifest.d/saom.yaml.
 
 use super::network::Network;
 use crate::error::{Error, Result};
@@ -244,16 +253,28 @@ impl Panel {
         Panel::from_adjacency(n, &adj)
     }
 
-    /// Adds an actor covariate (constant: `n` values; changing: `n * M`
-    /// values, wave-major, where M is the number of waves). Returns its
+    /// Adds an actor covariate (constant: `n` values; changing: `n * (M - 1)`
+    /// values, one column per period, or `n * M`, whose last column is
+    /// ignored; wave-major, where M is the number of waves). Returns its
     /// index.
     pub fn add_actor_covariate(&mut self, values: &[f64]) -> Result<usize> {
-        let waves = if values.len() == self.n {
-            1
+        let (n, m) = (self.n, self.waves.len());
+        let periods = m.saturating_sub(1);
+        let values = if values.len() == n {
+            values
+        } else if m < 3 && (values.len() == n * m || values.len() == n * periods) && n > 0 {
+            return Err(Error::InvalidArgument(
+                "a changing covariate needs at least three waves (with two waves, use a \
+                 constant covariate)"
+                    .into(),
+            ));
+        } else if values.len() == n * m {
+            &values[..n * periods]
         } else {
-            self.waves.len()
+            values
         };
-        self.actor.push(ActorCovariate::new(self.n, waves, values)?);
+        let waves = if values.len() == n { 1 } else { periods };
+        self.actor.push(ActorCovariate::new(n, waves, values)?);
         Ok(self.actor.len() - 1)
     }
 

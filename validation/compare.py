@@ -117,6 +117,8 @@ def main() -> int:
                     tally[(variant, oracle)]["match"] += 1
                     continue
                 known = tags & set(ospec.get("differs_when", []))
+                if name in ospec.get("differs_on", []):
+                    known = known | {"listed"}
                 numeric = all(not isinstance(v, tuple) for v in ours + theirs)
                 if len(theirs) == len(ours) and numeric:
                     i, a, b = worst_diff(ours, theirs)

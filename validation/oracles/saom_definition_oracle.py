@@ -55,7 +55,9 @@ class Covariates:
         for name, (kind, make) in sf.COVARIATES.items():
             values = make(n)
             if kind == "actor":
-                waves = values if name == "changing" else [values] * sf.WAVES
+                # One column per period: the last wave's values of a
+                # changing covariate are not used (as in RSiena).
+                waves = values[:sf.WAVES - 1] if name == "changing" else [values] * (sf.WAVES - 1)
                 waves = [[Fraction(v) for v in w] for w in waves]
                 self.actor[name] = waves
             else:
@@ -170,7 +172,11 @@ def actor_statistic(e: dict, x, cov: Covariates, period: int, i: int):
 
 
 def statistic(e: dict, x, cov: Covariates, period: int) -> float:
-    return float(sum(actor_statistic(e, x, cov, period, i) for i in range(len(x))))
+    total = sum(actor_statistic(e, x, cov, period, i) for i in range(len(x)))
+    # RSiena reports the number of 3-cycles; the actor sum counts each three times.
+    if e["effect"] == "cycle3":
+        total = Fraction(total) / 3
+    return float(total)
 
 
 def change_statistics(e: dict, x, cov: Covariates, period: int) -> list[float]:

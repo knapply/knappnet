@@ -213,6 +213,14 @@ saom_targets_outPopSqrt:
       call: "sum_i s_i(x(t_m+1)) for outPopSqrt from its formula"
     rsiena:
       call: "RSiena: includeEffects(eff, outPopSqrt); siena07(nsub = 0, cond = FALSE)$targets2"
+      differs_when: [directed]
+      reason: >-
+        The engine follows the formula in the RSiena manual, s_i = sum_j x_ij
+        sqrt(x_j+), on the network at the end of each period. The target
+        statistics RSiena 1.6.6 reports for outPopSqrt instead equal sum_ij
+        x_ij(t_m+1) x_j+(t_m): the alters' out-degrees at the start of the
+        period, without the square root (found by comparing RSiena's targets
+        on small networks; the other degree effects agree with the manual)
 
 saom_contributions_outPopSqrt:
   engine: {fn: saom_contributions, effect: outPopSqrt}
@@ -249,6 +257,13 @@ saom_targets_inActSqrt:
       call: "sum_i s_i(x(t_m+1)) for inActSqrt from its formula"
     rsiena:
       call: "RSiena: includeEffects(eff, inActSqrt); siena07(nsub = 0, cond = FALSE)$targets2"
+      differs_when: [directed]
+      reason: >-
+        The engine follows the formula in the RSiena manual, s_i = x_i+
+        sqrt(x_+i), on the network at the end of each period. The target
+        statistics RSiena 1.6.6 reports for inActSqrt use the in-degree at
+        the start of the period, sum_i x_i+(t_m+1) sqrt(x_+i(t_m)) (found by
+        comparing RSiena's targets on small networks)
 
 saom_contributions_inActSqrt:
   engine: {fn: saom_contributions, effect: inActSqrt}
@@ -483,6 +498,14 @@ saom_targets_simX_changing:
       call: "sum_i s_i(x(t_m+1)) for simX with the changing covariate, centered as RSiena centers it"
     rsiena:
       call: "RSiena: includeEffects(eff, simX, interaction1 = 'changing'); siena07(nsub = 0, cond = FALSE)$targets2"
+      differs_when: [directed]
+      reason: >-
+        The engine centers the similarity of a changing covariate by its mean
+        over ordered pairs of distinct actors and periods, as for a constant
+        covariate (where it agrees with RSiena). RSiena computes the
+        similarity mean of changing covariates differently; its definition
+        is not given in the manual, and on small examples it is not the mean
+        over pairs and periods
 
 saom_contributions_simX_changing:
   engine: {fn: saom_contributions, effect: simX, covariate: changing}

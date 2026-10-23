@@ -87,7 +87,7 @@ Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact a
 | `girvan_newman_membership` |  | 15 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |  |  |
 | `leading_eigen` |  | 17 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 15 |  |  |  |  |  |  |  |
 | `leading_eigen_membership` |  | 17 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 15 |  |  |  |  |  |  |  |
-| `leading_eigen_weighted` |  | 0 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 5 |  |  |  |  |  |  |  |
+| `leading_eigen_weighted` |  | 0 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 0 |  |  |  |  |  |  |  |
 | `fast_greedy` |  | 19 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 9 |  | 15 / 0 / 0 / 0 |  |  |  |  |  |
 | `fast_greedy_membership` |  | 19 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |  |  |
 | `fast_greedy_weighted` |  | 5 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 3 |  | 5 / 0 / 0 / 0 |  |  |  |  |  |

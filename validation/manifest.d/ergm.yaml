@@ -94,7 +94,11 @@ ergm_mple_dyadic:
 ergm_mple_dyadic_se:
   engine: {fn: ergm_mple, terms: mple_dyadic, output: se}
   applies_to: any
-  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  # ergm fits the pseudolikelihood with glm()'s default convergence rule,
+  # which leaves its standard errors accurate to about 1e-5 (the engine and
+  # the definition oracle agree to 1e-6; so does glm() with a strict rule,
+  # as test-ergm.R checks).
+  tolerance: {rel: 1.0e-4, abs: 1.0e-6}
   oracles:
     definition:
       call: "square roots of the diagonal of the inverse observed information at the BFGS maximum"
