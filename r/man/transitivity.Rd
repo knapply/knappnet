@@ -3,6 +3,14 @@
 \alias{clustering}
 \alias{average_clustering}
 \title{Transitivity and clustering coefficients}
+\description{
+\code{transitivity()} is the share of connected triples that are closed:
+three times the number of triangles divided by the number of paths of length
+two (Newman 2003). \code{clustering()} gives each node's local clustering
+coefficient, the share of pairs of its neighbors that are themselves
+adjacent (Watts and Strogatz 1998), and \code{average_clustering()} their
+mean.
+}
 \usage{
 transitivity(x, convention = c("igraph", "networkx"), threads = 0L)
 
@@ -17,26 +25,15 @@ average_clustering(x, weighted = FALSE, method = NULL,
 \item{convention}{How a coefficient that is 0 / 0 is reported, and which
 weighted coefficient is the default: \code{"igraph"} (the default) or
 \code{"networkx"}; see Details and \code{\link{conventions}}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
-\item{weighted}{Whether to compute a weighted local coefficient (see
-Details). The binary coefficient is the default, whatever the network's
-weights, as in igraph and NetworkX.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
+\item{weighted}{Whether to compute a weighted local coefficient (see Details).
+The binary coefficient is the default, whatever the network's weights, as in
+igraph and NetworkX.}
 \item{method}{The weighted coefficient: \code{"barrat"} (Barrat et al. 2004,
 igraph) or \code{"onnela"} (Onnela et al. 2005, NetworkX). \code{NULL} uses
 the convention's choice.}
-}
-\value{
-\code{transitivity()} and \code{average_clustering()} return a number;
-\code{clustering()} returns a numeric vector aligned with the rows of
-\code{x$nodes}.
-}
-\description{
-\code{transitivity()} is the share of connected triples that are closed:
-three times the number of triangles divided by the number of paths of length
-two (Newman 2003). \code{clustering()} gives each node's local clustering
-coefficient, the share of pairs of its neighbors that are themselves
-adjacent (Watts and Strogatz 1998), and \code{average_clustering()} their
-mean.
 }
 \details{
 All three use the simple undirected reading of the network: directions are
@@ -72,6 +69,11 @@ equal weights both reduce to the binary coefficient.
 
 Results match igraph (on the simple undirected reading) and NetworkX on every
 network in the validation suite.
+}
+\value{
+\code{transitivity()} and \code{average_clustering()} return a number;
+\code{clustering()} returns a numeric vector aligned with the rows of
+\code{x$nodes}.
 }
 \references{
 Watts, D. J., & Strogatz, S. H. (1998). Collective dynamics of 'small-world'

@@ -1,6 +1,16 @@
 \name{temporal_closeness}
 \alias{temporal_closeness}
 \title{Temporal closeness}
+\description{
+Pan and Saramäki's (2011) temporal closeness centrality
+\deqn{C_i = \frac{1}{n - 1} \sum_{j \ne i} \frac{1}{\tau_{ij}}}{C_i = (1 / (n - 1)) sum_{j != i} 1 / tau_ij}
+where \eqn{\tau_{ij}} is the average temporal distance from \eqn{i} to
+\eqn{j} over all starting times in the window (their Eq. 1; see
+\code{type = "average"} in \code{\link{temporal_distances}}). Nodes that
+cannot reach \eqn{j} at all contribute 0, as in harmonic centrality. High
+values mean that information leaving the node at a random time reaches
+the others quickly.
+}
 \usage{
 temporal_closeness(x, start = NULL, end = NULL, min_wait = 0,
   max_wait = Inf, strict = FALSE, traversal = 0, threads = 0L)
@@ -17,24 +27,9 @@ Pan and Saramäki's own rule is \code{strict = TRUE},
 \code{traversal = "duration"}: each contact starts strictly after the
 previous one ends. The defaults allow simultaneous contacts to chain, as
 in Holme and Saramäki (2012).}
-\item{threads}{Number of threads, a whole number; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-A numeric vector aligned with the rows of \code{x$nodes}; \code{NaN} for
-every node when there are fewer than two nodes or the window has no
-length.
-}
-\description{
-Pan and Saramäki's (2011) temporal closeness centrality
-\deqn{C_i = \frac{1}{n - 1} \sum_{j \ne i} \frac{1}{\tau_{ij}}}{C_i = (1 / (n - 1)) sum_{j != i} 1 / tau_ij}
-where \eqn{\tau_{ij}} is the average temporal distance from \eqn{i} to
-\eqn{j} over all starting times in the window (their Eq. 1; see
-\code{type = "average"} in \code{\link{temporal_distances}}). Nodes that
-cannot reach \eqn{j} at all contribute 0, as in harmonic centrality. High
-values mean that information leaving the node at a random time reaches
-the others quickly.
 }
 \details{
 The average temporal distance is computed exactly from each pair's
@@ -45,6 +40,11 @@ Self-loops, parallel contacts, direction, and waiting rules are treated
 as in \code{\link{temporal_distances}}; weights and node presence
 intervals are not used. Results are checked against a brute-force
 integration over starting times.
+}
+\value{
+A numeric vector aligned with the rows of \code{x$nodes}; \code{NaN} for
+every node when there are fewer than two nodes or the window has no
+length.
 }
 \references{
 Pan, R. K., & Saramäki, J. (2011). Path lengths, correlations, and

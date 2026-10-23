@@ -2,35 +2,6 @@
 \alias{plot_spatial}
 \alias{plot_edge_lengths}
 \title{Plot a spatial network on its map}
-\usage{
-plot_spatial(x, node_color = NULL, node_size = NULL, node_label = NULL,
-             edge_width = NULL, edge_color = NULL, ..., legend = TRUE)
-
-plot_edge_lengths(x, scale = NULL, form = c("exponential", "gaussian", "power"),
-                  exponent = 2, ...)
-}
-\arguments{
-\item{x}{A spatial \code{\link{netframe}}: one with sf node geometry, or
-one returned by \code{\link{spatial_network}} or
-\code{\link{proximity_network}}.}
-\item{node_color, edge_color}{Colors: the name of a column of \code{x$nodes}
-or \code{x$edges} (categories or numbers, mapped to a palette with a
-legend), a vector with one value per node or edge, or a single color.}
-\item{node_size}{Node sizes for point nodes: a numeric column of
-\code{x$nodes}, a vector with one value per node, or a single \code{cex};
-the default grows with degree.}
-\item{node_label}{Labels: \code{NULL} labels networks of at most 40 nodes
-with their identifiers, \code{TRUE} always, \code{FALSE} never, or a column
-of \code{x$nodes} or a vector with one label per node.}
-\item{edge_width}{Line widths for edges: a numeric column of
-\code{x$edges}, a vector with one value per edge, or a single \code{lwd}.}
-\item{legend}{Whether to draw a legend for a mapped \code{node_color}.}
-\item{...}{Further arguments to \code{\link[graphics]{title}}, such as
-\code{main}; for \code{plot_edge_lengths()}, to \code{\link[graphics]{hist}}.}
-\item{scale, form, exponent}{For \code{plot_edge_lengths()}, the
-\code{\link{distance_decay}} curve to overlay; \code{NULL} draws none.}
-}
-\value{\code{x}, invisibly.}
 \description{
 Draws a spatial network with base graphics at its true locations: nodes
 and edges at their geometries when the tables are sf (see
@@ -49,10 +20,35 @@ when \code{scale} is given, the \code{\link{distance_decay}} curve with that
 scale on a second axis, so the choice of scale can be judged against the
 lengths it will weight.
 
-Colors come from palettes that are safe for color-blind readers: the
-Okabe-Ito palette for categories (eight colors; more categories recycle
-them, with a warning) and viridis for numbers.
+Appearance arguments are read exactly as by \code{\link{plot.netframe}}
+(columns, vectors, single values, or vectors wrapped in \code{I()}), with
+the same palettes: Okabe-Ito colors for categories and viridis for
+numbers.
 }
+\usage{
+plot_spatial(x, node_color = NULL, node_size = NULL, node_label = NULL,
+             edge_width = NULL, edge_color = NULL, ..., legend = TRUE)
+
+plot_edge_lengths(x, scale = NULL, form = c("exponential", "gaussian", "power"),
+                  exponent = 2, ...)
+}
+\arguments{
+\item{x}{A spatial \code{\link{netframe}}: one with sf node geometry, or
+one returned by \code{\link{spatial_network}} or
+\code{\link{proximity_network}}.}
+\item{node_size, node_color, node_label, edge_width, edge_color}{Appearance
+of nodes and edges, as in \code{\link{plot.netframe}}: the name of a column
+of \code{x$nodes} or \code{x$edges}, a vector with one value per node or
+edge, a single value for all, or a vector wrapped in \code{\link{I}()} to
+use its values as they are. Node sizes apply to point nodes; polygons and
+lines are filled or drawn in the node color.}
+\item{legend}{Whether to draw legends for mapped columns and vectors.}
+\item{...}{Further arguments to \code{\link[graphics]{title}}, such as
+\code{main}; for \code{plot_edge_lengths()}, to \code{\link[graphics]{hist}}.}
+\item{scale, form, exponent}{For \code{plot_edge_lengths()}, the
+\code{\link{distance_decay}} curve to overlay; \code{NULL} draws none.}
+}
+\value{\code{x}, invisibly.}
 \seealso{\code{\link{plot.netframe}} for abstract layouts,
 \code{\link{to_sf}}, \code{\link{spatial_network}}.}
 \examples{

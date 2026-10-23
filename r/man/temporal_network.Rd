@@ -2,6 +2,15 @@
 \alias{temporal_network}
 \alias{is_temporal}
 \title{Temporal networks}
+\description{
+\code{temporal_network()} creates a network whose edges are timed
+contacts: each edge has a start time and, optionally, an end time or a
+duration, and nodes may have presence intervals. The result is an ordinary
+\code{\link{netframe}} with extra column roles, so every static measure
+still works on it (treating each contact as an edge), and the temporal
+functions listed under \sQuote{See also} use the times.
+\code{is_temporal()} tells whether a netframe has times.
+}
 \usage{
 temporal_network(edges, nodes = NULL, start = "time", end = NULL,
   duration = NULL, directed = TRUE, from = 1L, to = 2L, id = 1L,
@@ -36,19 +45,6 @@ is a netframe, which keeps its own direction.}
 each node is present, of the same type as \code{start}. A missing value
 means present from the beginning (start) or until the end (end).}
 \item{x}{Any object.}
-}
-\value{
-\code{temporal_network()} returns a \code{\link{netframe}} with time
-roles; \code{is_temporal()} returns \code{TRUE} or \code{FALSE}.
-}
-\description{
-\code{temporal_network()} creates a network whose edges are timed
-contacts: each edge has a start time and, optionally, an end time or a
-duration, and nodes may have presence intervals. The result is an ordinary
-\code{\link{netframe}} with extra column roles, so every static measure
-still works on it (treating each contact as an edge), and the temporal
-functions listed under \sQuote{See also} use the times.
-\code{is_temporal()} tells whether a netframe has times.
 }
 \details{
 \strong{Times.} Times are stored as given in \code{x$edges} and
@@ -87,6 +83,10 @@ flows (one row per event, with source, destination, and time) are contact
 sequences: pass them, or a netframe built from them, straight to
 \code{temporal_network()}. Millions of contacts are fine; slicing and
 paths run in compiled code after a single sort by time.
+}
+\value{
+\code{temporal_network()} returns a \code{\link{netframe}} with time
+roles; \code{is_temporal()} returns \code{TRUE} or \code{FALSE}.
 }
 \section{Missing values and invalid input}{
 Start times must not be missing and, with \code{end} or \code{duration},

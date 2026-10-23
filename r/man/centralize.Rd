@@ -1,17 +1,6 @@
 \name{centralize}
 \alias{centralize}
 \title{Centralization of any scores}
-\usage{
-centralize(scores, theoretical_max = NULL)
-}
-\arguments{
-\item{scores}{A numeric vector of node scores.}
-\item{theoretical_max}{The largest possible value of the sum of differences
-for \code{length(scores)} nodes, or \code{NULL} to return the sum itself.
-It depends on the measure, its normalization, and the network's direction;
-see the table in \code{\link{centralization}}.}
-}
-\value{A number: \code{NaN} if \code{scores} is empty or contains \code{NaN}.}
 \description{
 Freeman's (1978) centralization index for a vector of node scores:
 \eqn{\sum_i (c_{\max} - c_i)}{sum_i (c_max - c_i)}, the sum of differences
@@ -23,6 +12,17 @@ of degree, betweenness, closeness, and eigenvector centrality; this
 function serves any other measure whose maximum is known, or reports the
 unnormalized sum when it is not.
 }
+\usage{
+centralize(scores, theoretical_max = NULL)
+}
+\arguments{
+\item{scores}{A numeric vector of node scores.}
+\item{theoretical_max}{The largest possible value of the sum of differences
+for \code{length(scores)} nodes, or \code{NULL} to return the sum itself.
+It depends on the measure, its normalization, and the network's direction;
+see the table in \code{\link{centralization}}.}
+}
+\value{A number: \code{NaN} if \code{scores} is empty or contains \code{NaN}.}
 \references{
 Freeman, L. C. (1978). Centrality in social networks: Conceptual
 clarification. \emph{Social Networks}, 1(3), 215-239.

@@ -1,6 +1,15 @@
 \name{automorphic_equivalence}
 \alias{automorphic_equivalence}
 \title{Automorphic equivalence}
+\description{
+Nodes are automorphically equivalent when some automorphism of the
+network, a relabelling of the nodes that maps the network onto itself,
+maps one onto the other (Everett 1985; Borgatti and Everett 1992): they
+are interchangeable, and have the same value on every measure that depends
+on the structure alone. The classes are the orbits of the automorphism
+group, computed exactly by an individualization-refinement search (McKay
+and Piperno 2014).
+}
 \usage{
 automorphic_equivalence(x, max_steps = 1e6)
 }
@@ -11,17 +20,6 @@ examines. The search is exponential in the worst case (highly symmetric
 networks such as strongly regular graphs), so it stops with an error,
 rather than run indefinitely, once it has examined this many; results are
 never approximate.}
-}
-\value{An integer vector of class numbers (starting at 1) aligned with the
-rows of \code{x$nodes}.}
-\description{
-Nodes are automorphically equivalent when some automorphism of the
-network, a relabelling of the nodes that maps the network onto itself,
-maps one onto the other (Everett 1985; Borgatti and Everett 1992): they
-are interchangeable, and have the same value on every measure that depends
-on the structure alone. The classes are the orbits of the automorphism
-group, computed exactly by an individualization-refinement search (McKay
-and Piperno 2014).
 }
 \details{
 The equivalence is defined on binary ties: weights are ignored and parallel
@@ -37,6 +35,8 @@ igraph and NetworkX have no function for the orbits, and UCINET's routine
 the exact orbits; the validation suite checks the result against the
 orbits found by trying every permutation of small networks.
 }
+\value{An integer vector of class numbers (starting at 1) aligned with the
+rows of \code{x$nodes}.}
 \references{
 Everett, M. G. (1985). Role similarity and complexity in social networks.
 \emph{Social Networks}, 7(4), 353-359. \doi{10.1016/0378-8733(85)90013-9}

@@ -1,6 +1,11 @@
 \name{homophily}
 \alias{homophily}
 \title{Within-group tie shares}
+\description{
+For each group, the share of its members' ties that stay inside the group,
+against the share expected if ties ignored groups: the baseline homophily of
+McPherson, Smith-Lovin, and Cook (2001).
+}
 \usage{
 homophily(x, groups, direction = c("all", "out", "in"))
 }
@@ -10,14 +15,6 @@ homophily(x, groups, direction = c("all", "out", "in"))
 a vector with one value per node. Missing values are not allowed.}
 \item{direction}{For directed networks: ties sent (\code{"out"}), received
 (\code{"in"}), or both (\code{"all"}) by members.}
-}
-\value{A data frame with one row per group (in order of first appearance):
-\code{group}, \code{size}, \code{internal}, \code{external},
-\code{observed}, and \code{expected}.}
-\description{
-For each group, the share of its members' ties that stay inside the group,
-against the share expected if ties ignored groups: the baseline homophily of
-McPherson, Smith-Lovin, and Cook (2001).
 }
 \details{
 Ties are counted from the members' side: a tie between two members counts
@@ -30,6 +27,9 @@ share when every tie is equally likely; \code{observed} above \code{expected}
 indicates ties concentrated within the group. Self-loops are ignored,
 parallel edges each count, and weights are not used.
 }
+\value{A data frame with one row per group (in order of first appearance):
+\code{group}, \code{size}, \code{internal}, \code{external},
+\code{observed}, and \code{expected}.}
 \references{
 McPherson, M., Smith-Lovin, L., & Cook, J. M. (2001). Birds of a feather:
 Homophily in social networks. \emph{Annual Review of Sociology}, 27, 415-444.

@@ -133,16 +133,16 @@ cat(lines[(start + 1L):(end - 1L)], sep = "\n")
 
 Brandes, U. (2001). A faster algorithm for betweenness centrality.
 *Journal of Mathematical Sociology*, 25(2), 163-177.
-https://doi.org/10.1080/0022250X.2001.9990249
+<https://doi.org/10.1080/0022250X.2001.9990249>
 
 Dial, R. B. (1969). Algorithm 360: Shortest-path forest with topological
 ordering. *Communications of the ACM*, 12(11), 632-633.
-https://doi.org/10.1145/363269.363610
+<https://doi.org/10.1145/363269.363610>
 
 Dijkstra, E. W. (1959). A note on two problems in connexion with graphs.
-*Numerische Mathematik*, 1, 269-271. https://doi.org/10.1007/BF01386390
+*Numerische Mathematik*, 1, 269-271. <https://doi.org/10.1007/BF01386390>
 
 Salmon, J. K., Moraes, M. A., Dror, R. O., & Shaw, D. E. (2011). Parallel
 random numbers: As easy as 1, 2, 3. In *Proceedings of the 2011
 International Conference for High Performance Computing, Networking,
-Storage and Analysis (SC '11)*. https://doi.org/10.1145/2063384.2063405
+Storage and Analysis (SC '11)*. <https://doi.org/10.1145/2063384.2063405>

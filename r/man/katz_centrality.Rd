@@ -1,6 +1,11 @@
 \name{katz_centrality}
 \alias{katz_centrality}
 \title{Katz centrality}
+\description{
+Counts the walks that end at each node, with a walk of length k weighted by
+\eqn{\alpha^k} (Katz 1953): the solution of
+\eqn{x = \alpha A^T x + \beta}{x = alpha t(A) x + beta}.
+}
 \usage{
 katz_centrality(x, alpha = 0.1, beta = 1, mode = c("in", "out", "all"),
                 weighted = NULL, normalized = NULL,
@@ -18,8 +23,8 @@ value per node, or the name of a column of \code{x$nodes}.}
 (NetworkX, igraph), \code{"out"} walks starting there, and \code{"all"}
 ignores direction.}
 \item{weighted}{Whether to use edge weights, as given whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must not be negative.}
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
 \item{normalized}{Whether to scale the scores to Euclidean length 1.
 \code{NULL} uses the convention's default: \code{TRUE} for NetworkX,
 \code{FALSE} for igraph.}
@@ -31,12 +36,6 @@ score.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Counts the walks that end at each node, with a walk of length k weighted by
-\eqn{\alpha^k} (Katz 1953): the solution of
-\eqn{x = \alpha A^T x + \beta}{x = alpha t(A) x + beta}.
 }
 \details{
 Expanding the solution gives \eqn{x = \beta (1 + \alpha A^T 1 + \alpha^2
@@ -56,6 +55,7 @@ scores are not normalized; under NetworkX's a self-loop adds its weight once
 to the diagonal and scores have unit length. Weights are used as given and
 must not be negative.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Katz, L. (1953). A new status index derived from sociometric analysis.
 \emph{Psychometrika}, 18(1), 39-43. \doi{10.1007/BF02289026}

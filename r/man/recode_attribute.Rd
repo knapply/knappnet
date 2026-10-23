@@ -2,6 +2,14 @@
 \alias{recode_attribute}
 \alias{join_attributes}
 \title{Recode and join node attributes}
+\description{
+\code{recode_attribute()} replaces values of a column of \code{x$nodes} (or
+\code{x$edges}) according to a mapping, as UCINET's Transform > Recode does
+for data values (Hanneman and Riddle 2005, chapter 6).
+\code{join_attributes()} adds the columns of a data frame to
+\code{x$nodes}, matched by node identifier (UCINET: Data > Join > Columns,
+or loading an attribute dataset).
+}
 \usage{
 recode_attribute(x, column, map, default = NULL, table = c("nodes", "edges"))
 
@@ -19,15 +27,6 @@ join_attributes(x, data, by = NULL)
 position; \code{NULL} uses a column with the same name as the network's
 identifier column, or else the first column.}
 }
-\value{A netframe.}
-\description{
-\code{recode_attribute()} replaces values of a column of \code{x$nodes} (or
-\code{x$edges}) according to a mapping, as UCINET's Transform > Recode does
-for data values (Hanneman and Riddle 2005, chapter 6).
-\code{join_attributes()} adds the columns of a data frame to
-\code{x$nodes}, matched by node identifier (UCINET: Data > Join > Columns,
-or loading an attribute dataset).
-}
 \details{
 \code{map} is a named vector, old value to new (\code{c(male = "M", female =
 "F")}), or a function applied to the whole column. Values not named in the
@@ -41,6 +40,7 @@ nodes without a matching row get \code{NA}, rows of \code{data} without a
 matching node are dropped, and duplicate keys in \code{data} are an error.
 Columns of \code{data} that already exist in \code{x$nodes} replace them.
 }
+\value{A netframe.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

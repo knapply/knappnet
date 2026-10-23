@@ -2,16 +2,6 @@
 \alias{symmetrize}
 \alias{transpose_network}
 \title{Symmetrize or transpose a directed network}
-\usage{
-symmetrize(x, method = c("max", "min", "sum", "average", "upper", "lower"))
-
-transpose_network(x)
-}
-\arguments{
-\item{x}{A \code{\link{netframe}}.}
-\item{method}{How the two directions combine; see Description.}
-}
-\value{A netframe: undirected for \code{symmetrize()}.}
 \description{
 \code{symmetrize()} turns a directed network into an undirected one by
 combining the two directions of every pair, as UCINET's Transform >
@@ -34,6 +24,15 @@ chapter 6):
 \code{transpose_network()} reverses every edge (UCINET: Transform >
 Transpose).
 }
+\usage{
+symmetrize(x, method = c("max", "min", "sum", "average", "upper", "lower"))
+
+transpose_network(x)
+}
+\arguments{
+\item{x}{A \code{\link{netframe}}.}
+\item{method}{How the two directions combine; see Description.}
+}
 \details{
 An absent tie counts as weight 0, so for weighted networks \code{"max"},
 \code{"sum"}, and \code{"average"} tie a pair when either direction is tied
@@ -50,6 +49,7 @@ in node order. \code{transpose_network()} keeps every column. An undirected
 network is returned unchanged by \code{transpose_network()} and is an error
 for \code{symmetrize()}.
 }
+\value{A netframe: undirected for \code{symmetrize()}.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

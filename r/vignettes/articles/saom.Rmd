@@ -178,7 +178,7 @@ heterogeneity tests are not implemented; RSiena provides all of them.
 
 Lospinoso, J., and Snijders, T. A. B. (2019). Goodness of fit for
 stochastic actor-oriented models. *Methodological Innovations*, 12(3).
-[doi:10.1177/2059799119884282](https://doi.org/10.1177/2059799119884282)
+<https://doi.org/10.1177/2059799119884282>
 
 Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026). *Manual
 for RSiena*. University of Oxford, Department of Statistics and Nuffield
@@ -187,13 +187,13 @@ College; University of Groningen, Department of Sociology.
 
 Snijders, T. A. B. (2001). The statistical evaluation of social network
 dynamics. *Sociological Methodology*, 31(1), 361-395.
-[doi:10.1111/0081-1750.00099](https://doi.org/10.1111/0081-1750.00099)
+<https://doi.org/10.1111/0081-1750.00099>
 
 Snijders, T. A. B., van de Bunt, G. G., and Steglich, C. E. G. (2010).
 Introduction to stochastic actor-based models for network dynamics.
 *Social Networks*, 32(1), 44-60.
-[doi:10.1016/j.socnet.2009.02.004](https://doi.org/10.1016/j.socnet.2009.02.004)
+<https://doi.org/10.1016/j.socnet.2009.02.004>
 
 Snijders, T. A. B. (2017). Stochastic actor-oriented models for network
 dynamics. *Annual Review of Statistics and Its Application*, 4, 343-363.
-[doi:10.1146/annurev-statistics-060116-054035](https://doi.org/10.1146/annurev-statistics-060116-054035)
+<https://doi.org/10.1146/annurev-statistics-060116-054035>

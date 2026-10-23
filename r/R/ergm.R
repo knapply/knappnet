@@ -1,205 +1,10 @@
-#' Exponential random graph models
-#'
-#' `ergm_fit()` fits an exponential random graph model (ERGM) to a network
-#' from a formula of model terms written as in the statnet `ergm` package,
-#' for example `g ~ edges + mutual + gwesp(0.5, fixed = TRUE) +
-#' nodematch("group")`. `ergm_stats()` evaluates the terms on the observed
-#' network (statnet's `summary(formula)`), and `ergm_control()` collects the
-#' estimation settings. The functions carry an `ergm_` prefix rather than
-#' statnet's names (`ergm()`, `summary()`, `gof()`), so that both packages
-#' can be attached without masking.
-#'
-#' @param formula A formula whose left-hand side is a [netframe()] and whose
-#'   right-hand side sums model terms (see Details).
-#' @param estimate `"MCMLE"` (Monte Carlo maximum likelihood, the default),
-#'   `"MPLE"` (maximum pseudolikelihood), or `"exact"` (maximum likelihood
-#'   by enumerating every network; at most 22 free dyads). A model whose
-#'   terms are all dyad independent is fitted exactly by `"MPLE"`, and
-#'   `"MCMLE"` returns that fit.
-#' @param constraints `NULL`, or an n-by-n logical or 0/1 matrix (rows and
-#'   columns in the order of `x$nodes`) marking dyads that keep their
-#'   observed state: structural zeros and ones. Fixed dyads are never
-#'   toggled, enter no estimate, and are left out of the count of dyads.
-#' @param control Estimation settings from `ergm_control()`.
-#' @param start Starting coefficients for `"MCMLE"` and `"exact"`; `NULL`
-#'   uses the pseudolikelihood estimate when it is finite and zero otherwise.
-#' @param seed Seed for the Markov chains, a whole number in \[0, 2^53).
-#'   `NULL` draws one from R's random number generator, so [set.seed()]
-#'   makes results reproducible.
-#' @param threads Number of threads for parallel chains; `0` uses all
-#'   available cores (see "Threads" in [netframe()]).
-#' @param burnin,interval,nsim,chains Markov chain settings: proposals
-#'   discarded before sampling, proposals between samples, samples per
-#'   chain, and the number of chains run in parallel (each with its own
-#'   random stream, so results do not depend on `threads`).
-#' @param proposal `"tnt"` (tie/no-tie, the default and statnet's) or
-#'   `"random"` (a uniformly random dyad).
-#' @param max_iter Maximum number of Monte Carlo MLE iterations.
-#' @param margin How far inside the convex hull of the sampled statistics
-#'   the pseudo-observation of each step must lie, as a fraction (statnet's
-#'   `MCMLE.steplength.margin`).
-#' @param confidence Level of the chi-squared test that declares the
-#'   estimating equation solved.
-#' @param loglik Whether to estimate the log-likelihood of a Monte Carlo fit
-#'   by path sampling, so that `logLik()`, AIC, and BIC are available.
-#' @param loglik_steps Number of steps of the path.
-#' @param mple_max_iter,mple_tol Iteration limit and convergence tolerance
-#'   of the logistic regression behind the pseudolikelihood.
-#'
-#' @details
-#' An ERGM gives a network \eqn{y} on \eqn{n} nodes probability
-#' \deqn{P(Y = y) = \exp(\theta' g(y)) / c(\theta)}{P(Y = y) = exp(theta' g(y)) / c(theta)}
-#' where \eqn{g(y)} are the model statistics and \eqn{c(\theta)} sums over
-#' every network on the same nodes (Holland and Leinhardt 1981; Frank and
-#' Strauss 1986; Wasserman and Pattison 1996; Snijders et al. 2006). Terms,
-#' their names, and their parameterizations follow statnet's `ergm` package
-#' (Hunter et al. 2008; Morris, Handcock, and Hunter 2008) exactly, so
-#' `ergm_stats()` agrees with `summary()` there and estimates are directly
-#' comparable:
-#'
-#' \describe{
-#'   \item{`edges`}{Number of ties.}
-#'   \item{`mutual`}{Pairs tied in both directions (directed).}
-#'   \item{`nodecov(attr)`, `nodeicov(attr)`, `nodeocov(attr)`}{Sum over
-#'     ties of a numeric node attribute at both endpoints, the head, or the
-#'     tail.}
-#'   \item{`nodefactor(attr, levels = -1)`, `nodeifactor()`,
-#'     `nodeofactor()`}{For each kept level of a categorical attribute, the
-#'     number of tie endpoints (heads, tails) at nodes with that level.
-#'     `levels` are positions among the sorted levels (negative to drop, the
-#'     default drops the first) or level names.}
-#'   \item{`nodematch(attr, diff = FALSE, levels = NULL)`}{Ties whose
-#'     endpoints share a level; with `diff = TRUE` one statistic per level.}
-#'   \item{`absdiff(attr, pow = 1)`}{Sum over ties of
-#'     \eqn{|x_i - x_j|^{pow}}.}
-#'   \item{`edgecov(x, attrname = NULL)`}{Sum over ties of a dyadic
-#'     covariate: an n-by-n matrix, or a netframe (whose edge column
-#'     `attrname`, or tie count, fills the matrix). Undirected ties read the
-#'     cell (min, max), so an asymmetric matrix should be symmetrized
-#'     first.}
-#'   \item{`kstar(k)`, `istar(k)`, `ostar(k)`}{Number of k-stars (in- and
-#'     out-stars for directed networks); `k` may be a vector.}
-#'   \item{`triangle`, `ttriple`, `ctriple`}{Triangles; for directed networks
-#'     `triangle` counts transitive plus cyclic triples, which `ttriple` and
-#'     `ctriple` count separately.}
-#'   \item{`gwesp(decay, fixed = TRUE)`, `gwdsp()`, `gwnsp()`}{Geometrically
-#'     weighted edgewise, dyadwise, and non-edgewise shared partners
-#'     (Snijders et al. 2006; Hunter 2007) with a fixed decay \eqn{\alpha}:
-#'     \eqn{e^{\alpha} \sum_k (1 - (1 - e^{-\alpha})^k) EP_k}{exp(a) sum_k (1 - (1 - exp(-a))^k) EP_k},
-#'     where \eqn{EP_k} is the number of ties (dyads, non-ties) with exactly
-#'     \eqn{k} shared partners. Shared partners of a directed tie
-#'     \eqn{i \to j}{i -> j} are the outgoing two-path partners
-#'     \eqn{i \to k \to j}{i -> k -> j}, statnet's default `type = "OTP"`;
-#'     dyadwise statistics count ordered pairs in directed networks. Only
-#'     `fixed = TRUE` is supported.}
-#'   \item{`gwdegree(decay, fixed = TRUE)`, `gwidegree()`,
-#'     `gwodegree()`}{Geometrically weighted degree with the same weighting
-#'     of the degree distribution.}
-#'   \item{`degree(d)`, `idegree(d)`, `odegree(d)`}{Nodes of degree exactly
-#'     `d` (a vector gives several statistics).}
-#'   \item{`isolates`}{Nodes with no ties.}
-#' }
-#'
-#' Networks are read as binary and simple: parallel edges collapse to one
-#' tie, weights are ignored, and self-loops are an error. Attributes are
-#' columns of `x$nodes`; categorical levels are sorted (or a factor's
-#' levels).
-#'
-#' **Estimation.** The maximum pseudolikelihood estimate (MPLE; Strauss and
-#' Ikeda 1990) is the logistic regression of each dyad's state on its change
-#' statistics; it is the exact MLE when every term is dyad independent, and
-#' otherwise its standard errors are not valid and are labeled as such. The
-#' Monte Carlo MLE (Geyer and Thompson 1992) starts from the MPLE and
-#' iterates the stepping algorithm of Hummel, Hunter, and Handcock (2012):
-#' each iteration simulates networks at the current coefficients with
-#' Metropolis-Hastings tie/no-tie proposals (Morris, Handcock, and Hunter
-#' 2008), moves toward the observed statistics as far as the convex hull of
-#' the sample allows, and finishes with Newton's method on the
-#' importance-sampled log-likelihood; it stops when the mean sampled
-#' statistics match the observed ones within Monte Carlo error (a Hotelling
-#' test at `confidence`). Standard errors are the inverse Fisher information
-#' plus the Monte Carlo error of the estimate (Hunter and Handcock 2006);
-#' `summary()` reports the Monte Carlo share as `MCMC %`. The log-likelihood
-#' is estimated by path sampling from the null model (Gelman and Meng 1998;
-#' Hunter and Handcock 2006), which has log-likelihood \eqn{-D \log 2} for
-#' \eqn{D} free dyads. A sampler stuck at the empty or complete network (a
-#' degenerate model; Handcock 2003) stops with an error.
-#'
-#' With `estimate = "exact"` every network on the free dyads is enumerated
-#' (Gray-code order, one change statistic per step), giving the exact
-#' likelihood and MLE; the Monte Carlo MLE is tested against it.
-#'
-#' @return `ergm_fit()` returns an object of class `"ergm_fit"`: a list with
-#'   `coefficients`, `vcov` (the full covariance), `mcmc_vcov` (its Monte
-#'   Carlo part), `estimate`, `stats` (the observed statistics), `loglik`
-#'   and `loglik_se` (`NULL` when not estimated), `null_loglik`, `dyads`,
-#'   `mple` (the pseudolikelihood fit used to start), `converged`,
-#'   `iterations`, `sample` (the statistics of the final Monte Carlo
-#'   sample, for [mcmc_diagnostics()]), `model`, `control`, and `call`.
-#'   Methods: `print()`, `summary()` (coefficient table with standard
-#'   errors, `MCMC %`, z and p-values, and AIC and BIC when the
-#'   log-likelihood is available), `coef()`, `vcov()`, `logLik()`,
-#'   [simulate()][simulate.ergm_fit], and [predict()][predict.ergm_fit].
-#'   `ergm_stats()` returns a named numeric vector. `ergm_control()` returns
-#'   a list.
-#'
-#' @references
-#' Holland, P. W., & Leinhardt, S. (1981). An exponential family of
-#' probability distributions for directed graphs. *Journal of the American
-#' Statistical Association*, 76(373), 33-50.
-#' \doi{10.1080/01621459.1981.10477598}
-#'
-#' Frank, O., & Strauss, D. (1986). Markov graphs. *Journal of the American
-#' Statistical Association*, 81(395), 832-842.
-#' \doi{10.1080/01621459.1986.10478342}
-#'
-#' Wasserman, S., & Pattison, P. (1996). Logit models and logistic
-#' regressions for social networks: I. An introduction to Markov graphs and
-#' p*. *Psychometrika*, 61(3), 401-425. \doi{10.1007/BF02294547}
-#'
-#' Snijders, T. A. B., Pattison, P. E., Robins, G. L., & Handcock, M. S.
-#' (2006). New specifications for exponential random graph models.
-#' *Sociological Methodology*, 36(1), 99-153.
-#' \doi{10.1111/j.1467-9531.2006.00176.x}
-#'
-#' Hunter, D. R. (2007). Curved exponential family models for social
-#' networks. *Social Networks*, 29(2), 216-230.
-#' \doi{10.1016/j.socnet.2006.08.005}
-#'
-#' Strauss, D., & Ikeda, M. (1990). Pseudolikelihood estimation for social
-#' networks. *Journal of the American Statistical Association*, 85(409),
-#' 204-212. \doi{10.1080/01621459.1990.10475327}
-#'
-#' Geyer, C. J., & Thompson, E. A. (1992). Constrained Monte Carlo maximum
-#' likelihood for dependent data. *Journal of the Royal Statistical Society
-#' B*, 54(3), 657-683. \doi{10.1111/j.2517-6161.1992.tb01443.x}
-#'
-#' Hunter, D. R., & Handcock, M. S. (2006). Inference in curved exponential
-#' family models for networks. *Journal of Computational and Graphical
-#' Statistics*, 15(3), 565-583. \doi{10.1198/106186006X133069}
-#'
-#' Hummel, R. M., Hunter, D. R., & Handcock, M. S. (2012). Improving
-#' simulation-based algorithms for fitting ERGMs. *Journal of Computational
-#' and Graphical Statistics*, 21(4), 920-939.
-#' \doi{10.1080/10618600.2012.679224}
-#'
-#' Hunter, D. R., Handcock, M. S., Butts, C. T., Goodreau, S. M., & Morris,
-#' M. (2008). ergm: A package to fit, simulate and diagnose
-#' exponential-family models for networks. *Journal of Statistical
-#' Software*, 24(3), 1-29. \doi{10.18637/jss.v024.i03}
-#'
-#' Morris, M., Handcock, M. S., & Hunter, D. R. (2008). Specification of
-#' exponential-family random graph models: Terms and computational aspects.
-#' *Journal of Statistical Software*, 24(4), 1-24.
-#' \doi{10.18637/jss.v024.i04}
-#'
-#' Gelman, A., & Meng, X.-L. (1998). Simulating normalizing constants: From
-#' importance sampling to bridge sampling to path sampling. *Statistical
-#' Science*, 13(2), 163-185. \doi{10.1214/ss/1028905934}
-#'
-#' @seealso [ergm_gof()], [mcmc_diagnostics()], [simulate.ergm_fit()],
-#'   [tergm_fit()]
-#' @export
+# Exponential random graph models: estimation (pseudolikelihood, Monte
+# Carlo maximum likelihood, exact enumeration), the model formula and its
+# terms, simulation, prediction, and the fit's methods. Goodness of fit and
+# MCMC diagnostics are in ergm-gof.R and temporal models in
+# ergm-temporal.R.
+
+# Exponential random graph models (man/ergm_fit.Rd).
 ergm_fit <- function(formula, estimate = c("MCMLE", "MPLE", "exact"), constraints = NULL,
                      control = ergm_control(), start = NULL) {
   estimate <- match.arg(estimate)
@@ -251,7 +56,7 @@ ergm_fit <- function(formula, estimate = c("MCMLE", "MPLE", "exact"), constraint
     },
     MCMLE = {
       ptr <- ergm_handle(model)
-      seed <- qap_seed(control$seed)
+      seed <- check_seed(control$seed)
       critical <- stats::qchisq(control$confidence, df = p)
       res <- engine_call("ergm_fit",
         .Call(C_ergm_mcmle, ptr, start, as.double(control$burnin), as.double(control$interval),
@@ -299,15 +104,13 @@ ergm_fit <- function(formula, estimate = c("MCMLE", "MPLE", "exact"), constraint
   )), class = "ergm_fit")
 }
 
-#' @rdname ergm_fit
-#' @export
+# See man/ergm_fit.Rd.
 ergm_stats <- function(formula) {
   model <- ergm_model(formula, NULL)
   stats::setNames(model$stats, model$names)
 }
 
-#' @rdname ergm_fit
-#' @export
+# See man/ergm_fit.Rd.
 ergm_control <- function(seed = NULL, threads = 0L, burnin = 10000, interval = 100,
                          nsim = 1000, chains = 2L, proposal = c("tnt", "random"),
                          max_iter = 60L, margin = 0.05, confidence = 0.95, loglik = TRUE,
@@ -348,7 +151,7 @@ check_ergm_control <- function(ctl) {
       ctl$mple_tol <= 0) {
     stop("`mple_tol` must be a positive number.", call. = FALSE)
   }
-  if (!is.null(ctl$seed)) qap_seed(ctl$seed)
+  if (!is.null(ctl$seed)) check_seed(ctl$seed)
   resolve_threads(ctl$threads)
   invisible(ctl)
 }
@@ -357,7 +160,7 @@ proposal_code <- function(proposal) if (proposal == "random") 1L else 0L
 
 # ---- Methods -----------------------------------------------------------------
 
-#' @export
+# See man/ergm_fit.Rd.
 print.ergm_fit <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nExponential random graph model\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -387,13 +190,13 @@ estimate_text <- function(x) {
   )
 }
 
-#' @export
+# See man/ergm_fit.Rd.
 coef.ergm_fit <- function(object, ...) object$coefficients
 
-#' @export
+# See man/ergm_fit.Rd.
 vcov.ergm_fit <- function(object, ...) object$vcov
 
-#' @export
+# See man/ergm_fit.Rd.
 logLik.ergm_fit <- function(object, ...) {
   if (is.null(object$loglik)) {
     stop(paste0(
@@ -410,7 +213,7 @@ logLik.ergm_fit <- function(object, ...) {
             se = object$loglik_se, class = "logLik")
 }
 
-#' @export
+# See man/ergm_fit.Rd.
 summary.ergm_fit <- function(object, ...) {
   est <- object$coefficients
   se <- sqrt(diag(object$vcov))
@@ -439,7 +242,7 @@ summary.ergm_fit <- function(object, ...) {
   ), class = "summary.ergm_fit")
 }
 
-#' @export
+# See man/ergm_fit.Rd.
 print.summary.ergm_fit <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nExponential random graph model\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -468,33 +271,7 @@ print.summary.ergm_fit <- function(x, digits = max(3L, getOption("digits") - 3L)
   invisible(x)
 }
 
-#' Simulate networks from an exponential random graph model
-#'
-#' Draws networks from a fitted model, or from a formula and coefficients,
-#' by the Markov chain Monte Carlo sampler of [ergm_fit()] (tie/no-tie
-#' proposals by default). Chains start from the observed network; `burnin`
-#' proposals are discarded first and consecutive draws are `interval`
-#' proposals apart.
-#'
-#' @param object A fitted model from [ergm_fit()].
-#' @param formula A model formula, as in [ergm_fit()].
-#' @param coef Coefficients, one per statistic in formula order.
-#' @param nsim Number of networks to draw.
-#' @param seed Seed, a whole number in \[0, 2^53); `NULL` draws one from R's
-#'   random number generator.
-#' @param burnin,interval,proposal,threads Sampler settings; see
-#'   [ergm_control()]. The defaults for a fitted model come from its
-#'   control settings.
-#' @param constraints Fixed dyads, as in [ergm_fit()].
-#' @param output `"netframe"` returns a list of networks, `"stats"` only
-#'   the statistics of each draw.
-#' @param ... Not used.
-#'
-#' @return A list of [netframe()]s with the sampled statistics in attribute
-#'   `"stats"` (one row per network) and the seed in attribute `"seed"`, or
-#'   for `output = "stats"` the matrix of statistics alone.
-#' @seealso [ergm_fit()], [ergm_gof()]
-#' @export
+# Simulate networks from an exponential random graph model (man/simulate.ergm_fit.Rd).
 simulate.ergm_fit <- function(object, nsim = 1, seed = NULL, ..., coef = NULL,
                               burnin = object$control$burnin,
                               interval = object$control$interval,
@@ -505,8 +282,7 @@ simulate.ergm_fit <- function(object, nsim = 1, seed = NULL, ..., coef = NULL,
   ergm_draw(object$model, theta, nsim, seed, burnin, interval, proposal, threads, output)
 }
 
-#' @rdname simulate.ergm_fit
-#' @export
+# See man/simulate.ergm_fit.Rd.
 ergm_simulate <- function(formula, coef, nsim = 1, seed = NULL, burnin = 10000, interval = 100,
                           proposal = c("tnt", "random"), constraints = NULL, threads = 0L,
                           output = c("netframe", "stats")) {
@@ -533,7 +309,7 @@ ergm_draw <- function(model, theta, nsim, seed, burnin, interval, proposal, thre
     }
   }
   threads <- resolve_threads(threads)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   ptr <- ergm_handle(model)
   res <- engine_call("simulate",
     .Call(C_ergm_simulate, ptr, as.double(theta), as.double(burnin), as.double(max(interval, 1)),
@@ -558,24 +334,7 @@ edge_netframe <- function(x, m) {
   netframe(edges, x$nodes, directed = x$directed, from = 1L, to = 2L, id = x$roles$id)
 }
 
-#' Conditional tie probabilities from an exponential random graph model
-#'
-#' For every free dyad of the observed network, the probability of a tie
-#' given the rest of the network as observed,
-#' \eqn{P(Y_{ij} = 1 | y^c_{ij}) = \mathrm{logit}^{-1}(\theta' \delta_{ij})}{P(Y_ij = 1 | rest) = logistic(theta' delta_ij)},
-#' where \eqn{\delta_{ij}} is the dyad's change statistic. These are the
-#' probabilities of the pseudolikelihood; for dyad-independent models they
-#' are the marginal tie probabilities.
-#'
-#' @param object A fitted model from [ergm_fit()].
-#' @param type `"response"` for probabilities, `"link"` for their logits.
-#' @param coef Coefficients to use instead of the fitted ones.
-#' @param ... Not used.
-#'
-#' @return A data frame with one row per free dyad: `from`, `to` (node
-#'   identifiers), `tie` (whether the dyad is a tie in the observed
-#'   network), and `p` (or `link`). Undirected dyads appear once.
-#' @export
+# Conditional tie probabilities from an exponential random graph model (man/predict.ergm_fit.Rd).
 predict.ergm_fit <- function(object, type = c("response", "link"), coef = NULL, ...) {
   type <- match.arg(type)
   model <- object$model
@@ -876,13 +635,13 @@ ergm_term_table <- function(terms, x, env, lag) {
       kstar = , istar = , ostar = {
         if (what == "kstar") need_undirected(what, "`istar()` or `ostar()`") else need_directed(what)
         ks <- get_arg(args, "k", 1L)
-        check_counts(ks, what, min = 1)
+        check_term_counts(ks, what, min = 1)
         for (k in ks) add(TERM_CODES[[what]], param = k, name = paste0(what, k))
       },
       degree = , idegree = , odegree = {
         if (what == "degree") need_undirected(what, "`idegree()` or `odegree()`") else need_directed(what)
         ds <- get_arg(args, "d", 1L)
-        check_counts(ds, what, min = 0)
+        check_term_counts(ds, what, min = 0)
         for (d in ds) add(TERM_CODES[[what]], param = d, name = paste0(what, d))
       },
       triangle = add(15L, name = "triangle"),
@@ -967,7 +726,8 @@ select_levels <- function(lv, spec, what) {
                       "sorted levels (negative to drop), or level names."), what), call. = FALSE)
 }
 
-check_counts <- function(v, what, min) {
+# Whole numbers of at least `min` in a term's argument (degrees, star sizes).
+check_term_counts <- function(v, what, min) {
   if (!is.numeric(v) || !length(v) || anyNA(v) || any(v < min) || any(v != floor(v))) {
     stop(sprintf("Term `%s` needs whole numbers of at least %d.", what, min), call. = FALSE)
   }

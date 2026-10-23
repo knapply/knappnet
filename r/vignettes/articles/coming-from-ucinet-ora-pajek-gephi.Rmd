@@ -301,7 +301,7 @@ the group labels.
 
 Batagelj, V., & Mrvar, A. (2001). A subquadratic triad census algorithm
 for large sparse networks with small maximum degree. *Social Networks*,
-23(3), 237-243. https://doi.org/10.1016/S0378-8733(01)00035-1
+23(3), 237-243. <https://doi.org/10.1016/S0378-8733(01)00035-1>
 
 Borgatti, S. P., Agneessens, F., & Everett, M. G. (2026). xucinet:
 UCINET-style social network analysis in R, version 2.0.0.9000.
@@ -313,4 +313,4 @@ https://faculty.ucr.edu/~hanneman/nettext/
 
 Tsvetovat, M., Reminga, J., & Carley, K. M. (2004). DyNetML: Interchange
 format for rich social network data. Technical report CMU-ISRI-04-105,
-Carnegie Mellon University. https://doi.org/10.1184/R1/6622022.v1
+Carnegie Mellon University. <https://doi.org/10.1184/R1/6622022.v1>

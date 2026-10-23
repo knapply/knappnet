@@ -1,48 +1,11 @@
 \name{to_sf}
 \alias{to_sf}
+\alias{st_as_sf.netframe}
 \alias{check_geometry}
 \alias{transform_network}
 \alias{spatial_filter}
 \alias{spatial_join}
 \title{Spatial networks with sf}
-\usage{
-to_sf(x, what = c("nodes", "edges"), implicit = TRUE)
-
-check_geometry(x, tolerance = 0)
-
-transform_network(x, crs)
-
-spatial_filter(x, y, predicate = sf::st_intersects, ...)
-
-spatial_join(x, y, join = sf::st_intersects, ...)
-}
-\arguments{
-\item{x}{A \code{\link{netframe}} with sf nodes or edges; for
-\code{to_sf(what = "nodes")} also one with coordinate columns from
-\code{\link{spatial_network}}.}
-\item{what}{Which table to return: \code{"nodes"} or \code{"edges"}.}
-\item{implicit}{For \code{what = "edges"}, whether edges without geometry
-get straight-line geometries between their endpoints.}
-\item{tolerance}{Largest distance, in the units of the CRS (metres for
-longitude and latitude), at which an edge geometry's end still counts as
-touching its node.}
-\item{crs}{Target coordinate reference system, as accepted by
-\code{\link[sf]{st_transform}} (an EPSG code, a string, or an sf
-\code{crs}).}
-\item{y}{Features to filter or join by: an sf or sfc object, an sf
-\code{bbox}, or a spatial netframe (its node geometries are used).}
-\item{predicate, join}{A geometric binary predicate from sf, such as
-\code{\link[sf]{st_intersects}} (the default), \code{\link[sf]{st_within}},
-or \code{\link[sf]{st_is_within_distance}}, called as
-\code{predicate(nodes, y, ...)}.}
-\item{...}{Further arguments passed to \code{predicate} or \code{join}, such
-as \code{dist} for \code{\link[sf]{st_is_within_distance}}.}
-}
-\value{\code{to_sf()} returns an sf data frame. \code{check_geometry()}
-returns a logical vector aligned with the rows of \code{x$edges}. The other
-functions return a netframe: \code{transform_network()} and
-\code{spatial_join()} with the same nodes and edges, \code{spatial_filter()}
-the induced subnetwork.}
 \description{
 A spatial network is a \code{\link{netframe}} whose node table, edge table,
 or both are simple-feature data frames from the sf package (Pebesma 2018).
@@ -97,6 +60,44 @@ and a warning says how many nodes had more; a node that matches none gets
 suffix \code{_y}.
 }
 }
+\usage{
+to_sf(x, what = c("nodes", "edges"), implicit = TRUE)
+
+check_geometry(x, tolerance = 0)
+
+transform_network(x, crs)
+
+spatial_filter(x, y, predicate = sf::st_intersects, ...)
+
+spatial_join(x, y, join = sf::st_intersects, ...)
+}
+\arguments{
+\item{x}{A \code{\link{netframe}} with sf nodes or edges; for
+\code{to_sf(what = "nodes")} also one with coordinate columns from
+\code{\link{spatial_network}}.}
+\item{what}{Which table to return: \code{"nodes"} or \code{"edges"}.}
+\item{implicit}{For \code{what = "edges"}, whether edges without geometry
+get straight-line geometries between their endpoints.}
+\item{tolerance}{Largest distance, in the units of the CRS (metres for
+longitude and latitude), at which an edge geometry's end still counts as
+touching its node.}
+\item{crs}{Target coordinate reference system, as accepted by
+\code{\link[sf]{st_transform}} (an EPSG code, a string, or an sf
+\code{crs}).}
+\item{y}{Features to filter or join by: an sf or sfc object, an sf
+\code{bbox}, or a spatial netframe (its node geometries are used).}
+\item{predicate, join}{A geometric binary predicate from sf, such as
+\code{\link[sf]{st_intersects}} (the default), \code{\link[sf]{st_within}},
+or \code{\link[sf]{st_is_within_distance}}, called as
+\code{predicate(nodes, y, ...)}.}
+\item{...}{Further arguments passed to \code{predicate} or \code{join}, such
+as \code{dist} for \code{\link[sf]{st_is_within_distance}}.}
+}
+\value{\code{to_sf()} returns an sf data frame. \code{check_geometry()}
+returns a logical vector aligned with the rows of \code{x$edges}. The other
+functions return a netframe: \code{transform_network()} and
+\code{spatial_join()} with the same nodes and edges, \code{spatial_filter()}
+the induced subnetwork.}
 \section{Representative points}{
 Every point-based function of \code{\link{spatial_network}}
 (\code{edge_lengths()} for edges without geometry,

@@ -1,6 +1,13 @@
 \name{plot.mrqap}
 \alias{plot.mrqap}
 \title{Plot a multiple regression QAP}
+\description{
+Draws either a coefficient plot, each observed statistic against the
+interval of its permutation distribution, or the permutation distribution
+of every coefficient as a histogram with the observed statistic marked, as
+in the diagnostics Dekker, Krackhardt, and Snijders (2007) use to compare
+QAP variants.
+}
 \usage{
 \method{plot}{mrqap}(x, which = c("coefficients", "distributions"), level = 0.95,
      intercept = FALSE, breaks = "Sturges", ...)
@@ -19,14 +26,6 @@ very different from the slopes.}
 (coefficient plot) or \code{\link[graphics]{hist}} (distributions), such
 as \code{main}.}
 }
-\value{\code{x}, invisibly.}
-\description{
-Draws either a coefficient plot, each observed statistic against the
-interval of its permutation distribution, or the permutation distribution
-of every coefficient as a histogram with the observed statistic marked, as
-in the diagnostics Dekker, Krackhardt, and Snijders (2007) use to compare
-QAP variants.
-}
 \details{
 The statistics shown are the ones the permutation test uses
 (\code{x$statistic}): t-statistics (the default of \code{\link{mrqap}},
@@ -39,6 +38,7 @@ two-sided test, whose p-value \code{Pr(>=|b|)} is written beside it. Under
 double semi-partialling the permutation distributions are centred near 0
 for every coefficient; under Y-permutation they need not be.
 }
+\value{\code{x}, invisibly.}
 \references{
 Dekker, D., Krackhardt, D., & Snijders, T. A. B. (2007). Sensitivity of
 MRQAP tests to collinearity and autocorrelation conditions.

@@ -31,11 +31,6 @@ Everett 2026), which states each formula from UCINET's own source and checks
 it against UCINET's output. UCINET itself is not run in this package's
 validation suite until golden files produced with it are supplied.
 }
-\seealso{
-\code{\link{degree}}, \code{\link{betweenness}}, \code{\link{closeness}},
-\code{\link{harmonic_centrality}}, \code{\link{eigenvector_centrality}},
-\code{\link{centralization}}, \code{\link{graph_density}}
-}
 \references{
 Analytic Technologies. UCINET 6 for Windows help: Closeness
 (\url{http://www.analytictech.com/ucinet/help/oeky47.htm}), Betweenness
@@ -49,5 +44,10 @@ UCINET-style social network analysis in R, version 2.0.0.9000.
 
 Wasserman, S., & Faust, K. (1994). \emph{Social Network Analysis: Methods and
 Applications}. Cambridge University Press. \doi{10.1017/CBO9780511815478}
+}
+\seealso{
+\code{\link{degree}}, \code{\link{betweenness}}, \code{\link{closeness}},
+\code{\link{harmonic_centrality}}, \code{\link{eigenvector_centrality}},
+\code{\link{centralization}}, \code{\link{graph_density}}
 }
 \keyword{documentation}

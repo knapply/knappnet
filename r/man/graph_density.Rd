@@ -1,6 +1,12 @@
 \name{graph_density}
 \alias{graph_density}
 \title{Edge density}
+\description{
+The number of edges divided by the number of possible edges:
+\eqn{n(n-1)} in directed and \eqn{n(n-1)/2} in undirected networks, or
+\eqn{n^2} and \eqn{n(n+1)/2} when self-loops count as possible edges
+(Wasserman and Faust 1994).
+}
 \usage{
 graph_density(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet"))
 }
@@ -12,13 +18,6 @@ graph_density(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "uci
 loops can push the density above 1; \code{"sna"} and \code{"ucinet"} count
 distinct ties between distinct nodes (the adjacency matrix without its
 diagonal).}
-}
-\value{A number.}
-\description{
-The number of edges divided by the number of possible edges:
-\eqn{n(n-1)} in directed and \eqn{n(n-1)/2} in undirected networks, or
-\eqn{n^2} and \eqn{n(n+1)/2} when self-loops count as possible edges
-(Wasserman and Faust 1994).
 }
 \details{
 The name avoids masking \code{stats::density()}, the kernel density
@@ -35,6 +34,7 @@ A network with one node has no possible edges between distinct nodes, so
 its density is \code{NaN} (as in igraph and sna), except under the NetworkX
 convention, which returns 0.
 }
+\value{A number.}
 \references{
 Wasserman, S., & Faust, K. (1994). \emph{Social Network Analysis: Methods and
 Applications}. Cambridge University Press. \doi{10.1017/CBO9780511815478}

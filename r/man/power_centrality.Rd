@@ -1,6 +1,12 @@
 \name{power_centrality}
 \alias{power_centrality}
 \title{Bonacich power centrality}
+\description{
+Bonacich's (1987) family of measures \eqn{c(\alpha, \beta) = \alpha (I -
+\beta A)^{-1} A 1}{c(alpha, beta) = alpha (I - beta A)^-1 A 1}: a weighted
+count of the walks starting at each node, with a walk of length k weighted by
+\eqn{\beta^{k-1}}.
+}
 \usage{
 power_centrality(x, exponent = 1, mode = c("out", "in", "all"), weighted = NULL,
                  loops = FALSE, rescale = FALSE,
@@ -16,8 +22,8 @@ contacts are weak (Bonacich 1987).}
 (Bonacich, igraph, sna), \code{"in"} along in-ties, \code{"all"} ignores
 direction.}
 \item{weighted}{Whether to use edge weights, as given whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must not be negative.}
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
 \item{loops}{Whether self-loops enter the diagonal of the adjacency matrix
 (the number of loops, or their weights). igraph and sna ignore the diagonal
 by default.}
@@ -32,13 +38,6 @@ largest score.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Bonacich's (1987) family of measures \eqn{c(\alpha, \beta) = \alpha (I -
-\beta A)^{-1} A 1}{c(alpha, beta) = alpha (I - beta A)^-1 A 1}: a weighted
-count of the walks starting at each node, with a walk of length k weighted by
-\eqn{\beta^{k-1}}.
 }
 \details{
 \eqn{\alpha} is chosen so that the squared scores sum to the number of nodes,
@@ -55,6 +54,7 @@ score is \code{NaN} (\eqn{\alpha} would be 0/0).
 In directed networks the default counts walks along out-ties, so a node
 without out-ties scores 0 (Bonacich 1987). Weights are used as given.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Bonacich, P. (1987). Power and centrality: A family of measures.
 \emph{American Journal of Sociology}, 92(5), 1170-1182. \doi{10.1086/228631}

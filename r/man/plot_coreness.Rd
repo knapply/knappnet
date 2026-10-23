@@ -1,6 +1,11 @@
 \name{plot_coreness}
 \alias{plot_coreness}
-\title{Draw the k-core shells of a network}
+\title{Plot the k-core shells of a network}
+\description{
+Places nodes on concentric rings by \code{\link{coreness}}, the innermost
+ring holding the nodes of the highest core, and colors them by coreness,
+the layered view of core structure that Seidman (1983) describes.
+}
 \usage{
 plot_coreness(x, mode = c("all", "out", "in"), seed = NULL, threads = 0L, ...)
 }
@@ -10,17 +15,11 @@ plot_coreness(x, mode = c("all", "out", "in"), seed = NULL, threads = 0L, ...)
 \code{"in"}, as in \code{\link{coreness}}.}
 \item{seed}{Seed for the layout whose angles order the nodes within each
 ring (see Details), as in \code{\link{layout_network}}.}
-\item{threads}{Number of threads for that layout; \code{0} uses all
-available cores.}
+\item{threads}{Number of threads for that layout, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 \item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
 \code{node_label} or \code{main}.}
-}
-\value{The layout used, invisibly: a matrix with columns \code{x} and
-\code{y}.}
-\description{
-Places nodes on concentric rings by \code{\link{coreness}}, the innermost
-ring holding the nodes of the highest core, and colors them by coreness,
-the layered view of core structure that Seidman (1983) describes.
 }
 \details{
 Each distinct coreness value gets a ring, the highest in the center (a
@@ -30,6 +29,8 @@ whole network (\code{\link{layout_network}}), so that nodes close in the
 network tend to be close on the ring. Rings are drawn as dotted circles
 and the coreness values are listed in a legend inside the plot.
 }
+\value{The layout used, invisibly: a matrix with columns \code{x} and
+\code{y}.}
 \references{
 Seidman, S. B. (1983). Network structure and minimum degree. \emph{Social
 Networks}, 5(3), 269-287. \doi{10.1016/0378-8733(83)90028-X}
