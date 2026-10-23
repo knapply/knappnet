@@ -18,6 +18,13 @@
 //! Each format module documents what it supports and how it maps the
 //! format onto tables.
 //!
+//! Readers take time and memory proportional to the size of what they
+//! build: the input, plus a node count declared without listing the nodes
+//! (Pajek, UCINET DL; limited to [`MAX_DECLARED_NODES`]). Edge tables hold
+//! each endpoint's identifier as text, so memory also grows with the number
+//! of edges times the length of their identifiers. Every reader is fuzzed
+//! (`tests/io_fuzz.rs`): malformed input gives an error, never a panic.
+//!
 //! GraphML and DyNetML files both commonly end in `.xml`. When a `.xml`
 //! file is read without a format, its root element decides: `<graphml>` is
 //! GraphML, and `<DynamicMetaNetwork>`, `<DynamicNetwork>`, `<MetaNetwork>`,

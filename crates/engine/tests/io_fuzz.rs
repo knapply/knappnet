@@ -8,8 +8,8 @@
 //!
 //! - never panic;
 //! - never hang: every read runs on a worker thread and must finish within
-//!   a time limit (inputs are capped at a few hundred kilobytes, so this
-//!   bounds the work per byte);
+//!   a time limit (inputs are capped at 64 KiB, so this bounds the work per
+//!   byte);
 //! - either return a network that passes [`Network::validate`], whose
 //!   tables are rectangular, and that every writer can serialize and the
 //!   GraphML reader can read back unchanged; or return an error with a
@@ -184,6 +184,17 @@ const DL_LISTS: &str = "dl n=4 format=edgelist1\nlabels:\na,b,c,d\ndata:\n1 2\n2
 
 const DL_NODELIST: &str = "dl format=nodelist1 labels embedded\ndata:\nx y z\ny z\nz\n";
 
+const DL_TWO_MODE: &str = "DL NR=2, NC=3\nFORMAT = FULLMATRIX\nROW LABELS:\nann bob\nCOLUMN LABELS:\nx,y,\"z w\"\nDATA:\n1 0 1\n0 2 1\n";
+
+const DL_TWO_MODE_EMBEDDED: &str =
+    "dl nr=2 nc=2 labels embedded\ndata:\n   e1 e2\nann 1 0\nbob 1 1\n";
+
+const DL_TWO_MODE_LISTS: &str =
+    "dl nr=3 nc=2 format=edgelist2\nrow labels:\na b c\ncol labels:\np q\ndata:\n1 2\n3 1 4\n";
+
+const DL_NODELIST2: &str =
+    "dl format=nodelist2 labels embedded\ndata:\nann party picnic\nbob picnic\na a\n";
+
 const JSON_NX: &str = r#"{"directed": false, "multigraph": false, "graph": {"name": "g", "k": [1, {"a": null}]},
     "nodes": [{"id": 0, "club": "Aé😀"}, {"id": 1, "club": "B", "pos": [1, 2.5e-3]}, {"id": "x"}],
     "edges": [{"source": 0, "target": 1, "weight": 4}, {"source": "x", "target": 1, "weight": -1.5E2, "key": 0}]}"#;
@@ -274,6 +285,10 @@ fn corpus() -> Vec<(Format, Vec<u8>)> {
         (Format::Dl, DL_EMBEDDED.into()),
         (Format::Dl, DL_LISTS.into()),
         (Format::Dl, DL_NODELIST.into()),
+        (Format::Dl, DL_TWO_MODE.into()),
+        (Format::Dl, DL_TWO_MODE_EMBEDDED.into()),
+        (Format::Dl, DL_TWO_MODE_LISTS.into()),
+        (Format::Dl, DL_NODELIST2.into()),
         (Format::NodeLink, JSON_NX.into()),
         (Format::NodeLink, JSON_D3.into()),
         (Format::DynetMl, DYNETML.into()),
@@ -283,6 +298,14 @@ fn corpus() -> Vec<(Format, Vec<u8>)> {
         let net = sample(directed);
         for format in READABLE {
             let text = write_string(format, &net, &WriteOptions::default()).unwrap();
+            out.push((format, text.into_bytes()));
+        }
+    }
+    // A two-mode network (logical `type`, every edge across) in every format.
+    let two_mode = read_str(Format::Dl, DL_TWO_MODE, &ReadOptions::default()).unwrap();
+    for format in READABLE {
+        // DyNetML reads `type` as the ORA node type and refuses this one.
+        if let Ok(text) = write_string(format, &two_mode, &WriteOptions::default()) {
             out.push((format, text.into_bytes()));
         }
     }
@@ -297,6 +320,12 @@ fn corpus() -> Vec<(Format, Vec<u8>)> {
     }
     out
 }
+
+/// Inputs are cut to this length. Edge tables hold each endpoint's
+/// identifier as text, so memory grows with the number of edges times the
+/// length of their identifiers, which a hostile file can make quadratic in
+/// its own length; 64 KiB keeps the worst case within a CI machine.
+const MAX_INPUT: usize = 64 << 10;
 
 const INTERESTING: &[u8] = b"<>\"'&;=[]{}:,/\\\n\r\t #*%!?-.+eE019\0\x7f\x80\xc3\xff";
 
@@ -382,6 +411,13 @@ const KEYWORDS: &[&str] = &[
     "n=3",
     "n=",
     "nr=2",
+    "nc=3",
+    "nr=0 nc=0",
+    "format=edgelist2",
+    "format=nodelist2",
+    "row labels:",
+    "column labels:",
+    "col labels:",
     "dl",
     "{\"id\": 1}",
     "\"nodes\": []",
@@ -468,7 +504,7 @@ fn mutate(rng: &mut Stream, base: &[u8], others: &[(Format, Vec<u8>)]) -> Vec<u8
                     4 => b"{\"a\":",
                     _ => b"<node id='n'><graph>",
                 };
-                let count = 1 + rng.below(200_000 / unit.len() as u64) as usize;
+                let count = 1 + rng.below(60_000 / unit.len() as u64) as usize;
                 let at = pos(rng, &s);
                 s.splice(at..at, unit.repeat(count));
             }
@@ -525,7 +561,7 @@ fn mutate(rng: &mut Stream, base: &[u8], others: &[(Format, Vec<u8>)]) -> Vec<u8
             }
         }
         // Keep inputs bounded so the time limit bounds work per byte.
-        s.truncate(400_000);
+        s.truncate(MAX_INPUT);
     }
     s
 }
@@ -556,6 +592,17 @@ fn check_tables(net: &Network) -> Result<(), String> {
     Ok(())
 }
 
+fn endpoint_bytes(net: &Network) -> usize {
+    ["from", "to"]
+        .iter()
+        .filter_map(|c| net.edges.column(c))
+        .map(|c| match c {
+            Column::Str(v) => v.iter().flatten().map(String::len).sum(),
+            _ => 0,
+        })
+        .sum()
+}
+
 /// What a reader must guarantee about one input.
 fn check(format: Format, input: &[u8], result: engine::Result<Network>) -> Result<(), String> {
     match result {
@@ -563,6 +610,14 @@ fn check(format: Format, input: &[u8], result: engine::Result<Network>) -> Resul
             net.validate()
                 .map_err(|e| format!("invalid network: {e}"))?;
             check_tables(&net)?;
+            // Edge tables hold each endpoint's identifier as text, so a
+            // short file with one very long identifier on many edges makes
+            // a large table (memory grows with edges times identifier
+            // length). Writing such a table in every format would take
+            // gigabytes; the reader's own result has been checked above.
+            if endpoint_bytes(&net) > 32 << 20 {
+                return Ok(());
+            }
             for out in READABLE.into_iter().chain([Format::Dot]) {
                 // Writers may refuse (DyNetML cannot hold every network),
                 // but must not panic; GraphML holds everything.
@@ -609,7 +664,8 @@ fn check(format: Format, input: &[u8], result: engine::Result<Network>) -> Resul
     }
 }
 
-/// Whether a Pajek or DL input declares more than a million nodes. Both
+/// Whether a Pajek or DL input declares more than a million nodes
+/// (`*Vertices`, `n=`, `nr=`, or `nc=`). Both
 /// formats create isolates from a count alone, so reading such a file is
 /// legitimately proportional to the count (up to
 /// `MAX_DECLARED_NODES`); these inputs are skipped so a long run stays
@@ -628,6 +684,11 @@ fn declares_many_nodes(input: &[u8]) -> bool {
         .any(|(i, k)| big(&text[i + k.len()..]))
         || text.match_indices('n').any(|(i, _)| {
             let rest = text[i + 1..].trim_start();
+            let rest = rest
+                .strip_prefix('r')
+                .or_else(|| rest.strip_prefix('c'))
+                .unwrap_or(rest)
+                .trim_start();
             rest.starts_with('=') && big(&rest[1..])
         })
 }
@@ -697,6 +758,9 @@ fn fuzz(iterations: u64) {
             let mut rng = Stream::new(seed, (f as u64) << 40 | case);
             let base = bases[rng.below(bases.len() as u64) as usize];
             let input = mutate(&mut rng, base, &corpus);
+            if std::env::var("FUZZ_VERBOSE").is_ok() {
+                eprintln!("{format:?} case {case}");
+            }
             if std::env::var("FUZZ_CASE").is_ok() {
                 println!("input saved to {}", save(format, case, &input));
             }

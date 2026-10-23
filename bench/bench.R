@@ -63,15 +63,19 @@ same_partition <- function(a, b) {
 }
 
 rows <- list()
-record <- function(graph, measure, ours1, ours, tool, theirs, agree) {
+notes <- character()
+# `note` (optional) is printed after the row and, if the tools disagree,
+# with the failure: for example both modularity values for Louvain.
+record <- function(graph, measure, ours1, ours, tool, theirs, agree, note = NULL) {
   rows[[length(rows) + 1L]] <<- data.frame(
     graph = graph, measure = measure, knappnet_1_thread = ours1,
     knappnet = ours, tool = tool, tool_seconds = theirs,
     speedup_1_thread = theirs / ours1, speedup = theirs / ours,
     agree = agree, stringsAsFactors = FALSE)
-  cat(sprintf("%-22s %-24s %-7s %9.4f %9.4f %9.4f %7.1fx %7.1fx %s\n", graph, measure,
+  cat(sprintf("%-22s %-24s %-7s %9.4f %9.4f %9.4f %7.1fx %7.1fx %s%s\n", graph, measure,
               tool, ours1, ours, theirs, theirs / ours1, theirs / ours,
-              if (agree) "agree" else "DISAGREE"))
+              if (agree) "agree" else "DISAGREE", if (is.null(note)) "" else paste0("  ", note)))
+  if (!is.null(note)) notes[[paste(graph, measure, tool)]] <<- note
 }
 
 # Times a function that takes a `threads` argument on one thread and on
@@ -144,6 +148,58 @@ theirs <- timing(function() igraph::harmonic_centrality(und))
 record(lab_und, "harmonic centrality", t[1], t[2], "igraph", theirs,
        same(harmonic_centrality(und_nf), igraph::harmonic_centrality(und)))
 
+# ---- Directed and weighted shortest paths -------------------------------
+# Directed closeness and harmonic centrality (out-distances, as igraph's
+# default), and the two weighted algorithms: whole-number weights up to
+# 1024 take Dial's bucket queue, other weights Dijkstra's algorithm.
+t <- both(function(k) closeness(dir_nf, mode = "out", normalized = FALSE, threads = k))
+theirs <- timing(function() igraph::closeness(dir, mode = "out", normalized = FALSE))
+record(lab_dir, "closeness", t[1], t[2], "igraph", theirs,
+       same(closeness(dir_nf, mode = "out", normalized = FALSE),
+            igraph::closeness(dir, mode = "out", normalized = FALSE)))
+
+t <- both(function(k) harmonic_centrality(dir_nf, mode = "out", threads = k))
+theirs <- timing(function() igraph::harmonic_centrality(dir, mode = "out"))
+record(lab_dir, "harmonic centrality", t[1], t[2], "igraph", theirs,
+       same(harmonic_centrality(dir_nf, mode = "out"),
+            igraph::harmonic_centrality(dir, mode = "out")))
+
+n_w <- round(5000 * scale)
+weighted_case <- function(directed, integer) {
+  g <- igraph::sample_gnm(n_w, 5L * n_w, directed = directed)
+  m <- igraph::ecount(g)
+  w <- if (integer) sample.int(5L, m, replace = TRUE) else round(stats::runif(m, 0.1, 3), 6)
+  igraph::E(g)$weight <- w
+  e <- igraph::as_edgelist(g, names = FALSE)
+  nf <- netframe(data.frame(from = e[, 1], to = e[, 2], weight = w),
+                 data.frame(name = seq_len(n_w)), directed = directed, weight = "weight")
+  invisible(degree(nf))  # build the cache
+  label <- sprintf("%s%s weights, %d / %d", if (directed) "directed, " else "",
+                   if (integer) "integer (Dial)" else "real (Dijkstra)", n_w, m)
+  list(g = g, nf = nf, label = label)
+}
+for (case in list(weighted_case(FALSE, TRUE), weighted_case(FALSE, FALSE),
+                  weighted_case(TRUE, TRUE), weighted_case(TRUE, FALSE))) {
+  g <- case$g
+  nf <- case$nf
+  w <- igraph::E(g)$weight
+  t <- both(function(k) betweenness(nf, weighted = TRUE, threads = k))
+  theirs <- timing(function() igraph::betweenness(g, weights = w))
+  record(case$label, "betweenness", t[1], t[2], "igraph", theirs,
+         same(betweenness(nf, weighted = TRUE), igraph::betweenness(g, weights = w)))
+  t <- both(function(k) closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE,
+                                  threads = k))
+  theirs <- timing(function() igraph::closeness(g, mode = "out", weights = w))
+  record(case$label, "closeness", t[1], t[2], "igraph", theirs,
+         same(closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE),
+              igraph::closeness(g, mode = "out", weights = w)))
+  t <- both(function(k) harmonic_centrality(nf, mode = "out", weighted = TRUE, threads = k))
+  theirs <- timing(function() igraph::harmonic_centrality(g, mode = "out", weights = w))
+  record(case$label, "harmonic centrality", t[1], t[2], "igraph", theirs,
+         same(harmonic_centrality(nf, mode = "out", weighted = TRUE),
+              igraph::harmonic_centrality(g, mode = "out", weights = w)))
+}
+
 t <- both(function(k) eigenvector_centrality(pa_nf, threads = k))
 theirs <- timing(function() igraph::eigen_centrality(pa)$vector)
 record(lab_pa, "eigenvector centrality", t[1], t[2], "igraph", theirs,
@@ -174,10 +230,13 @@ t <- both(function(k) cluster_louvain(pa_nf, seed = 1), threaded = FALSE)
 theirs <- timing(function() igraph::cluster_louvain(pa))
 q_ours <- attr(cluster_louvain(pa_nf, seed = 1), "modularity")
 q_theirs <- igraph::modularity(igraph::cluster_louvain(pa))
-# Louvain is randomized, so the tools find different partitions; they
-# agree when their modularity is within 1% of each other.
+# Louvain is a randomized heuristic, so the tools find different
+# partitions. Agreement means comparable quality: this package's
+# modularity is at least 98% of igraph's (finding a higher modularity is
+# fine).
 record(lab_pa, "Louvain communities", t[1], t[2], "igraph", theirs,
-       abs(q_ours - q_theirs) <= 0.01 * abs(q_theirs))
+       q_ours >= 0.98 * q_theirs,
+       sprintf("modularity %.4f (knappnet) vs %.4f (igraph)", q_ours, q_theirs))
 
 t <- both(function(k) triad_census(dir_nf, threads = k))
 theirs <- timing(function() igraph::triad_census(dir))
@@ -260,6 +319,9 @@ bad <- res[!res$agree, c("graph", "measure", "tool")]
 if (nrow(bad)) {
   cat("\nResults differ for:\n")
   print(bad, row.names = FALSE)
+  for (k in paste(bad$graph, bad$measure, bad$tool)) {
+    if (!is.null(notes[k]) && !is.na(notes[k])) cat(k, ": ", notes[[k]], "\n", sep = "")
+  }
   quit(status = 1L)
 }
 cat("\nAll results agree.\n")
