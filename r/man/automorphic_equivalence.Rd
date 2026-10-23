@@ -55,8 +55,9 @@ McKay, B. D., & Piperno, A. (2014). Practical graph isomorphism, II.
 g <- netframe(data.frame(from = c(1, 1, 2, 2, 3, 3), to = c(2, 3, 4, 5, 6, 7)))
 automorphic_equivalence(g)  # {1}, {2, 3}, {4, 5, 6, 7}
 
-# Krackhardt's kite has a mirror symmetry.
-automorphic_equivalence(netframe(data.frame(
-  from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-  to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)), directed = FALSE))
+# Two triangles joined through a middle node: the outer corners are all
+# interchangeable, as are the two inner ones.
+h <- netframe(data.frame(from = c(1, 1, 2, 3, 4, 5, 5, 6),
+                         to   = c(2, 3, 3, 4, 5, 6, 7, 7)), directed = FALSE)
+automorphic_equivalence(h)  # {1, 2, 6, 7}, {3, 5}, {4}
 }

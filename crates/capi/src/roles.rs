@@ -19,14 +19,13 @@ use engine::matrix::Dense;
 use engine::metrics::blockmodel::{block_model, BlockModelOptions};
 use engine::metrics::degree::DegreeMode;
 use engine::metrics::reach::{
-    bridging_coefficient, edge_betweenness, information_centrality, reach,
-    EdgeBetweennessOptions, ReachOptions,
+    bridging_coefficient, edge_betweenness, information_centrality, reach, EdgeBetweennessOptions,
+    ReachOptions,
 };
 use engine::metrics::regular::{automorphic_equivalence, regular_equivalence, RegularOptions};
 use engine::metrics::scaling::{classical_mds, stress};
 use engine::spatial::{
-    edge_lengths, group_geometry, nearest_neighbors, within_distance, Crs, Points,
-    ProximityEdges,
+    edge_lengths, group_geometry, nearest_neighbors, within_distance, Crs, Points, ProximityEdges,
 };
 use engine::{Error, WeightKind};
 
