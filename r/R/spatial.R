@@ -224,7 +224,15 @@ check_proximity_args <- function(within, k) {
 # Distances are the weights of a proximity network when every one is
 # positive; a zero distance (coincident points, touching polygons) cannot
 # be a path length, so the column is then kept as an attribute only.
-proximity_weight <- function(edges) if (all(edges$distance > 0)) "distance"
+proximity_weight <- function(edges) {
+  if (all(edges$distance > 0)) return("distance")
+  if (length(edges$distance)) {
+    message("Some neighbour distances are zero (coincident points or touching ",
+            "shapes), so the network is unweighted; distances are kept in the ",
+            "`distance` edge column.")
+  }
+  NULL
+}
 proximity_weight_type <- function(edges) if (all(edges$distance > 0)) "distance"
 
 proximity_pairs <- function(px, py, lonlat, radius, within, k, threads) {

@@ -392,7 +392,8 @@ test_that("net_proximity() takes sf nodes of any geometry", {
   regions <- grid_regions()
   rp <- net_proximity(regions, within = 1, id = "region")
   expect_equal(nrow(rp$edges), 4L)  # side neighbours, 1 apart at the centres
-  rx <- net_proximity(regions, within = 0, id = "region", exact = TRUE)
+  expect_message(rx <- net_proximity(regions, within = 0, id = "region", exact = TRUE),
+                 "unweighted")
   expect_equal(nrow(rx$edges), 6L)  # every pair touches
   expect_equal(rx$edges$distance, rep(0, 6))
   # Zero distances cannot be path lengths, so the network is unweighted.

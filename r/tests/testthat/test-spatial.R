@@ -87,8 +87,10 @@ test_that("proximity networks join nearby points", {
   expect_equal(c(g$roles$x, g$roles$y), c("x", "y"))
   expect_equal(net_edge_lengths(g), g$edges$distance)
   # Coincident points are joined; nothing else at radius 0.
-  dup <- net_proximity(rbind(pts, data.frame(id = "f", x = 0, y = 0)),
-                           coords = c("x", "y"), crs = "planar", within = 0)
+  expect_message(
+    dup <- net_proximity(rbind(pts, data.frame(id = "f", x = 0, y = 0)),
+                         coords = c("x", "y"), crs = "planar", within = 0),
+    "unweighted")
   expect_equal(nrow(dup$edges), 1L)
   expect_equal(dup$edges$source, "a")
   expect_equal(dup$edges$target, "f")
