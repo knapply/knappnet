@@ -5,18 +5,9 @@
 # grDevices::palette.colors(), and viridis for sequential values), return
 # their input invisibly, and pass `...` on to graphics::title().
 
-# Okabe-Ito colours for k groups (black left out, so that labels stay
-# readable); beyond eight groups, the HCL "Dark 3" palette.
-groups_palette <- function(k) {
-  if (k <= 8L) {
-    return(unname(grDevices::palette.colors(9L, "Okabe-Ito")[-1L])[seq_len(k)])
-  }
-  grDevices::hcl.colors(k, "Dark 3")
-}
-
 # See man/cug_test.Rd.
 plot.cug_test <- function(x, ..., breaks = "Sturges") {
-  pal <- groups_palette(8L)
+  pal <- plot_qualitative(8L)
   null <- x$null
   if (!length(null)) stop("The null distribution is empty; nothing to plot.", call. = FALSE)
   dots <- list(...)
@@ -42,7 +33,7 @@ plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL)
   if (is.null(what)) what <- if (x$method == "discrete") "matrix" else "network"
   what <- check_choice(what, c("matrix", "network"), "what")
   g <- x$network
-  pal <- groups_palette(8L)
+  pal <- plot_qualitative(8L)
   if (what == "network") {
     if (x$method == "discrete") {
       plot(g, layout = layout, node_color = I(ifelse(x$core, pal[[5L]], pal[[1L]])), ...,
@@ -78,7 +69,7 @@ plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL)
   on.exit(graphics::par(old), add = TRUE)
   # Row i at the top, as a matrix is printed.
   colors <- if (weighted) {
-    grDevices::hcl.colors(64L, "viridis", rev = TRUE)
+    plot_matrix_palette(64L)
   } else {
     c("white", pal[[2L]])
   }
@@ -102,7 +93,7 @@ plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL)
 
 # See man/small_world.Rd.
 plot.small_world <- function(x, ...) {
-  pal <- groups_palette(8L)
+  pal <- plot_qualitative(8L)
   dots <- list(...)
   old <- graphics::par(mfrow = c(1L, 2L), mar = c(3, 4, 4, 1), oma = c(0, 0, 2, 0))
   on.exit(graphics::par(old), add = TRUE)

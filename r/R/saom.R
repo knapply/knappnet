@@ -552,8 +552,8 @@ plot.saom_fit <- function(x, which = c("trajectory", "deviations"), ...) {
     for (k in seq_along(pars)) {
       graphics::plot(tr$iteration, tr[[pars[k]]], type = "l", xlab = "phase 2 iteration",
                      ylab = "value", main = labels[k], ...)
-      graphics::abline(v = bounds, lty = 2, col = "grey60")
-      graphics::abline(h = x$coefficients[[k]], col = "firebrick")
+      graphics::abline(v = bounds, lty = 2, col = plot_gray)
+      graphics::abline(h = x$coefficients[[k]], col = plot_accent)
     }
   } else {
     sd <- apply(x$deviations, 2L, stats::sd)
@@ -564,7 +564,7 @@ plot.saom_fit <- function(x, which = c("trajectory", "deviations"), ...) {
       c(paste("rate period", seq_len(nrow(x$rates))), x$effects$label)
     graphics::boxplot(z, horizontal = TRUE, names = labels, las = 1,
                       xlab = "phase 3 deviation (standard deviations)", ...)
-    graphics::abline(v = 0, col = "firebrick")
+    graphics::abline(v = 0, col = plot_accent)
   }
   invisible(x)
 }
@@ -731,12 +731,12 @@ plot.saom_gof <- function(x, violin = TRUE, ...) {
     if (violin && length(unique(v)) > 1L) {
       d <- stats::density(v, from = min(v), to = max(v))
       w <- 0.4 * d$y / max(d$y)
-      graphics::polygon(c(j - w, rev(j + w)), c(d$x, rev(d$x)), col = "grey85", border = "grey40")
+      graphics::polygon(c(j - w, rev(j + w)), c(d$x, rev(d$x)), col = "gray85", border = "gray40")
     } else {
-      graphics::boxplot(v, at = j, add = TRUE, axes = FALSE, col = "grey85", outline = FALSE)
+      graphics::boxplot(v, at = j, add = TRUE, axes = FALSE, col = "gray85", outline = FALSE)
     }
   }
-  graphics::lines(seq_len(k), x$observed, col = "firebrick", lwd = 2)
-  graphics::points(seq_len(k), x$observed, col = "firebrick", pch = 19)
+  graphics::lines(seq_len(k), x$observed, col = plot_accent, lwd = 2)
+  graphics::points(seq_len(k), x$observed, col = plot_accent, pch = 19)
   invisible(x)
 }

@@ -223,13 +223,13 @@ plot.ergm_mcmc <- function(x, which = NULL, ask = NULL, ...) {
     v <- x$sample[, s]
     graphics::plot(seq_along(v), v, type = "l", xlab = "sample", ylab = s, main = "Trace")
     for (c in seq_len(x$chains)[-1]) graphics::abline(v = (c - 1L) * x$nsim + 0.5, lty = 3)
-    graphics::abline(h = 0, col = "grey50")
+    graphics::abline(h = 0, col = plot_gray)
     if (stats::sd(v) > 0) {
       graphics::plot(stats::density(v), main = "Density", xlab = s)
     } else {
       graphics::plot(c(v[1], v[1]), c(0, 1), type = "h", main = "Density", xlab = s, ylab = "")
     }
-    graphics::abline(v = 0, col = "grey50")
+    graphics::abline(v = 0, col = plot_gray)
     first <- v[seq_len(x$nsim)]
     if (stats::sd(first) > 0) {
       stats::acf(first, main = "Autocorrelation (first chain)")
