@@ -4,7 +4,7 @@
 \title{Example networks}
 \description{
 Classic networks for teaching, testing, and reproducing published analyses,
-returned as netframes. \code{net_examples()} lists them.
+returned as net_frames. \code{net_examples()} lists them.
 }
 \usage{
 net_example(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
@@ -67,7 +67,7 @@ the network as binary unless asked.}
 }
 }
 \value{
-\code{net_example()}: a netframe (two-mode for
+\code{net_example()}: a net_frame (two-mode for
 \code{"noordin_affiliations"} and \code{"southern_women"}).
 \code{net_examples()}: a data frame describing each network.
 }

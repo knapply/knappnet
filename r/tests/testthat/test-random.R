@@ -1,5 +1,5 @@
 # Random networks: exact constraints, reproducibility by seed, and the
-# netframe shape of the results. The generators' distributions are checked
+# net_frame shape of the results. The generators' distributions are checked
 # in validation/cug_check.py.
 
 simple_undirected <- function(g) {
@@ -11,7 +11,7 @@ simple_undirected <- function(g) {
 
 test_that("G(n, p) and G(n, m)", {
   g <- net_random_gnp(20, 0.3, seed = 1, threads = 2)
-  expect_s3_class(g, "netframe")
+  expect_s3_class(g, "net_frame")
   expect_equal(g$nodes$id, 1:20)
   simple_undirected(g)
   expect_equal(net_random_gnp(20, 0.3, seed = 1, threads = 1)$edges, g$edges)

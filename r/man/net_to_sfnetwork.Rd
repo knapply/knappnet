@@ -1,12 +1,12 @@
 \name{net_to_sfnetwork}
 \alias{net_to_sfnetwork}
-\alias{as_sfnetwork.netframe}
+\alias{as_sfnetwork.net_frame}
 \title{Convert to and from sfnetworks}
 \description{
-\code{net_to_sfnetwork()} turns a spatial netframe into an \code{sfnetwork}
+\code{net_to_sfnetwork()} turns a spatial net_frame into an \code{sfnetwork}
 object of the sfnetworks package (van der Meer et al. 2026);
-\code{\link{net_from}} on an \code{sfnetwork} converts back, and so does
-\code{sfnetworks::as_sfnetwork()} on a netframe. Node, edge, and
+\code{\link{as_net_frame}} on an \code{sfnetwork} converts back, and so does
+\code{sfnetworks::as_sfnetwork()} on a net_frame. Node, edge, and
 network-level attributes are carried across.
 }
 \usage{
@@ -23,7 +23,7 @@ straight-line geometries; \code{NULL} keeps the edge table as it is.}
 \details{
 The weight column and its type are stored in the graph attributes
 \code{knappnet_weight} and \code{knappnet_weight_type}, so that
-\code{net_from()} restores them; without them a numeric edge column
+\code{as_net_frame()} restores them; without them a numeric edge column
 called \code{weight} is taken as the weight.
 
 sfnetworks represents nodes as POINT features, so node geometries of other
@@ -41,14 +41,14 @@ Columns of class \code{units}, such as sfnetworks' \code{weight}, are
 converted to plain numbers on the way back.
 }
 \value{\code{net_to_sfnetwork()} returns an \code{sfnetwork};
-\code{\link{net_from}} on an \code{sfnetwork} a netframe whose node table
+\code{\link{as_net_frame}} on an \code{sfnetwork} a net_frame whose node table
 (and edge table, when edges are spatially explicit) is an sf data frame.}
 \references{
 van der Meer, L., Abad, L., Gilardi, A., & Lovelace, R. (2026). sfnetworks:
 Tidy geospatial networks. R package.
 \doi{10.32614/CRAN.package.sfnetworks}
 }
-\seealso{\code{\link{net_to_sf}}, \code{\link{net_from}}.}
+\seealso{\code{\link{net_to_sf}}, \code{\link{as_net_frame}}.}
 \examples{
 if (requireNamespace("sfnetworks", quietly = TRUE)) {
   pts <- sf::st_as_sf(data.frame(name = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
@@ -56,6 +56,6 @@ if (requireNamespace("sfnetworks", quietly = TRUE)) {
   g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")), pts, directed = FALSE)
   net <- net_to_sfnetwork(g, edges_as_lines = TRUE)
   net
-  net_from(net)
+  as_net_frame(net)
 }
 }

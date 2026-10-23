@@ -40,7 +40,7 @@ nodes without a matching row get \code{NA}, rows of \code{data} without a
 matching node are dropped, and duplicate keys in \code{data} are an error.
 Columns of \code{data} that already exist in \code{x$nodes} replace them.
 }
-\value{A netframe.}
+\value{A net_frame.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

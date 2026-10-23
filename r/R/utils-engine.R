@@ -1,13 +1,13 @@
-# The bridge between a netframe and the compiled engine: the graph handle
+# The bridge between a net_frame and the compiled engine: the graph handle
 # and its cache, the wrapper that rewrites engine errors for R users,
 # thread counts, and how a measure decides whether to use weights. Every
-# measure follows the same sequence: check_netframe(x), check its own
+# measure follows the same sequence: check_net_frame(x), check its own
 # arguments, resolve_threads(), engine_graph(x), engine_call().
 
-check_netframe <- function(x) {
-  if (!inherits(x, "netframe")) {
-    stop(sprintf(paste0("`x` must be a netframe, not %s; create one with net_frame() ",
-                        "or convert with net_from()."), describe_class(x)),
+check_net_frame <- function(x) {
+  if (!inherits(x, "net_frame")) {
+    stop(sprintf(paste0("`x` must be a net_frame, not %s; create one with net_frame() ",
+                        "or convert with as_net_frame()."), describe_class(x)),
          call. = FALSE)
   }
   check_index(x)
@@ -26,7 +26,7 @@ check_index <- function(x) {
 
 index_error <- function() {
   stop(paste0("Rows of `x$nodes` or `x$edges` were added, removed, or reordered after ",
-              "the netframe was created, so its edge index no longer matches. Rebuild ",
+              "the net_frame was created, so its edge index no longer matches. Rebuild ",
               "it with net_frame(x$edges, x$nodes, ...)."), call. = FALSE)
 }
 

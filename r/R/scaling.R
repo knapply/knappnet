@@ -177,7 +177,7 @@ as_dissimilarity <- function(d) {
 net_mds_distances <- function(x, method = c("geodesic", "euclidean", "hamming", "correlation"),
                           unreachable = "max_plus_one", weighted = NULL, weights_as = NULL,
                           threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   if (method == "geodesic") {
     d <- net_distances(x, mode = "all", weighted = weighted, weights_as = weights_as,

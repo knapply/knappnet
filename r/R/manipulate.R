@@ -1,14 +1,14 @@
 # Transformations of a network's tables: combining relations,
 # dichotomizing and symmetrizing, subnetworks and node filters, and recoding
-# or joining attributes. Each returns a new netframe built through
-# with_tables() or induced_netframe() (utils-nodes.R), which keep the
+# or joining attributes. Each returns a new net_frame built through
+# with_tables() or induced_net_frame() (utils-nodes.R), which keep the
 # roles and attributes of the input.
 
 # Combine the relations of a multiplex network (man/net_combine_relations.Rd).
 net_combine_relations <- function(x, relation = NULL,
                               method = c("union", "intersection", "sum", "difference", "select"),
                               which = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   relation <- relation_column(x, relation)
   rel <- x$edges[[relation]]
@@ -103,7 +103,7 @@ relation_column <- function(x, relation) {
   resolve_column(x$edges, relation, "relation", "edges")
 }
 
-# The edges of the chosen relations of a multiplex network, as a netframe
+# The edges of the chosen relations of a multiplex network, as a net_frame
 # with the same roles; `relation` NULL keeps every edge. Measures that take
 # `relation =` go through this.
 relation_subset <- function(x, relation, fn) {
@@ -125,12 +125,12 @@ relation_subset <- function(x, relation, fn) {
   }
   edges <- x$edges[rel %in% relation, , drop = FALSE]
   rownames(edges) <- NULL
-  rebuild_netframe(x, edges, x$nodes)
+  rebuild_net_frame(x, edges, x$nodes)
 }
 
 # Split a multiplex network into one network per relation (man/net_combine_relations.Rd).
 net_split_relations <- function(x, relation = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   relation <- relation_column(x, relation)
   rel <- x$edges[[relation]]
   if (anyNA(rel)) {
@@ -142,7 +142,7 @@ net_split_relations <- function(x, relation = NULL) {
   out <- lapply(labels, function(label) {
     edges <- x$edges[rel == label, , drop = FALSE]
     rownames(edges) <- NULL
-    rebuild_netframe(x, edges, x$nodes, relation = NULL)
+    rebuild_net_frame(x, edges, x$nodes, relation = NULL)
   })
   names(out) <- labels
   out
@@ -151,7 +151,7 @@ net_split_relations <- function(x, relation = NULL) {
 # Dichotomize a weighted network (man/net_dichotomize.Rd).
 net_dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="),
                         column = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   op <- match.arg(op)
   threshold <- check_number(threshold, "threshold", finite = FALSE)
   if (is.null(column)) {
@@ -181,7 +181,7 @@ net_dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==",
 
 # Symmetrize or transpose a directed network (man/net_symmetrize.Rd).
 net_symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "lower")) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   if (!x$directed) {
     stop("The network is already undirected; net_symmetrize() needs a directed one.",
@@ -246,7 +246,7 @@ net_symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper"
 
 # See man/net_symmetrize.Rd.
 net_transpose <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   if (!x$directed) return(x)
   edges <- x$edges
   from <- edges[[x$roles$source]]
@@ -257,47 +257,47 @@ net_transpose <- function(x) {
 
 # Subnetworks: node selection, filters, isolates, pendants, components (man/net_subnetwork.Rd).
 net_subnetwork <- function(x, nodes) {
-  check_netframe(x)
+  check_net_frame(x)
   keep <- node_selection(x, nodes)
-  induced_netframe(x, keep)
+  induced_net_frame(x, keep)
 }
 
 # See man/net_subnetwork.Rd.
 net_filter_nodes <- function(x, condition) {
-  check_netframe(x)
+  check_net_frame(x)
   keep <- eval(substitute(condition), x$nodes, parent.frame())
   if (!is.logical(keep) || !(length(keep) == nrow(x$nodes) || length(keep) == 1L)) {
     stop("`condition` must give a logical value for every row of `x$nodes`.", call. = FALSE)
   }
   keep <- rep_len(keep, nrow(x$nodes)) & !is.na(keep)
-  induced_netframe(x, which(keep))
+  induced_net_frame(x, which(keep))
 }
 
 # See man/net_subnetwork.Rd.
 net_remove_isolates <- function(x) {
-  check_netframe(x)
-  induced_netframe(x, which(neighbor_counts(x) > 0L))
+  check_net_frame(x)
+  induced_net_frame(x, which(neighbor_counts(x) > 0L))
 }
 
 # See man/net_subnetwork.Rd.
 net_remove_pendants <- function(x, recursive = FALSE) {
-  check_netframe(x)
+  check_net_frame(x)
   recursive <- check_flag(recursive, "recursive")
   repeat {
     counts <- neighbor_counts(x)
     if (!any(counts == 1L)) return(x)
-    x <- induced_netframe(x, which(counts != 1L))
+    x <- induced_net_frame(x, which(counts != 1L))
     if (!recursive) return(x)
   }
 }
 
 # See man/net_subnetwork.Rd.
 net_largest_component <- function(x, mode = c("weak", "strong")) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   if (!nrow(x$nodes)) return(x)
   cc <- net_components(x, mode)
-  induced_netframe(x, which(cc$membership == which.max(cc$csize)))
+  induced_net_frame(x, which(cc$membership == which.max(cc$csize)))
 }
 
 # Distinct neighbors other than the node itself, ignoring direction.
@@ -339,7 +339,7 @@ node_selection <- function(x, nodes) {
 
 # Recode and join node attributes (man/net_recode.Rd).
 net_recode <- function(x, column, map, default = NULL, table = c("nodes", "edges")) {
-  check_netframe(x)
+  check_net_frame(x)
   table <- match.arg(table)
   df <- x[[table]]
   column <- resolve_column(df, column, "column", table)
@@ -379,7 +379,7 @@ net_recode <- function(x, column, map, default = NULL, table = c("nodes", "edges
 
 # See man/net_recode.Rd.
 net_join <- function(x, data, by = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   if (!is.data.frame(data)) {
     stop(sprintf("`data` must be a data frame, not %s.", describe_class(data)), call. = FALSE)
   }

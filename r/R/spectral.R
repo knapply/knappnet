@@ -7,7 +7,7 @@ net_pagerank <- function(x, damping = 0.85, personalized = NULL, directed = TRUE
                      dangling = c("personalized", "uniform"),
                      convention = c("igraph", "networkx"), tol = 1e-12, max_iter = 10000L,
                      threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   dangling <- match.arg(dangling)
   convention <- match.arg(convention)
   damping <- check_number(damping, "damping", lower = 0, upper = 1)
@@ -31,7 +31,7 @@ net_katz <- function(x, alpha = 0.1, beta = 1, mode = c("in", "out", "all"),
                             weighted = NULL, normalized = NULL,
                             convention = c("igraph", "networkx"), tol = 1e-12,
                             max_iter = 10000L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
   alpha <- check_number(alpha, "alpha", lower = 0)
@@ -56,7 +56,7 @@ net_bonacich <- function(x, exponent = 1, mode = c("out", "in", "all"), weighted
                              loops = FALSE, rescale = FALSE,
                              convention = c("igraph", "sna"), tol = 1e-12,
                              max_iter = 10000L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
   exponent <- check_number(exponent, "exponent")
@@ -92,7 +92,7 @@ net_authority <- function(x, weighted = NULL, scale = NULL,
 }
 
 hits_common <- function(x, fn, weighted, scale, convention, tol, max_iter, threads) {
-  check_netframe(x)
+  check_net_frame(x)
   if (is.null(scale)) scale <- if (convention == "igraph") "max" else "sum"
   scale <- check_choice(scale, c("max", "sum", "unit"), "scale")
   weighted <- resolve_additive_weights(x, weighted)

@@ -66,7 +66,7 @@ test_that("ego_network returns the induced subgraph with its attributes", {
   g <- small()
   g$nodes$age <- c(30, 40, 50, 60, 70)
   e <- net_ego(g, "a")
-  expect_s3_class(e, "netframe")
+  expect_s3_class(e, "net_frame")
   expect_equal(e$nodes$name, c("a", "b", "d", "c"))
   expect_equal(e$nodes$age, c(30, 40, 50, 60))
   expect_equal(e$edges$w, c(1, 2, 3, 4))
@@ -96,7 +96,7 @@ test_that("ego networks of a two-mode network stay two-mode", {
 test_that("results match igraph", {
   skip_if_not_installed("igraph")
   ig <- igraph::make_graph("Zachary")
-  g <- net_from(ig)
+  g <- as_net_frame(ig)
   expect_equal(net_ego_size(g), igraph::ego_size(ig, order = 1))
   expect_equal(net_ego_size(g, order = 2, include_ego = FALSE),
                igraph::ego_size(ig, order = 2, mindist = 1))
@@ -120,7 +120,7 @@ test_that("results match igraph", {
   set.seed(5)
   dg <- igraph::sample_gnp(30, 0.1, directed = TRUE)
   igraph::V(dg)$name <- as.character(seq_len(30))
-  d <- net_from(dg)
+  d <- as_net_frame(dg)
   expect_equal(net_ego_size(d, mode = "out"), igraph::ego_size(dg, mode = "out"))
   expect_equal(net_ego_size(d, mode = "in"), igraph::ego_size(dg, mode = "in"))
   e <- net_ego(d, "1", mode = "in")

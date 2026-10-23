@@ -4,9 +4,9 @@
 # Conditional uniform graph tests (man/net_cug_test.Rd).
 net_cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
                      reps = 1000L, ..., seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   if (!is.function(statistic)) {
-    stop("`statistic` must be a function of a netframe returning one number.", call. = FALSE)
+    stop("`statistic` must be a function of a net_frame returning one number.", call. = FALSE)
   }
   conditioning <- match.arg(conditioning)
   reps <- check_count(reps, "reps", min = 1L)
@@ -15,7 +15,7 @@ net_cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.c
   label <- deparse(substitute(statistic))[[1L]]
 
   n <- nrow(x$nodes)
-  s <- netframe_summary(x)
+  s <- frame_summary_cached(x)
   if (s$loops || s$parallel) {
     warning("The network has self-loops or parallel edges; the random networks are simple, ",
             "and the observed number of edges and dyad census ignore them.", call. = FALSE)

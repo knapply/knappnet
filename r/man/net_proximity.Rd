@@ -16,7 +16,7 @@ net_proximity(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                   threads = 0L, exact = FALSE)
 }
 \arguments{
-\item{nodes}{A data frame of points, a spatial netframe (its nodes and
+\item{nodes}{A data frame of points, a spatial net_frame (its nodes and
 coordinate record are used), or an sf data frame of any geometry type (see
 Details).}
 \item{coords}{The two columns of \code{nodes} holding the coordinates, by
@@ -59,7 +59,7 @@ fewer than \code{k} other points gets them all. The edges carry a
 distances), so path-based measures use spatial lengths unless asked not
 to.
 
-For an sf node table (or a netframe with sf node geometry), when
+For an sf node table (or a net_frame with sf node geometry), when
 \code{coords} is not given, the geometries are reduced to representative
 points (see \code{\link{net_to_sf}}), longitude and latitude are recognized
 from the CRS (with the default Earth radius, so distances are in metres),
@@ -72,7 +72,7 @@ sphere, where the chord between two points increases with their
 great-circle distance, so it finds the same neighbours as the exact
 metric.
 }
-\value{A spatial netframe (see \code{\link{net_spatial}}) with edge
+\value{A spatial net_frame (see \code{\link{net_spatial}}) with edge
 columns \code{from}, \code{to}, and \code{distance}.}
 \references{
 Bentley, J. L. (1975). Multidimensional binary search trees used for

@@ -9,7 +9,7 @@
 A two-mode (affiliation) network has two declared sets of nodes, such as
 people and the events they attend, with ties only between the sets.
 \code{net_twomode()} creates one from data frames, \code{net_as_twomode()}
-converts a netframe, an igraph or network object, an incidence matrix, or
+converts a net_frame, an igraph or network object, an incidence matrix, or
 a network read from a file, \code{net_is_twomode()} tests whether a
 network declares two modes, \code{net_is_bipartite()} tests the structure
 (whether the nodes can be 2-coloured), and \code{net_incidence()} returns
@@ -56,7 +56,7 @@ or of the column to create without \code{nodes}.}
 \item{quiet}{Whether to suppress the advisory notes of validation.}
 \item{graph}{A named list of network-level attributes.}
 \item{x}{For \code{net_as_twomode()}, the object to convert; for the other
-functions, a \code{\link[=net_frame]{netframe}} (two-mode for
+functions, a \code{\link[=net_frame]{net_frame}} (two-mode for
 \code{net_incidence()}).}
 \item{weighted}{For matrices, whether values are edge weights (read as
 strengths). \code{NULL} treats any value other than 0 and 1 as a weight.}
@@ -68,7 +68,7 @@ the matrix; \code{NULL} counts edges.}
 \details{
 A mode is a declared, disjoint set of nodes of one kind (Wasserman and
 Faust 1994, ch. 8; Borgatti and Everett 1997). A two-mode network is a
-\code{\link[=net_frame]{netframe}} whose node table has a mode column
+\code{\link[=net_frame]{net_frame}} whose node table has a mode column
 (role \code{x$roles$mode}, any discrete column: text, integer, logical, or
 factor) and whose edges are declared to join different modes only
 (\code{x$declared$between_modes_only}); an edge within a mode is an error
@@ -88,7 +88,7 @@ The modes are labelled by the values of the mode column, in order of
 first appearance; \code{first} chooses which is the first mode.
 \code{\link{net_to_igraph}} writes igraph's logical \code{type} attribute
 (\code{FALSE} for the first mode) for every two-mode network, and
-\code{\link{net_from}} reads it back as the mode role.
+\code{\link{as_net_frame}} reads it back as the mode role.
 
 Without a node table, \code{net_twomode()} takes the first mode from the
 \code{source} column and the second from the \code{target} column, so a
@@ -101,7 +101,7 @@ columns the second (\code{column}), with identifiers from the row and
 column names (\code{r1}, \code{r2}, \ldots and \code{c1}, \code{c2},
 \ldots if there are none); values other than 0 and 1 become strengths
 unless \code{weighted = FALSE}. A data frame is passed to
-\code{net_twomode()}. A netframe keeps its tables and declares the modes.
+\code{net_twomode()}. A net_frame keeps its tables and declares the modes.
 
 Two-mode measures (\code{\link{net_project}}, \code{\link{net_twomode_degree}}
 and its relatives) read the network as an affiliation matrix and ignore
@@ -109,7 +109,7 @@ the direction of edges, so \code{net_twomode()} creates undirected networks
 by default.
 }
 \value{
-\code{net_twomode()} and \code{net_as_twomode()} return a netframe with a
+\code{net_twomode()} and \code{net_as_twomode()} return a net_frame with a
 mode role and edges declared to join different modes only.
 \code{net_is_twomode()} and \code{net_is_bipartite()} return \code{TRUE} or
 \code{FALSE}. \code{net_incidence()} returns a matrix with first-mode

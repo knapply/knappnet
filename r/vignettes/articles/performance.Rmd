@@ -76,7 +76,7 @@ which is unavailable on some platforms where R packages are built. The
 `threads` argument limits it; `threads = 0`, the default, uses every core.
 
 ```{r}
-karate <- net_from(igraph::make_graph("Zachary"))
+karate <- as_net_frame(igraph::make_graph("Zachary"))
 all.equal(net_betweenness(karate, threads = 1), net_betweenness(karate, threads = 2))
 ```
 

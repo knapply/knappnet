@@ -3,7 +3,7 @@
 # any network only it uses.
 
 # Krackhardt's kite (Krackhardt 1990) as an undirected edge list on nodes
-# 1 to 10, and as a netframe.
+# 1 to 10, and as a net_frame.
 kite_edges <- function() {
   data.frame(
     source = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),

@@ -31,7 +31,7 @@ geometries.}
 position, or \code{NULL} to number the regions 1, 2, ... in a new first
 column \code{id} (an existing \code{id} column is renamed \code{id_attr}).}
 }
-\value{A netframe whose node table is an sf data frame; see
+\value{A net_frame whose node table is an sf data frame; see
 \code{\link{net_to_sf}}.}
 \section{Snapping rule of net_from_lines()}{
 The first and last vertex of every line are collected, in the order of the

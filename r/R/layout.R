@@ -8,7 +8,7 @@ net_layout <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "c
                            root = NULL, center = NULL, max_iter = NULL, tol = NULL,
                            pivots = NULL, approximation = c("auto", "exact", "barnes_hut"),
                            threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   approximation <- match.arg(approximation)
   threads <- resolve_threads(threads)
@@ -52,7 +52,7 @@ net_layout <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "c
 
 # See man/net_layout.Rd.
 net_layout_stress <- function(x, layout, weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   xy <- layout_matrix(layout, nrow(x$nodes))
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)

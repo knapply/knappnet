@@ -6,7 +6,7 @@
 # Edge density (man/net_density.Rd).
 net_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet"),
                           relation = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   loops <- check_flag(loops, "loops")
   x <- relation_subset(x, relation, "net_density")
@@ -31,7 +31,7 @@ net_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "
 
 # Average degree and the degree distribution (man/net_avg_degree.Rd).
 net_avg_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   loops <- check_flag(loops, "loops")
   d <- net_degree(x, mode = mode, loops = loops)
@@ -42,7 +42,7 @@ net_avg_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
 # See man/net_avg_degree.Rd.
 net_degree_dist <- function(x, mode = c("all", "out", "in"), loops = TRUE,
                                 cumulative = FALSE) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   loops <- check_flag(loops, "loops")
   cumulative <- check_flag(cumulative, "cumulative")
@@ -57,7 +57,7 @@ net_degree_dist <- function(x, mode = c("all", "out", "in"), loops = TRUE,
 
 # Connected components (man/net_components.Rd).
 net_components <- function(x, mode = c("weak", "strong")) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   ptr <- engine_graph(x)
   m <- engine_call("net_components",
@@ -68,7 +68,7 @@ net_components <- function(x, mode = c("weak", "strong")) {
 
 # See man/net_components.Rd.
 net_fragmentation <- function(x, mode = c("weak", "strong")) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   ptr <- engine_graph(x)
   engine_call("net_fragmentation", .Call(C_fragmentation, ptr, if (mode == "strong") 1L else 0L))
@@ -76,7 +76,7 @@ net_fragmentation <- function(x, mode = c("weak", "strong")) {
 
 # Triad census (man/net_triad_census.Rd).
 net_triad_census <- function(x, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   out <- engine_call("net_triad_census", .Call(C_triad_census, ptr, threads))
@@ -91,7 +91,7 @@ net_centralization <- function(x, measure = c("degree", "betweenness", "closenes
                            loops = TRUE, normalized = TRUE,
                            convention = c("igraph", "networkx", "sna", "ucinet"),
                            threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   convention <- match.arg(convention)
   if (convention == "networkx") {
@@ -145,7 +145,7 @@ net_centralize <- function(scores, theoretical_max = NULL) {
 # Compactness and distance-weighted fragmentation (man/net_compactness.Rd).
 net_compactness <- function(x, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
                         threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
@@ -157,7 +157,7 @@ net_compactness <- function(x, mode = c("out", "in", "all"), weighted = NULL, we
 # See man/net_compactness.Rd.
 net_dw_fragmentation <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                                             weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
@@ -168,7 +168,7 @@ net_dw_fragmentation <- function(x, mode = c("out", "in", "all"), weighted = NUL
 
 # Small-world quotient (man/net_small_world.Rd).
 net_small_world <- function(x, local = FALSE, reps = 100L, seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   local <- check_flag(local, "local")
   reps <- check_count(reps, "reps", min = 1L)
   seed <- check_seed(seed)
@@ -225,7 +225,7 @@ net_core_periphery <- function(x, method = c("discrete", "continuous"),
                            fit = c("minres", "correlation"), weighted = NULL,
                            starts = 20L, max_stall = 200L, tenure = NULL, max_iter = 1000L,
                            tol = 1e-10, seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   links <- match.arg(links)
   fit <- match.arg(fit)

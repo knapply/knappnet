@@ -67,10 +67,10 @@ test_that("sf node tables record geometry roles and keep every column", {
   expect_output(print(g), "spatial: nodes POINT; CRS")
   # Measures run as usual; the engine never sees the geometry.
   expect_equal(unname(net_degree(g)), c(3L, 2L, 2L, 1L))
-  # net_from() on sf works both ways round.
-  expect_equal(net_from(utm_points(), edges = g$edges, directed = FALSE)$edges, g$edges)
+  # as_net_frame() on sf works both ways round.
+  expect_equal(as_net_frame(utm_points(), edges = g$edges, directed = FALSE)$edges, g$edges)
   edge_sf <- net_to_sf(g, "edges")
-  h <- net_from(edge_sf, nodes = utm_points(), directed = FALSE)
+  h <- as_net_frame(edge_sf, nodes = utm_points(), directed = FALSE)
   expect_equal(h$roles$edge_geometry, "geometry")
   expect_equal(h$roles$node_geometry, "geometry")
   # Nodes derived from an sf edge table have no geometry of their own.
@@ -89,9 +89,9 @@ test_that("nodes and edges must share a CRS", {
   no_crs <- sf::st_set_crs(net_to_sf(g, "edges"), NA)
   expect_error(net_frame(no_crs, utm_points(), directed = FALSE), "st_set_crs")
   # The same CRS, or none on both, is fine.
-  expect_s3_class(net_frame(net_to_sf(g, "edges"), utm_points(), directed = FALSE), "netframe")
+  expect_s3_class(net_frame(net_to_sf(g, "edges"), utm_points(), directed = FALSE), "net_frame")
   expect_s3_class(net_frame(no_crs, sf::st_set_crs(utm_points(), NA), directed = FALSE),
-                  "netframe")
+                  "net_frame")
 })
 
 test_that("representative points stand in for any node geometry", {
@@ -207,7 +207,7 @@ test_that("net_to_sf() returns sf tables, with implicit edges when asked", {
                                      sf::st_drop_geometry(city_points()), directed = FALSE))
   expect_equal(sf::st_crs(net_to_sf(cities, "nodes")), sf::st_crs(4326))
   expect_equal(sf::st_crs(net_to_sf(cities, "edges")), sf::st_crs(4326))
-  # A netframe without any location cannot become sf.
+  # A net_frame without any location cannot become sf.
   expect_error(net_to_sf(net_frame(g$edges, directed = FALSE)), "no geometry")
 })
 
@@ -366,7 +366,7 @@ test_that("net_proximity() takes sf nodes of any geometry", {
   expect_equal(g$edges$source, c("a", "a", "b"))
   expect_equal(g$edges$target, c("b", "c", "c"))
   expect_equal(g$edges$distance, c(3, 4, 5))
-  # The same from a netframe with sf nodes, and with exact distances.
+  # The same from a net_frame with sf nodes, and with exact distances.
   expect_equal(net_proximity(utm_network(), within = 5)$edges, g$edges)
   expect_equal(net_proximity(pts, within = 5, exact = TRUE)$edges, g$edges)
   k <- net_proximity(pts, k = 1)
@@ -566,7 +566,7 @@ test_that("sfnetworks objects convert both ways", {
   expect_equal(igraph::vertex_attr(net, "name"), c("a", "b", "c", "d"))
   expect_equal(igraph::vertex_attr(net, "kind"), c("u", "u", "v", "v"))
   expect_equal(igraph::edge_attr(net, "kind"), c("p", "q", "r", "s"))
-  back <- net_from(net)
+  back <- as_net_frame(net)
   expect_true(back$directed)
   expect_equal(back$nodes$name, g$nodes$name)
   expect_equal(back$nodes$kind, g$nodes$kind)
@@ -579,18 +579,18 @@ test_that("sfnetworks objects convert both ways", {
   expect_equal(net_betweenness(back), net_betweenness(g))
   # Implicit edges stay implicit; polygons become points with a message.
   imp <- net_to_sfnetwork(g)
-  expect_false(inherits(net_from(imp)$edges, "sf"))
-  expect_equal(net_from(imp)$edges$target, g$edges$target)
+  expect_false(inherits(as_net_frame(imp)$edges, "sf"))
+  expect_equal(as_net_frame(imp)$edges$target, g$edges$target)
   regions <- net_from_polygons(grid_regions(), id = "region")
   expect_message(rn <- net_to_sfnetwork(regions), "representative points")
   expect_equal(as.character(sf::st_geometry_type(sf::st_as_sf(rn, active = "nodes"),
                                                  by_geometry = TRUE)), rep("POINT", 4))
-  expect_equal(net_from(rn)$nodes$name, c("w", "x", "y", "z"))
+  expect_equal(as_net_frame(rn)$nodes$name, c("w", "x", "y", "z"))
   expect_s3_class(sfnetworks::as_sfnetwork(g), "sfnetwork")
   # Columns with units come back as plain numbers.
   roads <- net_from_lines(lattice_lines())
   roads$edges$metres <- sf::st_length(roads$edges)
-  rb <- net_from(net_to_sfnetwork(roads))
+  rb <- as_net_frame(net_to_sfnetwork(roads))
   expect_false(inherits(rb$edges$metres, "units"))
   expect_type(rb$edges$metres, "double")
   expect_equal(rb$edges$metres, rep(1, 12))

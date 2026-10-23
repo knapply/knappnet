@@ -113,8 +113,8 @@ net_mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   exact <- check_flag(exact, "exact")
   tol <- check_number(tol, "tol", lower = 0, upper = 1)
   threads <- resolve_threads(threads)
-  if (is.matrix(x) || inherits(x, "netframe") || is.data.frame(x)) x <- list(x)
-  if (!is.list(x)) stop("`x` must be a matrix, a netframe, or a list of them.", call. = FALSE)
+  if (is.matrix(x) || inherits(x, "net_frame") || is.data.frame(x)) x <- list(x)
+  if (!is.list(x)) stop("`x` must be a matrix, a net_frame, or a list of them.", call. = FALSE)
   k <- length(x)
   xnames <- names(x)
   if (is.null(xnames)) xnames <- rep("", k)
@@ -314,14 +314,14 @@ qap_draws <- function(n, reps, exact) {
 qap_matrices <- function(inputs, attr) {
   mats <- lapply(seq_along(inputs), function(i) {
     m <- inputs[[i]]
-    if (inherits(m, "netframe")) {
+    if (inherits(m, "net_frame")) {
       a <- if (is.null(attr)) m$roles$weight else attr
       m <- as.matrix(m, attr = a)
     } else if (is.data.frame(m)) {
       m <- as.matrix(m)
     }
     if (!is.matrix(m) || nrow(m) != ncol(m)) {
-      stop(sprintf("Input %d is not a square matrix or a netframe.", i), call. = FALSE)
+      stop(sprintf("Input %d is not a square matrix or a net_frame.", i), call. = FALSE)
     }
     if (!(is.numeric(m) || is.logical(m))) {
       stop(sprintf("Input %d is not numeric.", i), call. = FALSE)

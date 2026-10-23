@@ -18,7 +18,7 @@ ring (see Details), as in \code{\link{net_layout}}.}
 \item{threads}{Number of threads for that layout, a whole number; \code{0}
 uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
 in \code{\link{net_frame}}).}
-\item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
+\item{...}{Further arguments passed to \code{\link{plot.net_frame}}, such as
 \code{node_label} or \code{main}.}
 }
 \details{

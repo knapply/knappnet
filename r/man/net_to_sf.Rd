@@ -1,6 +1,6 @@
 \name{net_to_sf}
 \alias{net_to_sf}
-\alias{st_as_sf.netframe}
+\alias{st_as_sf.net_frame}
 \alias{net_check_geometry}
 \alias{net_transform}
 \alias{net_spatial_filter}
@@ -18,7 +18,7 @@ happens to cross a node does not join it. Geometry is handled entirely by
 sf (GEOS and s2); the engine only ever sees numbers derived from it, such
 as edge lengths and representative points.
 
-\code{\link{net_frame}} and \code{\link{net_from}} notice sf tables on
+\code{\link{net_frame}} and \code{\link{as_net_frame}} notice sf tables on
 their own and record the geometry columns and CRS in \code{x$roles}
 (\code{node_geometry}, \code{edge_geometry}, and \code{crs}, which then
 holds an sf \code{crs} object). Nodes and edges that both have geometry
@@ -34,7 +34,7 @@ become straight LINESTRINGs between the representative points of their
 endpoints when \code{implicit = TRUE} (sfnetworks calls these spatially
 implicit edges); with \code{implicit = FALSE} the edge table is returned as
 it is, and an error is raised if it has no geometry.
-\code{\link[sf]{st_as_sf}} on a netframe does the same.
+\code{\link[sf]{st_as_sf}} on a net_frame does the same.
 \item \code{net_check_geometry()} is the optional consistency check between
 edge geometries and node geometries. It is never required: a network is
 valid however its geometries lie. For each edge with geometry it reports
@@ -48,7 +48,7 @@ both tables at once and updates the recorded CRS. Columns computed earlier
 from the geometry, such as lengths, are not recomputed.
 \item \code{net_spatial_filter()} keeps the nodes whose geometry satisfies
 \code{predicate} with any feature of \code{y} (any sf or sfc object, a
-bbox, or another spatial netframe) and returns the induced subnetwork:
+bbox, or another spatial net_frame) and returns the induced subnetwork:
 those nodes and every edge between two of them, with all columns and
 roles, as \code{\link{net_ego}} does.
 \item \code{net_spatial_join()} attaches the attributes of the feature of
@@ -85,7 +85,7 @@ touching its node.}
 \code{\link[sf]{st_transform}} (an EPSG code, a string, or an sf
 \code{crs}).}
 \item{y}{Features to filter or join by: an sf or sfc object, an sf
-\code{bbox}, or a spatial netframe (its node geometries are used).}
+\code{bbox}, or a spatial net_frame (its node geometries are used).}
 \item{predicate, join}{A geometric binary predicate from sf, such as
 \code{\link[sf]{st_intersects}} (the default), \code{\link[sf]{st_within}},
 or \code{\link[sf]{st_is_within_distance}}, called as
@@ -95,7 +95,7 @@ as \code{dist} for \code{\link[sf]{st_is_within_distance}}.}
 }
 \value{\code{net_to_sf()} returns an sf data frame. \code{net_check_geometry()}
 returns a logical vector aligned with the rows of \code{x$edges}. The other
-functions return a netframe: \code{net_transform()} and
+functions return a net_frame: \code{net_transform()} and
 \code{net_spatial_join()} with the same nodes and edges, \code{net_spatial_filter()}
 the induced subnetwork.}
 \section{Representative points}{

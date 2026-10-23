@@ -1,21 +1,21 @@
 \name{net_spatial}
 \alias{net_spatial}
 \alias{net_is_spatial}
-\alias{spatial_netframe}
-\alias{print.spatial_netframe}
+\alias{spatial_net_frame}
+\alias{print.spatial_net_frame}
 \alias{net_edge_lengths}
 \alias{net_distance_decay}
 \alias{net_group_geometry}
 \title{Geospatial networks}
 \description{
-A spatial network is a netframe whose nodes have coordinates: longitude
+A spatial network is a net_frame whose nodes have coordinates: longitude
 and latitude in degrees, or planar x and y. \code{net_spatial()}
 records which node columns hold them; the other functions here use that
 record. Networks whose node table is an sf data frame (see
 \code{\link{net_to_sf}}) need no such record: their geometries, of any type,
 are reduced to representative points, and
 \code{net_spatial(x, representative = )} chooses how. Either way the
-network gets the class \code{spatial_netframe}, which
+network gets the class \code{spatial_net_frame}, which
 \code{net_is_spatial()} tests. Spatial networks in general are reviewed by
 Barthelemy (2011).
 }
@@ -26,7 +26,7 @@ net_spatial(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
 
 net_is_spatial(x)
 
-\method{print}{spatial_netframe}(x, ..., n = 6L, width = getOption("width"))
+\method{print}{spatial_net_frame}(x, ..., n = 6L, width = getOption("width"))
 
 net_edge_lengths(x)
 
@@ -36,7 +36,7 @@ net_distance_decay(d, scale, form = c("exponential", "gaussian", "power"),
 net_group_geometry(x, groups)
 }
 \arguments{
-\item{x}{A \code{\link[=net_frame]{netframe}}; for every function but
+\item{x}{A \code{\link[=net_frame]{net_frame}}; for every function but
 \code{net_spatial()} and \code{net_is_spatial()}, a spatial one returned by
 \code{net_spatial()} or \code{\link{net_proximity}}, or one with sf node
 geometry (see \code{\link{net_to_sf}}).}
@@ -57,7 +57,7 @@ is the mean Earth radius of the Geodetic Reference System 1980,
 6371008.7714 m (Moritz 2000), so distances are in metres; use 6371.0088
 for kilometres.}
 \item{quiet}{Whether to suppress the advisory notes of validation.}
-\item{..., n, width}{As in \code{\link[=net_frame]{print.netframe}}.}
+\item{..., n, width}{As in \code{\link[=net_frame]{print.net_frame}}.}
 \item{d}{Distances, such as the result of \code{net_edge_lengths()}.}
 \item{scale}{The distance at which the weight has fallen to \eqn{e^{-1}}
 (exponential and gaussian) or \eqn{2^{-e}} (power).}
@@ -77,7 +77,7 @@ latitudes within \eqn{[-90, 90]}.
 \code{net_edge_lengths()} gives the distance between the endpoints of every
 edge (0 for a self-loop); \code{summary()} or \code{hist()} of it describe
 the edge-length distribution, and the lengths can serve as distance
-weights in a new netframe. \code{net_distance_decay()} turns lengths into tie
+weights in a new net_frame. \code{net_distance_decay()} turns lengths into tie
 weights that fall with distance, as in gravity models of spatial
 interaction: \code{"exponential"} gives \eqn{\exp(-d / s)}{exp(-d / s)},
 \code{"gaussian"} \eqn{\exp(-(d / s)^2)}{exp(-(d / s)^2)}, and
@@ -93,11 +93,11 @@ of the members' unit vectors converted back to longitude and latitude,
 which is undefined (\code{NaN}) when that mean vanishes, as for two
 antipodal points.
 
-\strong{Classes.} A netframe whose node table has coordinate roles, or
+\strong{Classes.} A net_frame whose node table has coordinate roles, or
 whose node or edge table is an sf data frame, has class
-\code{c("spatial_netframe", "netframe")}, or
-\code{c("spatiotemporal_netframe", "spatial_netframe",
-"temporal_netframe", "netframe")} when its edges also carry times. The
+\code{c("spatial_net_frame", "net_frame")}, or
+\code{c("spatiotemporal_net_frame", "spatial_net_frame",
+"temporal_net_frame", "net_frame")} when its edges also carry times. The
 coordinate columns are validated by the engine (finite, latitudes within
 [-90, 90]) when the network is built. Transformations that keep the
 coordinate columns keep the class; dropping them drops it. The printed
@@ -108,7 +108,7 @@ adds a line on how distances are measured.
 columns and coordinate system recorded in \code{x$roles} (\code{x},
 \code{y}, \code{crs}, \code{radius}; for sf nodes \code{representative}
 and \code{radius} only, since \code{crs} then holds the sf CRS) and the
-class \code{spatial_netframe}. \code{net_is_spatial()} returns
+class \code{spatial_net_frame}. \code{net_is_spatial()} returns
 \code{TRUE} or \code{FALSE}.
 \code{net_edge_lengths()} returns a numeric vector aligned with the rows of
 \code{x$edges} (from the edge geometries when the edge table has them, with

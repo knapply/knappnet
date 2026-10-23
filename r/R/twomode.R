@@ -49,9 +49,9 @@ net_twomode <- function(edges, nodes = NULL, mode = "mode", first = NULL, direct
   roles <- list(id = id, source = src, target = tgt,
                 weight = resolve_optional(edges, weight, "weight", "edges"),
                 weight_type = check_weight_type(weight, weight_type), mode = mode)
-  x <- new_netframe(edges, nodes, check_flag(directed, "directed"), roles,
+  x <- new_net_frame(edges, nodes, check_flag(directed, "directed"), roles,
                     list(between_modes_only = TRUE), check_graph(graph))
-  x <- build_netframe(x, check_flag(quiet, "quiet"), "net_twomode")
+  x <- build_net_frame(x, check_flag(quiet, "quiet"), "net_twomode")
   set_first_mode(x, first)
 }
 
@@ -68,11 +68,11 @@ net_as_twomode <- function(x, mode = NULL, first = NULL, weighted = NULL, quiet 
   if (is.matrix(x) || (isS4(x) && methods::is(x, "Matrix"))) {
     return(incidence_to_twomode(x, weighted, quiet))
   }
-  if (is.data.frame(x) && !inherits(x, "netframe")) {
+  if (is.data.frame(x) && !inherits(x, "net_frame")) {
     return(net_twomode(x, mode = if (is.null(mode)) "mode" else mode, first = first,
                        quiet = quiet))
   }
-  x <- net_from(x)
+  x <- as_net_frame(x)
   if (is.null(mode)) {
     if (net_is_twomode(x)) return(set_first_mode(x, first))
     mode <- if (!is.null(x$roles$mode)) x$roles$mode else "mode"
@@ -80,20 +80,20 @@ net_as_twomode <- function(x, mode = NULL, first = NULL, weighted = NULL, quiet 
   mode <- resolve_mode_column(x$nodes, mode)
   declared <- x$declared
   declared$between_modes_only <- TRUE
-  out <- rebuild_netframe(x, x$edges, x$nodes, mode = mode, declared = declared,
+  out <- rebuild_net_frame(x, x$edges, x$nodes, mode = mode, declared = declared,
                           quiet = quiet, fn = "net_as_twomode")
   set_first_mode(out, first)
 }
 
 # See man/net_twomode.Rd.
 net_is_twomode <- function(x) {
-  if (!inherits(x, "netframe") || is.null(x$roles$mode)) return(FALSE)
+  if (!inherits(x, "net_frame") || is.null(x$roles$mode)) return(FALSE)
   isTRUE(x$declared$between_modes_only) && length(mode_labels(x)) == 2L
 }
 
 # See man/net_twomode.Rd.
 net_is_bipartite <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   n <- nrow(x$nodes)
   src <- x$index$src + 1L
   tgt <- x$index$tgt + 1L
@@ -232,7 +232,7 @@ twomode_centrality <- function(x, measure, normalized, unreachable, threads, fn)
 }
 
 check_twomode <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   if (is.null(x$roles$mode) || !isTRUE(x$declared$between_modes_only)) {
     stop("`x` is not a two-mode network; create one with net_twomode() or net_as_twomode().",
          call. = FALSE)
@@ -247,7 +247,7 @@ check_twomode <- function(x) {
 
 # The mode labels in the engine's order (first appearance in the node
 # table).
-mode_labels <- function(x) netframe_summary(x)$modes
+mode_labels <- function(x) frame_summary_cached(x)$modes
 
 # The mode of each node as the engine's 0-based code by first appearance.
 mode_codes <- function(x) {

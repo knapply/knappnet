@@ -1,12 +1,12 @@
 # Descriptive statistics of a network as a whole and its paths:
 # reciprocity, transitivity and clustering, distances and their summaries,
-# reachability, cut points and bridges, and summary.netframe(). Other
+# reachability, cut points and bridges, and summary.net_frame(). Other
 # whole-network measures (density, components, centralization, triads,
-# core-periphery, small worlds) are in topography.R.
+# core-periphery, small worlds) are in structure.R.
 
 # Reciprocity (man/net_reciprocity.Rd).
 net_reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlation")) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   code <- switch(mode, default = 0L, ratio = 1L, dyadic = 2L, correlation = 3L)
   ptr <- engine_graph(x)
@@ -15,7 +15,7 @@ net_reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlati
 
 # Transitivity and clustering coefficients (man/net_transitivity.Rd).
 net_transitivity <- function(x, convention = c("igraph", "networkx"), threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -36,7 +36,7 @@ net_avg_clustering <- function(x, weighted = FALSE, method = NULL,
 }
 
 clustering_common <- function(x, average, weighted, method, convention, threads) {
-  check_netframe(x)
+  check_net_frame(x)
   weighted <- check_flag(weighted, "weighted")
   weighting <- 0L
   if (weighted) {
@@ -58,7 +58,7 @@ undefined_code <- function(convention) if (convention == "networkx") 1L else 0L
 # Shortest-path distances, mean distance, diameter, eccentricity, and radius (man/net_distances.Rd).
 net_distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
                       weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
   rows <- node_positions(x, from, "from")
@@ -91,7 +91,7 @@ net_diameter <- function(x, mode = c("out", "in", "all"), weighted = NULL,
 # See man/net_distances.Rd.
 net_eccentricity <- function(x, mode = c("all", "out", "in"), weighted = NULL,
                          weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
@@ -110,7 +110,7 @@ net_radius <- function(x, mode = c("all", "out", "in"), weighted = NULL,
 # Totals over the searches from `sources` (0-based positions, or NULL for
 # every node): sources, pairs, total, longest, incomplete, mean, diameter.
 path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, threads, fn) {
-  check_netframe(x)
+  check_net_frame(x)
   w <- resolve_weighting(x, weighted, weights_as)
   unconnected <- check_flag(unconnected, "unconnected")
   threads <- resolve_threads(threads)
@@ -121,7 +121,7 @@ path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, th
 
 # Reachability (man/net_reachability.Rd).
 net_reachability <- function(x, mode = c("out", "in", "all"), threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -130,7 +130,7 @@ net_reachability <- function(x, mode = c("out", "in", "all"), threads = 0L) {
 
 # Cut points and bridges (man/net_cut_points.Rd).
 net_cut_points <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   ptr <- engine_graph(x)
   r <- engine_call("net_cut_points", .Call(C_cut_structure, ptr))
   x$nodes[[x$roles$id]][r[[1L]]]
@@ -138,21 +138,21 @@ net_cut_points <- function(x) {
 
 # See man/net_cut_points.Rd.
 net_bridges <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   ptr <- engine_graph(x)
   which(engine_call("net_bridges", .Call(C_cut_structure, ptr))[[2L]])
 }
 
-# Summarize a network (man/summary.netframe.Rd).
-summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L, ...) {
+# Summarize a network (man/summary.net_frame.Rd).
+summary.net_frame <- function(object, paths = NULL, weighted = NULL, threads = 0L, ...) {
   x <- object
-  check_netframe(x)
+  check_net_frame(x)
   check_flag_or_null(paths, "paths")
   w <- resolve_weighting(x, weighted, NULL)
   threads <- resolve_threads(threads)
   n <- nrow(x$nodes)
   ptr <- engine_graph(x)
-  s <- netframe_summary(x)
+  s <- frame_summary_cached(x)
   comp <- net_components(x, "weak")
   largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
   largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
@@ -213,15 +213,15 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
       missing_nodes = s$missing_nodes,
       missing_edges = s$missing_edges
     ),
-    class = "summary.netframe"
+    class = "summary.net_frame"
   )
 }
 
 # Largest component for which summary() computes distances by default.
 summary_path_limit <- 5000L
 
-# See man/summary.netframe.Rd.
-print.summary.netframe <- function(x, digits = 3L, ...) {
+# See man/summary.net_frame.Rd.
+print.summary.net_frame <- function(x, digits = 3L, ...) {
   num <- function(v) format(v, digits = digits)
   int <- function(v) format(v, big.mark = ",", scientific = FALSE, trim = TRUE)
   columns <- function(types) {

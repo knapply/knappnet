@@ -20,7 +20,7 @@ when \code{scale} is given, the \code{\link{net_distance_decay}} curve with that
 scale on a second axis, so the choice of scale can be judged against the
 lengths it will weight.
 
-Appearance arguments are read exactly as by \code{\link{plot.netframe}}
+Appearance arguments are read exactly as by \code{\link{plot.net_frame}}
 (columns, vectors, single values, or vectors wrapped in \code{I()}), with
 the same palettes: Okabe-Ito colors for categories and viridis for
 numbers.
@@ -37,7 +37,7 @@ net_plot_edge_lengths(x, scale = NULL, form = c("exponential", "gaussian", "powe
 one returned by \code{\link{net_spatial}} or
 \code{\link{net_proximity}}.}
 \item{node_size, node_color, node_label, edge_width, edge_color}{Appearance
-of nodes and edges, as in \code{\link{plot.netframe}}: the name of a column
+of nodes and edges, as in \code{\link{plot.net_frame}}: the name of a column
 of \code{x$nodes} or \code{x$edges}, a vector with one value per node or
 edge, a single value for all, or a vector wrapped in \code{\link{I}()} to
 use its values as they are. Node sizes apply to point nodes; polygons and
@@ -49,7 +49,7 @@ lines are filled or drawn in the node color.}
 \code{\link{net_distance_decay}} curve to overlay; \code{NULL} draws none.}
 }
 \value{\code{x}, invisibly.}
-\seealso{\code{\link{plot.netframe}} for abstract layouts,
+\seealso{\code{\link{plot.net_frame}} for abstract layouts,
 \code{\link{net_to_sf}}, \code{\link{net_spatial}}.}
 \examples{
 nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),

@@ -33,7 +33,7 @@ net_combine_relations(x, relation = NULL,
 net_split_relations(x, relation = NULL)
 }
 \arguments{
-\item{x}{A \code{\link[=net_frame]{netframe}}.}
+\item{x}{A \code{\link[=net_frame]{net_frame}}.}
 \item{relation}{The name of the edge column that gives each edge's
 relation; \code{NULL} uses the network's relation role, and is an error
 when it has none.}
@@ -65,8 +65,8 @@ The UCINET menu paths follow Hanneman and Riddle (2005, chapter 16), which
 also describes Transform > Multiplex, the inverse operation that stacks
 relations into one nominal-valued matrix.
 }
-\value{\code{net_combine_relations()} returns a netframe;
-\code{net_split_relations()} a named list of netframes, one per relation
+\value{\code{net_combine_relations()} returns a net_frame;
+\code{net_split_relations()} a named list of net_frames, one per relation
 in order of first appearance.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network

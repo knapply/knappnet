@@ -19,7 +19,7 @@ net_is_simple(x)
 net_multiplicity(x)
 }
 \arguments{
-\item{x}{A \code{\link[=net_frame]{netframe}}.}
+\item{x}{A \code{\link[=net_frame]{net_frame}}.}
 \item{combine}{How the weights of parallel edges are combined:
 \code{"sum"} (the default; igraph's \code{simplify()} does the same),
 \code{"mean"}, \code{"min"}, \code{"max"}, \code{"first"} (the first
@@ -49,7 +49,7 @@ removed), so the property is checked when the tables are edited.
 \code{net_multiplicity()} returns an integer vector aligned with the rows
 of \code{x$edges}: 1 for an edge with no parallel, and the size of its
 group otherwise. \code{net_is_simple()} returns \code{TRUE} or
-\code{FALSE}. \code{net_simplify()} returns a netframe.
+\code{FALSE}. \code{net_simplify()} returns a net_frame.
 }
 \references{
 Newman, M. E. J. (2018). \emph{Networks} (2nd ed.). Oxford University

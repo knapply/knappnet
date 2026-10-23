@@ -47,7 +47,7 @@ networks ignore \code{mode}. Steps are counted without weights.
 }
 \value{
 \code{net_ego()} returns a \code{\link{net_frame}}. \code{net_egos()}
-returns a list of netframes named by the egos' identifiers.
+returns a list of net_frames named by the egos' identifiers.
 }
 \references{
 Wasserman, S., & Faust, K. (1994). \emph{Social Network Analysis: Methods

@@ -1,15 +1,15 @@
-\name{summary.netframe}
-\alias{summary.netframe}
-\alias{print.summary.netframe}
+\name{summary.net_frame}
+\alias{summary.net_frame}
+\alias{print.summary.net_frame}
 \title{Summarize a network}
 \description{
 The standard descriptive table of a network: its size, ties, components,
 cohesion, distances, and degree distribution.
 }
 \usage{
-\method{summary}{netframe}(object, paths = NULL, weighted = NULL, threads = 0L, ...)
+\method{summary}{net_frame}(object, paths = NULL, weighted = NULL, threads = 0L, ...)
 
-\method{print}{summary.netframe}(x, digits = 3L, ...)
+\method{print}{summary.net_frame}(x, digits = 3L, ...)
 }
 \arguments{
 \item{object}{A \code{\link{net_frame}}.}
@@ -24,7 +24,7 @@ has a weight column; see \code{\link{net_distances}}.}
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{net_frame}}).}
 \item{...}{Not used.}
-\item{x}{A \code{summary.netframe} object.}
+\item{x}{A \code{summary.net_frame} object.}
 \item{digits}{Significant digits for proportions and means.}
 }
 \details{
@@ -55,7 +55,7 @@ in the size of the network, so networks with hundreds of thousands of nodes
 are summarized quickly.
 }
 \value{
-\code{summary()} returns an object of class \code{summary.netframe}: a list
+\code{summary()} returns an object of class \code{summary.net_frame}: a list
 holding the values described in Details, with a \code{print()} method.
 \code{print()} returns its argument invisibly.
 }

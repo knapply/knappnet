@@ -6,7 +6,7 @@ net_key_players <- function(x, k, measure = c("fragmentation", "distance_fragmen
                         m = 1, mode = c("out", "in", "all"), weighted = NULL,
                         weights_as = NULL, method = c("greedy", "exact"), restarts = 10L,
                         seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   method <- match.arg(method)
@@ -34,7 +34,7 @@ net_key_player_score <- function(x, set, measure = c("fragmentation", "distance_
                                                  "m_reach", "distance_reach"),
                              m = 1, mode = c("out", "in", "all"), weighted = NULL,
                              weights_as = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   m <- check_number(m, "m", lower = 0, finite = FALSE)
@@ -49,7 +49,7 @@ net_key_player_score <- function(x, set, measure = c("fragmentation", "distance_
 net_group_centrality <- function(x, group, measure = c("degree", "closeness", "betweenness"),
                              mode = c("out", "in", "all"), normalized = TRUE,
                              weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   normalized <- check_flag(normalized, "normalized")
@@ -72,7 +72,7 @@ net_group_centrality <- function(x, group, measure = c("degree", "closeness", "b
 # Flow betweenness (man/net_flow_betweenness.Rd).
 net_flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
                              capacity = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   scale <- match.arg(scale)
   check_flag_or_null(capacity, "capacity")
   if (is.null(capacity)) {

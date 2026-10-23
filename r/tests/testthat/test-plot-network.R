@@ -38,7 +38,7 @@ test_that("network overlays draw centrality, partitions, cores, and egos", {
 
     f <- net_example("florentine")
     expect_silent(e <- net_plot_ego(f, "Medici", seed = 1))
-    expect_s3_class(e, "netframe")
+    expect_s3_class(e, "net_frame")
     expect_identical(sort(e$nodes$name), sort(net_ego(f, "Medici")$nodes$name))
     expect_silent(net_plot_ego(f, "Medici", order = 2, seed = 1, main = "Two steps"))
     expect_error(net_plot_ego(f, "Nobody"), "not in the network")

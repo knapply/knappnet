@@ -22,7 +22,7 @@ software they teach. knappnet fixes one meaning for each term, records it
 here, and builds the data model around it.
 
 This article goes through the concepts in the order an analyst meets
-them. For each it gives the definition knappnet uses, how a netframe
+them. For each it gives the definition knappnet uses, how a net_frame
 represents it (which columns and roles in the node and edge tables, and
 which S3 class), how [igraph](https://r.igraph.org/), [statnet](https://statnet.org/)'s `network` and networkDynamic,
 [tidygraph](https://tidygraph.data-imaginist.com/), [NetworkX](https://networkx.org/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [ORA](https://www.casos.cs.cmu.edu/projects/ora/), and the teaching
@@ -41,7 +41,7 @@ edges, and the network as a whole. This is the graph of Wasserman and
 Faust (1994, ch. 4) and Newman (2018, ch. 6) with attributes attached;
 the smallest network is a dyad (Kadushin 2012).
 
-**In knappnet.** A netframe is two data frames. `nodes` has one row per
+**In knappnet.** A net_frame is two data frames. `nodes` has one row per
 node and an identifier column; `edges` has one row per edge and two
 endpoint columns. Any other column is an attribute. A list of *roles*
 records which columns carry structural meaning (identifier, endpoints,
@@ -107,7 +107,7 @@ same with igraph), which is the two-table model with other column names.
 **Why.** Attributes in data frames need no accessor vocabulary and work
 with every data tool the analyst already uses; two of the books spend a
 section explaining why a node table must always be supplied so that
-isolates and node order survive, which the netframe makes the default.
+isolates and node order survive, which the net_frame makes the default.
 
 ## Nodes and edges
 
@@ -154,7 +154,7 @@ per cell or link. Conversions therefore write only the weight column to
 those single-value formats.
 
 **Why.** Separating structure from metadata means a converter can map
-`network`'s flags onto netframe fields and pass the rest through
+`network`'s flags onto net_frame fields and pass the rest through
 untouched, and no user attribute can accidentally change how a measure
 runs.
 
@@ -377,7 +377,7 @@ Latora 2014 give its structural measures).
 *In knappnet:* the `relation` edge role, a discrete column in one long
 edge table, as the Noordin data already has. Parallel edges are detected
 within relation. Measures take `relation =` to select or combine
-relations, and a planned split helper returns one netframe per relation.
+relations, and a planned split helper returns one net_frame per relation.
 Relation-level attributes may go in `graph$relations`. Conversion writes
 an edge attribute for [igraph](https://r.igraph.org/) and `network`, relation numbers for [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
 stacked matrices for [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, and one `<network>` per relation for
@@ -479,7 +479,7 @@ theory an interval graph is the intersection graph of intervals on a line
 
 **In knappnet.** The `start`, `end` or `duration`, `node_start`, and
 `node_end` roles, with the time class recorded, on a
-`c("temporal_netframe", "netframe")` object. `start` alone is a contact
+`c("temporal_net_frame", "net_frame")` object. `start` alone is a contact
 sequence; `start` and `end` a link stream; node spells make a stream
 graph.
 
@@ -509,7 +509,7 @@ contacts   # active on [1, 3), [1, 2), [3, 6)
 ```
 
 **Panels.** Waves are time spells: wave k of a panel is the spell
-`[k, k + 1)` in a temporal netframe, so every window, snapshot, and
+`[k, k + 1)` in a temporal net_frame, so every window, snapshot, and
 rolling measure applies to panels unchanged. Planned helpers build the
 spells from a list of networks (one per wave, as [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), networkDynamic's
 `network.list`, and the textbooks supply them) and split them back.
@@ -553,11 +553,11 @@ has crossings is a different, spatial question. Road networks are nearly
 but not exactly planar (bridges, tunnels).
 
 **In knappnet.** The `node_geometry`, `edge_geometry`, and `crs` roles,
-taken from sf geometry columns, on a `c("spatial_netframe", "netframe")`
+taken from sf geometry columns, on a `c("spatial_net_frame", "net_frame")`
 object; both tables must share a CRS. A spatio-temporal network combines
 the spatial and temporal roles on a
-`c("spatiotemporal_netframe", "spatial_netframe", "temporal_netframe",
-"netframe")` object: fixed geometries with timed edges and nodes
+`c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame",
+"net_frame")` object: fixed geometries with timed edges and nodes
 (Williams and Musolesi 2016). Moving nodes are not represented; a
 trajectory would be modelled as node spells with a geometry attribute.
 knappnet does not require edge linestrings to end at node points; the
@@ -587,9 +587,9 @@ one per sampled ego, usually with no ties across egos (Burt 1984; Perry,
 Pescosolido, and Borgatti 2018).
 
 **In knappnet.** Extraction from a whole network (today `net_ego()`)
-returns an ordinary netframe, with ego included by default. For
+returns an ordinary net_frame, with ego included by default. For
 egocentric survey data an `ego` role on nodes and edges is planned, so
-one netframe holds every ego's network and measures run per ego; the
+one net_frame holds every ego's network and measures run per ego; the
 three-table shape (ego, alter, alter-alter tie) that egor uses and both R
 textbooks teach (Rawlings et al. 2023, ch. 6; Shafie and Schoch 2026,
 ch. 8) is the planned import and export bridge.
@@ -660,7 +660,7 @@ simplicial closure is a constraint no two-mode network has (Torres et al.
 2021 discuss when each representation is right).
 
 **In knappnet.** Not first-class; an edge has two endpoints. The
-documented exchange is a two-mode netframe with `mode = c("node",
+documented exchange is a two-mode net_frame with `mode = c("node",
 "hyperedge")`, and the clique expansion to a weighted one-mode network is
 the ordinary two-mode projection:
 

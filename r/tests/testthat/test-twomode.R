@@ -54,7 +54,7 @@ test_that("node types from two-valued columns", {
   expect_error(net_twomode(within, nodes, type = "kind"), "same mode")
 })
 
-test_that("net_as_twomode() converts matrices, data frames, and netframes", {
+test_that("net_as_twomode() converts matrices, data frames, and net_frames", {
   m <- matrix(c(1, 0, 1,
                 1, 1, 0), 2, byrow = TRUE, dimnames = list(c("p", "q"), c("x", "y", "z")))
   g <- net_as_twomode(m)
@@ -107,7 +107,7 @@ test_that("incidence matrices", {
 test_that("projections count shared partners", {
   g <- party()
   p <- net_project(g)
-  expect_s3_class(p, "netframe")
+  expect_s3_class(p, "net_frame")
   expect_false(p$directed)
   expect_equal(p$nodes$name, c("ann", "bob", "cat", "dan", "eve"))
   expect_equal(p$edges$source, c("ann", "ann", "ann", "bob", "bob", "cat"))

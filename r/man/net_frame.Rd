@@ -1,8 +1,8 @@
 \name{net_frame}
 \alias{net_frame}
-\alias{netframe}
+\alias{net_frame}
 \alias{net_diagnostics}
-\alias{print.netframe}
+\alias{print.net_frame}
 \title{Create a network from node and edge data frames}
 \description{
 A network is a pair of data frames: \code{nodes}, with one row per node, and
@@ -11,7 +11,7 @@ carried along untouched. Column roles say which columns hold node
 identifiers, edge endpoints, and, optionally, weights, modes, relations,
 and signs. The tables are validated in the engine before anything is
 computed: every problem is reported at once, with the rows concerned, and
-advisory notes say what was noticed. Printing a netframe shows a card of
+advisory notes say what was noticed. Printing a net_frame shows a card of
 its properties and the first rows of both tables.
 }
 \usage{
@@ -22,7 +22,7 @@ net_frame(edges, nodes = NULL, directed = TRUE, source = "source",
 
 net_diagnostics(x, threads = 0L)
 
-\method{print}{netframe}(x, ..., n = 6L, width = getOption("width"))
+\method{print}{net_frame}(x, ..., n = 6L, width = getOption("width"))
 }
 \arguments{
 \item{edges}{A data frame of edges.}
@@ -73,7 +73,7 @@ the node table, in order of first appearance, with \code{NA} attributes
 \item{graph}{A named list of network-level attributes (for example a title or
 data source), carried through conversions and file formats that support
 them.}
-\item{x}{A netframe.}
+\item{x}{A net_frame.}
 \item{threads}{Number of threads for the validation; \code{0} uses all
 available cores.}
 \item{...}{Ignored.}
@@ -132,7 +132,7 @@ must have the same class.
 }
 \subsection{Editing the tables}{
 Add columns to \code{x$nodes} and \code{x$edges} freely. The edge index is
-computed here; to add, remove, or reorder rows build a new netframe, or use
+computed here; to add, remove, or reorder rows build a new net_frame, or use
 the transformation functions (\code{\link{net_subnetwork}},
 \code{\link{net_filter_nodes}}, \code{\link{net_dichotomize}}, ...), which
 rebuild it. Measures stop when the number of nodes or edges has changed;
@@ -158,7 +158,7 @@ otherwise, followed by how many more rows and columns there are. Every
 line starts with \code{#}, so printed output can be pasted into a script.
 The output uses only ASCII characters. Temporal and spatial networks add
 a line each (see \code{\link{net_temporal}} and \code{\link{net_spatial}}).
-\code{\link[=summary.netframe]{summary()}} gives more.
+\code{\link[=summary.net_frame]{summary()}} gives more.
 }
 \subsection{Threads}{
 Measures that run in parallel take \code{threads}. \code{0} (the default)
@@ -175,19 +175,19 @@ interrupted until they return.
 geometry columns stay in place and are recorded in \code{x$roles}
 (\code{node_geometry}, \code{edge_geometry}, \code{crs}); both tables must
 then have the same coordinate reference system, and the network gets the
-class \code{spatial_netframe}. Connectivity still comes from \code{source}
+class \code{spatial_net_frame}. Connectivity still comes from \code{source}
 and \code{target}, never from the geometry. See \code{\link{net_to_sf}}.
 }
 }
-\value{An object of class \code{netframe}: a list with the two tables
+\value{An object of class \code{net_frame}: a list with the two tables
 (\code{nodes}, \code{edges}), \code{directed}, \code{roles} (the column
 names of each role, with \code{weight_type}), \code{declared}
 (\code{loops}, \code{multiple}, and \code{between_modes_only} when
 declared), \code{graph}, and the engine's edge index. Temporal and spatial
-networks are subclasses: \code{c("temporal_netframe", "netframe")},
-\code{c("spatial_netframe", "netframe")}, and
-\code{c("spatiotemporal_netframe", "spatial_netframe", "temporal_netframe",
-"netframe")}.
+networks are subclasses: \code{c("temporal_net_frame", "net_frame")},
+\code{c("spatial_net_frame", "net_frame")}, and
+\code{c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame",
+"net_frame")}.
 }
 \references{
 Butts, C. T. (2008). network: A package for managing relational data in R.
@@ -207,7 +207,7 @@ and Applications}. Cambridge University Press.
 \doi{10.1017/CBO9780511815478}
 }
 \seealso{
-\code{\link{net_from}} to convert from other packages, \code{\link{net_read}}
+\code{\link{as_net_frame}} to convert from other packages, \code{\link{net_read}}
 for files, \code{\link{net_twomode}}, \code{\link{net_temporal}}, and
 \code{\link{net_spatial}} for the other kinds of network, and
 \code{\link{net_simplify}} for loops and parallel edges.

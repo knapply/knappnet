@@ -2,7 +2,7 @@ test_that("every example network loads with the documented size", {
   info <- net_examples()
   for (i in seq_len(nrow(info))) {
     g <- net_example(info$name[i])
-    expect_s3_class(g, "netframe")
+    expect_s3_class(g, "net_frame")
     expect_equal(nrow(g$nodes), info$nodes[i], info = info$name[i])
     expect_equal(nrow(g$edges), info$edges[i], info = info$name[i])
   }

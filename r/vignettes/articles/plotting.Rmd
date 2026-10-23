@@ -31,9 +31,9 @@ florentine <- net_example("florentine")
 
 ## Networks
 
-`plot()` on a netframe draws it with a stress layout, nodes sized by degree,
+`plot()` on a net_frame draws it with a stress layout, nodes sized by degree,
 and labels when the network is small. Appearance comes from columns of the
-node and edge tables; see `?plot.netframe`.
+node and edge tables; see `?plot.net_frame`.
 
 ```{r network}
 plot(karate, node_color = "faction", seed = 1, main = "Zachary's karate club")

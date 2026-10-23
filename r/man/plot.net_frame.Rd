@@ -1,5 +1,5 @@
-\name{plot.netframe}
-\alias{plot.netframe}
+\name{plot.net_frame}
+\alias{plot.net_frame}
 \title{Plot a network}
 \description{
 Draws a network with base R graphics. With no arguments beyond the
@@ -9,7 +9,7 @@ arrows when the network is directed. Node and edge appearance can be set
 from columns of \code{x$nodes} and \code{x$edges}.
 }
 \usage{
-\method{plot}{netframe}(x, layout = NULL, node_size = NULL, node_color = NULL,
+\method{plot}{net_frame}(x, layout = NULL, node_size = NULL, node_color = NULL,
      node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
      legend = TRUE, seed = NULL)
 }

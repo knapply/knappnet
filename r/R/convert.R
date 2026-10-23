@@ -1,33 +1,33 @@
 # Conversion to and from other packages' objects (igraph, tidygraph,
 # network, dense and sparse adjacency matrices). Methods for sf and
 # sfnetworks are in sf.R. Methods for other packages' generics are
-# registered in NAMESPACE with S3method(pkg::generic, netframe) and take
+# registered in NAMESPACE with S3method(pkg::generic, net_frame) and take
 # effect when that package is loaded.
 
-# Convert networks to and from other packages (man/net_from.Rd).
-net_from <- function(x, ...) {
-  UseMethod("net_from")
+# Convert networks to and from other packages (man/as_net_frame.Rd).
+as_net_frame <- function(x, ...) {
+  UseMethod("as_net_frame")
 }
 
-# See man/net_from.Rd.
-net_from.default <- function(x, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.default <- function(x, ...) {
   if (isS4(x) && methods::is(x, "Matrix")) {
-    return(net_from.Matrix(x, ...))
+    return(as_net_frame.Matrix(x, ...))
   }
   stop(sprintf(paste0(
-    "Cannot convert an object of class `%s` to a netframe. Supported: igraph, ",
+    "Cannot convert an object of class `%s` to a net_frame. Supported: igraph, ",
     "tbl_graph, network, matrix, Matrix, and data.frame (an edge list)."),
     class(x)[[1]]), call. = FALSE)
 }
 
-# See man/net_from.Rd.
-net_from.netframe <- function(x, ...) x
+# See man/as_net_frame.Rd.
+as_net_frame.net_frame <- function(x, ...) x
 
-# See man/net_from.Rd.
-net_from.data.frame <- function(x, ...) net_frame(x, ...)
+# See man/as_net_frame.Rd.
+as_net_frame.data.frame <- function(x, ...) net_frame(x, ...)
 
-# See man/net_from.Rd.
-net_from.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...) {
   require_pkg("igraph")
   n <- igraph::vcount(x)
   vattrs <- igraph::vertex_attr(x)
@@ -59,8 +59,8 @@ net_from.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...) {
             weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
-# See man/net_from.Rd.
-net_from.network <- function(x, weight_type = "strength", quiet = FALSE, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.network <- function(x, weight_type = "strength", quiet = FALSE, ...) {
   require_pkg("network")
   n <- network::network.size(x)
   vnames <- network::network.vertex.names(x)
@@ -100,8 +100,8 @@ net_from.network <- function(x, weight_type = "strength", quiet = FALSE, ...) {
             weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
-# See man/net_from.Rd.
-net_from.matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
+# See man/as_net_frame.Rd.
+as_net_frame.matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
                                quiet = FALSE, ...) {
   check_flag_or_null(directed, "directed")
   check_flag_or_null(weighted, "weighted")
@@ -113,13 +113,13 @@ net_from.matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "
   }
   x[is.na(x)] <- 0
   idx <- which(x != 0, arr.ind = TRUE)
-  matrix_to_netframe(idx[, 1], idx[, 2], as.numeric(x[idx]), nrow(x), rownames(x),
+  matrix_to_net_frame(idx[, 1], idx[, 2], as.numeric(x[idx]), nrow(x), rownames(x),
                      symmetric = isSymmetric(unname(x)), directed, weighted, weight_type,
                      quiet)
 }
 
-# See man/net_from.Rd.
-net_from.Matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
+# See man/as_net_frame.Rd.
+as_net_frame.Matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
                                quiet = FALSE, ...) {
   require_pkg("Matrix")
   check_flag_or_null(directed, "directed")
@@ -141,11 +141,11 @@ net_from.Matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "
   }
   # As for dense matrices, missing values are read as 0 (no tie).
   keep <- !is.na(v) & v != 0
-  matrix_to_netframe(i[keep], j[keep], v[keep], nrow(x), rownames(x),
+  matrix_to_net_frame(i[keep], j[keep], v[keep], nrow(x), rownames(x),
                      symmetric = Matrix::isSymmetric(x), directed, weighted, weight_type, quiet)
 }
 
-matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted, weight_type,
+matrix_to_net_frame <- function(i, j, v, n, ids, symmetric, directed, weighted, weight_type,
                                quiet) {
   if (is.null(ids)) ids <- seq_len(n)
   if (anyDuplicated(ids)) {
@@ -171,9 +171,9 @@ matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted, w
             weight_type = if (weighted) weight_type, quiet = quiet)
 }
 
-# See man/net_from.Rd.
+# See man/as_net_frame.Rd.
 net_to_igraph <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   require_pkg("igraph")
   g <- igraph::make_empty_graph(n = nrow(x$nodes), directed = x$directed)
   if (nrow(x$edges)) {
@@ -199,15 +199,15 @@ net_to_igraph <- function(x) {
   g
 }
 
-# See man/net_from.Rd.
+# See man/as_net_frame.Rd.
 net_to_tbl_graph <- function(x) {
   require_pkg("tidygraph")
   tidygraph::as_tbl_graph(net_to_igraph(x))
 }
 
-# See man/net_from.Rd.
+# See man/as_net_frame.Rd.
 net_to_network <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   require_pkg("network")
   n <- nrow(x$nodes)
   src <- x$index$src + 1L
@@ -234,16 +234,16 @@ net_to_network <- function(x) {
 }
 
 # network's bipartite flag requires the first `b` vertices to be one mode;
-# only then is it set (the edges of a two-mode netframe already cross
+# only then is it set (the edges of a two-mode net_frame already cross
 # modes).
 bipartite_count <- function(types) {
   b <- sum(types == 0L)
   if (b > 0 && all(types[seq_len(b)] == 0L)) b else NULL
 }
 
-# See man/net_from.Rd.
-as.matrix.netframe <- function(x, attr = NULL, sparse = FALSE, ...) {
-  check_netframe(x)
+# See man/as_net_frame.Rd.
+as.matrix.net_frame <- function(x, attr = NULL, sparse = FALSE, ...) {
+  check_net_frame(x)
   check_flag(sparse, "sparse")
   n <- nrow(x$nodes)
   i <- x$index$src + 1L
@@ -286,6 +286,6 @@ plain_column <- function(v) {
 }
 
 # Methods for other packages' generics, registered when those packages load.
-as.igraph.netframe <- function(x, ...) net_to_igraph(x)
-as.network.netframe <- function(x, ...) net_to_network(x)
-as_tbl_graph.netframe <- function(x, ...) net_to_tbl_graph(x)
+as.igraph.net_frame <- function(x, ...) net_to_igraph(x)
+as.network.net_frame <- function(x, ...) net_to_network(x)
+as_tbl_graph.net_frame <- function(x, ...) net_to_tbl_graph(x)

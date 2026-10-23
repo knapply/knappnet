@@ -1,6 +1,6 @@
 # Density, average degree and the degree distribution, components and
 # fragmentation, the triad census, centralization, compactness, the
-# small-world quotient, and core-periphery structure (R/topography.R).
+# small-world quotient, and core-periphery structure (R/structure.R).
 # Hand-checked values first, then spot checks against igraph and sna. The
 # full comparison lives in validation/.
 

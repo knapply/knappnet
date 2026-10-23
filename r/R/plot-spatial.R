@@ -1,9 +1,9 @@
 # Plot a spatial network on its map (man/net_plot_spatial.Rd). Appearance
-# arguments are resolved by the helpers in utils-plot.R that plot.netframe()
+# arguments are resolved by the helpers in utils-plot.R that plot.net_frame()
 # uses; sf geometries are drawn by the helpers in sf.R.
 net_plot_spatial <- function(x, node_color = NULL, node_size = NULL, node_label = NULL,
                          edge_width = NULL, edge_color = NULL, ..., legend = TRUE) {
-  check_netframe(x)
+  check_net_frame(x)
   legend <- check_flag(legend, "legend")
   if (!has_positions(x)) {
     stop(paste0("`x` has no node locations: give sf nodes to net_frame(), or record ",

@@ -49,7 +49,7 @@ in node order. \code{net_transpose()} keeps every column. An undirected
 network is returned unchanged by \code{net_transpose()} and is an error
 for \code{net_symmetrize()}.
 }
-\value{A netframe: undirected for \code{net_symmetrize()}.}
+\value{A net_frame: undirected for \code{net_symmetrize()}.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

@@ -1,19 +1,19 @@
 \name{net_temporal}
 \alias{net_temporal}
 \alias{net_is_temporal}
-\alias{temporal_netframe}
-\alias{print.temporal_netframe}
-\alias{print.spatiotemporal_netframe}
+\alias{temporal_net_frame}
+\alias{print.temporal_net_frame}
+\alias{print.spatiotemporal_net_frame}
 \title{Temporal networks}
 \description{
 \code{net_temporal()} creates a network whose edges are timed
 contacts: each edge has a start time and, optionally, an end time or a
 duration, or belongs to a panel wave, and nodes may have presence spells.
-The result is a \code{\link[=net_frame]{netframe}} of class
-\code{temporal_netframe} with extra column roles, so every static measure
+The result is a \code{\link[=net_frame]{net_frame}} of class
+\code{temporal_net_frame} with extra column roles, so every static measure
 still works on it (treating each contact as an edge), and the temporal
 functions listed under \sQuote{See also} use the times.
-\code{net_is_temporal()} tells whether a netframe is one.
+\code{net_is_temporal()} tells whether a net_frame is one.
 }
 \usage{
 net_temporal(edges, nodes = NULL, start = "time", end = NULL, duration = NULL,
@@ -23,9 +23,9 @@ net_temporal(edges, nodes = NULL, start = "time", end = NULL, duration = NULL,
 
 net_is_temporal(x)
 
-\method{print}{temporal_netframe}(x, ..., n = 6L, width = getOption("width"))
+\method{print}{temporal_net_frame}(x, ..., n = 6L, width = getOption("width"))
 
-\method{print}{spatiotemporal_netframe}(x, ..., n = 6L, width = getOption("width"))
+\method{print}{spatiotemporal_net_frame}(x, ..., n = 6L, width = getOption("width"))
 }
 \arguments{
 \item{edges}{A data frame of contacts, one row per contact, or a
@@ -33,11 +33,11 @@ net_is_temporal(x)
 endpoints, weights, and other roles are kept.}
 \item{nodes}{A data frame of nodes, or \code{NULL}; see
 \code{\link{net_frame}}. Must be \code{NULL} when \code{edges} is a
-netframe.}
+net_frame.}
 \item{start}{The name of the column of \code{edges} holding each contact's
 start time. Times may be numbers (in any unit), \code{Date}, or
 \code{POSIXct} date-times. The default is the column named \code{"time"};
-a netframe that already has times keeps them.}
+a net_frame that already has times keeps them.}
 \item{end}{Optional name of the column of end times, of the same type as
 \code{start}.}
 \item{duration}{Optional name of a column of durations, an alternative to
@@ -54,11 +54,11 @@ holding when each node is present, of the same type as \code{start} (wave
 numbers with \code{wave}). A missing value means present from the beginning
 (start) or until the end (end).}
 \item{directed}{Whether contacts are directed. Ignored when \code{edges}
-is a netframe, which keeps its own direction.}
+is a net_frame, which keeps its own direction.}
 \item{source, target, id, weight, weight_type, quiet, graph}{As in
 \code{\link{net_frame}}.}
-\item{x}{Any object (a temporal netframe for \code{print()}).}
-\item{..., n, width}{As in \code{\link[=net_frame]{print.netframe}}.}
+\item{x}{Any object (a temporal net_frame for \code{print()}).}
+\item{..., n, width}{As in \code{\link[=net_frame]{print.net_frame}}.}
 }
 \details{
 \strong{Times.} Times are stored as given in \code{x$edges} and
@@ -86,15 +86,15 @@ share an instantaneous contact, and an interval belongs to every window it
 overlaps. Node presence intervals follow the same rule.
 
 \strong{Contacts and edges.} Self-loops and repeated contacts between the
-same nodes are allowed and kept; each contact is one edge of the netframe.
+same nodes are allowed and kept; each contact is one edge of the net_frame.
 Static measures applied directly to a temporal network see every contact
 as an edge (a multigraph); use \code{\link{net_aggregate}} for one
 weighted edge per pair of nodes, or \code{\link{net_window}} and
 \code{\link{net_snapshots}} for the contacts of a period.
 
-\strong{Classes.} The result has class \code{c("temporal_netframe",
-"netframe")}, or \code{c("spatiotemporal_netframe", "spatial_netframe",
-"temporal_netframe", "netframe")} when the nodes also carry coordinates or
+\strong{Classes.} The result has class \code{c("temporal_net_frame",
+"net_frame")}, or \code{c("spatiotemporal_net_frame", "spatial_net_frame",
+"temporal_net_frame", "net_frame")} when the nodes also carry coordinates or
 geometry. The temporal functions check the class and refuse other
 networks. Transformations that keep the time columns keep the class
 (\code{\link{net_subnetwork}}, \code{\link{net_window}}, ...); those
@@ -105,12 +105,12 @@ and adds a line on the time class.
 
 \strong{Log data.} Tables of events such as authentication logs or network
 flows (one row per event, with source, destination, and time) are contact
-sequences: pass them, or a netframe built from them, straight to
+sequences: pass them, or a net_frame built from them, straight to
 \code{net_temporal()}. Millions of contacts are fine; slicing and
 paths run in compiled code after a single sort by time.
 }
 \value{
-\code{net_temporal()} returns a netframe of class \code{temporal_netframe}
+\code{net_temporal()} returns a net_frame of class \code{temporal_net_frame}
 with time roles; \code{net_is_temporal()} returns \code{TRUE} or
 \code{FALSE}.
 }

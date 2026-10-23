@@ -69,7 +69,7 @@ checks to run. `--dry-run` only prints. The steps, in order:
    `tools/check_r_docs.py` checks that every `\usage` matches the
    function's formals, every export is defined and documented, every
    topic is in the [pkgdown](https://pkgdown.r-lib.org/) index, and Rd sections come in the package's
-   order. Shared helpers live in `r/R/utils-*.R`: `check_netframe()`,
+   order. Shared helpers live in `r/R/utils-*.R`: `check_net_frame()`,
    `engine_graph()`, `engine_call()`, `resolve_threads()`,
    `resolve_weighting()`, and `resolve_additive_weights()` in
    `utils-engine.R`; `check_flag()`, `check_choice()`, `check_count()`, and

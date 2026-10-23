@@ -7,8 +7,8 @@ net_plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = 
   values <- check_flag(values, "values")
   check_flag_or_null(key, "key")
   check_flag_or_null(labels, "labels")
-  if (inherits(x, "netframe")) {
-    check_netframe(x)
+  if (inherits(x, "net_frame")) {
+    check_net_frame(x)
     if (net_is_twomode(x)) {
       m <- net_incidence(x, attr = attr)
       row_lines <- col_lines <- integer()
@@ -33,7 +33,7 @@ net_plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = 
     }
   } else {
     if (!is.matrix(x) || !(is.numeric(x) || is.logical(x))) {
-      stop("`x` must be a netframe or a numeric matrix.", call. = FALSE)
+      stop("`x` must be a net_frame or a numeric matrix.", call. = FALSE)
     }
     m <- x
     storage.mode(m) <- "double"
@@ -81,12 +81,12 @@ group_order <- function(g) {
 net_plot_mixing <- function(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"),
                                values = TRUE, ...) {
   values <- check_flag(values, "values")
-  if (inherits(x, "netframe")) {
+  if (inherits(x, "net_frame")) {
     if (is.null(dim1)) stop("`dim1` is needed to compute the mixing matrix.", call. = FALSE)
     m <- net_mixing(x, dim1, dim2, direction = match.arg(direction))
   } else {
     if (!is.matrix(x) || !is.numeric(x)) {
-      stop("`x` must be a netframe or a numeric matrix.", call. = FALSE)
+      stop("`x` must be a net_frame or a numeric matrix.", call. = FALSE)
     }
     m <- x
   }

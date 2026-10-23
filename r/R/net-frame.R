@@ -1,10 +1,10 @@
-# The netframe class: the constructor, which hands the role columns of the
+# The net_frame class: the constructor, which hands the role columns of the
 # node and edge tables to the engine for validation and construction, the
 # diagnostics it reports, the subclasses, and the print card. The argument
 # checks are in utils-checks.R, the engine handle in utils-engine.R, the
-# print card in print-netframe.R, and summary() in descriptive.R.
+# print card in print-net-frame.R, and summary() in descriptive.R.
 #
-# A netframe is a list: `nodes` and `edges` (the two tables, untouched
+# A net_frame is a list: `nodes` and `edges` (the two tables, untouched
 # except for nodes appended from the edges), `directed`, `roles` (which
 # columns carry structural meaning: id, source, target, weight and
 # weight_type, mode, relation, sign, start, end, duration, wave,
@@ -39,13 +39,13 @@ net_frame <- function(edges, nodes = NULL, directed = TRUE, source = "source",
   declared <- list(loops = check_flag_or_null(loops, "loops"),
                    multiple = check_flag_or_null(multiple, "multiple"),
                    between_modes_only = NULL)
-  x <- new_netframe(edges, nodes, directed, roles, declared, graph, add_nodes)
-  build_netframe(x, quiet, "net_frame")
+  x <- new_net_frame(edges, nodes, directed, roles, declared, graph, add_nodes)
+  build_net_frame(x, quiet, "net_frame")
 }
 
 # See man/net_frame.Rd.
 net_diagnostics <- function(x, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   frame_diagnostics(engine_frame(x), threads)
 }
@@ -109,9 +109,9 @@ resolve_optional <- function(df, col, role, what) {
   resolve_column(df, col, role, what)
 }
 
-# An unbuilt netframe: the tables, roles, and declarations, with no index
-# or cache yet. build_netframe() validates it and fills the rest in.
-new_netframe <- function(edges, nodes, directed, roles, declared, graph, add_nodes = FALSE) {
+# An unbuilt net_frame: the tables, roles, and declarations, with no index
+# or cache yet. build_net_frame() validates it and fills the rest in.
+new_net_frame <- function(edges, nodes, directed, roles, declared, graph, add_nodes = FALSE) {
   roles <- roles[!vapply(roles, is.null, TRUE)]
   structure(
     list(
@@ -124,16 +124,16 @@ new_netframe <- function(edges, nodes, directed, roles, declared, graph, add_nod
       index = NULL,
       cache = new.env(parent = emptyenv())
     ),
-    class = "netframe",
+    class = "net_frame",
     add_nodes = add_nodes
   )
 }
 
-# Validates and builds a netframe through the engine: stops with every
+# Validates and builds a net_frame through the engine: stops with every
 # error, reports the notes (unless `quiet`), appends nodes taken from the
 # edges, records the edge index, caches the graph handle and the summary,
 # and sets the class. `fn` names the constructor in messages.
-build_netframe <- function(x, quiet = FALSE, fn = "net_frame", threads = 1L) {
+build_net_frame <- function(x, quiet = FALSE, fn = "net_frame", threads = 1L) {
   # sf node or edge tables record their geometry columns and CRS.
   x <- record_geometry(x)
   f <- engine_frame(x)
@@ -163,7 +163,7 @@ build_netframe <- function(x, quiet = FALSE, fn = "net_frame", threads = 1L) {
   cache$weights <- if (is.null(x$roles$weight)) NULL else x$edges[[x$roles$weight]]
   cache$summary <- frame_summary(f, threads)
   cache$diagnostics <- d
-  class(x) <- netframe_class(x)
+  class(x) <- net_frame_class(x)
   x
 }
 
@@ -206,30 +206,30 @@ append_nodes <- function(x, idx) {
   x
 }
 
-# The class vector a netframe gets from its roles: temporal when edges
+# The class vector a net_frame gets from its roles: temporal when edges
 # carry times or waves, spatial when nodes carry coordinates or either
 # table carries geometry, both when both.
-netframe_class <- function(x) {
+net_frame_class <- function(x) {
   r <- x$roles
   temporal <- !is.null(r$start) || !is.null(r$wave)
   spatial <- (!is.null(r$x) && !is.null(r$y)) || !is.null(r$node_geometry) ||
     !is.null(r$edge_geometry)
   if (temporal && spatial) {
-    c("spatiotemporal_netframe", "spatial_netframe", "temporal_netframe", "netframe")
+    c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame", "net_frame")
   } else if (temporal) {
-    c("temporal_netframe", "netframe")
+    c("temporal_net_frame", "net_frame")
   } else if (spatial) {
-    c("spatial_netframe", "netframe")
+    c("spatial_net_frame", "net_frame")
   } else {
-    "netframe"
+    "net_frame"
   }
 }
 
-# A netframe rebuilt from new tables with the same roles, declarations,
+# A net_frame rebuilt from new tables with the same roles, declarations,
 # and network attributes (roles whose columns are gone are dropped, so the
 # class follows the columns). `...` overrides roles: `weight = NULL` drops
 # the weight role, `directed = FALSE` changes the direction.
-rebuild_netframe <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_frame") {
+rebuild_net_frame <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_frame") {
   changes <- list(...)
   roles <- x$roles
   directed <- x$directed
@@ -273,8 +273,8 @@ rebuild_netframe <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_frame
   roles$node_geometry <- NULL
   roles$edge_geometry <- NULL
   if (inherits(roles$crs, "crs")) roles$crs <- NULL
-  out <- new_netframe(edges, nodes, directed, roles, declared, x$graph)
-  build_netframe(out, quiet = quiet, fn = fn)
+  out <- new_net_frame(edges, nodes, directed, roles, declared, x$graph)
+  build_net_frame(out, quiet = quiet, fn = fn)
 }
 
 # ---- The engine frame -----------------------------------------------------------
@@ -287,7 +287,7 @@ edge_role_codes <- c(source = 0L, target = 1L, weight = 2L, relation = 3L, sign 
 
 # The engine frame for `x`: the role columns of both tables as typed
 # buffers, the roles, the declarations, and the geometry flags. Built on
-# demand; the handle is cached by build_netframe() and engine_graph().
+# demand; the handle is cached by build_net_frame() and engine_graph().
 engine_frame <- function(x) {
   roles <- x$roles
   nodes <- x$nodes
@@ -511,8 +511,8 @@ frame_summary <- function(f, threads) {
   )
 }
 
-# The cached summary of a netframe, recomputed when the handle is stale.
-netframe_summary <- function(x) {
+# The cached summary of a net_frame, recomputed when the handle is stale.
+frame_summary_cached <- function(x) {
   engine_graph(x)
   s <- x$cache$summary
   if (is.null(s)) {
@@ -526,7 +526,7 @@ netframe_summary <- function(x) {
 
 # Edge multiplicity, simplicity, and simplification (man/net_simplify.Rd).
 net_multiplicity <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   engine_graph(x)
   engine_call("net_multiplicity",
               .Call(C_frame_multiplicity, x$cache$frame, as.double(nrow(x$edges))))
@@ -534,7 +534,7 @@ net_multiplicity <- function(x) {
 
 # See man/net_simplify.Rd.
 net_is_simple <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   engine_graph(x)
   engine_call("net_is_simple", .Call(C_frame_is_simple, x$cache$frame))
 }
@@ -542,7 +542,7 @@ net_is_simple <- function(x) {
 # See man/net_simplify.Rd.
 net_simplify <- function(x, combine = c("sum", "mean", "min", "max", "first", "count"),
                          remove_loops = FALSE) {
-  check_netframe(x)
+  check_net_frame(x)
   combine <- match.arg(combine)
   remove_loops <- check_flag(remove_loops, "remove_loops")
   engine_graph(x)
@@ -565,7 +565,7 @@ net_simplify <- function(x, combine = c("sum", "mean", "min", "max", "first", "c
   declared <- x$declared
   declared$multiple <- FALSE
   if (remove_loops) declared$loops <- FALSE
-  rebuild_netframe(x, edges, x$nodes, weight = weight,
+  rebuild_net_frame(x, edges, x$nodes, weight = weight,
                    weight_type = if (weighted) x$roles$weight_type else "strength",
                    declared = declared, fn = "net_simplify")
 }

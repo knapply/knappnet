@@ -170,7 +170,7 @@ census, and brokerage, ignore weights and say so in their help pages.
 
 ## Conversion
 
-`as.matrix()` gives the adjacency matrix, and `net_from()` turns a
+`as.matrix()` gives the adjacency matrix, and `as_net_frame()` turns a
 matrix back into a network. Direction is inferred from symmetry, and
 values other than 0 and 1 become weights:
 
@@ -179,7 +179,7 @@ m <- matrix(c(0, 2, 0,
               2, 0, 1,
               0, 1, 0), 3, byrow = TRUE,
             dimnames = list(c("x", "y", "z"), c("x", "y", "z")))
-small <- net_from(m)
+small <- as_net_frame(m)
 small
 small$edges
 as.matrix(small, attr = "weight")
@@ -192,7 +192,7 @@ network package, keeping node, edge, and network attributes:
 ig <- net_to_igraph(flo)
 igraph::vcount(ig)
 head(igraph::vertex_attr(ig, "betweenness"))
-karate <- net_from(igraph::make_graph("Zachary"))
+karate <- as_net_frame(igraph::make_graph("Zachary"))
 karate
 ```
 
@@ -203,7 +203,7 @@ network::network.size(net)
 
 `net_to_tbl_graph()` returns a tidygraph object, and the usual generics of
 those packages, `igraph::as.igraph()`, `network::as.network()`, and
-`tidygraph::as_tbl_graph()`, also accept a netframe.
+`tidygraph::as_tbl_graph()`, also accept a net_frame.
 
 ## Files
 
@@ -232,7 +232,7 @@ net_read(edges_csv, nodes = nodes_csv, directed = FALSE)
 
 ## Next steps
 
-- `?netframe`, `?read_network`, and `?as_netframe` for the details of
+- `?net_frame`, `?read_network`, and `?as_net_frame` for the details of
   building, reading, and converting networks.
 - `?conventions` for how [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) differ, and the
   `convention` argument that reproduces each.

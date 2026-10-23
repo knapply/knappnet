@@ -1,9 +1,9 @@
-# Plot a network (man/plot.netframe.Rd). The appearance arguments are
+# Plot a network (man/plot.net_frame.Rd). The appearance arguments are
 # resolved by the helpers in utils-plot.R, which net_plot_spatial() shares.
-plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
+plot.net_frame <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
                           node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
                           legend = TRUE, seed = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   legend <- check_flag(legend, "legend")
   geo <- identical(layout, "geo")
   if ((is.null(layout) || geo) && has_positions(x)) {

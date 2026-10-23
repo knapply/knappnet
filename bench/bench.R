@@ -11,7 +11,7 @@
 #
 # Timings are medians of repeated runs (operations under 0.2 s are looped
 # so each timed run lasts at least 0.2 s). Graphs are built before timing:
-# this package caches its compressed graph inside the netframe, and igraph
+# this package caches its compressed graph inside the net_frame, and igraph
 # and sna objects already hold theirs, so the times compare the
 # computations alone. Building a network from a data frame is timed
 # separately. igraph and sna run on one core; this package is timed both
@@ -105,10 +105,10 @@ dir <- igraph::sample_gnm(n_mid, 5L * n_mid, directed = TRUE)
 pa <- igraph::sample_pa(n_big, m = 3L, directed = FALSE)
 small <- igraph::sample_gnm(n_small, 5L * n_small, directed = TRUE)
 
-und_nf <- net_from(und)
-dir_nf <- net_from(dir)
-pa_nf <- net_from(pa)
-small_nf <- net_from(small)
+und_nf <- as_net_frame(und)
+dir_nf <- as_net_frame(dir)
+pa_nf <- as_net_frame(pa)
+small_nf <- as_net_frame(small)
 small_m <- as.matrix(small_nf)
 invisible(lapply(list(und_nf, dir_nf, pa_nf, small_nf), degree))  # build caches
 

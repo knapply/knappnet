@@ -4,7 +4,7 @@
 
 # Coreness (k-cores) (man/net_coreness.Rd).
 net_coreness <- function(x, mode = c("all", "out", "in")) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   ptr <- engine_graph(x)
   engine_call("net_coreness", .Call(C_coreness, ptr, mode_code(mode)))
@@ -12,7 +12,7 @@ net_coreness <- function(x, mode = c("all", "out", "in")) {
 
 # Maximal cliques and the clique number (man/net_max_cliques.Rd).
 net_max_cliques <- function(x, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -23,7 +23,7 @@ net_max_cliques <- function(x, min_size = 1L, threads = 0L) {
 
 # See man/net_max_cliques.Rd.
 net_clique_number <- function(x, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   engine_call("net_clique_number", .Call(C_clique_number, ptr, threads))
@@ -31,7 +31,7 @@ net_clique_number <- function(x, threads = 0L) {
 
 # n-cliques, n-clans, and k-plexes (man/net_n_cliques.Rd).
 net_n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
@@ -43,7 +43,7 @@ net_n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
 
 # See man/net_n_cliques.Rd.
 net_n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
@@ -55,7 +55,7 @@ net_n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
 
 # See man/net_n_cliques.Rd.
 net_k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   k <- check_count(k, "k", min = 1L)
   min_size <- if (is.null(min_size)) 2L * k - 1L else check_count(min_size, "min_size")
   if (!is.numeric(max_steps) || length(max_steps) != 1L || is.na(max_steps) || max_steps < 1) {
@@ -71,7 +71,7 @@ net_k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 
 
 # Bicomponents (blocks) (man/net_bicomponents.Rd).
 net_bicomponents <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   ptr <- engine_graph(x)
   idx <- engine_call("net_bicomponents", .Call(C_bicomponents, ptr))
   ids <- x$nodes[[x$roles$id]]
@@ -80,7 +80,7 @@ net_bicomponents <- function(x) {
 
 # Lambda sets and edge connectivity (man/net_lambda_sets.Rd).
 net_lambda_sets <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   ptr <- engine_graph(x)
   m <- engine_call("net_lambda_sets", .Call(C_lambda_connectivity, ptr))
   ids <- x$nodes[[x$roles$id]]
@@ -146,7 +146,7 @@ plot.lambda_sets <- function(x, ...) {
 
 # Modularity of a partition (man/net_modularity.Rd).
 net_modularity <- function(x, membership, resolution = 1, weighted = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   labels <- node_groups(x, membership, "membership")$codes
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
@@ -156,7 +156,7 @@ net_modularity <- function(x, membership, resolution = 1, weighted = NULL) {
 
 # Louvain community detection (man/net_louvain.Rd).
 net_louvain <- function(x, resolution = 1, weighted = NULL, seed = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   require_undirected(x, "Louvain community detection")
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
@@ -168,7 +168,7 @@ net_louvain <- function(x, resolution = 1, weighted = NULL, seed = NULL) {
 
 # Girvan-Newman, leading eigenvector, and greedy modularity communities (man/net_girvan_newman.Rd).
 net_girvan_newman <- function(x, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   require_undirected(x, "Girvan-Newman clustering")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -240,7 +240,7 @@ leaf_order <- function(merge) {
 
 # See man/net_girvan_newman.Rd.
 net_leading_eigen <- function(x, weighted = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   require_undirected(x, "The leading eigenvector method")
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
@@ -250,7 +250,7 @@ net_leading_eigen <- function(x, weighted = NULL) {
 
 # See man/net_girvan_newman.Rd.
 net_fast_greedy <- function(x, resolution = 1, weighted = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   require_undirected(x, "Greedy modularity optimization")
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
@@ -262,7 +262,7 @@ net_fast_greedy <- function(x, resolution = 1, weighted = NULL) {
 # Factions (man/net_factions.Rd).
 net_factions <- function(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
                      max_stall = 200L, tenure = NULL, seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   k <- check_count(k, "k")
   fit <- match.arg(fit)
   starts <- check_count(starts, "starts")

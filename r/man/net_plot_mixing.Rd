@@ -13,7 +13,7 @@ net_plot_mixing(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"),
 \arguments{
 \item{x}{A \code{\link{net_frame}}, or a numeric matrix as returned by
 \code{\link{net_mixing}}.}
-\item{dim1, dim2, direction}{For a netframe, passed to
+\item{dim1, dim2, direction}{For a net_frame, passed to
 \code{\link{net_mixing}}.}
 \item{values}{Whether to write the counts in the cells.}
 \item{...}{Further arguments passed to \code{\link[graphics]{image}}, such

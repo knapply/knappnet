@@ -137,7 +137,7 @@ test_that("arguments are checked", {
   expect_error(net_layout(g, max_iter = 0), "max_iter")
   expect_error(net_layout(g, pivots = -1), "pivots")
   expect_error(net_layout(g, tol = 0), "tol")
-  expect_error(net_layout(data.frame()), "netframe")
+  expect_error(net_layout(data.frame()), "net_frame")
   expect_error(net_layout_stress(g, matrix(0, 2, 2)), "7 rows")
 })
 
@@ -153,7 +153,7 @@ test_that("a network with one node or no edges", {
 
 test_that("stress is no worse than igraph's Kamada-Kawai layout on a classic network", {
   skip_if_not_installed("igraph")
-  karate <- net_from(igraph::make_graph("Zachary"))
+  karate <- as_net_frame(igraph::make_graph("Zachary"))
   ours <- net_layout(karate, seed = 1)
   # Kamada-Kawai minimizes a weighted stress of the same kind.
   set.seed(1)

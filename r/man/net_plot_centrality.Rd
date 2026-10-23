@@ -2,7 +2,7 @@
 \alias{net_plot_centrality}
 \title{Plot a score on the network}
 \description{
-Draws the network with \code{\link{plot.netframe}}, sizing and coloring
+Draws the network with \code{\link{plot.net_frame}}, sizing and coloring
 each node by a score such as a centrality, with a legend named after the
 score.
 }
@@ -17,15 +17,15 @@ centrality functions, or the name of a numeric column of \code{x$nodes}.}
 \item{title}{The name of the score, used for the legend.}
 \item{color}{Whether to color the nodes by the score as well as sizing
 them. \code{FALSE} keeps the default node color.}
-\item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
+\item{...}{Further arguments passed to \code{\link{plot.net_frame}}, such as
 \code{layout}, \code{seed}, \code{node_label}, or \code{main}.}
 }
 \details{
 Node area grows linearly with the score and the color follows the
-sequential palette of \code{\link{plot.netframe}}; undefined scores
+sequential palette of \code{\link{plot.net_frame}}; undefined scores
 (\code{NA}, \code{NaN}) are drawn at the smallest size in light gray.
 }
-\value{The layout used, invisibly, as \code{\link{plot.netframe}} returns.}
+\value{The layout used, invisibly, as \code{\link{plot.net_frame}} returns.}
 \seealso{\code{\link{net_plot_scores}} for a ranked dot plot of the same
 scores.}
 \examples{

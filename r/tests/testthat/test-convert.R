@@ -29,7 +29,7 @@ test_that("igraph round trip keeps structure and attributes", {
     expect_equal(igraph::V(ig)$age, c(31L, 45L, NA, 22L))
     expect_equal(igraph::E(ig)$kind, c("a", "b", "c", "d"))
     expect_equal(igraph::graph_attr(ig, "title"), "sample")
-    back <- net_from(ig)
+    back <- as_net_frame(ig)
     expect_same_network(g, back)
     expect_equal(back$roles$weight, "weight")
     expect_equal(back$nodes$member, g$nodes$member)
@@ -45,7 +45,7 @@ test_that("igraph round trip keeps structure and attributes", {
 
 test_that("unnamed igraph graphs use vertex positions", {
   skip_if_not_installed("igraph")
-  g <- net_from(igraph::make_ring(5))
+  g <- as_net_frame(igraph::make_ring(5))
   expect_equal(g$nodes$name, 1:5)
   expect_false(g$directed)
 })
@@ -54,7 +54,7 @@ test_that("tidygraph round trip", {
   skip_if_not_installed("tidygraph")
   tg <- net_to_tbl_graph(sample_net())
   expect_s3_class(tg, "tbl_graph")
-  expect_same_network(sample_net(), net_from(tg))
+  expect_same_network(sample_net(), as_net_frame(tg))
 })
 
 test_that("network (statnet) round trip keeps attributes", {
@@ -66,7 +66,7 @@ test_that("network (statnet) round trip keeps attributes", {
   expect_true(network::is.multiplex(net))
   expect_true(network::has.loops(net))
   expect_equal(network::get.vertex.attribute(net, "age"), c(31L, 45L, NA, 22L))
-  back <- net_from(net)
+  back <- as_net_frame(net)
   expect_same_network(g, back)
   expect_equal(back$edges$kind, g$edges$kind)
   expect_equal(back$edges$weight, g$edges$weight)
@@ -77,7 +77,7 @@ test_that("bipartite network objects keep their modes", {
   skip_if_not_installed("network")
   m <- matrix(c(1, 0, 1, 1, 0, 1), 2, 3)
   net <- network::network(m, bipartite = 2, directed = FALSE)
-  g <- net_from(net)
+  g <- as_net_frame(net)
   expect_equal(g$nodes$mode, c(1L, 1L, 2L, 2L, 2L))
   back <- net_to_network(g)
   expect_equal(network::get.network.attribute(back, "bipartite"), 2)
@@ -87,13 +87,13 @@ test_that("adjacency matrices convert both ways", {
   m <- matrix(c(0, 2, 0,
                 2, 0, 1,
                 0, 1, 0), 3, byrow = TRUE, dimnames = list(c("a", "b", "c"), c("a", "b", "c")))
-  g <- net_from(m)
+  g <- as_net_frame(m)
   expect_false(g$directed)
   expect_equal(g$edges$weight, c(2, 1))
   expect_equal(as.matrix(g, attr = "weight"), m)
 
   d <- matrix(c(0, 1, 0, 0), 2, dimnames = list(c("x", "y"), c("x", "y")))
-  gd <- net_from(d)
+  gd <- as_net_frame(d)
   expect_true(gd$directed)
   expect_null(gd$roles$weight)
   expect_equal(as.matrix(gd), d)
@@ -106,14 +106,14 @@ test_that("adjacency matrices convert both ways", {
 test_that("sparse matrices convert", {
   skip_if_not_installed("Matrix")
   m <- Matrix::sparseMatrix(i = c(1, 2), j = c(2, 3), x = c(1, 1), dims = c(3, 3))
-  g <- net_from(m)
+  g <- as_net_frame(m)
   expect_true(g$directed)
   expect_equal(nrow(g$edges), 2)
   s <- Matrix::forceSymmetric(m)
-  expect_false(net_from(s)$directed)
+  expect_false(as_net_frame(s)$directed)
   expect_equal(as.matrix(as.matrix(g, sparse = TRUE)), unname(as.matrix(g)), ignore_attr = TRUE)
 })
 
 test_that("unsupported objects give a helpful error", {
-  expect_error(net_from(1:3), "Supported:")
+  expect_error(as_net_frame(1:3), "Supported:")
 })

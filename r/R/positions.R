@@ -23,7 +23,7 @@ net_hierarchy <- function(x, weighted = NULL, threads = 0L) {
 }
 
 structural_holes <- function(x, measure, weighted, threads, fn) {
-  check_netframe(x)
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -32,7 +32,7 @@ structural_holes <- function(x, measure, weighted, threads, fn) {
 
 # Gould-Fernandez brokerage roles (man/net_brokerage.Rd).
 net_brokerage <- function(x, groups, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   codes <- node_groups(x, groups, "groups")$codes
   ptr <- engine_graph(x)
@@ -47,7 +47,7 @@ net_brokerage <- function(x, groups, threads = 0L) {
 # Structural equivalence (man/net_struct_equiv.Rd).
 net_struct_equiv <- function(x, method = c("euclidean", "correlation", "hamming"),
                                    weighted = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   code <- switch(method, euclidean = 0L, correlation = 1L, hamming = 2L)
   weighted <- resolve_additive_weights(x, weighted)
@@ -63,7 +63,7 @@ net_struct_equiv <- function(x, method = c("euclidean", "correlation", "hamming"
 # CONCOR blockmodel (man/net_concor.Rd).
 net_concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
                    threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   depth <- check_count(depth, "depth", min = 1L)
   tolerance <- check_number(tolerance, "tolerance", lower = 0, upper = 1, open = TRUE)
   max_iter <- check_count(max_iter, "max_iter")
@@ -86,7 +86,7 @@ net_concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_ite
 
 # Regular equivalence (CATREGE) (man/net_regular_equiv.Rd).
 net_regular_equiv <- function(x, seed = NULL, weighted = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   codes <- if (is.null(seed)) NULL else node_groups(x, seed, "seed")$codes
   ptr <- engine_graph(x)
@@ -96,7 +96,7 @@ net_regular_equiv <- function(x, seed = NULL, weighted = NULL) {
 
 # Automorphic equivalence (man/net_auto_equiv.Rd).
 net_auto_equiv <- function(x, max_steps = 1e6) {
-  check_netframe(x)
+  check_net_frame(x)
   if (!is.numeric(max_steps) || length(max_steps) != 1L || is.na(max_steps) ||
       max_steps < 1 || max_steps != floor(max_steps) || max_steps > 2^53) {
     stop("`max_steps` must be a positive whole number.", call. = FALSE)
@@ -108,7 +108,7 @@ net_auto_equiv <- function(x, max_steps = 1e6) {
 
 # Blockmodel of a partition (man/net_blockmodel.Rd).
 net_blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   loops <- check_flag(loops, "loops")
   if (!is.null(cutoff) && (!is.numeric(cutoff) || length(cutoff) != 1L || is.na(cutoff))) {
@@ -183,7 +183,7 @@ plot.blockmodel <- function(x, network = NULL, which = c("both", "density", "mat
   which <- match.arg(which)
   values <- check_flag(values, "values")
   if (!is.null(network)) {
-    check_netframe(network)
+    check_net_frame(network)
     if (nrow(network$nodes) != length(x$membership)) {
       stop("`network` must have one node per element of `x$membership`.", call. = FALSE)
     }

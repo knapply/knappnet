@@ -7,7 +7,7 @@
 net_spatial <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                         radius = 6371008.7714,
                         representative = c("point_on_surface", "centroid"), quiet = FALSE) {
-  check_netframe(x)
+  check_net_frame(x)
   crs <- match.arg(crs)
   representative <- match.arg(representative)
   radius <- check_number(radius, "radius", lower = 0, open = TRUE)
@@ -34,17 +34,17 @@ net_spatial <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar")
   roles$y <- cy
   roles$crs <- crs
   roles$radius <- as.double(radius)
-  out <- new_netframe(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
-  build_netframe(out, quiet, "net_spatial")
+  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
+  build_net_frame(out, quiet, "net_spatial")
 }
 
 # See man/net_spatial.Rd.
-net_is_spatial <- function(x) inherits(x, "spatial_netframe")
+net_is_spatial <- function(x) inherits(x, "spatial_net_frame")
 
 check_spatial <- function(x) {
-  check_netframe(x)
-  if (!inherits(x, "spatial_netframe")) {
-    stop(paste0("`x` must be a spatial network (class `spatial_netframe`), with node ",
+  check_net_frame(x)
+  if (!inherits(x, "spatial_net_frame")) {
+    stop(paste0("`x` must be a spatial network (class `spatial_net_frame`), with node ",
                 "coordinates or sf geometry; create one with net_spatial(x, coords = ...) ",
                 "or from sf tables."), call. = FALSE)
   }
@@ -79,9 +79,9 @@ check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
 # coordinates through this helper, so that node geometries of other kinds
 # can later be reduced to representative points in one place.
 node_coordinates <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   if (has_node_geometry(x)) {
-    require_pkg("sf", "A netframe with sf node geometry")
+    require_pkg("sf", "A net_frame with sf node geometry")
     return(geometry_coordinates(x))
   }
   if (is.null(x$roles$x) || is.null(x$roles$y) || is.null(x$roles$crs)) {
@@ -111,9 +111,9 @@ spatial_coords <- function(x) {
 
 # See man/net_spatial.Rd.
 net_edge_lengths <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   if (has_edge_geometry(x)) {
-    require_pkg("sf", "A netframe with sf edge geometry")
+    require_pkg("sf", "A net_frame with sf edge geometry")
     return(geometry_edge_lengths(x))
   }
   p <- spatial_coords(x)
@@ -163,7 +163,7 @@ net_proximity <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "pl
   check_flag(exact, "exact")
   check_proximity_args(within, k)
   sf_nodes <- NULL
-  if (inherits(nodes, "netframe")) {
+  if (inherits(nodes, "net_frame")) {
     if (missing(coords) && has_node_geometry(nodes)) {
       sf_nodes <- nodes$nodes
     } else if (missing(coords) && !is.null(nodes$roles$x) && !is.null(nodes$roles$y)) {
@@ -186,7 +186,7 @@ net_proximity <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "pl
   }
   crs <- match.arg(crs)
   if (!is.data.frame(nodes)) {
-    stop(sprintf("`nodes` must be a data frame or a netframe, not %s.", describe_class(nodes)),
+    stop(sprintf("`nodes` must be a data frame or a net_frame, not %s.", describe_class(nodes)),
          call. = FALSE)
   }
   if (length(coords) != 2L) {

@@ -74,7 +74,7 @@ cat(readLines(out), sep = "\n")
 
 [ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s meta-networks hold several classes of nodes (agents, organizations,
 tasks, resources, ...) and several networks among them. In knappnet the
-whole meta-network is one netframe: node classes are the `class` and
+whole meta-network is one net_frame: node classes are the `class` and
 `type` columns of the node table, and networks are the `network` column of
 the edge table.
 
@@ -198,7 +198,7 @@ percentages in some routines and proportions in others. knappnet always
 returns proportions; multiply by 100 to compare with a percentage:
 
 ```{r}
-karate <- net_from(igraph::make_graph("Zachary"))
+karate <- as_net_frame(igraph::make_graph("Zachary"))
 n <- nrow(karate$nodes)
 ucinet_style <- data.frame(
   node          = karate$nodes$name,

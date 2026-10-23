@@ -20,8 +20,8 @@ a vector with one value per node, such as the result of
 group, in order of the groups' first appearance, and draws a line between
 groups. For a matrix, a vector with one value per row (and column, if
 square).}
-\item{attr}{For a netframe, an edge column whose values fill the matrix;
-\code{NULL} counts edges (see \code{\link{as.matrix.netframe}}).}
+\item{attr}{For a net_frame, an edge column whose values fill the matrix;
+\code{NULL} counts edges (see \code{\link{as.matrix.net_frame}}).}
 \item{values}{Whether to write each cell's value in it.}
 \item{key}{Whether to draw a color key. \code{NULL} draws one when the
 matrix has more than two distinct values.}

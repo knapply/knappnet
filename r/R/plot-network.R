@@ -1,10 +1,10 @@
-# Plots that overlay a measure on the network drawn by plot.netframe():
+# Plots that overlay a measure on the network drawn by plot.net_frame():
 # scores, partitions, k-core shells, ego networks, and the robustness
 # curve.
 
 # Draw a network with nodes sized and colored by a score (man/net_plot_centrality.Rd).
 net_plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
-  check_netframe(x)
+  check_net_frame(x)
   color <- check_flag(color, "color")
   if (is.character(scores) && length(scores) == 1L && scores %in% names(x$nodes) &&
       identical(title, "score")) {
@@ -22,7 +22,7 @@ net_plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
 
 # Draw a network colored by a partition (man/net_plot_partition.Rd).
 net_plot_partition <- function(x, membership, title = "group", ...) {
-  check_netframe(x)
+  check_net_frame(x)
   if (is.character(membership) && length(membership) == 1L && membership %in% names(x$nodes) &&
       identical(title, "group")) {
     title <- membership
@@ -40,7 +40,7 @@ net_plot_partition <- function(x, membership, title = "group", ...) {
 
 # Draw the k-core shells of a network (man/net_plot_coreness.Rd).
 net_plot_coreness <- function(x, mode = c("all", "out", "in"), seed = NULL, threads = 0L, ...) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   n <- nrow(x$nodes)
   k <- net_coreness(x, mode = mode)
@@ -64,7 +64,7 @@ net_plot_coreness <- function(x, mode = c("all", "out", "in"), seed = NULL, thre
     out[members, 1] <- r * cos(theta)
     out[members, 2] <- r * sin(theta)
   }
-  # The legend is drawn here rather than by plot.netframe() so that the
+  # The legend is drawn here rather than by plot.net_frame() so that the
   # margins are known and the rings can be added in the same coordinates.
   mapped <- map_colors(k)
   args <- c(list(x = x, layout = out, node_color = I(mapped$col), legend = FALSE), dots)
@@ -87,7 +87,7 @@ net_plot_coreness <- function(x, mode = c("all", "out", "in"), seed = NULL, thre
 
 # Draw an ego network (man/net_plot_ego.Rd).
 net_plot_ego <- function(x, node, order = 1L, mode = c("all", "out", "in"), ...) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   e <- net_ego(x, node, order = order, mode = mode, include_ego = TRUE)
   is_ego <- node_ids(e) == as.character(node)
@@ -105,7 +105,7 @@ net_plot_robustness <- function(x, nodes = NULL, strategy = c("degree", "between
                             measure = c("largest_component", "fragmentation"), steps = 25,
                             mode = c("weak", "strong"), seed = NULL, threads = 0L,
                             label = "selected nodes", ...) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   if (!is.null(strategy)) {
@@ -125,7 +125,7 @@ net_plot_robustness <- function(x, nodes = NULL, strategy = c("degree", "between
   if (!is.null(seed)) set.seed(seed)
   evaluate <- function(removed) {
     keep <- setdiff(seq_len(n), removed)
-    sub <- induced_netframe(x, keep)
+    sub <- induced_net_frame(x, keep)
     if (measure == "largest_component") {
       comp <- net_components(sub, mode)
       if (comp$no == 0L) 0 else max(comp$csize) / n

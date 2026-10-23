@@ -59,7 +59,7 @@ edges <- data.frame(
 )
 g <- net_frame(edges, directed = FALSE)
 g
-#> <netframe> undirected network with 5 nodes and 5 edges, unweighted
+#> <net_frame> undirected network with 5 nodes and 5 edges, unweighted
 
 g$nodes$degree <- net_degree(g)
 g$nodes$betweenness <- net_betweenness(g)
@@ -72,7 +72,7 @@ g$nodes
 #> 5  eli      1           0
 ```
 
-A `netframe` is a list holding the two tables, `g$nodes` and `g$edges`,
+A `net_frame` is a list holding the two tables, `g$nodes` and `g$edges`,
 plus a note of which columns play which role (identifier, endpoints,
 weight). Nodes that only appear in the edge list are added to the node
 table automatically. Every measure returns a vector aligned with the rows

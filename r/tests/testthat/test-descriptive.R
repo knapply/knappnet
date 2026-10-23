@@ -219,7 +219,7 @@ test_that("cut points match igraph", {
 test_that("summary reports the descriptive table", {
   g <- pieces()
   s <- summary(g)
-  expect_s3_class(s, "summary.netframe")
+  expect_s3_class(s, "summary.net_frame")
   expect_equal(s$nodes, 6L)
   expect_equal(s$edges, 3L)
   expect_equal(s$isolates, 1)

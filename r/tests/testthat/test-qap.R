@@ -137,7 +137,7 @@ test_that("set.seed() and seed make results reproducible", {
   expect_error(net_qap_cor(d$y, d$x1, seed = -1), "seed")
 })
 
-test_that("netframes are accepted and aligned by node name", {
+test_that("net_frames are accepted and aligned by node name", {
   e <- data.frame(source = c("a", "b", "c", "d", "a", "e"),
                   target = c("b", "c", "d", "e", "c", "a"), w = c(1, 2, 3, 1, 2, 5))
   g <- net_frame(e, weight = "w", weight_type = "distance")

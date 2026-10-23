@@ -164,7 +164,7 @@ understanding of hierarchical system structures. \emph{IEEE Transactions on
 Systems, Man, and Cybernetics}, 11(2), 109-125.
 \doi{10.1109/TSMC.1981.4308636}
 }
-\seealso{\code{\link{plot.netframe}}}
+\seealso{\code{\link{plot.net_frame}}}
 \examples{
 # A triangle with a pendant node, a separate pair, and an isolate.
 g <- net_frame(data.frame(source = c(1, 2, 3, 3, 5), target = c(2, 3, 1, 4, 6)),

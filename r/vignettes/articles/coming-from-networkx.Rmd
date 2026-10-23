@@ -70,10 +70,10 @@ Two more differences matter:
 | [NetworkX](https://networkx.org/) | knappnet | Notes |
 |---|---|---|
 | `nx.Graph()`, `nx.DiGraph()`, `nx.MultiGraph()` | `net_frame(edges, nodes, directed)` | |
-| `nx.from_pandas_edgelist(df)` | `net_frame(df)` | Endpoints are the first two columns unless `from`, `to` name others. |
+| `nx.from_pandas_edgelist(df, source, target)` | `net_frame(df, source = "source", target = "target")` | Endpoint columns are named explicitly; the defaults are `"source"` and `"target"`, as in NetworkX. |
 | `G.add_nodes_from(...)` with attributes | the `nodes` data frame | Isolates need a row in `nodes`. |
 | `nx.to_numpy_array(G)`, `nx.to_scipy_sparse_array(G)` | `as.matrix(g)`, `as.matrix(g, sparse = TRUE)` | |
-| `nx.from_numpy_array(A)` | `net_from(A)` | |
+| `nx.from_numpy_array(A)` | `as_net_frame(A)` | |
 | `nx.read_graphml()`, `read_gexf()`, `read_gml()`, `read_pajek()`, `node_link_graph()` | `net_read(file)` | Format from the extension. |
 | `nx.write_graphml()`, ... | `net_write(g, file)` | |
 | `G.degree()` | `net_degree(g)` | |

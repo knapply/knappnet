@@ -26,7 +26,7 @@ test_that("net_spatial() records coordinates and checks them", {
   expect_equal(c(g$roles$x, g$roles$y), c("lon", "lat"))
   expect_equal(g$roles$crs, "lonlat")
   expect_equal(g$roles$radius, 6371.0088)
-  expect_s3_class(g, "netframe")
+  expect_s3_class(g, "net_frame")
   plain <- net_frame(g$edges, g$nodes, directed = FALSE)
   expect_error(net_edge_lengths(plain), "spatial_network")
   expect_error(net_spatial(plain, coords = c("lon", "height")), "coords\\[2\\]")
@@ -39,7 +39,7 @@ test_that("net_spatial() records coordinates and checks them", {
   expect_error(net_spatial(bad, coords = c("lon", "lat")), "row 2")
   expect_error(net_spatial(plain, coords = c("lon", "lat"), radius = 0), "`radius`")
   # Planar coordinates have no latitude limit.
-  expect_s3_class(net_spatial(bad, coords = c("lon", "lon"), crs = "planar"), "netframe")
+  expect_s3_class(net_spatial(bad, coords = c("lon", "lon"), crs = "planar"), "net_frame")
 })
 
 test_that("edge lengths are great-circle or Euclidean distances", {
@@ -110,7 +110,7 @@ test_that("proximity networks join nearby points", {
   # More neighbours than other points.
   k9 <- net_proximity(pts, coords = c("x", "y"), crs = "planar", k = 9)
   expect_equal(nrow(k9$edges), 20L)
-  # A spatial netframe can be given directly.
+  # A spatial net_frame can be given directly.
   g2 <- net_proximity(g, within = 1)
   expect_equal(g2$edges, g$edges)
   # Longitude and latitude: the same answer as the exact distances.

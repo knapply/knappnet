@@ -3,8 +3,8 @@ test_that("node set is derived from edges in order of appearance", {
   expect_equal(g$nodes$id, c("b", "a", "c"))
   expect_equal(g$index$src, c(0L, 1L))
   expect_equal(g$index$tgt, c(2L, 0L))
-  expect_s3_class(g, "netframe")
-  expect_identical(class(g), "netframe")
+  expect_s3_class(g, "net_frame")
+  expect_identical(class(g), "net_frame")
 })
 
 test_that("explicit nodes keep their order and attributes", {
@@ -209,7 +209,7 @@ test_that("the print card shows a one-mode network", {
   g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")))
   out <- capture.output(print(g))
   expect_identical(out[1:8], c(
-    "# netframe: 3 nodes, 2 edges",
+    "# net_frame: 3 nodes, 2 edges",
     "#   directed: yes             mode: one-mode",
     "#   weights:  none (unweighted)",
     "#   relations: none",
@@ -238,7 +238,7 @@ test_that("the print card shows weights, loops, parallel edges, and empty networ
   expect_output(print(u), "no loops, 1 parallel edge")
   empty <- net_frame(data.frame(source = character(), target = character()))
   out <- capture.output(print(empty))
-  expect_identical(out[1], "# netframe: 0 nodes, 0 edges")
+  expect_identical(out[1], "# net_frame: 0 nodes, 0 edges")
   expect_identical(out[7], "#   components: 0   isolates: 0   density: NaN")
   expect_true(any(out == "# Nodes (0 x 1)   Edges (0 x 2)"))
 })
@@ -260,7 +260,7 @@ test_that("the print card uses only ASCII", {
   g <- net_example("karate")
   out <- capture.output(print(g))
   expect_true(all(vapply(out, function(l) all(utf8ToInt(l) < 128), TRUE)))
-  expect_identical(out[1], "# netframe: 34 nodes, 78 edges")
+  expect_identical(out[1], "# net_frame: 34 nodes, 78 edges")
   expect_identical(out[2], "#   directed: no              mode: one-mode")
 })
 
@@ -333,7 +333,7 @@ test_that("net_simplify() follows the role-aware parallel rule", {
 
 test_that("measures check their arguments", {
   g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")))
-  expect_error(net_degree(data.frame(source = "a", target = "b")), "`x` must be a netframe")
+  expect_error(net_degree(data.frame(source = "a", target = "b")), "`x` must be a net_frame")
   expect_error(net_betweenness(g, threads = -1), "`threads` must be")
   expect_error(net_betweenness(g, threads = 1.5), "`threads` must be")
   expect_error(net_betweenness(g, threads = "2"), "`threads` must be")

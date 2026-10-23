@@ -10,9 +10,9 @@ msgs <- function() {
                               time = c(1, 1, 3, 6)))
 }
 
-test_that("temporal networks are netframes with time roles", {
+test_that("temporal networks are net_frames with time roles", {
   g <- msgs()
-  expect_s3_class(g, "netframe")
+  expect_s3_class(g, "net_frame")
   expect_true(net_is_temporal(g))
   expect_false(net_is_temporal(net_frame(data.frame(source = "a", target = "b"))))
   expect_false(net_is_temporal(data.frame(time = 1)))
@@ -49,7 +49,7 @@ test_that("start, end, and duration columns are found and checked", {
                "temporal network")
 })
 
-test_that("a netframe whose edges carry a time column can be made temporal", {
+test_that("a net_frame whose edges carry a time column can be made temporal", {
   x <- net_frame(data.frame(src = c("a", "b"), dst = c("b", "c"), start = c(1, 2),
                            bytes = c(10, 20)), weight = "bytes", weight_type = "distance")
   g <- net_temporal(x)

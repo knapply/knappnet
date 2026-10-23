@@ -176,7 +176,7 @@ test_that("homophily's samplike examples are reproduced", {
   skip_if_not_installed("network")
   env <- new.env()
   utils::data("sampson", package = "ergm", envir = env)
-  s <- net_from(env$samplike)
+  s <- as_net_frame(env$samplike)
   groups <- c("Turks", "Outcasts", "Loyal")
   expect_identical(net_mixing(s, "group"),
                    matrix(c(30, 1, 5, 7, 10, 1, 9, 2, 23), 3, byrow = TRUE,

@@ -99,9 +99,9 @@ reference:
     example.
   contents:
   - net_frame
-  - summary.netframe
+  - summary.net_frame
   - net_simplify
-  - net_from
+  - as_net_frame
   - net_read
   - net_example
 - title: Working with network data
@@ -139,7 +139,7 @@ reference:
   - net_edge_betweenness
   - net_information
   - net_bridging
-- title: The network as a whole
+- title: Whole-network structure
   desc: >-
     Density, components, reciprocity, transitivity, distances, cut
     structure, centralization, the triad census, compactness, small worlds,
@@ -265,7 +265,7 @@ reference:
     Layouts computed in the engine, a default plot that needs no arguments,
     and plots of measures, matrices, distributions, and test results.
   contents:
-  - plot.netframe
+  - plot.net_frame
   - net_layout
   - net_plot_centrality
   - net_plot_partition

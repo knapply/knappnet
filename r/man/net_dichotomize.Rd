@@ -20,7 +20,7 @@ net_dichotomize(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="), colu
 \item{column}{The numeric edge column to test, by name or position;
 \code{NULL} uses the network's weight column.}
 }
-\value{An unweighted netframe.}
+\value{An unweighted net_frame.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

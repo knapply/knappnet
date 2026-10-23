@@ -39,7 +39,7 @@ extern SEXP C_reachability(SEXP, SEXP, SEXP);
 extern SEXP C_reciprocity(SEXP, SEXP);
 extern SEXP C_transitivity(SEXP, SEXP, SEXP);
 
-/* topography.c: Topography and centrality. */
+/* topography.c: Whole-network structure and centrality. */
 extern SEXP C_centralization(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_closeness(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_components(SEXP, SEXP);

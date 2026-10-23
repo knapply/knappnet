@@ -62,10 +62,10 @@ above and below the mean coreness); \code{"network"} draws the network with
 core nodes (or coreness) coloured. \code{NULL} chooses \code{"matrix"} for
 the discrete and \code{"network"} for the continuous model.}
 \item{layout}{For \code{plot(what = "network")}: node positions, as in
-\code{\link{plot.netframe}}.}
+\code{\link{plot.net_frame}}.}
 \item{...}{For \code{plot}: further arguments passed to
 \code{\link[graphics]{title}} (and, with \code{what = "network"}, to
-\code{\link{plot.netframe}}), such as \code{main}. Ignored by \code{print}.}
+\code{\link{plot.net_frame}}), such as \code{main}. Ignored by \code{print}.}
 }
 \details{
 Pairs of distinct nodes enter the fit: each unordered pair once in
@@ -136,7 +136,7 @@ model \code{links} and \code{core}, a logical vector aligned with the rows of
 (non-negative, unit Euclidean norm), \code{residual} (the MINRES residual
 sum of squares, \code{NaN} for the correlation fit), and \code{iterations};
 \code{correlation}, the correlation between the data and the fitted
-pattern; and \code{network}, the netframe fitted (used by \code{plot}).
+pattern; and \code{network}, the net_frame fitted (used by \code{plot}).
 \code{plot} returns \code{x} invisibly.
 }
 \references{

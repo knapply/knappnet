@@ -1,4 +1,4 @@
-# plot.netframe() (R/plot-netframe.R): it must draw without error or
+# plot.net_frame() (R/plot-net-frame.R): it must draw without error or
 # warning for every kind of input, return the layout it used, restore
 # graphical parameters, and map columns as documented.
 

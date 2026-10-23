@@ -1,4 +1,4 @@
-# The print card of a netframe: a labelled card filled from the engine's
+# The print card of a net_frame: a labelled card filled from the engine's
 # summary (size, direction, modes, weights, relations, time, space,
 # loops and parallel edges, components, isolates, density), followed by
 # previews of the node and edge tables, side by side when the console is
@@ -7,28 +7,28 @@
 # The subclasses add their own lines through print_card().
 
 # See man/net_frame.Rd.
-print.netframe <- function(x, ..., n = 6L, width = getOption("width")) {
+print.net_frame <- function(x, ..., n = 6L, width = getOption("width")) {
   print_card(x, character(), n, width)
 }
 
 # See man/net_temporal.Rd.
-print.temporal_netframe <- function(x, ..., n = 6L, width = getOption("width")) {
+print.temporal_net_frame <- function(x, ..., n = 6L, width = getOption("width")) {
   print_card(x, temporal_card_lines(x), n, width)
 }
 
 # See man/net_spatial.Rd.
-print.spatial_netframe <- function(x, ..., n = 6L, width = getOption("width")) {
+print.spatial_net_frame <- function(x, ..., n = 6L, width = getOption("width")) {
   print_card(x, spatial_card_lines(x), n, width)
 }
 
 # See man/net_temporal.Rd.
-print.spatiotemporal_netframe <- function(x, ..., n = 6L, width = getOption("width")) {
+print.spatiotemporal_net_frame <- function(x, ..., n = 6L, width = getOption("width")) {
   print_card(x, c(temporal_card_lines(x), spatial_card_lines(x)), n, width)
 }
 
 # Prints the card, the subclass lines, and the table previews.
 print_card <- function(x, extra, n, width) {
-  check_netframe(x)
+  check_net_frame(x)
   n <- check_count(n, "n")
   width <- check_count(width, "width", min = 20L)
   lines <- c(card_lines(x), extra, "", preview_lines(x, n, width - 2L))
@@ -40,7 +40,7 @@ print_card <- function(x, extra, n, width) {
 
 # The lines of the card, without the "# " prefix.
 card_lines <- function(x) {
-  s <- netframe_summary(x)
+  s <- frame_summary_cached(x)
   pair <- function(left, right) {
     pad <- max(28L, nchar(left) + 4L)
     paste0(format(left, width = pad), right)

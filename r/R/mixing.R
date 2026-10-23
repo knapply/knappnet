@@ -3,7 +3,7 @@
 
 # Mixing matrices (man/net_mixing.Rd).
 net_mixing <- function(x, dim1, dim2 = NULL, direction = c("all", "out", "in")) {
-  check_netframe(x)
+  check_net_frame(x)
   direction <- match.arg(direction)
   d1 <- node_categories(x, dim1, "dim1", missing_ok = TRUE)
   same <- is.null(dim2)
@@ -31,7 +31,7 @@ net_mixing <- function(x, dim1, dim2 = NULL, direction = c("all", "out", "in")) 
 # Assortativity coefficients (man/net_assortativity.Rd).
 net_assortativity <- function(x, values, values_in = NULL, directed = TRUE, normalized = TRUE,
                           convention = c("igraph", "networkx", "homophily")) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   v <- node_values(x, values, "values")
   vin <- if (is.null(values_in)) NULL else node_values(x, values_in, "values_in")
@@ -50,7 +50,7 @@ net_assortativity <- function(x, values, values_in = NULL, directed = TRUE, norm
 # See man/net_assortativity.Rd.
 net_assort_nominal <- function(x, types, directed = TRUE, normalized = TRUE,
                                   convention = c("igraph", "networkx", "homophily")) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   t <- node_categories(x, types, "types", missing_ok = FALSE)
   directed <- check_flag(directed, "directed")
@@ -65,7 +65,7 @@ net_assort_nominal <- function(x, types, directed = TRUE, normalized = TRUE,
 # See man/net_assortativity.Rd.
 net_assort_degree <- function(x, directed = TRUE, weighted = FALSE, normalized = TRUE,
                                  convention = c("igraph", "networkx", "homophily")) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   directed <- check_flag(directed, "directed")
   weighted <- check_flag(weighted, "weighted")
@@ -83,7 +83,7 @@ assort_loops <- function(convention) if (convention == "networkx") 1L else 0L
 net_ei_index <- function(x, groups, scope = c("global", "group", "node"),
                      direction = c("all", "out", "in"),
                      convention = c("krackhardt", "homophily")) {
-  check_netframe(x)
+  check_net_frame(x)
   scope <- match.arg(scope)
   direction <- match.arg(direction)
   convention <- match.arg(convention)
@@ -103,7 +103,7 @@ net_ei_index <- function(x, groups, scope = c("global", "group", "node"),
 
 # Within-group tie shares (man/net_homophily.Rd).
 net_homophily <- function(x, groups, direction = c("all", "out", "in")) {
-  check_netframe(x)
+  check_net_frame(x)
   direction <- match.arg(direction)
   g <- node_categories(x, groups, "groups", missing_ok = FALSE)
   k <- length(g$levels)

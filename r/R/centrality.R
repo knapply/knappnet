@@ -3,14 +3,14 @@
 # edge betweenness, and information and bridging centrality. Spectral
 # measures (PageRank, Katz, HITS, Bonacich power) live in spectral.R, group
 # centrality and key players in resilience.R, and two-mode centrality in
-# twomode.R. Each function follows the same shape: check_netframe(), its own
+# twomode.R. Each function follows the same shape: check_net_frame(), its own
 # argument checks, resolve_threads(), engine_graph() or
 # engine_graph_simple() for the convention, then one engine_call().
 
 # Degree and strength (man/net_degree.Rd).
 net_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
                    convention = c("igraph", "networkx", "sna", "ucinet"), relation = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
   loops <- check_flag(loops, "loops")
@@ -33,7 +33,7 @@ net_strength <- function(x, mode = c("all", "out", "in"), loops = TRUE, relation
 net_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
                         weights_as = NULL,
                         convention = c("igraph", "networkx", "sna", "ucinet")) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   check_flag_or_null(weighted, "weighted")
   normalized <- check_flag(normalized, "normalized")
@@ -74,7 +74,7 @@ net_harmonic <- function(x, mode = NULL, weighted = NULL, normalized = NULL,
 
 closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, weights_as,
                              convention, fn) {
-  check_netframe(x)
+  check_net_frame(x)
   if (is.null(mode)) mode <- if (convention == "networkx") "in" else "out"
   mode <- check_choice(mode, c("out", "in", "all"), "mode")
   check_flag_or_null(weighted, "weighted")
@@ -99,7 +99,7 @@ closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, w
 net_eigen <- function(x, mode = NULL, weighted = NULL, scale = NULL,
                                    convention = c("igraph", "networkx", "sna", "ucinet"),
                                    tol = 1e-12, max_iter = 10000L, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   if (is.null(mode)) {
     mode <- switch(convention, igraph = "in", networkx = "in", sna = "out", ucinet = "all")
@@ -145,7 +145,7 @@ net_eigen <- function(x, mode = NULL, weighted = NULL, scale = NULL,
 # Reach centrality (man/net_reach.Rd).
 net_reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
                   normalized = FALSE, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   k <- check_number(k, "k", lower = 0, finite = FALSE)
   normalized <- check_flag(normalized, "normalized")
@@ -159,7 +159,7 @@ net_reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, w
 # See man/net_reach.Rd.
 net_dw_reach <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                                     weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
@@ -171,7 +171,7 @@ net_dw_reach <- function(x, mode = c("out", "in", "all"), weighted = NULL,
 
 # Proximity prestige (man/net_prox_prestige.Rd).
 net_prox_prestige <- function(x, weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
   ptr <- engine_graph(x)
@@ -183,7 +183,7 @@ net_prox_prestige <- function(x, weighted = NULL, weights_as = NULL, threads = 0
 # Edge betweenness (man/net_edge_betweenness.Rd).
 net_edge_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
                              weights_as = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   normalized <- check_flag(normalized, "normalized")
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
@@ -194,7 +194,7 @@ net_edge_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads
 
 # Information centrality (man/net_information.Rd).
 net_information <- function(x, weighted = NULL, convention = c("sna", "networkx")) {
-  check_netframe(x)
+  check_net_frame(x)
   convention <- match.arg(convention)
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
@@ -213,7 +213,7 @@ net_information <- function(x, weighted = NULL, convention = c("sna", "networkx"
 
 # Bridging centrality (man/net_bridging.Rd).
 net_bridging <- function(x, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   b <- engine_call("net_bridging",
@@ -223,7 +223,7 @@ net_bridging <- function(x, threads = 0L) {
 
 # See man/net_bridging.Rd.
 net_bridging_coef <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   ptr <- engine_graph(x)
   engine_call("net_bridging_coef", .Call(C_bridging_coefficient, ptr))
 }

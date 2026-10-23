@@ -12,7 +12,7 @@ net_rolling(x, fun, width = NULL, step = width, ..., breaks = NULL,
 }
 \arguments{
 \item{x}{A temporal network (\code{\link{net_temporal}}).}
-\item{fun}{A function, or the name of one, taking a netframe as its first
+\item{fun}{A function, or the name of one, taking a net_frame as its first
 argument.}
 \item{width}{Window length: a number in the unit of the times (seconds for
 date-times, days for dates) or a \code{difftime}.}

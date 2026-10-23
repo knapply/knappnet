@@ -73,7 +73,7 @@ export(net_filter_nodes)
 export(net_flow_betweenness)
 export(net_fragmentation)
 export(net_frame)
-export(net_from)
+export(as_net_frame)
 export(net_from_lines)
 export(net_from_polygons)
 export(net_girvan_newman)
@@ -189,16 +189,16 @@ export(net_write)
 
 # ---- S3 methods for classes defined in this package -----------------------
 
-# The netframe class and its subclasses (R/netframe.R, R/print-netframe.R,
-# R/descriptive.R, R/plot-netframe.R, R/convert.R)
-S3method(print, netframe)
-S3method(print, temporal_netframe)
-S3method(print, spatial_netframe)
-S3method(print, spatiotemporal_netframe)
-S3method(summary, netframe)
-S3method(plot, netframe)
-S3method(as.matrix, netframe)
-S3method(print, summary.netframe)
+# The net_frame class and its subclasses (R/net-frame.R, R/print-net-frame.R,
+# R/descriptive.R, R/plot-net-frame.R, R/convert.R)
+S3method(print, net_frame)
+S3method(print, temporal_net_frame)
+S3method(print, spatial_net_frame)
+S3method(print, spatiotemporal_net_frame)
+S3method(summary, net_frame)
+S3method(plot, net_frame)
+S3method(as.matrix, net_frame)
+S3method(print, summary.net_frame)
 
 # QAP tests (R/qap.R)
 S3method(print, qap_cor)
@@ -224,7 +224,7 @@ S3method(plot, classical_mds)
 S3method(print, blockmodel)
 S3method(plot, blockmodel)
 
-# Topography (R/topography.R)
+# Whole-network structure (R/structure.R)
 S3method(print, core_periphery)
 S3method(plot, core_periphery)
 S3method(print, small_world)
@@ -236,24 +236,24 @@ S3method(plot, lambda_sets)
 
 
 
-# ---- Methods of net_from() for other classes ---------------------------
+# ---- Methods of as_net_frame() for other classes ---------------------------
 
-S3method(net_from, default)
-S3method(net_from, netframe)
-S3method(net_from, data.frame)
-S3method(net_from, matrix)
-S3method(net_from, Matrix)
-S3method(net_from, igraph)
-S3method(net_from, network)
-S3method(net_from, sf)
-S3method(net_from, sfnetwork)
+S3method(as_net_frame, default)
+S3method(as_net_frame, net_frame)
+S3method(as_net_frame, data.frame)
+S3method(as_net_frame, matrix)
+S3method(as_net_frame, Matrix)
+S3method(as_net_frame, igraph)
+S3method(as_net_frame, network)
+S3method(as_net_frame, sf)
+S3method(as_net_frame, sfnetwork)
 
 
 # ---- Methods for generics of suggested packages ---------------------------
 # Registered when that package is loaded (delayed S3 registration, R >= 3.6).
 
-S3method(igraph::as.igraph, netframe)
-S3method(network::as.network, netframe)
-S3method(tidygraph::as_tbl_graph, netframe)
-S3method(sf::st_as_sf, netframe)
-S3method(sfnetworks::as_sfnetwork, netframe)
+S3method(igraph::as.igraph, net_frame)
+S3method(network::as.network, net_frame)
+S3method(tidygraph::as_tbl_graph, net_frame)
+S3method(sf::st_as_sf, net_frame)
+S3method(sfnetworks::as_sfnetwork, net_frame)

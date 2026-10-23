@@ -80,7 +80,7 @@ pick_weight <- function(edges, weight) {
 
 # See man/net_read.Rd.
 net_write <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   check_path(file, "file")
   check_string(format, "format", null_ok = TRUE)
   check_string(weight, "weight", null_ok = TRUE)

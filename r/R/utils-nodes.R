@@ -2,7 +2,7 @@
 # attributes given as a column name or a vector, and subsets of a network
 # that keep its roles and attributes.
 
-# Node identifiers of a netframe as character.
+# Node identifiers of a net_frame as character.
 node_ids <- function(x) as.character(x$nodes[[x$roles$id]])
 
 # Positions (1-based) in `x$nodes` of node identifiers given as values of
@@ -107,17 +107,17 @@ node_values <- function(x, values, name) {
 
 # ---- Derived networks -------------------------------------------------------------
 
-# A netframe with the same roles, declarations, and network attributes as
+# A net_frame with the same roles, declarations, and network attributes as
 # `x` but new tables (and possibly no weight role or another direction);
-# see rebuild_netframe() in netframe.R.
+# see rebuild_net_frame() in net_frame.R.
 with_tables <- function(x, edges, nodes, directed = x$directed, weight = x$roles$weight) {
-  rebuild_netframe(x, edges, nodes, directed = directed, weight = weight)
+  rebuild_net_frame(x, edges, nodes, directed = directed, weight = weight)
 }
 
 # The subgraph induced by the nodes at 1-based positions `keep` (in
 # ascending order): those nodes and every edge between two of them, with
 # all columns and roles.
-induced_netframe <- function(x, keep) {
+induced_net_frame <- function(x, keep) {
   inside <- logical(nrow(x$nodes))
   inside[keep] <- TRUE
   e <- inside[x$index$src + 1L] & inside[x$index$tgt + 1L]

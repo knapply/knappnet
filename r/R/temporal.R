@@ -8,10 +8,10 @@ net_temporal <- function(edges, nodes = NULL, start = "time", end = NULL, durati
                          source = "source", target = "target", id = "id", weight = NULL,
                          weight_type = NULL, quiet = FALSE, graph = list()) {
   quiet <- check_flag(quiet, "quiet")
-  if (inherits(edges, "netframe")) {
-    check_netframe(edges)
+  if (inherits(edges, "net_frame")) {
+    check_net_frame(edges)
     if (!is.null(nodes)) {
-      stop("`nodes` must be NULL when `edges` is a netframe; it already has nodes.",
+      stop("`nodes` must be NULL when `edges` is a net_frame; it already has nodes.",
            call. = FALSE)
     }
     x <- edges
@@ -35,7 +35,7 @@ net_temporal <- function(edges, nodes = NULL, start = "time", end = NULL, durati
                   weight = resolve_optional(edges, weight, "weight", "edges"),
                   weight_type = check_weight_type(weight, weight_type))
     if (!is.null(nodes)) roles$id <- resolve_column(nodes, id, "id", "nodes")
-    x <- new_netframe(edges, nodes, check_flag(directed, "directed"), roles, list(),
+    x <- new_net_frame(edges, nodes, check_flag(directed, "directed"), roles, list(),
                       check_graph(graph))
   }
   if (!is.null(end) && !is.null(duration)) {
@@ -98,19 +98,19 @@ net_temporal <- function(edges, nodes = NULL, start = "time", end = NULL, durati
     roles$tz <- if (is.null(z)) "" else z[[1L]]
   }
   x$roles <- roles
-  out <- new_netframe(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
-  build_netframe(out, quiet, "net_temporal")
+  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
+  build_net_frame(out, quiet, "net_temporal")
 }
 
 # See man/net_temporal.Rd.
-net_is_temporal <- function(x) inherits(x, "temporal_netframe")
+net_is_temporal <- function(x) inherits(x, "temporal_net_frame")
 
 # Panel waves as a temporal network (man/net_panel.Rd).
 net_panel <- function(networks, wave = "wave", node_start = "wave_first",
                       node_end = "wave_last", quiet = FALSE) {
   if (!is.list(networks) || !length(networks) ||
-      !all(vapply(networks, inherits, TRUE, "netframe"))) {
-    stop("`networks` must be a non-empty list of netframes, one per wave.", call. = FALSE)
+      !all(vapply(networks, inherits, TRUE, "net_frame"))) {
+    stop("`networks` must be a non-empty list of net_frames, one per wave.", call. = FALSE)
   }
   wave <- check_string(wave, "wave")
   node_start <- check_string(node_start, "node_start")
@@ -118,7 +118,7 @@ net_panel <- function(networks, wave = "wave", node_start = "wave_first",
   first <- networks[[1L]]
   for (k in seq_along(networks)) {
     g <- networks[[k]]
-    check_netframe(g)
+    check_net_frame(g)
     if (!identical(g$directed, first$directed)) {
       stop(sprintf("Wave %d is %s but wave 1 is %s; every wave must have the same direction.",
                    k, if (g$directed) "directed" else "undirected",
@@ -199,7 +199,7 @@ net_waves <- function(x, nodes = c("present", "all")) {
     nd <- x$nodes[node_w(k), , drop = FALSE]
     rownames(edges) <- NULL
     rownames(nd) <- NULL
-    rebuild_netframe(x, edges, nd, wave = NULL, node_start = NULL, node_end = NULL,
+    rebuild_net_frame(x, edges, nd, wave = NULL, node_start = NULL, node_end = NULL,
                      fn = "net_waves")
   })
   names(out) <- as.character(waves)
@@ -214,7 +214,7 @@ net_at <- function(x, time, nodes = c("all", "present", "active")) {
   ptr <- engine_temporal(x)
   idx <- engine_call("net_at", .Call(C_temporal_active_at, ptr, t)) + 1
   present <- if (nodes == "present") node_present(x, t, t) else NULL
-  slice_netframe(x, idx, nodes, present)
+  slice_net_frame(x, idx, nodes, present)
 }
 
 # See man/net_at.Rd.
@@ -227,7 +227,7 @@ net_window <- function(x, from, to, nodes = c("all", "present", "active")) {
   ptr <- engine_temporal(x)
   w <- engine_call("net_window", .Call(C_temporal_windows, ptr, a, b))
   present <- if (nodes == "present") node_present(x, a, b) else NULL
-  slice_netframe(x, w[[2L]] + 1, nodes, present)
+  slice_net_frame(x, w[[2L]] + 1, nodes, present)
 }
 
 # Snapshots of a temporal network (man/net_snapshots.Rd).
@@ -243,7 +243,7 @@ net_snapshots <- function(x, width = NULL, step = width, breaks = NULL, from = N
   out <- lapply(seq_along(w$from), function(k) {
     keep <- if (offsets[k + 1L] > offsets[k]) idx[(offsets[k] + 1):offsets[k + 1L]] else numeric()
     present <- if (nodes == "present") node_present(x, w$from[k], w$to[k]) else NULL
-    slice_netframe(x, keep, nodes, present)
+    slice_net_frame(x, keep, nodes, present)
   })
   attr(out, "windows") <- data.frame(start = from_seconds(w$from, x),
                                      end = from_seconds(w$to, x))
@@ -415,9 +415,9 @@ net_inter_event <- function(x, by = c("node", "pair"), mode = c("all", "out", "i
 # ---- Internal helpers ----------------------------------------------------------
 
 check_temporal <- function(x) {
-  check_netframe(x)
-  if (!inherits(x, "temporal_netframe")) {
-    stop(paste0("`x` must be a temporal network (class `temporal_netframe`), with times or ",
+  check_net_frame(x)
+  if (!inherits(x, "temporal_net_frame")) {
+    stop(paste0("`x` must be a temporal network (class `temporal_net_frame`), with times or ",
                 "waves on its edges; create one with net_temporal() or net_panel()."),
          call. = FALSE)
   }
@@ -656,8 +656,8 @@ window_series <- function(x, width, step, breaks, from, to) {
 }
 
 # The contacts at 1-based positions `keep` (ascending), with the nodes
-# chosen by `nodes`, as a temporal netframe with every column and role.
-slice_netframe <- function(x, keep, nodes, present) {
+# chosen by `nodes`, as a temporal net_frame with every column and role.
+slice_net_frame <- function(x, keep, nodes, present) {
   keep <- as.integer(keep)
   node_keep <- switch(nodes,
     all = rep(TRUE, nrow(x$nodes)),
@@ -670,7 +670,7 @@ slice_netframe <- function(x, keep, nodes, present) {
   edges_df <- x$edges[keep, , drop = FALSE]
   rownames(nodes_df) <- NULL
   rownames(edges_df) <- NULL
-  rebuild_netframe(x, edges_df, nodes_df)
+  rebuild_net_frame(x, edges_df, nodes_df)
 }
 
 # Node or pair identifiers for rows of event statistics (1-based groups).

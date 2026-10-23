@@ -111,7 +111,7 @@ random_common <- function(reps, seed, threads) {
 }
 
 # Turns the engine's list of list(from, to) (1-based node positions) into
-# netframes on nodes 1..n.
+# net_frames on nodes 1..n.
 random_result <- function(lists, n, directed) {
   nodes <- data.frame(id = seq_len(n))
   nets <- lapply(lists, function(e) {

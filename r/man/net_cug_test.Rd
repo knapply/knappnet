@@ -28,7 +28,7 @@ net_cug_test(x, statistic, conditioning = c("size", "edges", "dyad.census"),
 \arguments{
 \item{x}{A \code{\link{net_frame}} (for \code{print} and \code{plot}, a
 \code{cug_test} object).}
-\item{statistic}{A function of a netframe returning one number.}
+\item{statistic}{A function of a net_frame returning one number.}
 \item{conditioning}{What the random networks share with the observed one:
 \code{"size"}, \code{"edges"}, or \code{"dyad.census"}.}
 \item{reps}{Number of random networks.}
@@ -47,7 +47,7 @@ number; \code{0} uses all available cores, or 2 during \verb{R CMD check} (see
 \code{\link[graphics]{hist}}.}
 }
 \details{
-\code{statistic} is any function that takes a netframe (and \code{...}) and
+\code{statistic} is any function that takes a net_frame (and \code{...}) and
 returns a single number, such as \code{\link{net_transitivity}},
 \code{\link{net_centralization}}, or \code{function(g) mean(net_degree(g))}. It is
 applied to the observed network as given and to \code{reps} random networks

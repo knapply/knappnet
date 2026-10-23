@@ -15,7 +15,7 @@ net_plot_ego(x, node, order = 1L, mode = c("all", "out", "in"), ...)
 \item{order}{Alters are the nodes within this many steps of ego.}
 \item{mode}{For directed networks, \code{"all"}, \code{"out"}, or
 \code{"in"}; see \code{\link{net_ego}}.}
-\item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
+\item{...}{Further arguments passed to \code{\link{plot.net_frame}}, such as
 \code{layout}, \code{seed}, or \code{main}.}
 }
 \value{The ego network (a \code{\link{net_frame}}), invisibly.}

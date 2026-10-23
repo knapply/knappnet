@@ -20,7 +20,7 @@ difference.
   path-based measures). The fastest exact algorithm is chosen
   automatically: breadth-first search for binary networks, Dial's bucket
   queue for small whole-number lengths, and Dijkstra's algorithm otherwise.
-* Conversions to and from igraph (`net_to_igraph()`, `net_from()`),
+* Conversions to and from igraph (`net_to_igraph()`, `as_net_frame()`),
   tidygraph (`net_to_tbl_graph()`), statnet's network (`net_to_network()`), and
   dense or sparse adjacency matrices (`as.matrix()`), keeping node, edge,
   and network attributes.
@@ -51,7 +51,7 @@ difference.
 
 ## Plotting
 
-* `plot()` draws a netframe with a stress layout and appearance mapped from
+* `plot()` draws a net_frame with a stress layout and appearance mapped from
   node and edge columns; spatial networks are drawn at their locations.
   Every plot uses one colour scheme: Okabe and Ito's colour-blind-safe
   palette for categories (HCL "Dark 3" beyond eight), viridis for scores,
@@ -93,4 +93,4 @@ difference.
   Missing or non-finite weights are kept in the data but stop every
   measure, and zero or negative weights are checked by each measure that
   uses weights; errors name the row of the edge table. See "Missing values
-  and invalid input" in `?netframe`.
+  and invalid input" in `?net_frame`.

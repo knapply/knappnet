@@ -281,7 +281,7 @@ def r_function(area: str, name: str) -> str:
     return f'''# {title} (man/net_{name}.Rd). Conventions and references are documented
 # there; tools/check_r_docs.py checks that the usage matches this signature.
 net_{name} <- function(x, threads = 0L) {{
-  check_netframe(x)
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   engine_call("net_{name}", .Call(C_{name}, engine_graph(x), threads))
 }}
@@ -300,7 +300,7 @@ TODO: one sentence on what the measure is.
 net_{name}(x, threads = 0L)
 }}
 \\arguments{{
-\\item{{x}}{{A \\code{{\\link[=net_frame]{{netframe}}}}.}}
+\\item{{x}}{{A \\code{{\\link[=net_frame]{{net_frame}}}}.}}
 \\item{{threads}}{{Number of threads; \\code{{0}} uses all available cores.}}
 }}
 \\details{{
@@ -341,13 +341,13 @@ def r_tests_snippet(area: str, name: str) -> str:
 test_that("net_{name} rejects bad input", {{
   g <- net_frame(data.frame(source = 1, target = 2))
   expect_error(net_{name}(g, threads = -1L), "threads")
-  expect_error(net_{name}(list()), "netframe")
+  expect_error(net_{name}(list()), "net_frame")
 }})
 
 test_that("net_{name} agrees with igraph", {{
   skip_if_not_installed("igraph")
   # TODO: the igraph call that computes the same thing, if one exists.
-  g <- net_from(igraph::make_graph("Zachary"))
+  g <- as_net_frame(igraph::make_graph("Zachary"))
   expect_length(net_{name}(g, threads = 2L), 34)
 }})
 '''

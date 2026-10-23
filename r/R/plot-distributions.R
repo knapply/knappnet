@@ -1,6 +1,6 @@
 # Plots of distributions and rankings: degrees, component sizes, the triad
 # census against its expectation, and ranked scores. Plots of a network's
-# nodes and edges are in plot-netframe.R and plot-network.R, matrices in
+# nodes and edges are in plot-net-frame.R and plot-network.R, matrices in
 # plot-matrix.R, and plot methods for result classes next to their class.
 
 # Plot the degree distribution (man/net_plot_degree.Rd).
@@ -8,7 +8,7 @@ net_plot_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE,
                                      type = c("histogram", "ccdf"), log = FALSE,
                                      convention = c("igraph", "networkx", "sna", "ucinet"),
                                      ...) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   type <- match.arg(type)
   convention <- match.arg(convention)
@@ -63,7 +63,7 @@ net_plot_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE,
 
 # Plot the distribution of component sizes (man/net_plot_components.Rd).
 net_plot_components <- function(x, mode = c("weak", "strong"), log = FALSE, ...) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   log <- check_flag(log, "log")
   comp <- net_components(x, mode)
@@ -99,7 +99,7 @@ net_plot_components <- function(x, mode = c("weak", "strong"), log = FALSE, ...)
 
 # Plot the triad census (man/net_plot_triads.Rd).
 net_plot_triads <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...) {
-  check_netframe(x)
+  check_net_frame(x)
   expected <- check_flag(expected, "expected")
   log <- check_flag(log, "log")
   observed <- net_triad_census(x, threads = threads)
@@ -187,8 +187,8 @@ net_plot_scores <- function(scores, labels = NULL, top = 25, decreasing = TRUE, 
   decreasing <- check_flag(decreasing, "decreasing")
   top <- check_number(top, "top", lower = 1)
   k <- length(scores)
-  lab <- if (inherits(labels, "netframe")) {
-    check_netframe(labels)
+  lab <- if (inherits(labels, "net_frame")) {
+    check_net_frame(labels)
     node_ids(labels)
   } else if (is.null(labels)) {
     if (is.null(names(scores))) as.character(seq_len(k)) else names(scores)

@@ -29,7 +29,7 @@ file of nodes.}
 and of the identifier column of the node file, as in
 \code{\link{net_frame}}. Other formats name these columns themselves:
 \code{source}, \code{target}, and \code{id}.}
-\item{x}{A \code{\link[=net_frame]{netframe}}.}
+\item{x}{A \code{\link[=net_frame]{net_frame}}.}
 \item{weight}{When reading, the edge column holding weights; by default a
 numeric column called \code{weight} is used if there is one, and
 \code{NA} ignores it. When writing, the edge column written as the link
@@ -78,7 +78,7 @@ without \code{format} produces GraphML; use \code{format = "dynetml"} (or
 \code{"ora"}) to write DyNetML.
 }
 \value{
-\code{net_read()} returns a \code{\link[=net_frame]{netframe}}.
+\code{net_read()} returns a \code{\link[=net_frame]{net_frame}}.
 \code{net_write()} returns \code{file}, invisibly.
 }
 \section{GeoPackage}{

@@ -30,7 +30,7 @@ net_qap_cor(y, x, reps = 1000, seed = NULL, diag = FALSE,
 for undirected or symmetric data.}
 \item{exact}{Whether to evaluate all \eqn{n!} permutations instead of
 \code{reps} random ones (at most 10 nodes).}
-\item{attr}{For netframe inputs, the edge column that fills the matrix.
+\item{attr}{For net_frame inputs, the edge column that fills the matrix.
 \code{NULL} uses the network's weight column if it has one, and counts
 edges otherwise.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
@@ -42,9 +42,9 @@ cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \eqn{(i, j)}, \eqn{i \ne j}{i != j}, is a dyad. With \code{mode = "graph"},
 each unordered pair is used once, read from the lower triangle; the upper
 triangle is ignored. The diagonal is used only with \code{diag = TRUE}.
-These are the conventions of \code{sna::gcor()}. A netframe becomes its
-adjacency matrix (see \code{\link{as.matrix.netframe}}), so absent ties are
-0; an undirected netframe gives a symmetric matrix, for which
+These are the conventions of \code{sna::gcor()}. A net_frame becomes its
+adjacency matrix (see \code{\link{as.matrix.net_frame}}), so absent ties are
+0; an undirected net_frame gives a symmetric matrix, for which
 \code{mode = "graph"} is appropriate. When every matrix has row and column
 names, they are aligned by name.
 

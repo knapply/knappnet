@@ -3,7 +3,7 @@
 # Ego networks (man/net_ego.Rd).
 net_ego <- function(x, node, order = 1L, mode = c("all", "out", "in"),
                         include_ego = TRUE) {
-  check_netframe(x)
+  check_net_frame(x)
   if (length(node) != 1L) {
     stop("`node` must be a single node identifier; use net_egos() for several.",
          call. = FALSE)
@@ -15,7 +15,7 @@ net_ego <- function(x, node, order = 1L, mode = c("all", "out", "in"),
 # See man/net_ego.Rd.
 net_egos <- function(x, nodes = NULL, order = 1L, mode = c("all", "out", "in"),
                          include_ego = TRUE, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   order <- check_count(order, "order")
   include_ego <- check_flag(include_ego, "include_ego")
@@ -25,7 +25,7 @@ net_egos <- function(x, nodes = NULL, order = 1L, mode = c("all", "out", "in"),
   members <- engine_call("net_egos",
                          .Call(C_ego_members, ptr, as.integer(egos - 1L), order,
                                mode_code(mode), if (include_ego) 0L else 1L, threads))
-  out <- lapply(members, function(keep) induced_netframe(x, keep))
+  out <- lapply(members, function(keep) induced_net_frame(x, keep))
   names(out) <- node_ids(x)[egos]
   out
 }
@@ -33,7 +33,7 @@ net_egos <- function(x, nodes = NULL, order = 1L, mode = c("all", "out", "in"),
 # Egocentric measures (man/net_ego_summary.Rd).
 net_ego_summary <- function(x, order = 1L, mode = c("all", "out", "in"), betweenness = TRUE,
                         threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   betweenness <- check_flag(betweenness, "betweenness")
   res <- ego_measures(x, order, match.arg(mode), betweenness, threads, "net_ego_summary")
   out <- data.frame(node = x$nodes[[x$roles$id]], size = res[[1]], ties = res[[2]],
@@ -46,7 +46,7 @@ net_ego_summary <- function(x, order = 1L, mode = c("all", "out", "in"), between
 # See man/net_ego_summary.Rd.
 net_ego_size <- function(x, order = 1L, mode = c("all", "out", "in"), include_ego = TRUE,
                      threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   mode <- match.arg(mode)
   order <- check_count(order, "order")
   include_ego <- check_flag(include_ego, "include_ego")
@@ -58,13 +58,13 @@ net_ego_size <- function(x, order = 1L, mode = c("all", "out", "in"), include_eg
 
 # See man/net_ego_summary.Rd.
 net_ego_density <- function(x, order = 1L, mode = c("all", "out", "in"), threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   ego_measures(x, order, match.arg(mode), FALSE, threads, "net_ego_density")[[4]]
 }
 
 # See man/net_ego_summary.Rd.
 net_ego_betweenness <- function(x, order = 1L, mode = c("all", "out", "in"), threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   ego_measures(x, order, match.arg(mode), TRUE, threads, "net_ego_betweenness")[[6]]
 }
 

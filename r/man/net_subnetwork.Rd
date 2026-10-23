@@ -55,7 +55,7 @@ trees down to their cycles; otherwise only the nodes that are pendants in
 the original network are dropped. When several components are largest, the
 one containing the earliest node in \code{x$nodes} is kept.
 }
-\value{A netframe.}
+\value{A net_frame.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

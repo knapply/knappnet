@@ -2,7 +2,7 @@
 # value in the type the engine expects, or stops with a message that names
 # the argument in backticks and says what would be accepted (call. = FALSE,
 # since the caller's name adds nothing for the user). See "Missing values
-# and invalid input" in ?netframe for the rules these implement.
+# and invalid input" in ?net_frame for the rules these implement.
 
 # A single TRUE or FALSE.
 check_flag <- function(value, name) {

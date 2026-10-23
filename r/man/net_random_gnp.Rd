@@ -114,8 +114,8 @@ platform and thread count, and the first replicate of a batch of
 (\code{validation/cug_check.py}).
 }
 \value{
-A netframe with nodes \code{1, 2, ..., n} (integer identifiers in column
-\code{id}) when \code{reps = 1}, otherwise a list of \code{reps} netframes.
+A net_frame with nodes \code{1, 2, ..., n} (integer identifiers in column
+\code{id}) when \code{reps = 1}, otherwise a list of \code{reps} net_frames.
 }
 \references{
 Gilbert, E. N. (1959). Random graphs. \emph{Annals of Mathematical

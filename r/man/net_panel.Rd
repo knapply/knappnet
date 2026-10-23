@@ -18,7 +18,7 @@ net_panel(networks, wave = "wave", node_start = "wave_first",
 net_waves(x, nodes = c("present", "all"))
 }
 \arguments{
-\item{networks}{A list of \code{\link[=net_frame]{netframe}}s, one per
+\item{networks}{A list of \code{\link[=net_frame]{net_frame}}s, one per
 wave, in order, all with the same direction and the same identifier and
 endpoint column names and the same edge columns. Names that are whole
 numbers (\code{"1"}, \code{"2"}, ...) are used as the wave numbers;
@@ -29,7 +29,7 @@ each node's first wave and the end of its last wave (its presence spell).
 They are added only when the composition changes, that is when some node
 is absent from some wave.}
 \item{quiet}{Whether to suppress the advisory notes of validation.}
-\item{x}{A temporal netframe with a wave column, as built by
+\item{x}{A temporal net_frame with a wave column, as built by
 \code{net_panel()} or \code{net_temporal(wave = )}.}
 \item{nodes}{Which nodes each wave gets back: those present in that wave
 according to the node spells (the default), or all of them.}
@@ -50,9 +50,9 @@ Wave boundaries follow the half-open convention of \code{\link{net_temporal}}:
 remains the shape for exchange with RSiena and ORA.
 }
 \value{
-\code{net_panel()} returns a netframe of class \code{temporal_netframe}
+\code{net_panel()} returns a net_frame of class \code{temporal_net_frame}
 with the wave role (and node spells when the composition changes).
-\code{net_waves()} returns a named list of static netframes, one per wave
+\code{net_waves()} returns a named list of static net_frames, one per wave
 in increasing order, each keeping every column and role but the wave and
 the node spells.
 }

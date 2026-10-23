@@ -196,7 +196,7 @@ Each whole street is one edge here, so streets that cross without a vertex
 at the crossing are not connected: the network knows the data, not the
 map. `sf::st_intersection()` or `lwgeom::st_split()` can split the lines
 at their crossings first when that is what the data mean. Once built, the
-network is an ordinary netframe, and shortest paths follow street length:
+network is an ordinary net_frame, and shortest paths follow street length:
 
 ```{r}
 net_distances(roads)[1, ]
@@ -273,7 +273,7 @@ net_plot_spatial(mixed, edge_width = 2, main = "Stations, with one bent and one 
 ```
 
 `plot()` on the same network draws an abstract layout, as for any other
-netframe. `net_plot_edge_lengths()` shows the distribution of edge lengths and,
+net_frame. `net_plot_edge_lengths()` shows the distribution of edge lengths and,
 given a `scale`, the `net_distance_decay()` curve it would imply, which is the
 quickest way to pick a scale for distance-weighted ties:
 
@@ -306,11 +306,11 @@ igraph and tidygraph use:
 ```{r, eval = has_sfnetworks}
 net <- net_to_sfnetwork(roads)
 net
-net_from(net)
+as_net_frame(net)
 ```
 
-`sfnetworks::as_sfnetwork()` on a netframe and `sf::st_as_sf()` on a
-netframe work as well.
+`sfnetworks::as_sfnetwork()` on a net_frame and `sf::st_as_sf()` on a
+net_frame work as well.
 
 ## The planned Python mirror
 
@@ -321,7 +321,7 @@ is a data frame with an sfc column. The convention of a pair of
 GeoDataFrames, one for nodes and one for edges, is the one OSMnx
 established with `graph_to_gdfs()` and `graph_from_gdfs()` (Boeing 2017),
 so street networks downloaded with OSMnx will drop straight into the
-Python netframe. Geometry stays with GeoPandas and shapely (GEOS) and
+Python net_frame. Geometry stays with GeoPandas and shapely (GEOS) and
 pyproj; the engine receives lengths and representative points exactly as
 it does from R, so every measure validated here is validated there.
 

@@ -192,7 +192,7 @@ plot_groups <- function(x, groups, name) {
   factor(as.character(g$values), levels = as.character(g$labels))
 }
 
-# Adds a column to the node table under a unique name so plot.netframe()
+# Adds a column to the node table under a unique name so plot.net_frame()
 # can map it and label the legend with `title`.
 with_node_column <- function(x, values, title) {
   name <- make.unique(c(names(x$nodes), title))[ncol(x$nodes) + 1L]
@@ -201,7 +201,7 @@ with_node_column <- function(x, values, title) {
 }
 
 # ---- Appearance arguments of network plots ---------------------------------------
-# Shared by plot.netframe() and net_plot_spatial(). Each appearance argument
+# Shared by plot.net_frame() and net_plot_spatial(). Each appearance argument
 # can be the name of a column of the node or edge table, a vector with one
 # value per node or edge, a single value for all, or a vector wrapped in
 # I() to be used as it is.
@@ -417,7 +417,7 @@ twomode_fill <- function(x) {
        legend = list(type = "fill", title = "mode", labels = labels, col = pal, lwd = 2))
 }
 
-# Node positions for plot.netframe(): a layout method, two node columns, a
+# Node positions for plot.net_frame(): a layout method, two node columns, a
 # matrix or data frame, or a function of the network.
 plot_layout <- function(x, layout, seed) {
   n <- nrow(x$nodes)

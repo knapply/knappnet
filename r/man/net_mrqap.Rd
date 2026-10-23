@@ -20,7 +20,7 @@ net_mrqap(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
 \arguments{
 \item{y}{The response: a square numeric matrix or a
 \code{\link{net_frame}}.}
-\item{x}{The predictors: a matrix or netframe, or a list of them. List
+\item{x}{The predictors: a matrix or net_frame, or a list of them. List
 names become coefficient names (\code{x1}, \code{x2}, \ldots otherwise).}
 \item{reps}{Number of random permutations.}
 \item{method}{\code{"dsp"} (double semi-partialling, the default) or
@@ -38,7 +38,7 @@ default, as Dekker et al. 2007 recommend) or \code{"beta"}, the raw
 coefficient.}
 \item{exact}{Whether to evaluate all \eqn{n!} permutations instead of
 \code{reps} random ones (at most 10 nodes).}
-\item{attr}{For netframe inputs, the edge column that fills each matrix.
+\item{attr}{For net_frame inputs, the edge column that fills each matrix.
 \code{NULL} uses each network's weight column if it has one, and counts
 edges otherwise.}
 \item{tol}{Tolerance for detecting a rank-deficient design: a column that
