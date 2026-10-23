@@ -8,7 +8,12 @@ description: >
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4,
+                      dpi = 96)
+```
+
+```{r}
+library(knappnet)
 ```
 
 Most of the words in network analysis mean more than one thing. A
@@ -28,10 +33,11 @@ which S3 class), how [igraph](https://r.igraph.org/), [statnet](https://statnet.
 [tidygraph](https://tidygraph.data-imaginist.com/), [NetworkX](https://networkx.org/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [ORA](https://www.casos.cs.cmu.edu/projects/ora/), and the teaching
 sources differ, and why knappnet chose as it did. The decisions were made
 in October 2026 and are recorded, with their alternatives, in
-`docs/DECISIONS.md` in the repository. Representations marked *planned*
-are decided but not yet implemented; the code in this article builds
-plain data frames and shows the decided constructor calls without running
-them, so that nothing here depends on functions that do not exist yet.
+`docs/DECISIONS.md` in the repository, and `docs/DATA_MODEL.md` specifies
+every structure. Representations marked *provisional* are implemented but
+may change after review. Every code chunk here runs; the
+[network types](network-types.html) article shows each configuration
+again with real data and a plot.
 
 ## A network
 
@@ -57,13 +63,12 @@ edges <- data.frame(source = c("ana", "ana", "ben", "cy"),
 edges
 ```
 
-```{r, eval = FALSE}
-# Decided constructor call (the endpoint column names are always given
-# explicitly or taken from the defaults "source" and "target"; nothing is
-# guessed from column positions).
+```{r}
 g <- net_frame(edges, nodes, directed = FALSE,
-              source = "source", target = "target", id = "name",
-              weight = "years", weight_type = "strength")
+               source = "source", target = "target", id = "name",
+               weight = "years", weight_type = "strength")
+g
+plot(g, seed = 1)
 ```
 
 The endpoint columns are named by the `source` and `target` arguments,
@@ -71,8 +76,9 @@ whose defaults are the column names `"source"` and `"target"`. Nothing is
 guessed from column position, and a table whose endpoints are called
 `from`/`to` or `sender`/`receiver` (the names used by Rawlings et al.
 2023 and by Shafie and Schoch 2026) is passed with
-`source = "sender", target = "receiver"`. Nodes that appear only in the
-edge table are added to `nodes` with a message. Every measure returns a
+`source = "sender", target = "receiver"`. Endpoints missing from `nodes`
+are an error that lists them, unless `add_nodes = TRUE` appends them with
+a note. Every measure returns a
 vector aligned with the rows of `nodes` (or of `edges`), so results are
 stored as columns.
 
@@ -88,7 +94,13 @@ geometries in one coordinate reference system), and advisory notes (nodes
 added from edges, isolates, identifiers that look 0-based, loops and
 parallel edges when none were declared), which `quiet = TRUE` silences.
 This validation lives in the engine so that the planned Python package
-applies exactly the same rules.
+applies exactly the same rules, and every problem is reported in one
+error:
+
+```{r, error = TRUE}
+net_frame(data.frame(source = c("ana", NA, "ben"), target = c("ben", "cy", "zed")), nodes,
+          id = "name")
+```
 
 **Other tools.** [igraph](https://r.igraph.org/) (Csardi and Nepusz 2006), `network` (Butts 2008),
 [NetworkX](https://networkx.org/) (Hagberg, Schult, and Swart 2008), and [graph-tool](https://graph-tool.skewed.de/) keep attributes
@@ -193,9 +205,10 @@ node. Loops are allowed, kept, counted when the network is printed, and
 each measure states how it treats them (Newman 2018, ch. 6; Wiederstein
 2021 gives the same plain definition).
 
-**In knappnet.** A row with equal endpoints. There is no network-level
-flag; the printed card reports the count. Helpers to find and remove
-loops are planned.
+**In knappnet.** A row with equal endpoints. The printed card reports the
+count, the plot draws a loop as a small circle beside its node, and
+`net_simplify(remove_loops = TRUE)` removes them. Declaring
+`loops = FALSE` makes every loop an error that names its row.
 
 **Other tools.** [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [graph-tool](https://graph-tool.skewed.de/), and [NetworKit](https://networkit.github.io/) allow loops.
 `network` has a `loops` flag that defaults to `FALSE`, so loops are
@@ -230,13 +243,28 @@ multiplex
 
 Rows 1 and 2 are not parallel (different relations); rows 2 and 3 are.
 The network is simple within `friendship` and has one pair of parallel
-edges within `advice`.
+edges within `advice`:
 
-**In knappnet.** A repeated structural key among the rows of `edges`. The
-printed card reports "parallel edges (within the same relation)". Planned
-helpers test simplicity, give each edge's multiplicity, and simplify with
-a declared rule for combining attributes (sum for weights by default,
-first value otherwise), following the idea of [igraph](https://r.igraph.org/)'s `edge.attr.comb`.
+```{r}
+m <- net_frame(multiplex, relation = "relation")
+net_multiplicity(m)
+net_is_simple(m)
+```
+
+**In knappnet.** A repeated structural key among the rows of `edges`: the
+endpoints with the relation, layers, and time spell. `net_multiplicity()`
+gives each edge's multiplicity, `net_is_simple()` tests simplicity, and
+`net_simplify()` collapses parallel edges, combining weights by a declared
+rule (sum by default) and other columns by `attributes` (first value by
+default), following the idea of [igraph](https://r.igraph.org/)'s
+`edge.attr.comb`. Plots draw parallel edges as arcs:
+
+```{r, fig.height = 3.5}
+op <- par(mfrow = c(1, 2))
+xy <- plot(m, main = "multigraph", seed = 1)
+plot(net_simplify(m), layout = xy, main = "simplified")
+par(op)
+```
 
 **Other tools.** igraph and [graph-tool](https://graph-tool.skewed.de/) are multigraphs by default;
 [NetworkX](https://networkx.org/) needs `MultiGraph`; [NetworKit](https://networkit.github.io/) does not support parallel edges;
@@ -274,10 +302,19 @@ there is no default meaning. The printed card shows the column, the
 meaning, and the range. Missing, `NaN`, and infinite weights are stored,
 reported, and refused by every measure until resolved.
 
-```{r, eval = FALSE}
+```{r, error = TRUE}
 net_frame(edges, weight = "years")                           # error: say what the weights mean
 net_frame(edges, weight = "years", weight_type = "strength") # years of acquaintance
-net_frame(edges, weight = "minutes", weight_type = "distance")
+```
+
+The same column read both ways changes every shortest path: as strengths
+the long acquaintance between `ben` and `cy` is a short path, as
+distances it is a long one.
+
+```{r}
+as_distance <- net_frame(edges, weight = "years", weight_type = "distance", directed = FALSE)
+net_distances(g)["ana", ]
+net_distances(as_distance)["ana", ]
 ```
 
 **Other tools.** [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) read an attribute called `weight` by
@@ -324,9 +361,9 @@ levels recorded so that the first mode gives the rows and the second the
 columns of the incidence matrix, and a network-level rule stating whether
 edges may only cross modes. A logical `type` column, [igraph](https://r.igraph.org/)'s convention,
 is accepted as input and written when converting to igraph. Two tests
-with two names are planned: one reports the declared modes (today
-`net_is_twomode()`), the other tests 2-colourability and returns the
-colouring, stopping with a clear message when the graph is not bipartite.
+have two names: `net_is_twomode()` reports whether two modes are declared
+with edges only between them, and `net_is_bipartite()` tests
+2-colourability, a property of the structure.
 
 ```{r}
 affiliations <- data.frame(source = c("ana", "ana", "ben", "cy"),
@@ -334,6 +371,17 @@ affiliations <- data.frame(source = c("ana", "ana", "ben", "cy"),
 members <- data.frame(name = c("ana", "ben", "cy", "club A", "club B"),
                       mode = c("person", "person", "person", "club", "club"))
 members
+clubs <- net_twomode(affiliations, members, mode = "mode", id = "name")
+clubs
+c(declared_two_mode = net_is_twomode(clubs), bipartite = net_is_bipartite(clubs))
+plot(clubs)
+```
+
+A path is bipartite without being two-mode:
+
+```{r}
+path <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")), directed = FALSE)
+c(declared_two_mode = net_is_twomode(path), bipartite = net_is_bipartite(path))
 ```
 
 Two-mode networks default to undirected, as in igraph and `network`, but
@@ -377,7 +425,7 @@ Latora 2014 give its structural measures).
 *In knappnet:* the `relation` edge role, a discrete column in one long
 edge table, as the Noordin data already has. Parallel edges are detected
 within relation. Measures take `relation =` to select or combine
-relations, and a planned split helper returns one net_frame per relation.
+relations, and `net_split_relations()` returns one net_frame per relation.
 Relation-level attributes may go in `graph$relations`. Conversion writes
 an edge attribute for [igraph](https://r.igraph.org/) and `network`, relation numbers for [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
 stacked matrices for [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, and one `<network>` per relation for
@@ -391,14 +439,34 @@ layers. The network is node-aligned when every actor is in every layer.
 Mucha et al. (2010) call layers "slices"; knappnet treats the word as a
 synonym.
 
-*In knappnet (later, as a separate subclass):* node-layers are rows of
-`nodes` with `actor` and `layer` roles, `id` stays unique per row, and an
-edge is interlayer when its endpoints' layers differ. A planned
-`as_multilayer()` lifts a multiplex network by replicating each actor per
-relation and adding coupling edges on request. The alternative of one
-row per actor with `layer_from`/`layer_to` on edges was rejected: node
-attributes that differ by layer would have no home, and interlayer edges
-between different actors would need four endpoint columns.
+*In knappnet:* actors stay in `nodes`, one row each, and every edge names
+the layer of each endpoint in two columns, `source_layer` and
+`target_layer`. An edge is intralayer when the two layers are equal, a
+coupling when it joins an actor to itself across layers, and interlayer
+otherwise; an optional layer table holds layer attributes. The class is
+`multilayer_net_frame`. `net_as_multilayer()` lifts a multiplex network by
+copying the relation into both layer columns and adding coupling edges
+(between all pairs of layers, or between consecutive ones for ordered
+layers), `net_edge_layers()` classifies the edges, and
+`net_split_layers()` returns one network per layer.
+
+```{r}
+ties <- data.frame(source = c("ana", "ana", "ana"), target = c("ben", "ben", "ana"),
+                   from_layer = c("work", "online", "work"),
+                   to_layer = c("work", "online", "online"))
+ml <- net_frame(ties, directed = FALSE, source_layer = "from_layer",
+                target_layer = "to_layer")
+ml
+net_edge_layers(ml)
+```
+
+The alternative, one node row per actor and layer (the node-layers of
+Kivelä et al. 2014 as rows), was set aside: it breaks the alignment of
+results with actors, and multiplex data, by far the common case, would
+need every actor copied once per relation. The cost is that an actor is
+present in every layer with one value of each attribute; per-layer
+presence and attributes would need a node-layer table, an open question
+in `docs/DATA_MODEL.md`.
 
 **Multilevel.** In the sense of Lazega et al. (2008), Wang et al. (2013),
 and Lazega and Snijders (2016): two or more node sets at distinct levels
@@ -434,16 +502,24 @@ optionally with a magnitude (Harary 1953; Cartwright and Harary 1956).
 Sign is categorical and distinct from weight: a negative tie is not a
 shorter path.
 
-**In knappnet (provisional, adopted from the research recommendation and
-to be implemented after the core changes).** A `sign` edge role holding
--1 and +1, the values signnet uses so that objects convert without
-recoding (Shafie and Schoch 2026, ch. 7). `weight`, if present, is the
-magnitude and stays non-negative. A planned `as_signed(x, sign =
-"weight")` splits a signed value column into sign and magnitude, which is
-how [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), and correlation networks (Epskamp et al. 2012) arrive;
-export writes `sign * weight` back as the single value. Measures to come
-are structural balance, the frustration index, Doreian and Mrvar (1996)
+**In knappnet (provisional).** A `sign` edge role holding -1 and +1, the
+values signnet uses so that objects convert without recoding (Shafie and
+Schoch 2026, ch. 7). `weight`, if present, is the magnitude and stays
+non-negative. `net_as_signed()` splits a signed value column into sign
+and magnitude, which is how [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), and correlation networks
+(Epskamp et al. 2012) arrive. The role is validated, printed, and drawn
+(negative ties dashed); no measure uses it yet. Measures to come are
+structural balance, the frustration index, Doreian and Mrvar (1996)
 partitioning, and signed degree.
+
+```{r}
+ratings <- data.frame(source = c("ana", "ana", "ben"), target = c("ben", "cy", "cy"),
+                      value = c(2, -1, 3))
+signed <- net_frame(net_as_signed(ratings, "value"), directed = FALSE, sign = "sign",
+                    weight = "weight", weight_type = "strength")
+signed
+plot(signed, seed = 1)
+```
 
 **Other tools.** Pajek and UCINET code the sign in the line value;
 [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [tidygraph](https://tidygraph.data-imaginist.com/), and `network` have no concept beyond an
@@ -477,28 +553,28 @@ theory an interval graph is the intersection graph of intervals on a line
 (Lekkerkerker and Boland 1962), an unrelated object. Casteigts et al.
 (2012) give the general time-varying-graph formalism as background.
 
-**In knappnet.** The `start`, `end` or `duration`, `node_start`, and
-`node_end` roles, with the time class recorded, on a
-`c("temporal_net_frame", "net_frame")` object. `start` alone is a contact
-sequence; `start` and `end` a link stream; node spells make a stream
-graph.
+**In knappnet.** The `start`, `end`, and `wave` edge roles and the
+`node_start` and `node_end` node roles (or the long `node_spells` table),
+with the time class recorded, on a `c("temporal_net_frame", "net_frame")`
+object. `start` alone is a contact sequence; `start` and `end` a link
+stream; node spells make a stream graph; `wave` a panel. Times may be
+numbers, dates, or date-times.
 
 | Data | Columns |
 |---|---|
 | Contact sequence | `source`, `target`, `start` |
-| Link stream | `source`, `target`, `start`, `end` (or `duration`) |
-| Stream graph | the above, plus `node_start`, `node_end` on `nodes` |
-| Panel of waves | `source`, `target`, `start = k`, `end = k + 1` |
+| Link stream | `source`, `target`, `start`, `end` |
+| Stream graph | the above, plus `node_start`, `node_end` on `nodes`, or a `node_spells` table |
+| Panel of waves | `source`, `target`, `wave` (wave k is `[k, k + 1)`) |
 
 Spells are half-open, `[start, end)`: an edge is active at `start` and
 not at `end`, so consecutive spells and snapshot boundaries are
-unambiguous. An edge with `end == start`, or with no `end`, is an
-instantaneous contact. `start = -Inf` and `end = Inf` mean the start or
-end was not observed (left and right censoring), as in networkDynamic. A
-missing `end` when other edges have one is an error, not "forever". An
-edge may be active only while both endpoints are present, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/)'s
-consistency rule, and the constructor checks it when node spells are
-given.
+unambiguous. An edge with `end == start` is an instantaneous contact.
+Edge times must be finite and present; whether to allow censored spells
+(`-Inf` or `Inf`, as networkDynamic does) is an open question. A node
+spell may be open on either side (a missing start or end). An edge may be
+active only while both endpoints are present, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/)'s
+consistency rule, and the constructor checks it.
 
 ```{r}
 contacts <- data.frame(source = c("ana", "ana", "ben"),
@@ -506,22 +582,35 @@ contacts <- data.frame(source = c("ana", "ana", "ben"),
                        start  = c(1, 1, 3),
                        end    = c(3, 2, 6))
 contacts   # active on [1, 3), [1, 2), [3, 6)
+stream <- net_frame(contacts, directed = FALSE, start = "start", end = "end")
+stream
+net_plot_timeline(stream)
 ```
 
 **Panels.** Waves are time spells: wave k of a panel is the spell
 `[k, k + 1)` in a temporal net_frame, so every window, snapshot, and
-rolling measure applies to panels unchanged. Planned helpers build the
-spells from a list of networks (one per wave, as [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), networkDynamic's
-`network.list`, and the textbooks supply them) and split them back.
+rolling measure applies to panels unchanged. `net_panel()` builds a panel
+from a list of networks (one per wave, as [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), networkDynamic's
+`network.list`, and the textbooks supply them) and `net_waves()` splits it
+back:
 
-**Node presence and time-varying attributes (planned).** A node is
-present during its spell and does not exist for measures outside it, not
-merely isolated. A node with several spells, and an attribute whose value
-changes over time (networkDynamic's temporally extended attributes;
-RSiena's behaviour variables per wave), go in optional long tables
-`node_spells` and `edge_spells` (identifier, `start`, `end`, and one
-column per time-varying attribute); the main tables keep one row per node
-and per edge, so `id` stays unique and results stay aligned.
+```{r, fig.height = 3.5}
+waves <- list(net_frame(data.frame(source = c("ana", "ben"), target = c("ben", "cy"))),
+              net_frame(data.frame(source = c("ana", "cy"), target = c("cy", "ben"))))
+panel <- net_panel(waves)
+panel
+net_plot_snapshots(panel, seed = 1)
+```
+
+**Node presence and time-varying attributes (provisional).** A node is
+present during its spells and does not exist for measures outside them,
+not merely isolated. A node with several spells goes in the optional long
+table `node_spells` (identifier, `start`, `end`), and attributes whose
+values change over time (networkDynamic's temporally extended attributes;
+RSiena's changing covariates) in `node_changes` (identifier, `time`, and
+the new values); the node table keeps one row per node, so `id` stays
+unique and results stay aligned. `net_node_spells()` lists the spells and
+`net_nodes_at()` gives the attributes in force at a time.
 
 **Other tools.** networkDynamic (Butts et al. 2026) uses half-open
 activity spells with `-Inf`/`Inf` censoring, vertex and edge spells,
@@ -552,9 +641,24 @@ the structure that needs no coordinates; whether a particular geometry
 has crossings is a different, spatial question. Road networks are nearly
 but not exactly planar (bridges, tunnels).
 
-**In knappnet.** The `node_geometry`, `edge_geometry`, and `crs` roles,
-taken from sf geometry columns, on a `c("spatial_net_frame", "net_frame")`
-object; both tables must share a CRS. A spatio-temporal network combines
+**In knappnet.** Two coordinate columns of `nodes` (`coords`, with `crs`
+saying whether they are longitude and latitude or planar), or the
+`node_geometry`, `edge_geometry`, and `crs` roles taken from sf geometry
+columns, on a `c("spatial_net_frame", "net_frame")` object; both tables
+must share a CRS. A spatial network is drawn on its coordinates:
+
+```{r}
+places <- data.frame(id = c("Baltimore", "Washington", "Philadelphia"),
+                     lon = c(-76.61, -77.04, -75.17), lat = c(39.29, 38.91, 39.95))
+trains <- data.frame(source = c("Washington", "Baltimore"),
+                     target = c("Baltimore", "Philadelphia"), minutes = c(35, 75))
+rail <- net_frame(trains, places, directed = FALSE, weight = "minutes",
+                  weight_type = "distance", coords = c("lon", "lat"))
+rail
+plot(rail)
+```
+
+A spatio-temporal network combines
 the spatial and temporal roles on a
 `c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame",
 "net_frame")` object: fixed geometries with timed edges and nodes
@@ -586,13 +690,24 @@ Borgatti 2005). An *egocentric* dataset is a collection of such networks,
 one per sampled ego, usually with no ties across egos (Burt 1984; Perry,
 Pescosolido, and Borgatti 2018).
 
-**In knappnet.** Extraction from a whole network (today `net_ego()`)
-returns an ordinary net_frame, with ego included by default. For
-egocentric survey data an `ego` role on nodes and edges is planned, so
-one net_frame holds every ego's network and measures run per ego; the
-three-table shape (ego, alter, alter-alter tie) that egor uses and both R
-textbooks teach (Rawlings et al. 2023, ch. 6; Shafie and Schoch 2026,
-ch. 8) is the planned import and export bridge.
+**In knappnet.** `net_ego()` extracts one ego network from a whole
+network as an ordinary net_frame, with ego included by default. A
+collection of ego networks is one net_frame with an `ego` role on nodes
+and edges, so measures run on all egos at once and results stay aligned;
+`net_ego_frame()` derives one from a whole network and `net_split_egos()`
+returns one network per ego. The three-table shape (ego, alter,
+alter-alter tie) that egor uses and both R textbooks teach (Rawlings et
+al. 2023, ch. 6; Shafie and Schoch 2026, ch. 8) converts both ways with
+`net_to_egor()` and `as_net_frame()`.
+
+```{r, fig.height = 3}
+whole <- net_frame(data.frame(source = c("ana", "ana", "ben", "cy", "dee"),
+                              target = c("ben", "cy", "cy", "dee", "eli")),
+                   directed = FALSE)
+egos <- net_ego_frame(whole, egos = c("ana", "dee"), threads = 1)
+egos
+net_plot_egos(egos, seed = 1)
+```
 
 **Other tools.** [igraph](https://r.igraph.org/)'s `make_ego_graph()` and [NetworkX](https://networkx.org/)'s `ego_graph()`
 include ego; egor's conversion excludes ego by default, a difference the
@@ -627,17 +742,30 @@ tied by design and is excluded from denominators and models; a
 *structural one* is fixed as present (Kossinets 2006; Robins, Pattison,
 and Woolcock 2004; Wasserman and Faust 1994, ch. 2).
 
-**In knappnet (provisional, after the core changes).** An `na` node role
-marks non-respondents, the operational notion in the textbooks (Rawlings
-et al. 2023, ch. 4, where a non-respondent's row is entirely `NA` and a
-zero in their column does not mean the tie would not have been
-reciprocated). An `na` edge role marks dyads whose status is unknown.
-Measures stop when any unresolved `na` node or edge exists unless an
-`na_action` says what to do (treat as absent, as present, or exclude the
-dyad from denominators), mirroring the existing rule that `NA` weights
-are stored but refused. Structural zeros and ones are better kept as a
+**In knappnet (provisional).** A logical `node_missing` column marks
+non-respondents, the operational notion in the textbooks (Rawlings et al.
+2023, ch. 4, where a non-respondent's row is entirely `NA` and a zero in
+their column does not mean the tie would not have been reciprocated);
+their unreported ties are implied by rule and never written out. A
+logical `edge_missing` column marks rows whose tie status is unknown:
+they stay in the table, carrying their relation, layers, and spell, but
+are left out of the graph that measures use. Measures refuse unresolved
+missingness, mirroring the rule that `NA` weights are stored but refused;
+`net_resolve_missing()` resolves it with an explicit `na_action` (treat
+as absent or as present). Structural zeros and ones are better kept as a
 rule or a pair table than as rows, since in edge-list form they are
 mostly absent pairs; that representation is still open.
+
+```{r, fig.height = 3}
+survey <- data.frame(source = c("ana", "ana", "ben"), target = c("ben", "cy", "cy"),
+                     unknown = c(FALSE, TRUE, FALSE))
+partial <- net_frame(survey, directed = FALSE, edge_missing = "unknown")
+partial
+op <- par(mfrow = c(1, 2))
+xy <- plot(partial, main = "unobserved pair dotted", seed = 1)
+plot(net_resolve_missing(partial, "absent"), layout = xy, main = "resolved as absent")
+par(op)
+```
 
 **Other tools.** `network` marks missing edges with an `na` attribute and
 returns `NA` from the adjacency matrix for them; [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/) codes `NA` for
@@ -668,6 +796,8 @@ the ordinary two-mode projection:
 hyperedges <- data.frame(source = c("ana", "ben", "cy", "ana", "dee"),
                          target = c("h1",  "h1",  "h1", "h2",  "h2"))
 hyperedges   # h1 = {ana, ben, cy}, h2 = {ana, dee}
+hyper <- net_twomode(hyperedges)
+net_project(hyper)$edges   # the clique expansion, weighted by shared hyperedges
 ```
 
 `network` supports hyperedges with `hyper = TRUE`; XGI (Landry et al.
