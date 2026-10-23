@@ -1065,7 +1065,10 @@ write_gpkg <- function(x, file, weight) {
   )
   path <- path.expand(file)
   if (file.exists(path)) unlink(path)
-  sf::st_write(nodes, path, layer = "nodes", driver = "GPKG", quiet = TRUE)
+  # delete_dsn replaces a file that could not be removed (on Windows a file
+  # read earlier in the session can stay locked).
+  sf::st_write(nodes, path, layer = "nodes", driver = "GPKG", quiet = TRUE,
+               delete_dsn = file.exists(path))
   sf::st_write(edges, path, layer = "edges", driver = "GPKG", quiet = TRUE)
   sf::st_write(meta, path, layer = "network", driver = "GPKG", quiet = TRUE)
   invisible(file)
