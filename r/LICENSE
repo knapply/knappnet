@@ -1,2 +1,23 @@
-YEAR: 2026
-COPYRIGHT HOLDER: Brendan Knapp
+Copyright (c) 2026 Brendan Knapp. All rights reserved.
+
+This software and its source code, documentation, and associated files
+(the "Software") are proprietary. No license or other right to use, copy,
+modify, merge, publish, distribute, sublicense, or sell the Software, in
+whole or in part, is granted, whether by implication, estoppel, or
+otherwise, except by a separate written agreement signed by the copyright
+holder.
+
+Viewing the Software where it is published does not grant any right to use
+it. Licensing terms for academic, research, and commercial use will be
+announced separately.
+
+Data sets distributed with the Software remain under their own licenses, as
+stated in r/inst/extdata/DATASETS.md and each data set's README.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

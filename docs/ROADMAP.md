@@ -211,8 +211,8 @@ bridges below are the supported path meanwhile.
 
 ## Teaching data sets, with licences
 
-Every shipped data set needs a licence that allows redistribution under
-MIT and a `data-raw/` script that rebuilds it from its published source.
+Every shipped data set needs a licence that allows redistribution with the
+package and a `data-raw/` script that rebuilds it from its published source.
 
 | Data set | Taught in | Source and licence | Tier |
 |---|---|---|---|
@@ -224,7 +224,7 @@ MIT and a `data-raw/` script that rebuilds it from its published source.
 | Sampson monastery, Davis southern women (shipped), Zachary karate (shipped) | A, S4, NAR | `davis1941deep`; `zachary1977information` | next |
 | Les Misérables (Knuth), Game of Thrones season 1, Star Wars | S10, W4, W7 | Stanford GraphBase (`knuth1993stanford`), public; Beveridge and Shan 2016 and Gabasova 2016, redistributable with attribution | next |
 | Glasgow (Teenage Friends and Lifestyle) and s50 panels | R15, S19 | [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/) data page; check the stated terms before shipping | later |
-| igraphdata sets (UKfaculty, enron, yeast, macaque, immuno, USairports, Koenigsberg) | W, NAR | igraphdata is CC BY-SA 4.0: share-alike is incompatible with bundling in an MIT package; point to the package instead | out of scope |
+| igraphdata sets (UKfaculty, enron, yeast, macaque, immuno, USairports, Koenigsberg) | W, NAR | igraphdata is CC BY-SA 4.0: share-alike is incompatible with bundling; point to the package instead | out of scope |
 | Classroom and GSS egocentric data of Rawlings et al. | R3-R15 | companion repository under CC BY-NC-ND: not redistributable; document how to load them | out of scope |
 | UCNets, cowList, Senate cosponsorship | S7, S8 | restricted or large; document only | out of scope |
 

@@ -12,7 +12,7 @@ Description: Network analysis on networks represented as a pair of data
     (2001) <doi:10.1080/0022250X.2001.9990249> and the triad census uses the
     algorithm of Batagelj and Mrvar (2001)
     <doi:10.1016/S0378-8733(01)00035-1>.
-License: MIT + file LICENSE
+License: file LICENSE
 URL: https://github.com/knapply/knappnet, https://knapply.github.io/knappnet/
 BugReports: https://github.com/knapply/knappnet/issues
 Encoding: UTF-8
