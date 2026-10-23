@@ -198,8 +198,6 @@ label_prop_quality:
   oracles:
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA))"
-      differs_when: [edge_case]
-      reason: Modularity is undefined without edges; the engine reports -1, igraph NaN.
 
 label_prop_quality_retention:
   engine: {fn: label_propagation, variant: retention, output: quality, seeds: 100}
@@ -215,8 +213,6 @@ label_prop_quality_retention:
         is undefined (the engine reports -1, NetworkX 0)
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'retention'))"
-      differs_when: [edge_case]
-      reason: Modularity is undefined without edges; the engine reports -1, igraph NaN.
 
 label_prop_quality_fast:
   engine: {fn: label_propagation, variant: fast, output: quality, seeds: 100}
@@ -229,8 +225,6 @@ label_prop_quality_fast:
       reason: *lpa_simple
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'fast'))"
-      differs_when: [edge_case]
-      reason: Modularity is undefined without edges; the engine reports -1, igraph NaN.
 
 # ---- Infomap ----------------------------------------------------------------
 
@@ -267,7 +261,9 @@ infomap_quality:
     igraph:
       call: "mean over set.seed(1..5) of cluster_infomap(g, nb.trials = 10)$codelength"
       differs_when: [edge_case]
-      reason: The engine reports -1 (NaN) for a network without edges.
+      reason: >-
+        a network without edges has no random walk; the engine reports
+        -1 (undefined) where igraph may report a codelength of 0
 
 # ---- Leiden -------------------------------------------------------------------
 
@@ -325,8 +321,6 @@ leiden_quality:
       reason: *lpa_simple
     igraph:
       call: "mean over set.seed(1..20) of modularity(g, cluster_leiden(g, objective_function = 'modularity', n_iterations = -1, weights = NA))"
-      differs_when: [edge_case]
-      reason: Modularity is undefined without edges; the engine reports -1, igraph NaN.
 
 leiden_cpm_quality:
   engine: {fn: leiden, objective: cpm, resolution: 0.1, output: mean_quality, seeds: 20}
@@ -335,8 +329,6 @@ leiden_cpm_quality:
   oracles:
     igraph:
       call: "mean over set.seed(1..20) of the CPM quality (1/2m) sum_ij (A_ij - 0.1) delta of cluster_leiden(g, objective_function = 'CPM', resolution = 0.1, n_iterations = -1, weights = NA)"
-      differs_when: [edge_case]
-      reason: The quality is undefined without edges; the engine reports -1, igraph NaN.
 
 # ---- Spinglass ------------------------------------------------------------------
 
