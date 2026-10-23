@@ -121,8 +121,25 @@ impl<'a> Lexer<'a> {
     }
 }
 
+/// HTML names of the ISO 8859-1 characters U+00A0 to U+00FF, the entities
+/// the GML specification uses for non-ASCII text (`himsolt1997gml`), and the
+/// only ones igraph's reader decodes.
+const LATIN1_NAMES: [&str; 96] = [
+    "nbsp", "iexcl", "cent", "pound", "curren", "yen", "brvbar", "sect", "uml", "copy", "ordf",
+    "laquo", "not", "shy", "reg", "macr", "deg", "plusmn", "sup2", "sup3", "acute", "micro",
+    "para", "middot", "cedil", "sup1", "ordm", "raquo", "frac14", "frac12", "frac34", "iquest",
+    "Agrave", "Aacute", "Acirc", "Atilde", "Auml", "Aring", "AElig", "Ccedil", "Egrave", "Eacute",
+    "Ecirc", "Euml", "Igrave", "Iacute", "Icirc", "Iuml", "ETH", "Ntilde", "Ograve", "Oacute",
+    "Ocirc", "Otilde", "Ouml", "times", "Oslash", "Ugrave", "Uacute", "Ucirc", "Uuml", "Yacute",
+    "THORN", "szlig", "agrave", "aacute", "acirc", "atilde", "auml", "aring", "aelig", "ccedil",
+    "egrave", "eacute", "ecirc", "euml", "igrave", "iacute", "icirc", "iuml", "eth", "ntilde",
+    "ograve", "oacute", "ocirc", "otilde", "ouml", "divide", "oslash", "ugrave", "uacute", "ucirc",
+    "uuml", "yacute", "thorn", "yuml",
+];
+
 /// GML strings use HTML-style character entities for quotes and
-/// non-ASCII text, as written by NetworkX.
+/// non-ASCII text: named ISO 8859-1 entities and numeric ones (as written
+/// by NetworkX) are decoded.
 fn unescape(s: &str) -> String {
     if !s.contains('&') {
         return s.to_string();
@@ -145,7 +162,10 @@ fn unescape(s: &str) -> String {
                     .ok()
                     .and_then(char::from_u32),
                 _ if ent.starts_with('#') => ent[1..].parse().ok().and_then(char::from_u32),
-                _ => None,
+                _ => LATIN1_NAMES
+                    .iter()
+                    .position(|&n| n == ent)
+                    .and_then(|k| char::from_u32(0xA0 + k as u32)),
             };
             ch.map(|c| (c, e))
         });
@@ -170,6 +190,11 @@ fn escape(s: &str) -> String {
         match c {
             '"' => out.push_str("&quot;"),
             '&' => out.push_str("&amp;"),
+            c if (0xA0..=0xFF).contains(&(c as u32)) => {
+                out.push('&');
+                out.push_str(LATIN1_NAMES[c as usize - 0xA0]);
+                out.push(';');
+            }
             c if !c.is_ascii() || (c as u32) < 0x20 => out.push_str(&format!("&#{};", c as u32)),
             c => out.push(c),
         }
@@ -446,7 +471,7 @@ graph [
   directed 1
   name "demo &quot;x&quot;"
   node [ id 1 label "a" graphics [ x 1.5 y 2 ] ]
-  node [ id 2 label "b&#233;" ]
+  node [ id 2 label "b&eacute;" ]
   edge [ source 1 target 2 weight 0.5 ]
   # a comment
   edge [ source 2 target 2 ]

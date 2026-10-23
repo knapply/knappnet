@@ -136,10 +136,15 @@ test_that("spectral measures match igraph", {
   expect_equal(power_centrality(g, exponent = -0.3),
                igraph::power_centrality(ig, exponent = -0.3), tolerance = 1e-8,
                ignore_attr = TRUE)
-  hub <- igraph::hub_score(ig)
-  if (is.list(hub)) hub <- hub$vector
-  auth <- igraph::authority_score(ig)
-  if (is.list(auth)) auth <- auth$vector
+  # igraph 2.1 replaced hub_score() and authority_score() with hits_scores().
+  if (exists("hits_scores", envir = asNamespace("igraph"))) {
+    hits <- igraph::hits_scores(ig)
+    hub <- hits$hub
+    auth <- hits$authority
+  } else {
+    hub <- igraph::hub_score(ig)$vector
+    auth <- igraph::authority_score(ig)$vector
+  }
   expect_equal(hub_score(g), hub, tolerance = 1e-7, ignore_attr = TRUE)
   expect_equal(authority_score(g), auth, tolerance = 1e-7, ignore_attr = TRUE)
 })
