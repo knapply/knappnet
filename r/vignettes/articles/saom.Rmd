@@ -1,0 +1,199 @@
+---
+title: "Stochastic actor-oriented models"
+description: >
+  Modelling how a network changed between observations: data, effects,
+  estimation by the method of moments, convergence, and goodness of fit.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.5)
+```
+
+A stochastic actor-oriented model (SAOM; Snijders 2001; Snijders, van de
+Bunt, and Steglich 2010) explains how a directed network observed at two or
+more moments changed between them. The model imagines the change as a
+sequence of *ministeps*: an actor gets an opportunity to change, and then
+adds one outgoing tie, drops one, or leaves the network as it is, choosing
+the option that leads to the network it likes best, with some randomness.
+What an actor likes is an *evaluation function*, a weighted sum of
+*effects* such as reciprocity, transitive closure, or similarity on a
+covariate; the weights are the parameters, and the question a SAOM answers
+is which tendencies, with what strength, account for the observed changes.
+
+knappnet implements the model as RSiena defines it (Ripley et al. 2026),
+with RSiena's effect definitions, covariate centering, and estimation
+algorithm, and validates the deterministic parts against RSiena exactly.
+This article walks through a complete analysis on a simulated panel.
+
+```{r}
+library(knappnet)
+```
+
+## A panel
+
+`saom_data()` takes a list of directed netframes on the same actors, in
+time order, plus covariates. Here the first wave is a random network on 40
+actors with a binary covariate, and the later waves are generated from a
+known model with `saom_simulate()`, so that we know what the estimates
+should recover: a strong tendency against ties (`density` −2.2), a
+preference for reciprocated ties (`recip` 1.5), transitive closure
+(`transTrip` 0.3), and homophily on `smoke` (`simX` 0.6).
+
+```{r}
+set.seed(7)
+n <- 40
+actors <- data.frame(id = seq_len(n), smoke = rbinom(n, 1, 0.4))
+ties <- which(matrix(runif(n * n) < 0.06, n, n) & !diag(n), arr.ind = TRUE)
+wave1 <- netframe(data.frame(from = ties[, 1], to = ties[, 2]), nodes = actors)
+
+model <- ~ density + recip + transTrip + simX("smoke")
+truth <- c(-2.2, 1.5, 0.3, 0.6)
+later <- saom_simulate(saom_data(list(wave1, wave1), covariates = "smoke"), model,
+                       theta = truth, rates = 4, seed = 1)[[1]]
+wave2 <- later[[1]]
+later <- saom_simulate(saom_data(list(wave2, wave2), covariates = "smoke"), model,
+                       theta = truth, rates = 4, seed = 2)[[1]]
+wave3 <- later[[1]]
+
+panel <- saom_data(list(wave1, wave2, wave3), covariates = "smoke")
+panel
+```
+
+The covariate column `smoke` was read from the node tables; a column whose
+values differ between waves becomes a changing covariate. Dyadic
+covariates (matrices or netframes on the same actors) go in `dyadic`.
+
+## Effects
+
+Effects are written as a one-sided formula using RSiena's short names.
+`saom_effects()` shows what a formula means and `saom_effect_names()`
+lists what is available; the help page `?saom_effects` gives every
+definition.
+
+```{r}
+saom_effects(~ density + recip + transTrip + gwespFF(parameter = 69) + simX("smoke"))
+```
+
+## Estimation
+
+`saom_fit()` estimates the parameters by the method of moments: it looks
+for parameter values under which networks simulated from each wave to the
+next reproduce, on average, the observed statistics of the next wave. The
+search is the three-phase Robbins-Monro algorithm of Snijders (2001) as
+implemented in RSiena, and `saom_control()` holds its settings. Phase 3
+is the expensive part; 1000 simulations (the default) are enough to
+explore, and more are advisable for a published result. A seed makes the
+result reproducible, whatever the number of threads.
+
+```{r}
+fit <- saom_fit(panel, model, control = saom_control(seed = 11, threads = 2))
+fit
+```
+
+The estimates recover the generating values within their standard errors.
+The last column holds the *convergence t-ratios*: for each statistic, the
+mean deviation of the simulated from the observed value divided by its
+standard deviation. RSiena's rule of thumb is that all of them should be
+below 0.1 in absolute value and the *overall maximum convergence ratio*
+(the largest t-ratio of any linear combination of the statistics) below
+0.25. When that is not the case, re-estimate starting from the current
+estimates:
+
+```{r, eval = FALSE}
+fit <- saom_fit(panel, model, initial = coef(fit),
+                control = saom_control(seed = 12, threads = 2))
+```
+
+`summary()` adds the covariance matrix of the estimates, with correlations
+below the diagonal (large correlations signal collinear effects), and the
+observed and mean simulated statistics; `coef()` and `vcov()` extract the
+estimates and their covariance matrix. The rate parameters say how many
+opportunities for change each actor had per period; by default they are
+estimated *conditionally*, from the simulated time it takes to reproduce
+the observed number of changes, rather than as parameters of the
+Robbins-Monro iteration (`saom_control(conditional = FALSE)` does the
+latter).
+
+```{r}
+summary(fit)
+```
+
+## Estimation diagnostics
+
+`plot()` shows the path of the parameters through phase 2. Each subphase
+takes smaller steps than the one before; within a subphase the values
+should wander around the final estimate rather than drift.
+
+```{r}
+plot(fit)
+```
+
+The phase 3 deviations should be centered on zero:
+
+```{r}
+plot(fit, which = "deviations")
+```
+
+## Goodness of fit
+
+A converged model reproduces the statistics it was fitted to, by
+construction. Whether it also reproduces other features of the data is the
+question of goodness of fit (Lospinoso and Snijders 2019): `saom_gof()`
+compares an auxiliary statistic of the observed networks (summed over the
+waves after the first) with its distribution over the networks simulated
+in phase 3, and reports the Mahalanobis distance of the observed value from
+the simulated ones and a Monte Carlo p-value. Small p-values point to
+features the model misses; here the data were generated by the model, so
+the fit should be adequate.
+
+```{r}
+gof <- saom_gof(fit, "indegree")
+gof
+plot(gof)
+```
+
+The violins are the simulated distributions of the number of actors with
+in-degree at most 0, 1, ..., 8, and the red line the observed counts.
+Three other statistics are available: the out-degree distribution, the
+triad census, and the distribution of geodesic distances.
+
+```{r}
+plot(saom_gof(fit, "triad_census"))
+```
+
+## What is and is not implemented
+
+The engine covers directed one-mode networks with constant and changing
+actor covariates and constant dyadic covariates; the effects in
+`?saom_effects`; conditional and unconditional method-of-moments
+estimation with score-function derivatives and delta-method standard
+errors; simulation; and goodness of fit by auxiliary statistics. Behavior
+dynamics (co-evolution of networks and actor attributes), several
+dependent networks, non-directed networks, creation and endowment effects,
+rate effects, missing data, structural zeros and ones, composition change,
+maximum likelihood and Bayesian estimation, score-type tests, and time
+heterogeneity tests are not implemented; RSiena provides all of them.
+
+## References
+
+Lospinoso, J., and Snijders, T. A. B. (2019). Goodness of fit for
+stochastic actor-oriented models. *Methodological Innovations*, 12(3).
+[doi:10.1177/2059799119884282](https://doi.org/10.1177/2059799119884282)
+
+Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026). *Manual
+for RSiena*. University of Oxford, Department of Statistics and Nuffield
+College; University of Groningen, Department of Sociology.
+<https://www.stats.ox.ac.uk/~snijders/siena/RSiena_Manual.pdf>
+
+Snijders, T. A. B. (2001). The statistical evaluation of social network
+dynamics. *Sociological Methodology*, 31(1), 361-395.
+[doi:10.1111/0081-1750.00099](https://doi.org/10.1111/0081-1750.00099)
+
+Snijders, T. A. B., van de Bunt, G. G., and Steglich, C. E. G. (2010).
+Introduction to stochastic actor-based models for network dynamics.
+*Social Networks*, 32(1), 44-60.
+[doi:10.1016/j.socnet.2009.02.004](https://doi.org/10.1016/j.socnet.2009.02.004)
+
+Snijders, T. A. B. (2017). Stochastic actor-oriented models for network
+dynamics. *Annual Review of Statistics and Its Application*, 4, 343-363.
+[doi:10.1146/annurev-statistics-060116-054035](https://doi.org/10.1146/annurev-statistics-060116-054035)

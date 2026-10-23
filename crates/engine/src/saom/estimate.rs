@@ -24,11 +24,12 @@
 //!    deviations truncated at `truncation` standard deviations (estimated
 //!    in phase 1). Subphase k runs at least 2.52^k (7 + p) and at most 200
 //!    more iterations, and ends early once, for every coordinate, the sum
-//!    of products of successive deviations is non-positive (Pflug 1990,
-//!    `pflug1990nonasymptotic`). It ends by setting theta to its average
-//!    over the subphase (Polyak 1990, `polyak1990new`; Ruppert 1988,
-//!    `ruppert1988efficient`) and multiplying the gain a by `reduceg`
-//!    (default 0.5, from `firstg` = 0.2).
+//!    of products of successive deviations is non-positive (the rule of
+//!    Snijders 2001, appendix, after a proposal of Pflug). It ends by
+//!    setting theta to its average over the subphase (averaged stochastic
+//!    approximation; Polyak and Juditsky 1992, `polyak1992acceleration`)
+//!    and multiplying the gain a by `reduceg` (default 0.5, from
+//!    `firstg` = 0.2).
 //! 3. **Phase 3**: n3 simulations (default 1000) at the final theta give
 //!    the mean and covariance Sigma of S, the convergence t-ratios
 //!    t_k = (mean S_k - s_k) / sd(S_k), the overall maximum convergence

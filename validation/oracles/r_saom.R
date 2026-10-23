@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-# Golden values from RSiena (Ripley, Snijders, Boda, Voros, and Preciado)
+# Golden values from RSiena (Ripley, Snijders, Boda, and Voros)
 # for the deterministic parts of the stochastic actor-oriented model: the
 # target statistics of every effect and the rate statistics (number of
 # changed tie variables) per period (validation/manifest.d/saom.yaml,
