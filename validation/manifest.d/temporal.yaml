@@ -1,6 +1,6 @@
 # Temporal networks: time-respecting paths, reachability, temporal
 # closeness, slicing into windows, aggregation, and inter-event statistics.
-# Format as in ../manifest.yaml.
+# Format: see ../README.md.
 #
 # Every fixture is read as a contact sequence: edge e becomes a contact
 # with the start and end times given by validation/derived/temporal.py

@@ -21,7 +21,6 @@ import yaml
 HERE = Path(__file__).resolve().parent
 FIXTURES = HERE / "fixtures"
 GOLDEN = HERE / "golden"
-MANIFEST = HERE / "manifest.yaml"
 MANIFEST_DIR = HERE / "manifest.d"
 
 # Fixture tags that manifest entries may name in `differs_when` and
@@ -66,8 +65,7 @@ def fixture_names() -> list[str]:
 
 def manifest_files() -> list[Path]:
     """Every manifest file, in name order."""
-    files = [MANIFEST] if MANIFEST.exists() else []
-    return files + sorted(MANIFEST_DIR.glob("*.yaml"))
+    return sorted(MANIFEST_DIR.glob("*.yaml"))
 
 
 def load_area(area: str) -> dict:

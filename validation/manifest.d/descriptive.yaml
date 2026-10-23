@@ -1,12 +1,12 @@
 # Reciprocity, transitivity and clustering, distances, mean distance,
 # diameter, eccentricity, radius, reachability, cut points, and bridges.
-# Format as in ../manifest.yaml.
+# Format: see ../README.md.
 #
 # Non-finite results are written as markers by the engine runner
 # (validation/bindings/descriptive.py) and by every oracle: -999 for NaN
 # (undefined) and -1000 for infinity. No measure here can take either value.
 #
-# Engine options not in ../manifest.yaml:
+# Engine options beyond the common keys:
 #   mode        reciprocity: default | ratio | dyadic | correlation;
 #               paths: out | in | all.
 #   undefined   clustering coefficients that are 0 / 0: nan (igraph; left
