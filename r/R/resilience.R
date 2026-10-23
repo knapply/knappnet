@@ -1,12 +1,12 @@
 # Key players, group centrality, and flow betweenness.
 
-# Key players (man/key_players.Rd).
-key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentation",
+# Key players (man/net_key_players.Rd).
+net_key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentation",
                                           "m_reach", "distance_reach"),
                         m = 1, mode = c("out", "in", "all"), weighted = NULL,
                         weights_as = NULL, method = c("greedy", "exact"), restarts = 10L,
                         seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   method <- match.arg(method)
@@ -20,7 +20,7 @@ key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentati
   w <- resolve_weighting(x, weighted, weights_as)
   seed <- check_seed(seed)
   threads <- resolve_threads(threads)
-  res <- engine_call("key_players",
+  res <- engine_call("net_key_players",
     .Call(C_key_players, engine_graph(x), as.double(k), kpp_code(measure), m, mode_code(mode),
           w$weighted, w$code, if (method == "exact") 1L else 0L, as.double(restarts), seed,
           threads))
@@ -29,27 +29,27 @@ key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentati
        measure = measure, evaluations = res[[3]])
 }
 
-# See man/key_players.Rd.
-key_player_score <- function(x, set, measure = c("fragmentation", "distance_fragmentation",
+# See man/net_key_players.Rd.
+net_key_player_score <- function(x, set, measure = c("fragmentation", "distance_fragmentation",
                                                  "m_reach", "distance_reach"),
                              m = 1, mode = c("out", "in", "all"), weighted = NULL,
                              weights_as = NULL) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   m <- check_number(m, "m", lower = 0, finite = FALSE)
   index <- node_positions(x, set, "set", distinct = TRUE)
   w <- resolve_weighting(x, weighted, weights_as)
-  engine_call("key_player_score",
+  engine_call("net_key_player_score",
     .Call(C_kpp_score, engine_graph(x), as.integer(index - 1L), kpp_code(measure), m,
           mode_code(mode), w$weighted, w$code))
 }
 
-# Group centrality (man/group_centrality.Rd).
-group_centrality <- function(x, group, measure = c("degree", "closeness", "betweenness"),
+# Group centrality (man/net_group_centrality.Rd).
+net_group_centrality <- function(x, group, measure = c("degree", "closeness", "betweenness"),
                              mode = c("out", "in", "all"), normalized = TRUE,
                              weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
   normalized <- check_flag(normalized, "normalized")
@@ -64,15 +64,15 @@ group_centrality <- function(x, group, measure = c("degree", "closeness", "betwe
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
   code <- switch(measure, degree = 0L, closeness = 1L, betweenness = 2L)
-  engine_call("group_centrality",
+  engine_call("net_group_centrality",
     .Call(C_group_centrality, engine_graph(x), as.integer(index - 1L), code, mode_code(mode),
           w$weighted, w$code, normalized, threads))
 }
 
-# Flow betweenness (man/flow_betweenness.Rd).
-flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
+# Flow betweenness (man/net_flow_betweenness.Rd).
+net_flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
                              capacity = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   scale <- match.arg(scale)
   check_flag_or_null(capacity, "capacity")
   if (is.null(capacity)) {
@@ -81,7 +81,7 @@ flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
   if (capacity) require_weights(x)
   threads <- resolve_threads(threads)
   code <- switch(scale, raw = 0L, normalized = 1L, fractional = 2L)
-  engine_call("flow_betweenness",
+  engine_call("net_flow_betweenness",
     .Call(C_flow_betweenness, engine_graph(x), capacity, code, threads))
 }
 

@@ -59,7 +59,7 @@ bridges below are the supported path meanwhile.
 | Vertex connectivity (pairwise and global) and cohesive blocking | R8: Moody and White cohesion | Even and Tarjan 1975; Moody and White 2003 | next |
 | `net_normalize_ties()` (row, column, matrix; sum, mean, max, z, Euclidean, iterative CA) | A5.5.6, U3 | [UCINET](https://sites.google.com/site/ucinetsoftware/home) 6 reference manual (`borgatti2002ucinet`); `hanneman2005introduction` ch. 6 | next |
 | `net_attribute_matrix()` (same, diff, absdiff, sum, product, sender, receiver) | A5.6, A14.5: inputs to QAP and MRQAP | `borgatti2002ucinet` | next |
-| Full `symmetrize` method set (difference, product, division, comparisons) and a missing-value rule; `dichotomize(density =)` and a diagonal policy | A5.5.1, A5.5.4, U3 | `borgatti2002ucinet` | next |
+| Full `symmetrize` method set (difference, product, division, comparisons) and a missing-value rule; `net_dichotomize(density =)` and a diagonal policy | A5.5.1, A5.5.4, U3 | `borgatti2002ucinet` | next |
 | Walk counts, `net_neighbors()`, per-edge mutual flag | R3, S3, NAR2 | `wasserman1994social` ch. 4 | next |
 | Deterministic generators (empty, complete, star, ring, lattice, tree) | S3, S4: reference graphs for density and centralization | [igraph](https://r.igraph.org/)'s `make_*` for conventions | next |
 | Line graph | NAR2: edge-level measures | Harary and Norman 1960 | later |
@@ -123,14 +123,14 @@ bridges below are the supported path meanwhile.
 | Backbone extraction (SDSM with the BiCM null, FDSM by curveball sampling, fixed-row, fixed-column, fixed-fill) returning p-values as an edge column; disparity filter for one-mode weighted networks | S6, A13, U: dark-network data are mostly two-mode | Neal 2014; Saracco et al. 2015; Strona et al. 2014; Serrano, Boguna, and Vespignani 2009 | now |
 | Two-mode clustering coefficients (six-cycle global and local) | S6, R11: [igraph](https://r.igraph.org/)'s transitivity returns 0 on bipartite graphs silently | Opsahl 2013 | next |
 | Two-mode core-periphery, dual-projection Louvain, bi-cliques, two-mode equivalence | A13.5-13.7 | `everett2013dual`; `borgatti1997network` | later |
-| Incidence-matrix constructor; two attribute tables (one per mode) in `twomode()` | W1, R11: the stacked attribute frame with NA blocks | | next |
+| Incidence-matrix constructor; two attribute tables (one per mode) in `net_twomode()` | W1, R11: the stacked attribute frame with NA blocks | | next |
 | Share of projected ties matching on an attribute; per-group homogeneity | R11 | | later |
 
 ## Inference
 
 | What | Why | Implement from | Tier |
 |---|---|---|---|
-| `cug_test()` with vector-valued statistics (per-element two-tailed p) and degree-sequence conditioning; a triad-census CUG table | R7, R9, R13, S16 | `holland1976local` (expected counts under U\|MAN); `wasserman1994social` ch. 14 | now |
+| `net_cug_test()` with vector-valued statistics (per-element two-tailed p) and degree-sequence conditioning; a triad-census CUG table | R7, R9, R13, S16 | `holland1976local` (expected counts under U\|MAN); `wasserman1994social` ch. 14 | now |
 | Tau statistic for ranked-clustering, clustering, and balance hypotheses | R9 | Holland and Leinhardt 1970, 1976; Johnsen 1985 | next |
 | Node-level permutation tests (t-test, ANOVA, regression) and group-level permutation tests | A14.3-4, U9: "does centrality differ by attribute?" | `hubert1987assignment`; Hubert and Schultz 1976; `krackhardt1988predicting` | now |
 | ANOVA density models (constant homophily, variable homophily, structural blockmodel) with permutation p | A14, A10.5, U9 | `hanneman2005introduction` ch. 18 | next |
@@ -157,7 +157,7 @@ bridges below are the supported path meanwhile.
 |---|---|---|---|
 | Planarity test (graph) and geometry crossing count (spatial), under distinct names | Definitions article; road networks | `barthelemy2011spatial` | later |
 | Great-circle curved arcs in spatial plots; map backgrounds | W10, S12 | | later |
-| Opt-in `check_geometry()` stays opt-in (*decided*, article) | sfnetworks enforces at construction | `vandermeer2026sfnetworks` | now (documented) |
+| Opt-in `net_check_geometry()` stays opt-in (*decided*, article) | sfnetworks enforces at construction | `vandermeer2026sfnetworks` | now (documented) |
 
 ## Signed
 
@@ -199,13 +199,13 @@ bridges below are the supported path meanwhile.
 
 | What | Why | Implement from | Tier |
 |---|---|---|---|
-| `to_network()` carrying node, edge, and dyad covariates, documented as the [ergm](https://cran.r-project.org/package=ergm) and tergm hand-off | R13, S18, A15, U10 | `butts2008network`; `hunter2008ergm` | now |
+| `net_to_network()` carrying node, edge, and dyad covariates, documented as the [ergm](https://cran.r-project.org/package=ergm) and tergm hand-off | R13, S18, A15, U10 | `butts2008network`; `hunter2008ergm` | now |
 | `to_siena()`: n x n x T arrays, constant and changing covariates, composition change, structural zeros | R15, S19, A15, U11 | `ripley2026manual` | next |
 | `to_relevent()`: (time, sender, receiver) plus covariate arrays | R13, S20 | Butts 2008 (relational event framework) | next |
 | `to_diffnet()` and from it | R14 | Valente 1995; netdiffuseR (MIT) as a reference | later |
 | egor: three-table import and export (see Ego networks) | R6, S8 | | now |
 | networkDynamic and tsna: spells in both directions, including TEAs | R3 | `butts2026networkdynamic` | next |
-| Lossless `to_tbl_graph()` and back; documented dplyr idioms on `g$nodes` and `g$edges` | S21-23 | `pedersen2017tidygraph` | next |
+| Lossless `net_to_tbl_graph()` and back; documented dplyr idioms on `g$nodes` and `g$edges` | S21-23 | `pedersen2017tidygraph` | next |
 | Extra file formats: ncol, lgl, dimacs, graphdb, adjacency-list files; two-mode and multi-matrix DL; [UCINET](https://sites.google.com/site/ucinetsoftware/home) native .##h | S1, R3, A5.4 | | later |
 | Result provenance: an attribute on returned vectors recording convention and weighting, printed by `summary()` | A (xucinet's `$assumptions`) | | later |
 

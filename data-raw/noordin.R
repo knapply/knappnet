@@ -52,15 +52,16 @@ edges <- do.call(rbind, lapply(edges, function(d) {
   d[setdiff(Reduce(union, lapply(edges, names)), names(d))] <- NA
   d[Reduce(union, lapply(edges, names))]
 }))
-names(edges)[1:2] <- c("from", "to")
+names(edges)[1:2] <- c("source", "target")
 # "NOORDINTOP_BUSINESS&FINANCE" -> "business_finance", and so on.
 short <- tolower(sub("^NOORDINTOP_", "", edges$relation))
 short <- sub("&", "_", short, fixed = TRUE)
 short[short == "trainingevents"] <- "training"
 edges$relation <- short
-utils::write.csv(nodes["name"], file.path(out, "nodes.csv"), row.names = FALSE,
+names(nodes)[names(nodes) == "name"] <- "id"
+utils::write.csv(nodes["id"], file.path(out, "nodes.csv"), row.names = FALSE,
                  fileEncoding = "UTF-8", quote = FALSE)
-utils::write.csv(edges[c("from", "to", "relation")], file.path(out, "relations.csv"),
+utils::write.csv(edges[c("source", "target", "relation")], file.path(out, "relations.csv"),
                  row.names = FALSE, fileEncoding = "UTF-8", quote = FALSE)
 
 env2 <- new.env()
@@ -79,8 +80,8 @@ long <- do.call(rbind, lapply(seq_along(events), function(j) {
 long <- long[order(long$event, long$person), ]
 utils::write.csv(long, file.path(out, "affiliations.csv"), row.names = FALSE,
                  fileEncoding = "UTF-8", quote = FALSE)
-utils::write.csv(data.frame(name = c(people, events),
-                            event = rep(c(FALSE, TRUE), c(length(people), length(events)))),
+utils::write.csv(data.frame(id = c(people, events),
+                            mode = rep(c("person", "event"), c(length(people), length(events)))),
                  file.path(out, "affiliation_nodes.csv"), row.names = FALSE, quote = FALSE)
 cat("rownames:", head(rownames(aff)), "\n")
 cat("written to", out, "\n")

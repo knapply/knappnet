@@ -6,7 +6,7 @@
 `area` is the module the measure belongs to (an existing one such as
 `descriptive`, or a new one), and `name` the measure's snake_case name,
 which becomes the engine function, the C symbol `net_<name>`, the C glue
-entry point `C_<name>`, the R function, and the manifest key. For each
+entry point `C_<name>`, the R function `net_<name>`, and the manifest key. For each
 layer the script either creates the file when the area is new, or prints
 the snippet to paste when the file already exists. Files shared by every
 area (`metrics/mod.rs`, `capi/src/lib.rs`, `netcapi.h`, `init.c`,
@@ -278,36 +278,36 @@ def init_snippet(name: str) -> str:
 
 def r_function(area: str, name: str) -> str:
     title = name.replace("_", " ").capitalize()
-    return f'''# {title} (man/{name}.Rd). Conventions and references are documented
+    return f'''# {title} (man/net_{name}.Rd). Conventions and references are documented
 # there; tools/check_r_docs.py checks that the usage matches this signature.
-{name} <- function(x, threads = 0L) {{
-  check_netframe(x)
+net_{name} <- function(x, threads = 0L) {{
+  check_net_frame(x)
   threads <- resolve_threads(threads)
-  engine_call("{name}", .Call(C_{name}, engine_graph(x), threads))
+  engine_call("net_{name}", .Call(C_{name}, engine_graph(x), threads))
 }}
 '''
 
 
 def rd_file(area: str, name: str) -> str:
     title = name.replace("_", " ").capitalize()
-    return f'''\\name{{{name}}}
-\\alias{{{name}}}
+    return f'''\\name{{net_{name}}}
+\\alias{{net_{name}}}
 \\title{{{title}}}
 \\description{{
 TODO: one sentence on what the measure is.
 }}
 \\usage{{
-{name}(x, threads = 0L)
+net_{name}(x, threads = 0L)
 }}
 \\arguments{{
-\\item{{x}}{{A \\code{{\\link{{netframe}}}}.}}
+\\item{{x}}{{A \\code{{\\link[=net_frame]{{net_frame}}}}.}}
 \\item{{threads}}{{Number of threads; \\code{{0}} uses all available cores.}}
 }}
 \\details{{
 TODO: the conventions, in the same order as the engine module: loops,
 parallel edges, direction, weights, normalization, undefined values
 (\\code{{NaN}}), and which tools the result matches. If tools disagree, add a
-\\code{{convention}} argument (see \\code{{\\link{{closeness}}}}) and one example
+\\code{{convention}} argument (see \\code{{\\link{{net_closeness}}}}) and one example
 per convention below, with a comment naming the tool each reproduces.
 }}
 \\value{{A numeric vector aligned with the rows of \\code{{x$nodes}}.}}
@@ -316,9 +316,9 @@ TODO: Author, A. (Year). Title. \\emph{{Journal}}, volume(issue), pages.
 \\doi{{10.xxxx/xxxxx}}
 }}
 \\examples{{
-g <- netframe(data.frame(from = c(1, 2, 2, 3), to = c(2, 3, 3, 3)),
-              directed = FALSE)
-{name}(g)
+g <- net_frame(data.frame(source = c(1, 2, 2, 3), target = c(2, 3, 3, 3)),
+               directed = FALSE)
+net_{name}(g)
 }}
 '''
 
@@ -331,24 +331,24 @@ def r_tests(area: str, name: str) -> str:
 
 
 def r_tests_snippet(area: str, name: str) -> str:
-    return f'''test_that("{name} matches hand-checked values", {{
+    return f'''test_that("net_{name} matches hand-checked values", {{
   # TODO: values worked out by hand from the definition.
-  g <- netframe(data.frame(from = c(1, 2, 2, 3), to = c(2, 3, 3, 3)),
-                nodes = data.frame(id = 1:4), directed = FALSE)
-  expect_equal({name}(g, threads = 2L), c(1, 2, 1, 0))
+  g <- net_frame(data.frame(source = c(1, 2, 2, 3), target = c(2, 3, 3, 3)),
+                 nodes = data.frame(id = 1:4), directed = FALSE)
+  expect_equal(net_{name}(g, threads = 2L), c(1, 2, 1, 0))
 }})
 
-test_that("{name} rejects bad input", {{
-  g <- netframe(data.frame(from = 1, to = 2))
-  expect_error({name}(g, threads = -1L), "threads")
-  expect_error({name}(list()), "netframe")
+test_that("net_{name} rejects bad input", {{
+  g <- net_frame(data.frame(source = 1, target = 2))
+  expect_error(net_{name}(g, threads = -1L), "threads")
+  expect_error(net_{name}(list()), "net_frame")
 }})
 
-test_that("{name} agrees with igraph", {{
+test_that("net_{name} agrees with igraph", {{
   skip_if_not_installed("igraph")
   # TODO: the igraph call that computes the same thing, if one exists.
-  g <- as_netframe(igraph::make_graph("Zachary"))
-  expect_length({name}(g, threads = 2L), 34)
+  g <- as_net_frame(igraph::make_graph("Zachary"))
+  expect_length(net_{name}(g, threads = 2L), 34)
 }})
 '''
 
@@ -603,8 +603,8 @@ def plan(area: str, name: str) -> list[tuple[str, str, str]]:
         ("crates/capi/src/lib.rs", f"mod {area};\n"),
         ("crates/capi/include/netcapi.h", header_snippet(area, name)),
         ("r/src/init.c", init_snippet(name)),
-        ("r/NAMESPACE", f"export({name})\n"),
-        ("r/_pkgdown.yml", f"  - {name}        # under the reference section the measure belongs to\n"),
+        ("r/NAMESPACE", f"export(net_{name})\n"),
+        ("r/_pkgdown.yml", f"  - net_{name}        # under the reference section the measure belongs to\n"),
         ("docs/references.bib", bib_snippet(name)),
     ]
     for rel, text in shared:

@@ -1,13 +1,13 @@
-# Plot a spatial network on its map (man/plot_spatial.Rd). Appearance
-# arguments are resolved by the helpers in utils-plot.R that plot.netframe()
+# Plot a spatial network on its map (man/net_plot_spatial.Rd). Appearance
+# arguments are resolved by the helpers in utils-plot.R that plot.net_frame()
 # uses; sf geometries are drawn by the helpers in sf.R.
-plot_spatial <- function(x, node_color = NULL, node_size = NULL, node_label = NULL,
+net_plot_spatial <- function(x, node_color = NULL, node_size = NULL, node_label = NULL,
                          edge_width = NULL, edge_color = NULL, ..., legend = TRUE) {
-  check_netframe(x)
+  check_net_frame(x)
   legend <- check_flag(legend, "legend")
   if (!has_positions(x)) {
-    stop(paste0("`x` has no node locations: give sf nodes to netframe(), or record ",
-                "coordinate columns with spatial_network()."), call. = FALSE)
+    stop(paste0("`x` has no node locations: give sf nodes to net_frame(), or record ",
+                "coordinate columns with net_spatial()."), call. = FALSE)
   }
   n <- nrow(x$nodes)
   m <- nrow(x$edges)
@@ -82,11 +82,11 @@ plot_spatial <- function(x, node_color = NULL, node_size = NULL, node_label = NU
   invisible(x)
 }
 
-# Histogram of edge lengths with an optional decay curve (man/plot_spatial.Rd).
-plot_edge_lengths <- function(x, scale = NULL, form = c("exponential", "gaussian", "power"),
+# Histogram of edge lengths with an optional decay curve (man/net_plot_spatial.Rd).
+net_plot_edge_lengths <- function(x, scale = NULL, form = c("exponential", "gaussian", "power"),
                               exponent = 2, ...) {
   form <- match.arg(form)
-  len <- edge_lengths(x)
+  len <- net_edge_lengths(x)
   unit <- attr(len, "unit")
   len <- as.vector(len)
   dots <- list(...)
@@ -106,7 +106,7 @@ plot_edge_lengths <- function(x, scale = NULL, form = c("exponential", "gaussian
     d <- seq(0, max(h$breaks), length.out = 200L)
     old <- graphics::par(new = TRUE)
     on.exit(graphics::par(old), add = TRUE)
-    graphics::plot(d, distance_decay(d, scale, form, exponent), type = "l", lwd = 2,
+    graphics::plot(d, net_distance_decay(d, scale, form, exponent), type = "l", lwd = 2,
                    col = plot_accent, axes = FALSE, xlab = "", ylab = "", ylim = c(0, 1),
                    xlim = range(h$breaks))
     graphics::axis(4, col = plot_accent, col.axis = plot_accent)

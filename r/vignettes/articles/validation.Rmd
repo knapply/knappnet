@@ -125,7 +125,7 @@ with a stated reason. Some examples from the manifest:
 
 - **[sna](https://cran.r-project.org/package=sna), degree, on networks with loops or parallel edges.** sna works on
   adjacency matrices, so parallel edges collapse to one and the diagonal is
-  ignored. `degree(g, convention = "sna")` reproduces sna and is validated
+  ignored. `net_degree(g, convention = "sna")` reproduces sna and is validated
   against it.
 - **[NetworkX](https://networkx.org/), betweenness, on multigraphs.** NetworkX traverses neighbor
   sets, so parallel edges count as a single shortest path; [igraph](https://r.igraph.org/) and

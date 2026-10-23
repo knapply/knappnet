@@ -2,137 +2,233 @@
 # time-respecting paths and reachability, temporal closeness, rolling
 # measures, and burstiness. Plots are in plot-temporal.R.
 
-# Temporal networks (man/temporal_network.Rd).
-temporal_network <- function(edges, nodes = NULL, start = "time", end = NULL,
-                             duration = NULL, directed = TRUE, from = 1L, to = 2L, id = 1L,
-                             node_start = NULL, node_end = NULL, weight = NULL,
-                             weight_type = c("distance", "strength"), graph = list()) {
-  weight_type <- match.arg(weight_type)
-  default_start <- missing(start)
-  if (inherits(edges, "netframe")) {
-    check_netframe(edges)
+# Temporal networks (man/net_temporal.Rd).
+net_temporal <- function(edges, nodes = NULL, start = "time", end = NULL, duration = NULL,
+                         wave = NULL, node_start = NULL, node_end = NULL, ...,
+                         quiet = FALSE) {
+  quiet <- check_flag(quiet, "quiet")
+  if (!is.null(end) && !is.null(duration)) {
+    stop("Give `end` or `duration`, not both.", call. = FALSE)
+  }
+  if (!is.null(wave)) {
+    if (!missing(start) || !is.null(end) || !is.null(duration)) {
+      stop("Give `wave`, or `start` (with `end` or `duration`), not both.", call. = FALSE)
+    }
+    start <- NULL
+  }
+  if (inherits(edges, "net_frame")) {
+    check_net_frame(edges)
     if (!is.null(nodes)) {
-      stop("`nodes` must be NULL when `edges` is a netframe; it already has nodes.",
+      stop("`nodes` must be NULL when `edges` is a net_frame; it already has nodes.",
+           call. = FALSE)
+    }
+    if (...length()) {
+      stop("Other net_frame() arguments apply only when `edges` is a data frame.",
            call. = FALSE)
     }
     x <- edges
-    if (default_start && !is.null(x$roles$start)) {
-      start <- x$roles$start
-      if (missing(end) && missing(duration)) {
-        end <- x$roles$end
-        duration <- x$roles$duration
+    if (missing(start) && is.null(wave)) {
+      if (!is.null(x$roles$start)) {
+        start <- x$roles$start
+        if (is.null(end) && is.null(duration)) {
+          end <- x$roles$end
+          duration <- x$roles$duration
+        }
+      } else if (!is.null(x$roles$wave)) {
+        start <- NULL
+        wave <- x$roles$wave
       }
-      default_start <- FALSE
     }
     if (is.null(node_start) && is.null(node_end)) {
       node_start <- x$roles$node_start
       node_end <- x$roles$node_end
     }
+    roles <- x$roles
+    roles[c("start", "end", "duration", "wave", "node_start", "node_end", "time_class",
+            "tz")] <- NULL
+    roles$start <- role_optional(x$edges, start, "start", "edges")
+    roles$end <- role_optional(x$edges, end, "end", "edges")
+    roles$wave <- role_optional(x$edges, wave, "wave", "edges")
+    roles$node_start <- role_optional(x$nodes, node_start, "node_start", "nodes")
+    roles$node_end <- role_optional(x$nodes, node_end, "node_end", "nodes")
+    roles <- c(roles[!vapply(roles, is.null, TRUE)],
+               time_roles(x$edges, x$nodes, x$node_spells, x$node_changes, roles))
+    out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph,
+                         tables = frame_tables(x))
   } else {
-    x <- netframe(edges, nodes, directed = directed, from = from, to = to, id = id,
-                  weight = weight, weight_type = weight_type, graph = graph)
+    if (is.null(start) && is.null(wave)) {
+      stop("Give the edge times: `start` (with `end` or `duration`) or `wave`.",
+           call. = FALSE)
+    }
+    out <- prepare_frame(c(list(edges = edges, nodes = nodes, start = start, end = end,
+                                wave = wave, node_start = node_start, node_end = node_end),
+                           list(...)))
   }
-  if (default_start && !"time" %in% names(x$edges) && "start" %in% names(x$edges)) {
-    start <- "start"
-  }
-  if (!is.null(end) && !is.null(duration)) {
-    stop("Give `end` or `duration`, not both.", call. = FALSE)
-  }
-  start <- resolve_column(x$edges, start, "start", "edges")
-  kind <- time_kind(x$edges[[start]])
-  if (is.na(kind)) {
-    stop(sprintf(paste0("Start times (column `%s` of `edges`) must be numbers, dates, ",
-                        "or date-times, not %s."), start, describe_class(x$edges[[start]])),
-         call. = FALSE)
-  }
-  if (!is.null(end)) {
-    end <- resolve_column(x$edges, end, "end", "edges")
-    check_same_kind(x$edges[[end]], kind, sprintf("End times (column `%s` of `edges`)", end))
+  if (is.null(out$roles$start) && is.null(out$roles$wave)) {
+    stop("A temporal network needs edge times: `start` or `wave`.", call. = FALSE)
   }
   if (!is.null(duration)) {
-    duration <- resolve_column(x$edges, duration, "duration", "edges")
-    d <- x$edges[[duration]]
+    duration <- role_column(out$edges, duration, "duration", "edges")
+    d <- out$edges[[duration]]
     if (!(inherits(d, "difftime") || (is.numeric(d) && !is.object(d)))) {
       stop(sprintf("Durations (column `%s` of `edges`) must be numbers or a difftime, not %s.",
                    duration, describe_class(d)), call. = FALSE)
     }
+    out$roles$duration <- duration
   }
-  if (!is.null(node_start)) {
-    node_start <- resolve_column(x$nodes, node_start, "node_start", "nodes")
-    check_same_kind(x$nodes[[node_start]], kind,
-                    sprintf("Node start times (column `%s` of `nodes`)", node_start))
-  }
-  if (!is.null(node_end)) {
-    node_end <- resolve_column(x$nodes, node_end, "node_end", "nodes")
-    check_same_kind(x$nodes[[node_end]], kind,
-                    sprintf("Node end times (column `%s` of `nodes`)", node_end))
-  }
-  v <- x$edges[[start]]
-  tz <- if (kind == "POSIXct") {
-    z <- attr(as.POSIXct(v), "tzone")
-    if (is.null(z)) "" else z[[1L]]
-  }
-  x$roles$start <- start
-  x$roles$end <- end
-  x$roles$duration <- duration
-  x$roles$node_start <- node_start
-  x$roles$node_end <- node_end
-  x$roles$time_class <- kind
-  x$roles$tz <- tz
-  temporal_times(x)
-  if (!is.null(node_start) || !is.null(node_end)) node_presence(x)
-  x
+  build_net_frame(out, quiet, "net_temporal")
 }
 
-# See man/temporal_network.Rd.
-is_temporal <- function(x) inherits(x, "netframe") && !is.null(x$roles$start)
+# See man/net_temporal.Rd.
+net_is_temporal <- function(x) inherits(x, "temporal_net_frame")
 
-# A temporal network at a time or in a window (man/network_at.Rd).
-network_at <- function(x, time, nodes = c("all", "present", "active")) {
+# Panel waves as a temporal network (man/net_panel.Rd).
+net_panel <- function(networks, wave = "wave", node_start = "wave_first",
+                      node_end = "wave_last", quiet = FALSE) {
+  if (!is.list(networks) || !length(networks) ||
+      !all(vapply(networks, inherits, TRUE, "net_frame"))) {
+    stop("`networks` must be a non-empty list of net_frames, one per wave.", call. = FALSE)
+  }
+  wave <- check_string(wave, "wave")
+  node_start <- check_string(node_start, "node_start")
+  node_end <- check_string(node_end, "node_end")
+  first <- networks[[1L]]
+  for (k in seq_along(networks)) {
+    g <- networks[[k]]
+    check_net_frame(g)
+    if (!identical(g$directed, first$directed)) {
+      stop(sprintf("Wave %d is %s but wave 1 is %s; every wave must have the same direction.",
+                   k, if (g$directed) "directed" else "undirected",
+                   if (first$directed) "directed" else "undirected"), call. = FALSE)
+    }
+    if (!identical(g$roles$id, first$roles$id) || !identical(g$roles$source, first$roles$source) ||
+        !identical(g$roles$target, first$roles$target)) {
+      stop(sprintf("Wave %d names its identifier or endpoint columns differently from wave 1.",
+                   k), call. = FALSE)
+    }
+    if (wave %in% names(g$edges)) {
+      stop(sprintf("Wave %d already has an edge column called `%s`; choose another `wave`.",
+                   k, wave), call. = FALSE)
+    }
+  }
+  waves <- seq_along(networks)
+  if (!is.null(names(networks))) {
+    numbered <- suppressWarnings(as.integer(names(networks)))
+    if (!anyNA(numbered) && !anyDuplicated(numbered)) waves <- numbered
+  }
+  edges <- lapply(seq_along(networks), function(k) {
+    e <- as.data.frame(networks[[k]]$edges)
+    e[[wave]] <- rep(waves[[k]], nrow(e))
+    e
+  })
+  edges <- do.call(rbind, edges)
+  rownames(edges) <- NULL
+  nodes <- lapply(seq_along(networks), function(k) {
+    nd <- as.data.frame(networks[[k]]$nodes)
+    nd$.wave <- rep(waves[[k]], nrow(nd))
+    nd
+  })
+  nodes <- do.call(rbind, nodes)
+  id <- first$roles$id
+  ids <- as.character(nodes[[id]])
+  present <- tapply(nodes$.wave, ids, range)
+  keep <- !duplicated(ids)
+  nodes <- nodes[keep, , drop = FALSE]
+  nodes$.wave <- NULL
+  rownames(nodes) <- NULL
+  # Node spells: from the first wave a node appears in to the end of its
+  # last wave, [first, last + 1), only when the composition changes.
+  spells <- NULL
+  r <- present[as.character(nodes[[id]])]
+  lo <- vapply(r, `[`, 0, 1L)
+  hi <- vapply(r, `[`, 0, 2L) + 1
+  if (any(lo != min(waves)) || any(hi != max(waves) + 1)) {
+    nodes[[node_start]] <- as.double(lo)
+    nodes[[node_end]] <- as.double(hi)
+    spells <- list(node_start = node_start, node_end = node_end)
+  }
+  weight <- first$roles$weight
+  net_temporal(edges, nodes, wave = wave, node_start = spells$node_start,
+               node_end = spells$node_end, directed = first$directed,
+               source = first$roles$source, target = first$roles$target, id = id,
+               weight = if (!is.null(weight) && weight %in% names(edges)) weight,
+               weight_type = first$roles$weight_type, quiet = quiet, graph = first$graph)
+}
+
+# See man/net_panel.Rd.
+net_waves <- function(x, nodes = c("present", "all")) {
+  check_temporal(x)
+  nodes <- match.arg(nodes)
+  if (is.null(x$roles$wave)) {
+    stop("`x` has no wave column; net_waves() splits a panel built with `wave =` ",
+         "or net_panel().", call. = FALSE)
+  }
+  w <- x$edges[[x$roles$wave]]
+  waves <- sort(unique(w))
+  node_w <- if (nodes == "present" && (!is.null(x$roles$node_start) || !is.null(x$roles$node_end))) {
+    p <- node_presence(x)
+    function(k) p$start <= k & k < p$end
+  } else {
+    function(k) rep(TRUE, nrow(x$nodes))
+  }
+  out <- lapply(waves, function(k) {
+    edges <- x$edges[w == k, , drop = FALSE]
+    nd <- x$nodes[node_w(k), , drop = FALSE]
+    rownames(edges) <- NULL
+    rownames(nd) <- NULL
+    rebuild_net_frame(x, edges, nd, wave = NULL, node_start = NULL, node_end = NULL,
+                     fn = "net_waves")
+  })
+  names(out) <- as.character(waves)
+  out
+}
+
+# A temporal network at a time or in a window (man/net_at.Rd).
+net_at <- function(x, time, nodes = c("all", "present", "active")) {
   check_temporal(x)
   nodes <- match.arg(nodes)
   t <- time_arg(time, x, "time")
   ptr <- engine_temporal(x)
-  idx <- engine_call("network_at", .Call(C_temporal_active_at, ptr, t)) + 1
+  idx <- engine_call("net_at", .Call(C_temporal_active_at, ptr, t)) + 1
   present <- if (nodes == "present") node_present(x, t, t) else NULL
-  slice_netframe(x, idx, nodes, present)
+  slice_net_frame(x, idx, nodes, present)
 }
 
-# See man/network_at.Rd.
-network_window <- function(x, from, to, nodes = c("all", "present", "active")) {
+# See man/net_at.Rd.
+net_window <- function(x, from, to, nodes = c("all", "present", "active")) {
   check_temporal(x)
   nodes <- match.arg(nodes)
   a <- time_arg(from, x, "from")
   b <- time_arg(to, x, "to")
   if (!(a < b)) stop("`from` must be earlier than `to`.", call. = FALSE)
   ptr <- engine_temporal(x)
-  w <- engine_call("network_window", .Call(C_temporal_windows, ptr, a, b))
+  w <- engine_call("net_window", .Call(C_temporal_windows, ptr, a, b))
   present <- if (nodes == "present") node_present(x, a, b) else NULL
-  slice_netframe(x, w[[2L]] + 1, nodes, present)
+  slice_net_frame(x, w[[2L]] + 1, nodes, present)
 }
 
-# Snapshots of a temporal network (man/snapshots.Rd).
-snapshots <- function(x, width = NULL, step = width, breaks = NULL, from = NULL, to = NULL,
+# Snapshots of a temporal network (man/net_snapshots.Rd).
+net_snapshots <- function(x, width = NULL, step = width, breaks = NULL, from = NULL, to = NULL,
                       nodes = c("all", "present", "active")) {
   check_temporal(x)
   nodes <- match.arg(nodes)
   w <- window_series(x, width, step, breaks, from, to)
   ptr <- engine_temporal(x)
-  res <- engine_call("snapshots", .Call(C_temporal_windows, ptr, w$from, w$to))
+  res <- engine_call("net_snapshots", .Call(C_temporal_windows, ptr, w$from, w$to))
   offsets <- res[[1L]]
   idx <- res[[2L]] + 1
   out <- lapply(seq_along(w$from), function(k) {
     keep <- if (offsets[k + 1L] > offsets[k]) idx[(offsets[k] + 1):offsets[k + 1L]] else numeric()
     present <- if (nodes == "present") node_present(x, w$from[k], w$to[k]) else NULL
-    slice_netframe(x, keep, nodes, present)
+    slice_net_frame(x, keep, nodes, present)
   })
   attr(out, "windows") <- data.frame(start = from_seconds(w$from, x),
                                      end = from_seconds(w$to, x))
   out
 }
 
-# Aggregate a temporal network into a weighted network (man/aggregate_network.Rd).
-aggregate_network <- function(x, weight = c("count", "duration"), from = NULL, to = NULL) {
+# Aggregate a temporal network into a weighted network (man/net_aggregate.Rd).
+net_aggregate <- function(x, weight = c("count", "duration"), from = NULL, to = NULL) {
   check_temporal(x)
   weight <- match.arg(weight)
   if (is.null(from) != is.null(to)) {
@@ -144,22 +240,23 @@ aggregate_network <- function(x, weight = c("count", "duration"), from = NULL, t
     if (!(window[1L] < window[2L])) stop("`from` must be earlier than `to`.", call. = FALSE)
   }
   ptr <- engine_temporal(x)
-  a <- engine_call("aggregate_network", .Call(C_temporal_aggregate, ptr, window))
+  a <- engine_call("net_aggregate", .Call(C_temporal_aggregate, ptr, window))
   ids <- x$nodes[[x$roles$id]]
   edges <- data.frame(ids[a[[1L]] + 1], ids[a[[2L]] + 1], stringsAsFactors = FALSE)
-  ends <- c(x$roles$from, x$roles$to)
-  if (any(ends %in% c("count", "duration", "first", "last"))) ends <- c("from", "to")
+  ends <- c(x$roles$source, x$roles$target)
+  if (any(ends %in% c("count", "duration", "first", "last"))) ends <- c("source", "target")
   names(edges) <- ends
   edges$count <- a[[3L]]
   edges$duration <- a[[4L]] / time_scale(x)
   edges$first <- from_seconds(a[[5L]], x)
   edges$last <- from_seconds(a[[6L]], x)
-  netframe(edges, x$nodes, directed = x$directed, from = 1L, to = 2L, id = x$roles$id,
-           weight = weight, weight_type = "strength", graph = x$graph)
+  net_frame(edges, x$nodes, directed = x$directed, source = ends[[1L]], target = ends[[2L]],
+            id = x$roles$id, weight = weight, weight_type = "strength", quiet = TRUE,
+            graph = x$graph)
 }
 
-# Time-respecting paths (man/temporal_distances.Rd).
-temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure", "fastest",
+# Time-respecting paths (man/net_temporal_distances.Rd).
+net_temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure", "fastest",
                                            "shortest", "average"),
                                from = NULL, to = NULL, start = NULL, end = NULL,
                                min_wait = 0, max_wait = Inf, strict = FALSE, traversal = 0,
@@ -173,17 +270,17 @@ temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure
   ptr <- engine_temporal(x)
   scale <- time_scale(x)
   if (type == "average") {
-    r <- engine_call("temporal_distances", .Call(C_temporal_closeness, ptr, opts, TRUE))
+    r <- engine_call("net_temporal_distances", .Call(C_temporal_closeness, ptr, opts, TRUE))
     m <- matrix(r[[2L]], n, n, byrow = TRUE)[rows, cols, drop = FALSE] / scale
   } else if (type == "latest_departure") {
     # One pass per destination, walks into it: row k holds the latest
     # departure from every node to destination cols[k].
-    v <- engine_call("temporal_distances",
+    v <- engine_call("net_temporal_distances",
                      .Call(C_temporal_paths, ptr, 1L, 2L, as.integer(cols - 1L), opts))
     m <- t(matrix(v, length(cols), n, byrow = TRUE))[rows, , drop = FALSE] / scale
   } else {
     code <- switch(type, earliest_arrival = 0L, fastest = 2L, shortest = 3L)
-    v <- engine_call("temporal_distances",
+    v <- engine_call("net_temporal_distances",
                      .Call(C_temporal_paths, ptr, code, 1L, as.integer(rows - 1L), opts))
     m <- matrix(v, length(rows), n, byrow = TRUE)[, cols, drop = FALSE]
     if (type != "shortest") m <- m / scale
@@ -193,44 +290,44 @@ temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure
   m
 }
 
-# Temporal reachability (man/temporal_reach.Rd).
-temporal_reach <- function(x, mode = c("out", "in"), start = NULL, end = NULL, min_wait = 0,
+# Temporal reachability (man/net_temporal_reach.Rd).
+net_temporal_reach <- function(x, mode = c("out", "in"), start = NULL, end = NULL, min_wait = 0,
                            max_wait = Inf, strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
   mode <- match.arg(mode)
   opts <- path_options(x, start, end, min_wait, max_wait, strict, traversal, threads)
-  engine_call("temporal_reach", .Call(C_temporal_reach, engine_temporal(x),
+  engine_call("net_temporal_reach", .Call(C_temporal_reach, engine_temporal(x),
                                       if (mode == "out") 1L else 2L, opts))
 }
 
-# See man/temporal_reach.Rd.
-reachability_ratio <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
+# See man/net_temporal_reach.Rd.
+net_reach_ratio <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
                                strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
   opts <- path_options(x, start, end, min_wait, max_wait, strict, traversal, threads)
   n <- nrow(x$nodes)
   if (n < 2L) return(NaN)
-  r <- engine_call("reachability_ratio", .Call(C_temporal_reach, engine_temporal(x), 1L, opts))
+  r <- engine_call("net_reach_ratio", .Call(C_temporal_reach, engine_temporal(x), 1L, opts))
   sum(r) / (n * (n - 1))
 }
 
-# Temporal closeness (man/temporal_closeness.Rd).
-temporal_closeness <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
+# Temporal closeness (man/net_temporal_closeness.Rd).
+net_temporal_closeness <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
                                strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
   opts <- path_options(x, start, end, min_wait, max_wait, strict, traversal, threads)
-  r <- engine_call("temporal_closeness",
+  r <- engine_call("net_temporal_closeness",
                    .Call(C_temporal_closeness, engine_temporal(x), opts, FALSE))
   r[[1L]] * time_scale(x)
 }
 
-# Apply a measure over a series of windows (man/rolling.Rd).
-rolling <- function(x, fun, width = NULL, step = width, ..., breaks = NULL, from = NULL,
+# Apply a measure over a series of windows (man/net_rolling.Rd).
+net_rolling <- function(x, fun, width = NULL, step = width, ..., breaks = NULL, from = NULL,
                     to = NULL, nodes = c("all", "present", "active")) {
   check_temporal(x)
   fun <- match.fun(fun)
   nodes <- match.arg(nodes)
-  snaps <- snapshots(x, width = width, step = step, breaks = breaks, from = from, to = to,
+  snaps <- net_snapshots(x, width = width, step = step, breaks = breaks, from = from, to = to,
                      nodes = nodes)
   w <- attr(snaps, "windows")
   parts <- lapply(seq_along(snaps), function(k) {
@@ -264,13 +361,13 @@ rolling <- function(x, fun, width = NULL, step = width, ..., breaks = NULL, from
              stringsAsFactors = FALSE)
 }
 
-# Inter-event times and burstiness (man/burstiness.Rd).
-burstiness <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
+# Inter-event times and burstiness (man/net_burstiness.Rd).
+net_burstiness <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
   check_temporal(x)
   by <- match.arg(by)
   mode <- match.arg(mode)
   ptr <- engine_temporal(x)
-  r <- engine_call("burstiness", .Call(C_temporal_burstiness, ptr,
+  r <- engine_call("net_burstiness", .Call(C_temporal_burstiness, ptr,
                                        if (by == "node") 0L else 1L, mode_code(mode)))
   out <- event_groups(x, ptr, by, seq_along(r[[1L]]))
   out$events <- r[[1L]]
@@ -279,13 +376,13 @@ burstiness <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) 
   out
 }
 
-# See man/burstiness.Rd.
-inter_event_times <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
+# See man/net_burstiness.Rd.
+net_inter_event <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
   check_temporal(x)
   by <- match.arg(by)
   mode <- match.arg(mode)
   ptr <- engine_temporal(x)
-  r <- engine_call("inter_event_times", .Call(C_temporal_inter_event, ptr,
+  r <- engine_call("net_inter_event", .Call(C_temporal_inter_event, ptr,
                                               if (by == "node") 0L else 1L, mode_code(mode)))
   out <- event_groups(x, ptr, by, r[[1L]] + 1)
   out$gap <- r[[2L]] / time_scale(x)
@@ -295,10 +392,11 @@ inter_event_times <- function(x, by = c("node", "pair"), mode = c("all", "out", 
 # ---- Internal helpers ----------------------------------------------------------
 
 check_temporal <- function(x) {
-  check_netframe(x)
-  if (is.null(x$roles$start)) {
-    stop(paste0("`x` must be a temporal network, with times on its edges; create one ",
-                "with temporal_network()."), call. = FALSE)
+  check_net_frame(x)
+  if (!inherits(x, "temporal_net_frame")) {
+    stop(paste0("`x` must be a temporal network (class `temporal_net_frame`), with times or ",
+                "waves on its edges; create one with net_temporal() or net_panel()."),
+         call. = FALSE)
   }
 }
 
@@ -343,6 +441,14 @@ from_seconds <- function(s, x) {
 # Start and end times (seconds), checked. Instantaneous contacts end when
 # they start.
 temporal_times <- function(x) {
+  if (is.null(x$roles$start) && is.null(x$roles$wave)) {
+    stop(paste0("`x` has node spells but no edge times; time-respecting paths need edge ",
+                "times (`start` or `wave`)."), call. = FALSE)
+  }
+  if (!is.null(x$roles$wave)) {
+    w <- as.double(x$edges[[x$roles$wave]])
+    return(list(start = w, end = w + 1))
+  }
   kind <- x$roles$time_class
   s <- to_seconds(x$edges[[x$roles$start]], kind)
   bad <- which(!is.finite(s))
@@ -398,21 +504,43 @@ node_presence <- function(x) {
 
 # Which nodes are present at time a (a == b) or in the window [a, b).
 node_present <- function(x, a, b) {
+  if (!is.null(x$node_spells)) return(node_present_spells(x, a, b))
   if (is.null(x$roles$node_start) && is.null(x$roles$node_end)) {
     return(rep(TRUE, nrow(x$nodes)))
   }
   p <- node_presence(x)
+  spell_hits(p$start, p$end, a, b)
+}
+
+# Whether each spell [start, end) is active at time a (a == b) or overlaps
+# the window [a, b).
+spell_hits <- function(start, end, a, b) {
   if (a == b) {
-    (p$start <= a & a < p$end) | (p$start == a & p$end == a)
+    (start <= a & a < end) | (start == a & end == a)
   } else {
-    ifelse(p$start == p$end, p$start >= a & p$start < b, p$start < b & p$end > a)
+    ifelse(start == end, start >= a & start < b, start < b & end > a)
   }
+}
+
+# node_present() for a node spells table, through the engine's resolved
+# spells (a node without spells is present throughout).
+node_present_spells <- function(x, a, b) {
+  n <- nrow(x$nodes)
+  engine_graph(x, missing_ok = TRUE)
+  r <- engine_call("net_frame", .Call(C_frame_node_spells, x$cache$frame, as.double(n)))
+  counts <- diff(r$offsets)
+  node <- rep(seq_len(n), counts)
+  hit <- spell_hits(r$start, r$end, a, b)
+  out <- counts == 0L
+  out[unique(node[hit])] <- TRUE
+  out
 }
 
 # The engine's temporal network for `x`, built on first use and cached
 # alongside the graph handle (see engine_graph()).
 engine_temporal <- function(x) {
   check_index(x)
+  require_resolved(x)
   tt <- temporal_times(x)
   cache <- x$cache
   ptr <- cache$temporal_ptr
@@ -422,7 +550,7 @@ engine_temporal <- function(x) {
   if (!fresh) {
     m <- length(x$index$src)
     if (m && max(x$index$src, x$index$tgt) >= nrow(x$nodes)) index_error()
-    ptr <- engine_call("temporal_network",
+    ptr <- engine_call("net_temporal",
       .Call(C_temporal_new, nrow(x$nodes), x$index$src, x$index$tgt, tt$start, tt$end,
             x$directed))
     cache$temporal_ptr <- ptr
@@ -491,7 +619,7 @@ path_options <- function(x, start, end, min_wait, max_wait, strict, traversal, t
   c(s, e, lo, hi, as.double(strict), tcode, tval, as.double(resolve_threads(threads)))
 }
 
-# Window starts and ends (seconds) for snapshots() and rolling().
+# Window starts and ends (seconds) for net_snapshots() and net_rolling().
 window_series <- function(x, width, step, breaks, from, to) {
   if (!is.null(breaks)) {
     if (!is.null(width) || !is.null(from) || !is.null(to)) {
@@ -531,8 +659,8 @@ window_series <- function(x, width, step, breaks, from, to) {
 }
 
 # The contacts at 1-based positions `keep` (ascending), with the nodes
-# chosen by `nodes`, as a temporal netframe with every column and role.
-slice_netframe <- function(x, keep, nodes, present) {
+# chosen by `nodes`, as a temporal net_frame with every column and role.
+slice_net_frame <- function(x, keep, nodes, present) {
   keep <- as.integer(keep)
   node_keep <- switch(nodes,
     all = rep(TRUE, nrow(x$nodes)),
@@ -545,13 +673,7 @@ slice_netframe <- function(x, keep, nodes, present) {
   edges_df <- x$edges[keep, , drop = FALSE]
   rownames(nodes_df) <- NULL
   rownames(edges_df) <- NULL
-  weight_type <- if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type
-  out <- netframe(edges_df, nodes_df, directed = x$directed, from = x$roles$from,
-                  to = x$roles$to, id = x$roles$id, weight = x$roles$weight,
-                  weight_type = weight_type, graph = x$graph)
-  extra <- setdiff(names(x$roles), names(out$roles))
-  if (length(extra)) out$roles[extra] <- x$roles[extra]
-  out
+  rebuild_net_frame(x, edges_df, nodes_df)
 }
 
 # Node or pair identifiers for rows of event statistics (1-based groups).
@@ -561,25 +683,7 @@ event_groups <- function(x, ptr, by, groups) {
   if (by == "node") {
     return(data.frame(node = ids[groups], stringsAsFactors = FALSE))
   }
-  a <- engine_call("burstiness", .Call(C_temporal_aggregate, ptr, NULL))
-  data.frame(from = ids[a[[1L]][groups] + 1], to = ids[a[[2L]][groups] + 1],
+  a <- engine_call("net_burstiness", .Call(C_temporal_aggregate, ptr, NULL))
+  data.frame(source = ids[a[[1L]][groups] + 1], target = ids[a[[2L]][groups] + 1],
              stringsAsFactors = FALSE)
-}
-
-# One line for print.netframe().
-temporal_summary <- function(x) {
-  tt <- tryCatch(temporal_times(x), error = function(e) NULL)
-  if (is.null(tt)) {
-    return(sprintf("temporal: times in `%s` (some are invalid)\n", x$roles$start))
-  }
-  m <- length(tt$start)
-  cols <- sprintf("`%s`", x$roles$start)
-  if (!is.null(x$roles$end)) cols <- sprintf("%s to `%s`", cols, x$roles$end)
-  if (!is.null(x$roles$duration)) cols <- sprintf("%s plus `%s`", cols, x$roles$duration)
-  if (m == 0L) return(sprintf("temporal: no contacts (times in %s)\n", cols))
-  last <- if (is.null(tt$end)) max(tt$start) else max(tt$end)
-  inst <- if (is.null(tt$end)) m else sum(tt$end == tt$start)
-  sprintf("temporal: contacts from %s to %s (times in %s), %s instantaneous\n",
-          format(from_seconds(min(tt$start), x)), format(from_seconds(last, x)), cols,
-          if (inst == m) "all" else format(inst))
 }

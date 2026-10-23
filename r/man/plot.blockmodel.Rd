@@ -2,7 +2,7 @@
 \alias{plot.blockmodel}
 \title{Plot a blockmodel}
 \description{
-Draws the block densities of a \code{\link{blockmodel}} as a heat map,
+Draws the block densities of a \code{\link{net_blockmodel}} as a heat map,
 with the 1-blocks of the image matrix outlined, and, when the network is
 given, its adjacency matrix permuted so that nodes of the same block are
 adjacent, with lines at the block boundaries: the two displays used to
@@ -13,8 +13,8 @@ present blockmodels since White, Boorman, and Breiger (1976).
      values = TRUE, ...)
 }
 \arguments{
-\item{x}{A \code{\link{blockmodel}}.}
-\item{network}{The \code{\link{netframe}} the blockmodel was computed on,
+\item{x}{A \code{\link{net_blockmodel}}.}
+\item{network}{The \code{\link{net_frame}} the blockmodel was computed on,
 for the permuted adjacency matrix. \code{NULL} draws only the densities.}
 \item{which}{\code{"both"} (when \code{network} is given),
 \code{"density"}, or \code{"matrix"}.}
@@ -36,10 +36,10 @@ White, H. C., Boorman, S. A., & Breiger, R. L. (1976). Social structure
 from multiple networks. I. Blockmodels of roles and positions.
 \emph{American Journal of Sociology}, 81(4), 730-780. \doi{10.1086/226141}
 }
-\seealso{\code{\link{blockmodel}}, \code{\link{plot_matrix}}.}
+\seealso{\code{\link{net_blockmodel}}, \code{\link{net_plot_matrix}}.}
 \examples{
-g <- example_network("florentine")
-bm <- blockmodel(g, concor(g, depth = 2))
+g <- net_example("florentine")
+bm <- net_blockmodel(g, net_concor(g, depth = 2))
 plot(bm)
 plot(bm, network = g)
 }

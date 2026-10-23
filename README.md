@@ -54,28 +54,44 @@ remotes::install_github("knapply/knappnet", subdir = "r")
 library(knappnet)
 
 edges <- data.frame(
-  from = c("ana", "ana", "ben", "cy", "cy"),
-  to   = c("ben", "cy",  "cy",  "dee", "eli")
+  source = c("ana", "ana", "ben", "cy", "cy"),
+  target   = c("ben", "cy",  "cy",  "dee", "eli")
 )
-g <- netframe(edges, directed = FALSE)
+g <- net_frame(edges, directed = FALSE)
 g
-#> <netframe> undirected network with 5 nodes and 5 edges, unweighted
+#> # net_frame: 5 nodes, 5 edges
+#> #   directed:  no        mode: one-mode (5 actors)
+#> #   weights:   unweighted
+#> #   time:      static    space: none
+#> #   simple:    no loops, no parallel edges
+#> #   components: 1    isolates: 0    density: 0.500
+#> #
+#> # Nodes (5 x 1)   Edges (5 x 2)
+#> #   id              source target
+#> #   <chr>           <chr>  <chr>
+#> # 1 ana           1 ana    ben
+#> # 2 ben           2 ana    cy
+#> # 3 cy            3 ben    cy
+#> # 4 dee           4 cy     dee
+#> # 5 eli           5 cy     eli
 
-g$nodes$degree <- degree(g)
-g$nodes$betweenness <- betweenness(g)
+g$nodes$degree <- net_degree(g)
+g$nodes$betweenness <- net_betweenness(g)
 g$nodes
-#>   name degree betweenness
-#> 1  ana      2           0
-#> 2  ben      2           0
-#> 3   cy      4           5
-#> 4  dee      1           0
-#> 5  eli      1           0
+#>    id degree betweenness
+#> 1 ana      2           0
+#> 2 ben      2           0
+#> 3  cy      4           5
+#> 4 dee      1           0
+#> 5 eli      1           0
 ```
 
-A `netframe` is a list holding the two tables, `g$nodes` and `g$edges`,
+A `net_frame` is a list holding the two tables, `g$nodes` and `g$edges`,
 plus a note of which columns play which role (identifier, endpoints,
-weight). Nodes that only appear in the edge list are added to the node
-table automatically. Every measure returns a vector aligned with the rows
+weight, and so on), and the printed card says what kind of network it is.
+Without a node table, the nodes are taken from the edge list. The tables
+are validated before anything is computed, and every problem is reported
+at once with the rows concerned. Every measure returns a vector aligned with the rows
 of `g$nodes`, so results can be stored as columns and analyzed with
 whatever data tools you already use.
 
@@ -130,20 +146,20 @@ classic case: each tool treats unreachable nodes differently. Here `a`,
 `b`, and `c` form a path, and `d` and `e` are a separate pair:
 
 ```r
-split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
 data.frame(
-  node     = split$nodes$name,
-  igraph   = round(closeness(split), 3),
-  networkx = round(closeness(split, convention = "networkx"), 3),
-  sna      = closeness(split, convention = "sna"),
-  ucinet   = round(closeness(split, convention = "ucinet"), 3)
+  node     = split$nodes$id,
+  igraph   = round(net_closeness(split), 3),
+  networkx = round(net_closeness(split, convention = "networkx"), 3),
+  sna      = net_closeness(split, convention = "sna"),
+  ucinet   = round(net_closeness(split, convention = "ucinet"), 3)
 )
 #>   node igraph networkx sna ucinet
 #> 1    a  0.333    0.333   0  0.444
 #> 2    b  0.500    0.500   0  0.500
-#> 3    d  1.000    0.250   0  0.400
-#> 4    c  0.333    0.333   0  0.444
+#> 3    c  0.333    0.333   0  0.444
+#> 4    d  1.000    0.250   0  0.400
 #> 5    e  1.000    0.250   0  0.400
 ```
 

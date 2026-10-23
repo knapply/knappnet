@@ -44,15 +44,15 @@ nx.betweenness_centrality(G, normalized=False)
 ```
 
 ```{r}
-edges <- data.frame(from = c("ana", "ana", "ben", "cy", "cy"),
-                    to   = c("ben", "cy", "cy", "dee", "eli"))
-g <- netframe(edges, directed = FALSE)
-betweenness(g)
+edges <- data.frame(source = c("ana", "ana", "ben", "cy", "cy"),
+                    target   = c("ben", "cy", "cy", "dee", "eli"))
+g <- net_frame(edges, directed = FALSE)
+net_betweenness(g)
 ```
 
 Results are vectors in the order of `g$nodes`, not dictionaries keyed by
-node. `setNames(betweenness(g), g$nodes$name)` gives the keyed form, and
-`g$nodes$betweenness <- betweenness(g)` stores the result as a column.
+node. `setNames(net_betweenness(g), g$nodes$id)` gives the keyed form, and
+`g$nodes$betweenness <- net_betweenness(g)` stores the result as a column.
 
 Two more differences matter:
 
@@ -69,34 +69,34 @@ Two more differences matter:
 
 | [NetworkX](https://networkx.org/) | knappnet | Notes |
 |---|---|---|
-| `nx.Graph()`, `nx.DiGraph()`, `nx.MultiGraph()` | `netframe(edges, nodes, directed)` | |
-| `nx.from_pandas_edgelist(df)` | `netframe(df)` | Endpoints are the first two columns unless `from`, `to` name others. |
+| `nx.Graph()`, `nx.DiGraph()`, `nx.MultiGraph()` | `net_frame(edges, nodes, directed)` | |
+| `nx.from_pandas_edgelist(df, source, target)` | `net_frame(df, source = "source", target = "target")` | Endpoint columns are named explicitly; the defaults are `"source"` and `"target"`, as in NetworkX. |
 | `G.add_nodes_from(...)` with attributes | the `nodes` data frame | Isolates need a row in `nodes`. |
 | `nx.to_numpy_array(G)`, `nx.to_scipy_sparse_array(G)` | `as.matrix(g)`, `as.matrix(g, sparse = TRUE)` | |
-| `nx.from_numpy_array(A)` | `as_netframe(A)` | |
-| `nx.read_graphml()`, `read_gexf()`, `read_gml()`, `read_pajek()`, `node_link_graph()` | `read_network(file)` | Format from the extension. |
-| `nx.write_graphml()`, ... | `write_network(g, file)` | |
-| `G.degree()` | `degree(g)` | |
-| `G.degree(weight="weight")` | `strength(g)` | |
-| `nx.degree_centrality(G)` | `degree(g) / (nrow(g$nodes) - 1)` | |
-| `nx.betweenness_centrality(G)` | `betweenness(g, normalized = TRUE, convention = "networkx")` | NetworkX normalizes by default; knappnet does not. The convention matters only with parallel edges. |
-| `nx.closeness_centrality(G)` | `closeness(g, convention = "networkx")` | Wasserman-Faust scaling for disconnected networks; distances *to* the node in directed networks. |
-| `nx.harmonic_centrality(G)` | `harmonic_centrality(g, convention = "networkx")` | Not normalized; distances to the node. |
-| `nx.eigenvector_centrality_numpy(G)` | `eigenvector_centrality(g, convention = "networkx")` | Unit Euclidean norm; NetworkX refuses disconnected networks, and so does this convention. |
-| `nx.density(G)` | `graph_density(g, convention = "networkx")` | Differs from the default only for a single node. |
-| `nx.connected_components(G)` | `components(g)$membership` | A membership vector instead of a list of sets. |
-| `nx.weakly_connected_components()`, `strongly_connected_components()` | `components(g, mode = "weak" / "strong")` | |
-| `nx.core_number(G)` | `coreness(g)` | NetworkX rejects loops and multigraphs; knappnet counts them as [igraph](https://r.igraph.org/) does. |
-| `nx.find_cliques(G)` | `max_cliques(g)` | |
-| `max(len(c) for c in nx.find_cliques(G))` | `clique_number(g)` | |
-| `nx.community.louvain_communities(G, seed=)` | `cluster_louvain(g, seed = )` | A membership vector with a `modularity` attribute. Partitions differ between implementations; modularity is comparable. |
-| `nx.community.modularity(G, communities)` | `modularity(g, membership)` | NetworkX returns 0 for a network without edges; knappnet returns `NaN`. |
-| `nx.constraint(G)`, `nx.effective_size(G)` | `constraint(g)`, `effective_size(g)` | NetworkX counts self-loops as ties to oneself; knappnet ignores them, as Burt's measures concern ties to others. |
-| (none) | `efficiency(g)` | Burt's efficiency, effective size over the number of contacts (not `nx.local_efficiency()`). |
-| `nx.triadic_census(G)` | `triad_census(g)` | NetworkX accepts only directed graphs. |
-| (none) | `brokerage()`, `structural_equivalence()`, `concor()` | |
-| (none) | `qap_cor()`, `mrqap()` | QAP correlation and MRQAP regression. |
-| (none) | `centralization()`, `fragmentation()` | |
+| `nx.from_numpy_array(A)` | `as_net_frame(A)` | |
+| `nx.read_graphml()`, `read_gexf()`, `read_gml()`, `read_pajek()`, `node_link_graph()` | `net_read(file)` | Format from the extension. |
+| `nx.write_graphml()`, ... | `net_write(g, file)` | |
+| `G.degree()` | `net_degree(g)` | |
+| `G.degree(weight="weight")` | `net_strength(g)` | |
+| `nx.degree_centrality(G)` | `net_degree(g) / (nrow(g$nodes) - 1)` | |
+| `nx.betweenness_centrality(G)` | `net_betweenness(g, normalized = TRUE, convention = "networkx")` | NetworkX normalizes by default; knappnet does not. The convention matters only with parallel edges. |
+| `nx.closeness_centrality(G)` | `net_closeness(g, convention = "networkx")` | Wasserman-Faust scaling for disconnected networks; distances *to* the node in directed networks. |
+| `nx.harmonic_centrality(G)` | `net_harmonic(g, convention = "networkx")` | Not normalized; distances to the node. |
+| `nx.eigenvector_centrality_numpy(G)` | `net_eigen(g, convention = "networkx")` | Unit Euclidean norm; NetworkX refuses disconnected networks, and so does this convention. |
+| `nx.density(G)` | `net_density(g, convention = "networkx")` | Differs from the default only for a single node. |
+| `nx.connected_components(G)` | `net_components(g)$membership` | A membership vector instead of a list of sets. |
+| `nx.weakly_connected_components()`, `strongly_connected_components()` | `net_components(g, mode = "weak" / "strong")` | |
+| `nx.core_number(G)` | `net_coreness(g)` | NetworkX rejects loops and multigraphs; knappnet counts them as [igraph](https://r.igraph.org/) does. |
+| `nx.find_cliques(G)` | `net_max_cliques(g)` | |
+| `max(len(c) for c in nx.find_cliques(G))` | `net_clique_number(g)` | |
+| `nx.community.louvain_communities(G, seed=)` | `net_louvain(g, seed = )` | A membership vector with a `modularity` attribute. Partitions differ between implementations; modularity is comparable. |
+| `nx.community.modularity(G, communities)` | `net_modularity(g, membership)` | NetworkX returns 0 for a network without edges; knappnet returns `NaN`. |
+| `nx.constraint(G)`, `nx.effective_size(G)` | `net_constraint(g)`, `net_effective_size(g)` | NetworkX counts self-loops as ties to oneself; knappnet ignores them, as Burt's measures concern ties to others. |
+| (none) | `net_efficiency(g)` | Burt's efficiency, effective size over the number of contacts (not `nx.local_efficiency()`). |
+| `nx.triadic_census(G)` | `net_triad_census(g)` | NetworkX accepts only directed graphs. |
+| (none) | `net_brokerage()`, `net_struct_equiv()`, `net_concor()` | |
+| (none) | `net_qap_cor()`, `net_mrqap()` | QAP correlation and MRQAP regression. |
+| (none) | `net_centralization()`, `net_fragmentation()` | |
 
 PageRank, Katz centrality, assortativity, ego networks, bipartite
 (two-mode) networks, and layouts are coming soon.
@@ -108,11 +108,11 @@ share of the network a node reaches (Wasserman and Faust 1994, p. 201), so
 a node in a small component is not mistaken for a central one:
 
 ```{r}
-split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
-data.frame(node     = split$nodes$name,
-           networkx = round(closeness(split, convention = "networkx"), 3),
-           igraph   = round(closeness(split, normalized = TRUE), 3))
+data.frame(node     = split$nodes$id,
+           networkx = round(net_closeness(split, convention = "networkx"), 3),
+           igraph   = round(net_closeness(split, normalized = TRUE), 3))
 ```
 
 **Parallel edges in betweenness.** NetworkX walks neighbor sets, so two
@@ -121,11 +121,11 @@ edge as a distinct shortest path. In this network `a` and `b` are joined
 twice:
 
 ```{r}
-multi <- netframe(data.frame(from = c("a", "a", "b", "a", "d"),
-                             to   = c("b", "b", "c", "d", "c")), directed = FALSE)
-data.frame(node     = multi$nodes$name,
-           igraph   = round(betweenness(multi), 3),
-           networkx = round(betweenness(multi, convention = "networkx"), 3))
+multi <- net_frame(data.frame(source = c("a", "a", "b", "a", "d"),
+                             target   = c("b", "b", "c", "d", "c")), directed = FALSE)
+data.frame(node     = multi$nodes$id,
+           igraph   = round(net_betweenness(multi), 3),
+           networkx = round(net_betweenness(multi, convention = "networkx"), 3))
 ```
 
 Between `a` and `c` there are three shortest paths under the default (two
@@ -136,11 +136,11 @@ NetworkX's.
 that the largest is 1. The ranking is the same:
 
 ```{r}
-kite <- netframe(data.frame(from = c(1, 1, 1, 2, 2, 3, 4),
-                            to   = c(2, 3, 4, 3, 4, 4, 5)), directed = FALSE)
-data.frame(node     = kite$nodes$name,
-           igraph   = round(eigenvector_centrality(kite), 3),
-           networkx = round(eigenvector_centrality(kite, convention = "networkx"), 3))
+kite <- net_frame(data.frame(source = c(1, 1, 1, 2, 2, 3, 4),
+                            target   = c(2, 3, 4, 3, 4, 4, 5)), directed = FALSE)
+data.frame(node     = kite$nodes$id,
+           igraph   = round(net_eigen(kite), 3),
+           networkx = round(net_eigen(kite, convention = "networkx"), 3))
 ```
 
 **Weighted shortest paths with ties.** Reciprocals of whole-number weights
