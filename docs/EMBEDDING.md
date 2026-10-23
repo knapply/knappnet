@@ -6,6 +6,9 @@ embedded devices. These are the properties it must have, with status.
 
 ## Interface stability
 
+Deferred until the feature set settles; the interface may change freely
+until then.
+
 - [ ] `net_abi_version()` and a header version macro; semantic versioning
       of the C ABI with a written compatibility policy.
 - [ ] Every function returns a status code and writes a message into a
