@@ -9,6 +9,16 @@ title="$1"
 shift
 for f in "$@"; do
   [ -f "$f" ] || continue
-  body=$(tail -n 150 "$f" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
+  case "$f" in
+    *.Rout.fail)
+      # Test logs can contain very long diffs; show each failure's header
+      # and first lines, then the summary at the end.
+      text=$( (grep -n -A8 -E '^── (Failure|Error)' "$f" | head -n 200; echo '...'; tail -n 15 "$f") )
+      ;;
+    *)
+      text=$(tail -n 150 "$f")
+      ;;
+  esac
+  body=$(printf '%s\n' "$text" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
   echo "::${LEVEL:-error} title=${title}: $(basename "$f")::${body}"
 done

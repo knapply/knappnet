@@ -102,15 +102,15 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `edge_betweenness_normalized` | 28 / 0 / 0 / 0 |  |  |  | 25 / 2 / 0 / 0 |  |  |  |  |
 | `edge_betweenness_weighted` | 7 / 0 / 0 / 0 |  | 0 / 0 / 0 / 7 |  | 7 / 0 / 0 / 0 |  |  |  |  |
 | `edge_betweenness_weighted_strength` | 7 / 0 / 0 / 0 |  | 0 / 0 / 0 / 7 |  | 5 / 2 / 0 / 0 |  |  |  |  |
-| `information_centrality` | 28 / 0 / 0 / 0 |  |  |  | 23 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |
+| `information_centrality` | 28 / 0 / 0 / 0 |  |  |  | 23 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
 | `information_centrality_weighted` | 7 / 0 / 0 / 0 |  |  |  | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 |  |  |  |
 | `bridging_coefficient` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `bridging_centrality` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `hierarchy` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `hierarchy_weighted` | 7 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `centralization_eigenvector` | 27 / 0 / 0 / 0 |  | 0 / 0 / 0 / 27 |  |  |  |  |  |  |
-| `regular_equivalence` | 28 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 28 |  |  |  |
-| `regular_equivalence_seed` | 28 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 28 |  |  |  |
+| `regular_equivalence` | 28 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 27 |  |  |  |
+| `regular_equivalence_seed` | 28 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 27 |  |  |  |
 | `regular_equivalence_weighted` | 7 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `automorphic_equivalence` | 8 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `block_density` | 28 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 26 |  |  |  |
@@ -150,29 +150,29 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `hits_hubs` | 20 / 0 / 0 / 0 |  | 0 / 0 / 0 / 20 |  |  |  |  |  |  |
 | `hits_authorities_networkx` | 20 / 0 / 0 / 0 |  |  |  | 26 / 0 / 0 / 0 |  |  |  |  |
 | `hits_hubs_networkx` | 20 / 0 / 0 / 0 |  |  |  | 26 / 0 / 0 / 0 |  |  |  |  |
-| `assortativity_degree` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
+| `assortativity_degree` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
 | `assortativity_degree_networkx` | 28 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
 | `assortativity_degree_undirected` | 9 / 0 / 0 / 0 |  | 0 / 0 / 0 / 9 |  |  |  |  |  |  |
 | `assortativity_degree_weighted` | 7 / 0 / 0 / 0 |  |  |  | 7 / 0 / 0 / 0 |  |  |  |  |
 | `assortativity_nominal` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
-| `assortativity_nominal_undirected` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
+| `assortativity_nominal_undirected` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
 | `assortativity_nominal_networkx` | 28 / 0 / 0 / 0 |  |  |  | 26 / 2 / 0 / 0 |  |  |  |  |
 | `assortativity_modularity` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
-| `assortativity_values` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
-| `assortativity_values_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 0 / 0 / 0 / 9 |  |  |  |  |  |  |
+| `assortativity_values` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
+| `assortativity_values_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 | 0 / 0 / 0 / 9 |  |  |  |  |  |  |
 | `assortativity_values_networkx` | 28 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
 | `assortativity_covariance` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  |  |  |  |  |  |
-| `mixing_matrix` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |  |
-| `mixing_matrix_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |  |  |  |  |
-| `mixing_matrix_nodes` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |  |
-| `mixing_matrix_nodes_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |  |  |  |  |
-| `mixing_matrix_nodes_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |  |  |  |  |
-| `ei_index` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |  |
+| `mixing_matrix` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |  |  |  |  |
+| `mixing_matrix_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  |  |  |  |  |  |  |
+| `mixing_matrix_nodes` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |  |  |  |  |
+| `mixing_matrix_nodes_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  |  |  |  |  |  |  |
+| `mixing_matrix_nodes_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  |  |  |  |  |  |  |
+| `ei_index` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |  |  |  |  |
 | `ei_index_group` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `ei_index_group_out` | 9 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
-| `ei_index_group_homophily` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |  |
+| `ei_index_group_homophily` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |  |  |  |  |
 | `ei_index_node` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
-| `ei_index_node_homophily` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |  |  |  |  |
+| `ei_index_node_homophily` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |  |  |  |  |  |  |  |
 | `group_shares` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
 | `coreness_all` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 26 / 2 / 0 / 0 |  |  |  |  |
 | `coreness_out` | 9 / 0 / 0 / 0 |  | 0 / 0 / 0 / 9 |  |  |  |  |  |  |

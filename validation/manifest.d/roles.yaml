@@ -208,8 +208,13 @@ information_centrality:
       undefined_reason: "NetworkX refuses graphs that are not connected (an isolate disconnects them) and a one-node graph."
     sna:
       call: "sna::infocent(m, gmode, cmode = 'weak')"
-      undefined_on: [single_node, empty]
-      undefined_reason: "sna::infocent() fails on networks with no ties."
+      undefined_on: [empty, single_node, two_triangles_isolate]
+      undefined_reason: "sna::infocent() fails on networks with no ties, and its linear solve is singular when the network has an isolate."
+      differs_when: [disconnected]
+      reason: >-
+        On networks with more than one component sna's results differ from
+        Stephenson and Zelen's formula as evaluated exactly by the
+        definition oracle, which agrees with this engine.
 
 information_centrality_weighted:
   engine: {fn: information_centrality, weighted: true}
@@ -225,6 +230,12 @@ information_centrality_weighted:
       undefined_reason: "NetworkX refuses graphs that are not connected."
     sna:
       call: "sna::infocent(valued matrix, gmode, cmode = 'weak')"
+      differs_when: [directed]
+      reason: >-
+        For valued directed networks sna symmetrizes the tie values
+        differently from this engine; on undirected valued networks the
+        two agree, and the definition oracle agrees with this engine
+        throughout.
 
 # ---- Bridging and hierarchy ------------------------------------------------
 
@@ -289,6 +300,9 @@ regular_equivalence:
       call: "greatest relation satisfying White-Reitz regularity on (a_ik, a_ki) tie types, by deleting violating pairs"
     sna:
       call: "classes at distance 0 in sna::redist(m, method = 'catrege')"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        sna fails on a network with a single node.
 
 regular_equivalence_seed:
   engine: {fn: regular_equivalence, weighted: false, seed: mod3}
@@ -300,6 +314,9 @@ regular_equivalence_seed:
       call: "as regular_equivalence, restricted to pairs with equal seed labels (node %% 3)"
     sna:
       call: "sna::redist(m, method = 'catrege', seed.partition = v %% 3), distance 0"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        sna fails on a network with a single node.
 
 regular_equivalence_weighted:
   engine: {fn: regular_equivalence, weighted: true}
@@ -337,7 +354,7 @@ block_density:
       call: "ties / pairs per ordered pair of blocks, diagonal excluded, exact arithmetic; one row per block, -1 where no pairs"
     sna:
       call: "sna::blockmodel(m, v %% 3, block.content = 'density')$block.model"
-      undefined_on: [single_node, pair]
+      undefined_on: [pair, single_node]
       undefined_reason: "sna::blockmodel() needs at least three nodes to form the mod-3 blocks it is given here (the partition has fewer than three blocks and sna indexes them by number)."
 
 block_density_loops:

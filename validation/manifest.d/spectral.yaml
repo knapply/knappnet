@@ -324,6 +324,9 @@ assortativity_degree:
       call: "igraph::assortativity_degree(g, directed = TRUE)"
     homophily:
       call: "homophily::assort_degree(g)"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
       differs_when: [loops, multi_edges]
       reason: >-
         homophily takes degrees from the row and column sums of the
@@ -384,6 +387,9 @@ assortativity_nominal_undirected:
       call: "igraph::assortativity_nominal(g, types, directed = FALSE)"
     homophily:
       call: "homophily::assort_discrete(g, 'group'), which symmetrizes the mixing matrix"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 assortativity_nominal_networkx:
   engine: {fn: assortativity_nominal, types: mod3, directed: true, loops: once}
@@ -420,6 +426,9 @@ assortativity_values:
       call: "igraph::assortativity(g, values = (7 * (0:(n - 1))) %% 11, directed = TRUE)"
     homophily:
       call: "homophily::assort_scalar(g, (7 * (0:(n - 1))) %% 11)"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 assortativity_values_in:
   engine: {fn: assortativity_values, values: num7, values_in: num3, directed: true, loops: twice}
@@ -432,6 +441,9 @@ assortativity_values_in:
       call: "igraph::assortativity(g, values = 7v mod 11, values.in = 3v mod 5, directed = TRUE)"
     homophily:
       call: "homophily::assort_scalar(g, 7v mod 11, 3v mod 5)"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 assortativity_values_networkx:
   engine: {fn: assortativity_values, values: num7, directed: true, loops: once}
@@ -462,6 +474,9 @@ mixing_matrix:
       call: "arc counts by category of v mod 3, folded into the upper triangle for undirected networks"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'group')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 mixing_matrix_in:
   engine: {fn: mixing_matrix, dim1: mod3, direction: in}
@@ -472,6 +487,9 @@ mixing_matrix_in:
       call: "transpose of the arc counts by source and target category"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'group', direction = 'in')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 mixing_matrix_nodes:
   engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: all}
@@ -482,6 +500,9 @@ mixing_matrix_nodes:
       call: "for each node, its ties to nodes in each category of v mod 3, both directions"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 mixing_matrix_nodes_out:
   engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: out}
@@ -492,6 +513,9 @@ mixing_matrix_nodes_out:
       call: "for each node, its out-ties to nodes in each category"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group', direction = 'out')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 mixing_matrix_nodes_in:
   engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: in}
@@ -502,6 +526,9 @@ mixing_matrix_nodes_in:
       call: "category of the sender (rows) by receiving node (columns)"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group', direction = 'in')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 ei_index:
   engine: {fn: ei_index, groups: mod3, scope: global}
@@ -512,6 +539,9 @@ ei_index:
       call: "(E - I) / (E + I) over all edges, groups v mod 3 (Krackhardt and Stern 1988)"
     homophily:
       call: "homophily::ei_index(g, 'group', scope = 'global')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 ei_index_group:
   engine: {fn: ei_index, groups: mod3, scope: group, counting: standard}
@@ -538,6 +568,9 @@ ei_index_group_homophily:
       call: "I_g from the diagonal and E_g from row g of the upper triangle of homophily's mixing matrix"
     homophily:
       call: "homophily::ei_index(g, 'group', scope = 'group')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 ei_index_node:
   engine: {fn: ei_index, groups: mod3, scope: node, counting: standard}
@@ -556,6 +589,9 @@ ei_index_node_homophily:
       call: "as ei_index_node, with a self-loop counted twice when ties are counted both ways"
     homophily:
       call: "homophily::ei_index(g, 'group', scope = 'node')"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        homophily fails on networks without ties or with a single node.
 
 group_shares:
   engine: {fn: group_shares, groups: mod3}
