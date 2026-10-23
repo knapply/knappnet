@@ -242,8 +242,9 @@ test_that("information centrality matches the formula", {
   expect_equal(net_information(g2), 2 * net_information(g1))
   expect_equal(net_information(g1, weighted = FALSE),
                net_information(net_frame(e, directed = FALSE)))
-  bad <- net_frame(data.frame(source = 1, target = 2, w = -1), directed = FALSE, weight = "w", weight_type = "distance")
-  expect_error(net_information(bad), "strictly positive")
+  # Distances that are not positive are refused when the network is built.
+  expect_error(net_frame(data.frame(source = 1, target = 2, w = -1), directed = FALSE,
+                         weight = "w", weight_type = "distance"), "positive")
   # Direction is ignored and parallel edges collapse.
   d <- net_frame(data.frame(source = c(1, 2, 1, 4, 4), target = c(2, 1, 3, 1, 1)))
   expect_equal(net_information(d), c(4 / 3, 0.8, 0.8, 0.8))

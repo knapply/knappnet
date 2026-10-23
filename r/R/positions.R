@@ -154,8 +154,8 @@ net_block_summary <- function(bm) {
   r <- rep(seq_len(k), times = k)
   s <- rep(seq_len(k), each = k)
   data.frame(
-    source = bm$blocks[r],
-    target = bm$blocks[s],
+    from = bm$blocks[r],
+    to = bm$blocks[s],
     size_from = bm$sizes[r],
     size_to = bm$sizes[s],
     ties = as.vector(bm$ties),

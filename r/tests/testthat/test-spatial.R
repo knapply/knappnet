@@ -28,7 +28,7 @@ test_that("net_spatial() records coordinates and checks them", {
   expect_equal(g$roles$radius, 6371.0088)
   expect_s3_class(g, "net_frame")
   plain <- net_frame(g$edges, g$nodes, directed = FALSE)
-  expect_error(net_edge_lengths(plain), "spatial_network")
+  expect_error(net_edge_lengths(plain), "net_spatial")
   expect_error(net_spatial(plain, coords = c("lon", "height")), "coords\\[2\\]")
   expect_error(net_spatial(plain, coords = "lon"), "two columns")
   expect_error(net_spatial(plain, coords = c("id", "lat")), "numeric")
@@ -92,6 +92,7 @@ test_that("proximity networks join nearby points", {
   expect_equal(nrow(dup$edges), 1L)
   expect_equal(dup$edges$source, "a")
   expect_equal(dup$edges$target, "f")
+  expect_null(dup$roles$weight)
   # Nearest neighbours: directed, nearest first, ties by position.
   k1 <- net_proximity(pts, coords = c("x", "y"), crs = "planar", k = 1)
   expect_true(k1$directed)

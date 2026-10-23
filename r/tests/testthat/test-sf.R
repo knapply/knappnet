@@ -395,6 +395,8 @@ test_that("net_proximity() takes sf nodes of any geometry", {
   rx <- net_proximity(regions, within = 0, id = "region", exact = TRUE)
   expect_equal(nrow(rx$edges), 6L)  # every pair touches
   expect_equal(rx$edges$distance, rep(0, 6))
+  # Zero distances cannot be path lengths, so the network is unweighted.
+  expect_null(rx$roles$weight)
   expect_error(net_proximity(data.frame(x = 1, y = 1), coords = c("x", "y"), crs = "planar",
                                  within = 1, exact = TRUE), "sf nodes")
 })
@@ -476,7 +478,7 @@ test_that("net_plot_spatial() draws sf geometries", {
     cities <- net_frame(data.frame(source = "London", target = "Paris"), city_points(), directed = FALSE)
     expect_silent(net_plot_spatial(cities))
     expect_silent(net_plot_edge_lengths(net_frame(net_to_sf(cities, "edges"), city_points(),
-                                             directed = FALSE), scale = 5e5))
+                                                  directed = FALSE, quiet = TRUE), scale = 5e5))
     expect_equal(graphics::par("mar"), c(5.1, 4.1, 4.1, 2.1))
   })
 })

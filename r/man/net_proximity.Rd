@@ -57,7 +57,9 @@ by position in \code{nodes}, so the result is reproducible; a point with
 fewer than \code{k} other points gets them all. The edges carry a
 \code{distance} column, which is the network's weight column (as
 distances), so path-based measures use spatial lengths unless asked not
-to.
+to. A distance of zero (coincident points, or touching geometries with
+\code{exact = TRUE}) cannot be a path length, so when any edge has one the
+column is kept as an attribute and the network is unweighted.
 
 For an sf node table (or a net_frame with sf node geometry), when
 \code{coords} is not given, the geometries are reduced to representative
@@ -73,7 +75,7 @@ great-circle distance, so it finds the same neighbours as the exact
 metric.
 }
 \value{A spatial net_frame (see \code{\link{net_spatial}}) with edge
-columns \code{from}, \code{to}, and \code{distance}.}
+columns \code{source}, \code{target}, and \code{distance}.}
 \references{
 Bentley, J. L. (1975). Multidimensional binary search trees used for
 associative searching. \emph{Communications of the ACM}, 18(9), 509-517.

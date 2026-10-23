@@ -38,7 +38,7 @@ test_that("every error is reported at once, with the rows", {
   expect_error(net_frame(data.frame(source = "a", target = "q"), nodes), "not in `nodes`: q")
   expect_error(net_frame(data.frame(source = "a", target = "b"), data.frame(id = c("a", "a"))),
                "must be unique")
-  expect_error(net_frame(data.frame(source = NA, target = "b")), "must not be missing")
+  expect_error(net_frame(data.frame(source = NA_character_, target = "b")), "must not be missing")
   expect_error(net_frame(data.frame(source = "a", target = "b"), weight = "w"),
                "`weight` names column `w`, which is not in `edges`")
   err <- tryCatch(net_frame(data.frame(source = c("a", NA), target = c("q", "b")),

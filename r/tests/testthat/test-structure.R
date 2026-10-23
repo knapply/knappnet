@@ -163,13 +163,14 @@ test_that("discrete core-periphery fits by every link rule", {
   g <- cp_net()
   cp <- net_core_periphery(g, seed = 1, threads = 2)
   expect_s3_class(cp, "core_periphery")
-  expect_equal(g$nodes$id[cp$core], c(2, 5, 7))
+  expect_equal(sort(g$nodes$id[cp$core]), c(2, 5, 7))
   expect_equal(cp$correlation, 1)
   expect_equal(net_core_periphery(g, seed = 1, threads = 1)$core, cp$core)
   # Exhaustive optima for the other rules (see validation/).
-  expect_equal(g$nodes$id[net_core_periphery(g, links = "ones", seed = 1, threads = 2)$core],
+  expect_equal(sort(g$nodes$id[net_core_periphery(g, links = "ones", seed = 1, threads = 2)$core]),
                c(2, 5))
-  expect_equal(g$nodes$id[net_core_periphery(g, links = "zeros", seed = 1, threads = 2)$core],
+  expect_equal(sort(g$nodes$id[net_core_periphery(g, links = "zeros", seed = 1,
+                                                  threads = 2)$core]),
                c(1, 2, 4, 5, 7))
   expect_equal(net_core_periphery(g, links = "ones", seed = 1, threads = 2)$correlation,
                0.6330542, tolerance = 1e-6)

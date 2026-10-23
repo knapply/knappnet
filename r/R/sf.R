@@ -542,8 +542,8 @@ sf_proximity_network <- function(nodes, within, k, knn, id, exact, threads) {
   ids <- nodes[[id]]
   edges <- data.frame(source = ids[r$from], target = ids[r$to], distance = r$distance,
                       stringsAsFactors = FALSE)
-  net_frame(edges, nodes, directed = r$directed, id = id, weight = "distance",
-            weight_type = "distance", quiet = TRUE)
+  net_frame(edges, nodes, directed = r$directed, id = id, weight = proximity_weight(edges),
+            weight_type = proximity_weight_type(edges), quiet = TRUE)
 }
 
 # Pairs within a distance, or k nearest neighbours, by sf::st_distance on

@@ -157,8 +157,8 @@ test_that("flow betweenness uses capacities when asked", {
   expect_equal(net_flow_betweenness(dist), unit)
   expect_equal(net_flow_betweenness(dist, capacity = TRUE), raw)
   expect_error(net_flow_betweenness(path5(), capacity = TRUE), "no weights")
-  neg <- net_frame(transform(e, w = -w), directed = FALSE, weight = "w", weight_type = "distance")
-  expect_error(net_flow_betweenness(neg, capacity = TRUE), "non-negative")
+  expect_error(net_frame(transform(e, w = -w), directed = FALSE, weight = "w",
+                         weight_type = "distance"), "positive")
 })
 
 test_that("flow betweenness matches sna", {

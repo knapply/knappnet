@@ -204,8 +204,8 @@ net_proximity <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "pl
   ids <- nodes[[id]]
   edges <- data.frame(source = ids[r$from], target = ids[r$to], distance = r$distance,
                       stringsAsFactors = FALSE)
-  g <- net_frame(edges, nodes, directed = r$directed, id = id, weight = "distance",
-                 weight_type = "distance", quiet = TRUE)
+  g <- net_frame(edges, nodes, directed = r$directed, id = id, weight = proximity_weight(edges),
+                 weight_type = proximity_weight_type(edges), quiet = TRUE)
   net_spatial(g, coords = c(cx, cy), crs = crs, radius = radius, quiet = TRUE)
 }
 
@@ -221,6 +221,12 @@ check_proximity_args <- function(within, k) {
 
 # The engine's neighbour search: pairs within a distance or each point's
 # k nearest neighbours, as 1-based positions with their distances.
+# Distances are the weights of a proximity network when every one is
+# positive; a zero distance (coincident points, touching polygons) cannot
+# be a path length, so the column is then kept as an attribute only.
+proximity_weight <- function(edges) if (all(edges$distance > 0)) "distance"
+proximity_weight_type <- function(edges) if (all(edges$distance > 0)) "distance"
+
 proximity_pairs <- function(px, py, lonlat, radius, within, k, threads) {
   r <- engine_call("net_proximity",
                    .Call(C_proximity, px, py, if (lonlat) 0L else 1L, as.double(radius),

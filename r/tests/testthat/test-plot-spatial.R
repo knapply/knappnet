@@ -16,7 +16,7 @@ test_that("net_plot_spatial() draws point-based networks without sf", {
     expect_silent(net_plot_spatial(g, node_color = "region", node_size = "lat", main = "Cities"))
     expect_silent(net_plot_spatial(g, node_color = "red", node_label = FALSE, edge_width = 2,
                                edge_color = c("red", "blue", "green"), legend = FALSE))
-    expect_silent(net_plot_spatial(net_spatial(net_frame(edges[0, ], nodes, directed = FALSE, quiet = TRUE))))
+    expect_silent(net_plot_spatial(net_spatial(net_frame(edges[0, ], nodes, directed = FALSE, quiet = TRUE), quiet = TRUE)))
     expect_error(net_plot_spatial(net_frame(edges, directed = FALSE)), "no node locations")
     expect_error(net_plot_spatial(g, node_color = "nope"), "color")
     expect_error(net_plot_spatial(g, node_size = 1:2), "node_size")
@@ -31,7 +31,7 @@ test_that("net_plot_spatial() draws point-based networks without sf", {
     expect_silent(out <- net_plot_edge_lengths(g))
     expect_identical(out, g)
     expect_silent(net_plot_edge_lengths(g, scale = 500, form = "gaussian", main = "Lengths"))
-    expect_silent(net_plot_edge_lengths(net_spatial(net_frame(edges[0, ], nodes, directed = FALSE, quiet = TRUE))))
+    expect_silent(net_plot_edge_lengths(net_spatial(net_frame(edges[0, ], nodes, directed = FALSE, quiet = TRUE), quiet = TRUE)))
     expect_equal(graphics::par("mar"), c(5.1, 4.1, 4.1, 2.1))
   })
 })

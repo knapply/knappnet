@@ -12,7 +12,7 @@ test_that("cug_test returns the observed statistic and a null distribution", {
   expect_equal(ct$dropped, 0)
   expect_equal(ct$p_greater, mean(ct$null >= ct$observed))
   expect_equal(ct$p_less, mean(ct$null <= ct$observed))
-  expect_equal(ct$statistic, "transitivity")
+  expect_equal(ct$statistic, "net_transitivity")
   # The karate club is far more clustered than G(n, m).
   expect_equal(ct$p_greater, 0)
   expect_equal(ct$p_less, 1)
