@@ -16,6 +16,7 @@ pub mod dendrogram;
 pub mod fast_greedy;
 pub mod girvan_newman;
 pub mod leading_eigen;
+pub mod walktrap;
 
 pub use compare::{compare_partitions, split_join_distance, CompareMethod};
 pub use dendrogram::{
@@ -25,6 +26,7 @@ pub use dendrogram::{
 pub use fast_greedy::{fast_greedy, FastGreedy};
 pub use girvan_newman::{girvan_newman, GirvanNewman};
 pub use leading_eigen::{leading_eigen, LeadingEigen};
+pub use walktrap::{walktrap, Walktrap};
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
