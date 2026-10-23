@@ -1,7 +1,6 @@
 # Temporary: runs the R code of the articles (not part of the package build).
 
 test_that("article knappnet.Rmd runs", {
-  skip_on_cran()
   skip_if_not_installed("igraph")
   skip_if_not_installed("network")
   on_null_device(local({
@@ -106,7 +105,6 @@ net_read(edges_csv, nodes = nodes_csv, directed = FALSE)
 })
 
 test_that("article network-types.Rmd runs", {
-  skip_on_cran()
   on_null_device(local({
 
 library(knappnet)
@@ -260,7 +258,6 @@ net_example("sampson")
 })
 
 test_that("article definitions.Rmd runs", {
-  skip_on_cran()
   on_null_device(local({
 
 library(knappnet)
@@ -366,7 +363,6 @@ net_project(hyper)$edges   # the clique expansion, weighted by shared hyperedges
 })
 
 test_that("article coming-from-igraph.Rmd runs", {
-  skip_on_cran()
   skip_if_not_installed("igraph")
   on_null_device(local({
 
@@ -413,7 +409,6 @@ head(igraph::vertex_attr(back, "betweenness"))
 })
 
 test_that("article coming-from-networkx.Rmd runs", {
-  skip_on_cran()
   on_null_device(local({
 
 library(knappnet)
@@ -441,7 +436,6 @@ data.frame(node     = kite$nodes$id,
 })
 
 test_that("article coming-from-statnet.Rmd runs", {
-  skip_on_cran()
   skip_if_not_installed("network")
   skip_if_not_installed("sna")
   on_null_device(local({
@@ -532,7 +526,6 @@ rbind(knappnet_exact = fit$p.value[, "Pr(>=|b|)"],
 })
 
 test_that("article coming-from-ucinet-ora-pajek-gephi.Rmd runs", {
-  skip_on_cran()
   skip_if_not_installed("igraph")
   on_null_device(local({
 
@@ -626,7 +619,6 @@ net_fragmentation(split)
 })
 
 test_that("article conventions.Rmd runs", {
-  skip_on_cran()
   on_null_device(local({
 
 library(knappnet)
@@ -685,7 +677,6 @@ c(igraph = net_density(multi), sna = net_density(multi, convention = "sna"))
 })
 
 test_that("article plotting.Rmd runs", {
-  skip_on_cran()
   on_null_device(local({
 
 library(knappnet)
@@ -742,7 +733,6 @@ net_plot_rolling(net_rolling(g, net_degree, width = 6, step = 3), main = "Degree
 })
 
 test_that("article spatial-networks.Rmd runs", {
-  skip_on_cran()
   skip_if_not_installed("sf")
   on_null_device(local({
 has_sf <- requireNamespace("sf", quietly = TRUE)
