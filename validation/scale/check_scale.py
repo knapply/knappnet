@@ -96,10 +96,13 @@ BUDGETS = {
     "cut_points": LINEAR,
     "pagerank": LINEAR,
     "hits": LINEAR,
-    "assortativity_degree": LINEAR,
     "assortativity_nominal": LINEAR,
     "assortativity_values": LINEAR,
     "project": LINEAR,
+    # NetworkX's degree assortativity builds a mixing matrix indexed by
+    # every distinct strength, which on a network with real weights has
+    # one entry per node.
+    "assortativity_degree": ("n", 5000),
     # Dense n x n matrices in the oracle (Katz: an eigenvalue problem).
     "katz": ("n", 1500),
     "constraint": ("n", 1500),
@@ -142,15 +145,23 @@ def budget_of(spec: dict) -> dict | tuple:
     return BUDGETS.get(eng["fn"], PATHS)
 
 
-# Convention differences that only networks of the scale tier exhibit,
-# declared here as the manifest declares the others (the tags come from
-# generate.py). Each entry: the engine functions, whether weighted, the
-# oracles, the fixture tags, and the reason.
+# Convention differences that only networks of the scale tier exhibit
+# (the main fixtures have no such case), declared here as the manifest
+# declares the others with `differs_when`. Each entry: the engine
+# parameters a variant must match (as in VARIANT_BUDGETS), the oracles,
+# the fixture tags (from generate.py), and the reason.
 SCALE_DIFFERENCES = [
-    ({"betweenness", "betweenness_simple"}, True, {"networkx"}, {"near_ties"},
+    ({"fn": "betweenness", "weighted": True}, {"networkx"}, {"near_ties"},
      "the engine, like igraph, counts shortest paths whose lengths agree to a relative "
      "tolerance of 1e-10 as tied; NetworkX compares lengths exactly, so on networks with "
      "nearly equal path lengths (generate.py's near_ties tag) it counts fewer shortest paths"),
+    ({"fn": "betweenness_simple", "weighted": True}, {"networkx"}, {"near_ties"},
+     "as for betweenness"),
+    ({"fn": "twomode", "measure": "closeness", "unreachable": "ignore"}, {"networkx"},
+     {"disconnected"},
+     "a node that reaches nobody has undefined closeness in the engine (NaN, written as -1) "
+     "and 0 in NetworkX's bipartite.closeness_centrality; see "
+     "crates/engine/src/metrics/bipartite.rs"),
 ]
 
 
@@ -158,16 +169,21 @@ def scale_difference(spec: dict, oracle: str, tags: set) -> set:
     """Tags under which `oracle` is known to differ on `spec` in this tier."""
     eng = spec["engine"]
     out = set()
-    for fns, weighted, oracles, when, _ in SCALE_DIFFERENCES:
-        if eng["fn"] in fns and bool(eng.get("weighted")) == weighted and oracle in oracles:
+    for match, oracles, when, _ in SCALE_DIFFERENCES:
+        if oracle in oracles and all(bool(eng.get(k)) == v if isinstance(v, bool)
+                                     else eng.get(k) == v for k, v in match.items()):
             out |= tags & when
     return out
 
 
 # The R oracle scripts build dense adjacency matrices for sna, so the R
 # tier uses networks of up to R_MAX_NODES nodes. igraph runs every
-# measure there; sna's slower matrix routines get their own budgets.
+# measure there except those with n x n results; sna's slower matrix
+# routines get their own budgets.
 R_MAX_NODES = 5000
+IGRAPH_BUDGETS = {
+    "distances": ("n", 1500),
+}
 SNA_BUDGETS = {
     "triad_census": ("n", 600),
     "brokerage": ("n", 600),
@@ -349,10 +365,14 @@ def sna_ok(spec: dict, fx) -> bool:
     return within(SNA_BUDGETS.get(spec["engine"]["fn"], SNA_DEFAULT), fx)
 
 
+def igraph_ok(spec: dict, fx) -> bool:
+    return within(IGRAPH_BUDGETS.get(spec["engine"]["fn"], ("n", R_MAX_NODES)), fx)
+
+
 def r_budget(oracle: str, spec: dict, fx) -> bool:
     if fx.n > R_MAX_NODES:
         return False
-    return oracle != "sna" or sna_ok(spec, fx)
+    return igraph_ok(spec, fx) if oracle == "igraph" else sna_ok(spec, fx)
 
 
 def prepare_r(out: Path) -> int:
@@ -376,13 +396,16 @@ def prepare_r(out: Path) -> int:
             kept = {}
             for variant, spec in specs.items():
                 oracles = {o: v for o, v in spec["oracles"].items()
-                           if (o == "igraph" or (o == "sna" and sna_ok(spec, fx)))}
+                           if o in ("igraph", "sna") and r_budget(o, spec, fx)}
                 if oracles:
                     kept[variant] = dict(spec, oracles=oracles)
             dest = root / src.relative_to(VALIDATION)
             dest.parent.mkdir(parents=True, exist_ok=True)
             dest.write_text(yaml.safe_dump(kept, sort_keys=False) if kept else "{}\n")
-        (root / "golden").mkdir()
+        # The R scripts write their VERSION files into these directories
+        # whether or not they wrote any golden file there.
+        for oracle in ("igraph", "sna"):
+            (root / "golden" / oracle).mkdir(parents=True)
     print(f"prepared R inputs in {out}")
     return 0
 
