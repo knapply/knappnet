@@ -1,0 +1,178 @@
+name,code,iso_a3,continent,subregion,type,population,population_year,longitude,latitude
+Fiji,FJI,FJI,Oceania,Melanesia,Sovereign country,889953,2019,177.975427,-17.826099
+United Republic of Tanzania,TZA,TZA,Africa,Eastern Africa,Sovereign country,58005463,2019,34.959183,-6.051866
+Western Sahara,SAH,ESH,Africa,Northern Africa,Indeterminate,603253,2017,-12.630304,23.967592
+Canada,CAN,CAN,North America,Northern America,Sovereign country,37589262,2019,-101.9107,60.324287
+United States of America,USA,USA,North America,Northern America,Country,328239523,2019,-97.482602,39.538479
+Kazakhstan,KAZ,KAZ,Asia,Central Asia,Sovereignty,18513930,2019,68.685548,49.054149
+Uzbekistan,UZB,UZB,Asia,Central Asia,Sovereign country,33580650,2019,64.005429,41.693603
+Papua New Guinea,PNG,PNG,Oceania,Melanesia,Sovereign country,8776109,2019,143.910216,-5.695285
+Indonesia,IDN,IDN,Asia,South-Eastern Asia,Sovereign country,270625568,2019,101.892949,-0.954404
+Argentina,ARG,ARG,South America,South America,Sovereign country,44938712,2019,-64.173331,-33.501159
+Chile,CHL,CHL,South America,South America,Sovereign country,18952038,2019,-72.318871,-38.151771
+Democratic Republic of the Congo,COD,COD,Africa,Middle Africa,Sovereign country,86790567,2019,23.458829,-1.858167
+Somalia,SOM,SOM,Africa,Eastern Africa,Sovereign country,10192317.3,2019,45.19238,3.568925
+Kenya,KEN,KEN,Africa,Eastern Africa,Sovereign country,52573973,2019,37.907632,0.549043
+Sudan,SDN,SDN,Africa,Northern Africa,Sovereign country,42813238,2019,29.260657,16.330746
+Chad,TCD,TCD,Africa,Middle Africa,Sovereign country,15946876,2019,18.645041,15.142959
+Haiti,HTI,HTI,North America,Caribbean,Sovereign country,11263077,2019,-72.224051,19.263784
+Dominican Republic,DOM,DOM,North America,Caribbean,Sovereign country,10738958,2019,-70.653998,19.104137
+Russia,RUS,RUS,Europe,Eastern Europe,Sovereign country,144373535,2019,44.686469,58.249357
+The Bahamas,BHS,BHS,North America,Caribbean,Sovereign country,389482,2019,-77.146688,26.401789
+Falkland Islands,FLK,FLK,South America,South America,Disputed,3398,2016,-58.738602,-51.608913
+Norway,NOR,,Europe,Northern Europe,Sovereign country,5347896,2019,9.679975,61.357092
+Greenland,GRL,GRL,North America,Northern America,Country,56225,2019,-39.335251,74.319387
+French Southern and Antarctic Lands,ATF,ATF,Seven seas (open ocean),Seven seas (open ocean),Dependency,140,2017,69.122136,-49.303721
+East Timor,TLS,TLS,Asia,South-Eastern Asia,Sovereign country,1293119,2019,125.854679,-8.803705
+South Africa,ZAF,ZAF,Africa,Southern Africa,Sovereign country,58558270,2019,23.665734,-29.708776
+Lesotho,LSO,LSO,Africa,Southern Africa,Sovereign country,2125268,2019,28.246639,-29.480158
+Mexico,MEX,MEX,North America,Central America,Sovereign country,127575529,2019,-102.289448,23.919988
+Uruguay,URY,URY,South America,South America,Sovereign country,3461734,2019,-55.966942,-32.961127
+Brazil,BRA,BRA,South America,South America,Sovereign country,211049527,2019,-49.55945,-12.098687
+Bolivia,BOL,BOL,South America,South America,Sovereign country,11513100,2019,-64.593433,-16.666015
+Peru,PER,PER,South America,South America,Sovereign country,32510453,2019,-72.90016,-12.976679
+Colombia,COL,COL,South America,South America,Sovereign country,50339443,2019,-73.174347,3.373111
+Panama,PAN,PAN,North America,Central America,Sovereign country,4246439,2019,-80.352106,8.72198
+Costa Rica,CRI,CRI,North America,Central America,Sovereign country,5047561,2019,-84.077922,10.0651
+Nicaragua,NIC,NIC,North America,Central America,Sovereign country,6545502,2019,-85.069347,12.670697
+Honduras,HND,HND,North America,Central America,Sovereign country,9746117,2019,-86.887604,14.794801
+El Salvador,SLV,SLV,North America,Central America,Sovereign country,6453553,2019,-88.890124,13.685371
+Guatemala,GTM,GTM,North America,Central America,Sovereign country,16604026,2019,-90.497134,14.982133
+Belize,BLZ,BLZ,North America,Central America,Sovereign country,390353,2019,-88.712962,17.202068
+Venezuela,VEN,VEN,South America,South America,Sovereign country,28515829,2019,-64.599381,7.182476
+Guyana,GUY,GUY,South America,South America,Sovereign country,782766,2019,-58.942643,5.124317
+Suriname,SUR,SUR,South America,South America,Sovereign country,581363,2019,-55.91094,4.143987
+France,FRA,,Europe,Western Europe,Country,67059887,2019,2.552275,46.696113
+Ecuador,ECU,ECU,South America,South America,Sovereign country,17373662,2019,-78.188375,-1.259076
+Puerto Rico,PRI,PRI,North America,Caribbean,Dependency,3193694,2019,-66.481065,18.234668
+Jamaica,JAM,JAM,North America,Caribbean,Sovereign country,2948279,2019,-77.318767,18.137124
+Cuba,CUB,CUB,North America,Caribbean,Sovereignty,11333483,2019,-77.975855,21.334024
+Zimbabwe,ZWE,ZWE,Africa,Eastern Africa,Sovereign country,14645468,2019,29.925444,-18.91164
+Botswana,BWA,BWA,Africa,Southern Africa,Sovereign country,2303697,2019,24.179216,-22.102634
+Namibia,NAM,NAM,Africa,Southern Africa,Sovereign country,2494530,2019,17.108166,-20.575298
+Senegal,SEN,SEN,Africa,Western Africa,Sovereign country,16296364,2019,-14.778586,15.138125
+Mali,MLI,MLI,Africa,Western Africa,Sovereign country,19658031,2019,-2.038455,18.692713
+Mauritania,MRT,MRT,Africa,Western Africa,Sovereign country,4525696,2019,-9.740299,19.587062
+Benin,BEN,BEN,Africa,Western Africa,Sovereign country,11801151,2019,2.352018,10.324775
+Niger,NER,NER,Africa,Western Africa,Sovereign country,23310715,2019,9.504356,17.446195
+Nigeria,NGA,NGA,Africa,Western Africa,Sovereign country,200963599,2019,7.50322,9.439799
+Cameroon,CMR,CMR,Africa,Middle Africa,Sovereign country,25876380,2019,12.473488,4.585041
+Togo,TGO,TGO,Africa,Western Africa,Sovereign country,8082366,2019,1.058113,8.80722
+Ghana,GHA,GHA,Africa,Western Africa,Sovereign country,30417856,2019,-1.036941,7.717639
+Ivory Coast,CIV,CIV,Africa,Western Africa,Sovereign country,25716544,2019,-5.568618,7.49139
+Guinea,GIN,GIN,Africa,Western Africa,Sovereign country,12771246,2019,-10.016402,10.618516
+Guinea-Bissau,GNB,GNB,Africa,Western Africa,Sovereign country,1920922,2019,-14.52413,12.163712
+Liberia,LBR,LBR,Africa,Western Africa,Sovereign country,4937374,2019,-9.460379,6.447177
+Sierra Leone,SLE,SLE,Africa,Western Africa,Sovereign country,7813215,2019,-11.763677,8.617449
+Burkina Faso,BFA,BFA,Africa,Western Africa,Sovereign country,20321378,2019,-1.36388,12.673048
+Central African Republic,CAF,CAF,Africa,Middle Africa,Sovereign country,4745185,2019,20.906897,6.989681
+Republic of the Congo,COG,COG,Africa,Middle Africa,Sovereign country,5380508,2019,15.9005,0.142331
+Gabon,GAB,GAB,Africa,Middle Africa,Sovereign country,2172579,2019,11.835939,-0.437739
+Equatorial Guinea,GNQ,GNQ,Africa,Middle Africa,Sovereign country,1355986,2019,8.9902,2.333
+Zambia,ZMB,ZMB,Africa,Eastern Africa,Sovereign country,17861030,2019,26.395298,-14.660804
+Malawi,MWI,MWI,Africa,Eastern Africa,Sovereign country,18628747,2019,33.608082,-13.386737
+Mozambique,MOZ,MOZ,Africa,Eastern Africa,Sovereign country,30366036,2019,37.83789,-13.94323
+eSwatini,SWZ,SWZ,Africa,Southern Africa,Sovereign country,1148130,2019,31.467264,-26.533676
+Angola,AGO,AGO,Africa,Middle Africa,Sovereign country,31825295,2019,17.984249,-12.182762
+Burundi,BDI,BDI,Africa,Eastern Africa,Sovereign country,11530580,2019,29.917086,-3.332836
+Israel,ISR,ISR,Asia,Western Asia,Disputed,9053300,2019,34.847915,30.911148
+Lebanon,LBN,LBN,Asia,Western Asia,Sovereign country,6855713,2019,35.992892,34.133368
+Madagascar,MDG,MDG,Africa,Eastern Africa,Sovereign country,26969307,2019,46.704241,-18.628288
+Palestine,PSX,PSE,Asia,Western Asia,Indeterminate,4685306,2019,35.291341,32.047431
+Gambia,GMB,GMB,Africa,Western Africa,Sovereign country,2347706,2019,-14.998318,13.641721
+Tunisia,TUN,TUN,Africa,Northern Africa,Sovereign country,11694719,2019,9.007881,33.687263
+Algeria,DZA,DZA,Africa,Northern Africa,Sovereign country,43053054,2019,2.808241,27.397406
+Jordan,JOR,JOR,Asia,Western Asia,Sovereign country,10101694,2019,36.375991,30.805025
+United Arab Emirates,ARE,ARE,Asia,Western Asia,Sovereign country,9770529,2019,54.547256,23.466285
+Qatar,QAT,QAT,Asia,Western Asia,Sovereign country,2832067,2019,51.143509,25.237383
+Kuwait,KWT,KWT,Asia,Western Asia,Sovereign country,4207083,2019,47.313999,29.413628
+Iraq,IRQ,IRQ,Asia,Western Asia,Sovereign country,39309783,2019,43.26181,33.09403
+Oman,OMN,OMN,Asia,Western Asia,Sovereign country,4974986,2019,57.336553,22.120427
+Vanuatu,VUT,VUT,Oceania,Melanesia,Sovereign country,299882,2019,166.908762,-15.37153
+Cambodia,KHM,KHM,Asia,South-Eastern Asia,Sovereign country,16486542,2019,104.50487,12.647584
+Thailand,THA,THA,Asia,South-Eastern Asia,Sovereign country,69625582,2019,101.073198,15.45974
+Laos,LAO,LAO,Asia,South-Eastern Asia,Sovereign country,7169455,2019,102.533912,19.431821
+Myanmar,MMR,MMR,Asia,South-Eastern Asia,Sovereign country,54045420,2019,95.804497,21.573855
+Vietnam,VNM,VNM,Asia,South-Eastern Asia,Sovereign country,96462106,2019,105.387292,21.715416
+North Korea,PRK,PRK,Asia,Eastern Asia,Sovereign country,25666161,2019,126.444516,39.885252
+South Korea,KOR,KOR,Asia,Eastern Asia,Sovereign country,51709098,2019,128.129504,36.384924
+Mongolia,MNG,MNG,Asia,Eastern Asia,Sovereign country,3225167,2019,104.150405,45.997488
+India,IND,IND,Asia,Southern Asia,Sovereign country,1366417754,2019,79.358105,22.686852
+Bangladesh,BGD,BGD,Asia,Southern Asia,Sovereign country,163046161,2019,89.684963,24.214956
+Bhutan,BTN,BTN,Asia,Southern Asia,Sovereign country,763092,2019,90.040294,27.536685
+Nepal,NPL,NPL,Asia,Southern Asia,Sovereign country,28608710,2019,83.639914,28.297925
+Pakistan,PAK,PAK,Asia,Southern Asia,Sovereign country,216565318,2019,68.545632,29.328389
+Afghanistan,AFG,AFG,Asia,Southern Asia,Sovereign country,38041754,2019,66.496586,34.164262
+Tajikistan,TJK,TJK,Asia,Central Asia,Sovereign country,9321018,2019,72.587276,38.199835
+Kyrgyzstan,KGZ,KGZ,Asia,Central Asia,Sovereign country,6456900,2019,74.532637,41.66854
+Turkmenistan,TKM,TKM,Asia,Central Asia,Sovereign country,5942089,2019,58.676647,39.855246
+Iran,IRN,IRN,Asia,Southern Asia,Sovereign country,82913906,2019,54.931495,32.166225
+Syria,SYR,SYR,Asia,Western Asia,Sovereign country,17070135,2019,38.277783,35.006636
+Armenia,ARM,ARM,Asia,Western Asia,Sovereign country,2957731,2019,44.800564,40.459077
+Sweden,SWE,SWE,Europe,Northern Europe,Sovereign country,10285453,2019,19.01705,65.85918
+Belarus,BLR,BLR,Europe,Eastern Europe,Sovereign country,9466856,2019,28.417701,53.821888
+Ukraine,UKR,UKR,Europe,Eastern Europe,Sovereign country,44385155,2019,32.140865,49.724739
+Poland,POL,POL,Europe,Eastern Europe,Sovereign country,37970874,2019,19.490468,51.990316
+Austria,AUT,AUT,Europe,Western Europe,Sovereign country,8877067,2019,14.130515,47.518859
+Hungary,HUN,HUN,Europe,Eastern Europe,Sovereign country,9769949,2019,19.447867,47.086841
+Moldova,MDA,MDA,Europe,Eastern Europe,Sovereign country,2657637,2019,28.487904,47.434999
+Romania,ROU,ROU,Europe,Eastern Europe,Sovereign country,19356544,2019,24.972624,45.733237
+Lithuania,LTU,LTU,Europe,Northern Europe,Sovereign country,2786844,2019,24.089932,55.103703
+Latvia,LVA,LVA,Europe,Northern Europe,Sovereign country,1912789,2019,25.458723,57.066872
+Estonia,EST,EST,Europe,Northern Europe,Sovereign country,1326590,2019,25.867126,58.724865
+Germany,DEU,DEU,Europe,Western Europe,Sovereign country,83132799,2019,9.678348,50.961733
+Bulgaria,BGR,BGR,Europe,Eastern Europe,Sovereign country,6975761,2019,25.15709,42.508785
+Greece,GRC,GRC,Europe,Southern Europe,Sovereign country,10716322,2019,21.72568,39.492763
+Turkey,TUR,TUR,Asia,Western Asia,Sovereign country,83429615,2019,34.508268,39.345388
+Albania,ALB,ALB,Europe,Southern Europe,Sovereign country,2854191,2019,20.11384,40.654855
+Croatia,HRV,HRV,Europe,Southern Europe,Sovereign country,4067500,2019,16.37241,45.805799
+Switzerland,CHE,CHE,Europe,Western Europe,Sovereign country,8574832,2019,7.463965,46.719114
+Luxembourg,LUX,LUX,Europe,Western Europe,Sovereign country,619896,2019,6.07762,49.733732
+Belgium,BEL,BEL,Europe,Western Europe,Sovereign country,11484055,2019,4.800448,50.785392
+Netherlands,NLD,NLD,Europe,Western Europe,Country,17332850,2019,5.61144,52.422211
+Portugal,PRT,PRT,Europe,Southern Europe,Sovereign country,10269417,2019,-8.271754,39.606675
+Spain,ESP,ESP,Europe,Southern Europe,Sovereign country,47076781,2019,-3.464718,40.090953
+Ireland,IRL,IRL,Europe,Northern Europe,Sovereign country,4941444,2019,-7.798588,53.078726
+New Caledonia,NCL,NCL,Oceania,Melanesia,Dependency,287800,2019,165.084004,-21.064697
+Solomon Islands,SLB,SLB,Oceania,Melanesia,Sovereign country,669823,2019,159.170468,-8.029548
+New Zealand,NZL,NZL,Oceania,Australia and New Zealand,Country,4917000,2019,172.787,-39.759
+Australia,AUS,AUS,Oceania,Australia and New Zealand,Country,25364307,2019,134.04972,-24.129522
+Sri Lanka,LKA,LKA,Asia,Southern Asia,Sovereign country,21803000,2019,80.704823,7.581097
+China,CHN,CHN,Asia,Eastern Asia,Country,1397715000,2019,106.337289,32.498178
+Taiwan,TWN,TWN,Asia,Eastern Asia,Sovereign country,23568378,2020,120.868204,23.652408
+Italy,ITA,ITA,Europe,Southern Europe,Sovereign country,60297396,2019,11.076907,44.732482
+Denmark,DNK,DNK,Europe,Northern Europe,Country,5818553,2019,9.018163,55.966965
+United Kingdom,GBR,GBR,Europe,Northern Europe,Country,66834405,2019,-2.116346,54.402739
+Iceland,ISL,ISL,Europe,Northern Europe,Sovereign country,361313,2019,-18.673711,64.779286
+Azerbaijan,AZE,AZE,Asia,Western Asia,Sovereign country,10023318,2019,47.210994,40.402387
+Georgia,GEO,GEO,Asia,Western Asia,Sovereign country,3720382,2019,43.735724,41.870087
+Philippines,PHL,PHL,Asia,South-Eastern Asia,Sovereign country,108116615,2019,122.465,11.198
+Malaysia,MYS,MYS,Asia,South-Eastern Asia,Sovereign country,31949777,2019,113.83708,2.528667
+Brunei,BRN,BRN,Asia,South-Eastern Asia,Sovereign country,433285,2019,114.551943,4.448298
+Slovenia,SVN,SVN,Europe,Southern Europe,Sovereign country,2087946,2019,14.915312,46.06076
+Finland,FIN,FIN,Europe,Northern Europe,Country,5520314,2019,27.276449,63.252361
+Slovakia,SVK,SVK,Europe,Eastern Europe,Sovereign country,5454073,2019,19.049868,48.734044
+Czechia,CZE,CZE,Europe,Eastern Europe,Sovereign country,10669709,2019,15.377555,49.882364
+Eritrea,ERI,ERI,Africa,Eastern Africa,Sovereign country,6081196,2020,38.285566,15.787401
+Japan,JPN,JPN,Asia,Eastern Asia,Sovereign country,126264931,2019,138.44217,36.142538
+Paraguay,PRY,PRY,South America,South America,Sovereign country,7044636,2019,-60.146394,-21.674509
+Yemen,YEM,YEM,Asia,Western Asia,Sovereign country,29161922,2019,45.874383,15.328226
+Saudi Arabia,SAU,SAU,Asia,Western Asia,Sovereign country,34268528,2019,44.6996,23.806908
+Antarctica,ATA,ATA,Antarctica,Antarctica,Indeterminate,4490,2019,35.885455,-79.843222
+Northern Cyprus,CYN,,Asia,Western Asia,Sovereign country,326000,2017,33.692434,35.216071
+Cyprus,CYP,CYP,Asia,Western Asia,Sovereign country,1198575,2019,33.084182,34.913329
+Morocco,MAR,MAR,Africa,Northern Africa,Sovereign country,36471769,2019,-7.187296,31.650723
+Egypt,EGY,EGY,Africa,Northern Africa,Sovereign country,100388073,2019,29.445837,26.186173
+Libya,LBY,LBY,Africa,Northern Africa,Sovereign country,6777452,2019,18.011015,26.638944
+Ethiopia,ETH,ETH,Africa,Eastern Africa,Sovereign country,112078730,2019,39.0886,8.032795
+Djibouti,DJI,DJI,Africa,Eastern Africa,Sovereign country,973560,2019,42.498825,11.976343
+Somaliland,SOL,,Africa,Eastern Africa,Sovereign country,5096159,2014,46.731595,9.443889
+Uganda,UGA,UGA,Africa,Eastern Africa,Sovereign country,44269594,2019,32.948555,1.972589
+Rwanda,RWA,RWA,Africa,Eastern Africa,Sovereign country,12626950,2019,30.103894,-1.897196
+Bosnia and Herzegovina,BIH,BIH,Europe,Southern Europe,Sovereign country,3301000,2019,18.06841,44.091051
+North Macedonia,MKD,MKD,Europe,Southern Europe,Sovereign country,2083459,2019,21.555839,41.558223
+Republic of Serbia,SRB,SRB,Europe,Southern Europe,Sovereign country,6944975,2019,20.787989,44.189919
+Montenegro,MNE,MNE,Europe,Southern Europe,Sovereign country,622137,2019,19.143727,42.803101
+Kosovo,KOS,,Europe,Southern Europe,Disputed,1794248,2019,20.860719,42.593587
+Trinidad and Tobago,TTO,TTO,North America,Caribbean,Sovereign country,1394973,2019,-60.9184,10.9989
+South Sudan,SDS,SSD,Africa,Eastern Africa,Sovereign country,11062113,2019,30.390151,7.230477
