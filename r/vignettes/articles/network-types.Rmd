@@ -1,0 +1,442 @@
+---
+title: "Network types"
+description: >
+  Every configuration of a net_frame, from a one-mode network to
+  multilayer, temporal, spatial, ego, and partially observed networks:
+  the tables, the net_frame() call, the printed card, and a plot that
+  makes the configuration visible.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4.5,
+                      dpi = 96)
+```
+
+Every network in knappnet is two data frames, one row per node and one row
+per edge. What kind of network it is (directed or not, two-mode,
+weighted, multiplex, temporal, spatial, and so on) is said by *roles*:
+arguments of `net_frame()` that name the columns carrying structure, and
+*declarations* that state properties the data must satisfy. This article
+shows each configuration with its tables, the call, the card that
+`print()` shows, and a plot. The [definitions](definitions.html) article
+explains the choices behind each one, and `docs/DATA_MODEL.md` in the
+repository is the full specification.
+
+Most examples use the data sets shipped with the package
+(`net_examples()` lists them, with their sources). Where a configuration
+is not in any shipped data set, the example is *derived* from one, and
+the text says how.
+
+```{r}
+library(knappnet)
+net_examples()[, c("name", "type", "source")]
+```
+
+## Directed and undirected
+
+Direction belongs to the network. Krackhardt's (1987) managers named the
+colleagues they considered friends; the friendship ties are directed.
+
+```{r}
+friends <- net_example("krackhardt", relation = "friendship")
+head(friends$edges)
+friends
+```
+
+The same tables read as undirected make every named friendship mutual,
+and a pair who named each other becomes two parallel edges (shown as
+arcs):
+
+```{r}
+undirected <- net_frame(friends$edges, friends$nodes, directed = FALSE, source = "from",
+                        target = "to", id = "name", quiet = TRUE)
+undirected
+```
+
+```{r, fig.height = 4}
+op <- par(mfrow = c(1, 2))
+xy <- plot(friends, main = "directed", node_label = FALSE, seed = 1)
+plot(undirected, layout = xy, main = "undirected", node_label = FALSE)
+par(op)
+```
+
+## Two-mode networks
+
+A two-mode network declares two disjoint sets of nodes, and every edge
+joins one to the other. Davis, Gardner, and Gardner's (1941) women and
+the social events they attended:
+
+```{r}
+women <- net_example("southern_women")
+head(women$nodes)
+head(women$edges)
+women
+```
+
+`net_twomode()` is `net_frame()` with a `mode` column and the declaration
+`between_modes_only = TRUE`; an edge within a mode is an error that lists
+the rows. The plot puts each mode in its own row, and the projection onto
+the women is an ordinary one-mode network:
+
+```{r, fig.height = 4}
+op <- par(mfrow = c(1, 2))
+plot(women, node_label = FALSE, main = "women and events")
+plot(net_project(women), node_label = FALSE, main = "women, by shared events", seed = 1)
+par(op)
+```
+
+## k-mode and multimode networks
+
+A `mode` column may have any number of values. This three-mode network
+is derived from the `country_borders` data: African countries belong to
+subregions, and subregions to the continent, with edges only between
+modes.
+
+```{r}
+cb <- net_example("country_borders")
+africa <- cb$nodes[cb$nodes$continent == "Africa", ]
+regions <- sort(unique(africa$subregion))
+nodes <- data.frame(id = c(africa$code, regions, "Africa"),
+                    mode = c(rep("country", nrow(africa)), rep("subregion", length(regions)),
+                             "continent"))
+edges <- data.frame(source = c(africa$code, regions),
+                    target = c(africa$subregion, rep("Africa", length(regions))))
+three <- net_frame(edges, nodes, directed = FALSE, mode = "mode", between_modes_only = TRUE)
+three
+plot(three, layout = "modes", node_label = FALSE, seed = 1)
+```
+
+Adding the borders between countries makes a *multimode* network in the
+sense of ORA: modes are declared, and ties within a mode are allowed
+(`between_modes_only = FALSE`).
+
+## Weighted networks: strength and distance
+
+A weight column must say what it means. As a **strength** (frequency,
+intensity), a larger weight brings nodes closer, and path-based measures
+use 1/weight as the length; as a **distance** (cost, travel time), a
+larger weight keeps them apart. The same three edges read both ways give
+different shortest paths from `a` to `c`:
+
+```{r}
+w <- data.frame(source = c("a", "b", "a"), target = c("b", "c", "c"), w = c(1, 1, 5))
+as_strength <- net_frame(w, directed = FALSE, weight = "w", weight_type = "strength")
+as_distance <- net_frame(w, directed = FALSE, weight = "w", weight_type = "distance")
+as_strength
+net_distances(as_strength)
+net_distances(as_distance)
+```
+
+```{r, fig.height = 3.5}
+op <- par(mfrow = c(1, 2))
+xy <- plot(as_strength, main = "strength: a-c is strong", seed = 3)
+plot(as_distance, layout = xy, main = "distance: a-c is far",
+     edge_color = I(c("black", "black", "gray80")))
+par(op)
+```
+
+Strengths are drawn wider the stronger the tie; distances do not change
+the width, since a thick line would suggest a strong tie. Victor Hugo's
+characters weighted by the chapters they share (Knuth 1993):
+
+```{r}
+mis <- net_example("les_miserables", weighted = TRUE)
+mis
+plot(mis, node_label = FALSE, seed = 1)
+```
+
+## Signed networks
+
+A `sign` column holds `-1` or `1`; a weight, if any, is the magnitude and
+stays non-negative. Read's (1954) alliances and enmities among the
+Gahuku-Gama subtribes; negative ties are dashed:
+
+```{r}
+tribes <- net_example("highland_tribes")
+head(tribes$edges)
+tribes
+plot(tribes, seed = 1)
+```
+
+Signed values in one column, as Pajek and UCINET store them, are split by
+`net_as_signed()`.
+
+## Multiplex networks
+
+Several relations on one node set, in one long edge table with a
+`relation` column. Krackhardt's managers reported advice, friendship,
+and reporting ties:
+
+```{r}
+krack <- net_example("krackhardt")
+table(krack$edges$relation)
+krack
+plot(krack, node_label = FALSE, seed = 1)
+```
+
+Edges of different relations are never parallel, so this network is
+simple. Each relation can also be drawn on its own, with a shared layout:
+
+```{r, fig.height = 3.5}
+xy <- net_layout(krack, seed = 1)
+relations <- net_split_relations(krack)
+op <- par(mfrow = c(1, 3))
+for (r in names(relations)) plot(relations[[r]], layout = xy, main = r, node_label = FALSE)
+par(op)
+```
+
+## Multilayer networks
+
+Actors stay in the node table; every edge names the layer of each
+endpoint. An edge within a layer is intralayer; one joining an actor to
+itself across layers is a coupling; any other edge across layers is
+interlayer (Kivela et al. 2014). An optional layer table holds layer
+attributes.
+
+```{r}
+edges <- data.frame(source = c("ann", "ann", "bob", "ann", "ann"),
+                    target = c("bob", "bob", "cy", "ann", "cy"),
+                    from_layer = c("work", "online", "online", "work", "work"),
+                    to_layer = c("work", "online", "online", "online", "online"))
+layers <- data.frame(layer = c("work", "online"), medium = c("office", "chat"))
+ml <- net_frame(edges, directed = FALSE, source_layer = "from_layer",
+                target_layer = "to_layer", layers = layers)
+ml
+cbind(edges, net_edge_layers(ml)["class"])
+```
+
+A multiplex network is the special case whose only edges between layers
+are couplings. `net_as_multilayer()` lifts one, here Krackhardt's three
+relations with a coupling between every pair of layers, and
+`net_plot_layers()` draws one panel per layer:
+
+```{r, fig.height = 3.5}
+krack_layers <- net_as_multilayer(krack)
+krack_layers
+net_plot_layers(krack_layers, node_label = FALSE, seed = 1)
+```
+
+## Temporal networks
+
+Edges carry times in one of three forms: a `start` alone makes each edge
+an instantaneous **contact**, `start` and `end` make it a half-open
+**spell** `[start, end)`, and a whole-number `wave` puts it in a panel
+wave `[k, k + 1)`. Times may be numbers, dates, or date-times.
+
+### Contacts
+
+```{r}
+calls <- data.frame(source = c("a", "b", "a", "c", "b", "d", "a"),
+                    target = c("b", "c", "c", "d", "d", "a", "d"),
+                    time = c(1, 2, 2, 4, 5, 7, 8))
+contacts <- net_frame(calls, directed = FALSE, start = "time")
+contacts
+```
+
+```{r, fig.height = 3.5}
+net_plot_timeline(contacts)
+net_plot_snapshots(contacts, width = 3, seed = 1)
+```
+
+### Edge spells and node spells
+
+Two spells of one tie are two rows, not parallel edges. Nodes may have
+presence spells too, as two columns (one spell each) or as a long table
+(several spells per node); an edge must fall within the presence of both
+endpoints.
+
+```{r}
+spells <- data.frame(source = c("ann", "ann", "bob", "cy"),
+                     target = c("bob", "bob", "cy", "dee"),
+                     from = c(0, 12, 3, 6), to = c(10, 15, 9, 14))
+people <- data.frame(id = c("ann", "bob", "cy", "dee"), joined = c(0, 0, 2, 5),
+                     left = c(NA, NA, NA, 16))
+stream <- net_frame(spells, people, directed = FALSE, start = "from", end = "to",
+                    node_start = "joined", node_end = "left")
+stream
+net_plot_snapshots(stream, breaks = c(0, 4, 8, 12, 16), seed = 1)
+```
+
+Nodes absent from a window are drawn light gray. Several spells per node
+and attributes that change over time go in the `node_spells` and
+`node_changes` tables (see `?net_node_spells`).
+
+### Panels
+
+Sampson's (1968) novices ranked whom they liked at three times. Each
+wave is the spell `[k, k + 1)`:
+
+```{r}
+liking <- net_example("sampson", relation = "liking")
+liking
+net_plot_snapshots(liking, node_label = FALSE, seed = 1)
+```
+
+A panel can also be derived from contacts: cut the contact times into
+windows and stack the windows as waves. Here the contacts above become
+two waves:
+
+```{r}
+waves <- net_snapshots(contacts, breaks = c(1, 5, 9))
+panel <- net_panel(waves)
+panel
+sapply(net_waves(panel), function(g) nrow(g$edges))
+```
+
+## Spatial networks
+
+Nodes with coordinates (or sf geometry) make a spatial network;
+adjacency still comes from the edge table. A spatial network is drawn on
+its coordinates. Road distances between cities in the north-eastern
+United States, derived from the `miles` data by keeping cities in nine
+states and pairs at most 120 miles apart:
+
+```{r}
+miles <- net_example("miles")
+ne <- miles$nodes[miles$nodes$state %in% c("ME", "NH", "VT", "MA", "RI", "CT", "NY", "NJ",
+                                           "PA"), ]
+near <- miles$edges[miles$edges$from %in% ne$name & miles$edges$to %in% ne$name &
+                      miles$edges$miles <= 120, ]
+roads <- net_frame(near, ne, directed = FALSE, source = "from", target = "to", id = "name",
+                   weight = "miles", weight_type = "distance",
+                   coords = c("longitude", "latitude"), quiet = TRUE)
+roads
+plot(roads, node_label = FALSE)
+```
+
+Country borders, with each country at its representative point:
+
+```{r}
+cb
+plot(cb, node_label = FALSE)
+```
+
+## Spatio-temporal networks
+
+Spatial and temporal roles together give a `spatiotemporal_net_frame`.
+No shipped data set has both, so this one is derived from the
+north-eastern road network above by giving each link a time equal to its
+length: the panels then show the short, middle, and long links on the
+map.
+
+```{r}
+banded <- near
+banded$band <- banded$miles
+st <- net_frame(banded, ne, directed = FALSE, source = "from", target = "to", id = "name",
+                start = "band", coords = c("longitude", "latitude"), quiet = TRUE)
+class(st)
+st
+net_plot_snapshots(st, breaks = c(0, 60, 90, 121), layout = c("longitude", "latitude"),
+                   node_label = FALSE)
+```
+
+## Ego networks
+
+An `ego` column on nodes and edges holds a collection of ego networks in
+one net_frame, as egocentric surveys collect them. They can also be
+derived from a whole network: here the first-order advice networks of
+three of Krackhardt's managers.
+
+```{r}
+advice <- net_example("krackhardt", relation = "advice")
+egos <- net_ego_frame(advice, egos = c(2, 7, 21), threads = 1)
+egos
+head(egos$nodes)
+net_plot_egos(egos, node_label = FALSE, seed = 1)
+```
+
+`net_split_egos()` returns one network per ego, and `net_to_egor()` and
+`as_net_frame()` convert to and from egor's three tables.
+
+## Missing data
+
+An unobserved pair is a row flagged in a logical `edge_missing` column:
+it is neither a tie nor a non-tie, is kept in the table, and is left out
+of the graph that measures use. A non-respondent is a node flagged in a
+logical `node_missing` column. In this example, derived from the
+friendship network, managers 7 and 15 are treated as if they had not
+answered, and two pairs as if they had not been asked about:
+
+```{r}
+fr_nodes <- friends$nodes
+fr_nodes$no_reply <- fr_nodes$name %in% c(7, 15)
+fr_edges <- friends$edges[!friends$edges$from %in% c(7, 15), ]
+fr_edges$unknown <- FALSE
+unasked <- data.frame(from = c(1, 3), to = c(5, 9), relation = "friendship",
+                      unknown = TRUE)
+fr_edges <- rbind(fr_edges, unasked)
+partial <- net_frame(fr_edges, fr_nodes, source = "from", target = "to", id = "name",
+                     node_missing = "no_reply", edge_missing = "unknown", quiet = TRUE)
+partial
+plot(partial, node_color = "no_reply", node_label = FALSE, seed = 1)
+```
+
+Measures refuse unresolved missing data. `net_resolve_missing()` makes
+the choice explicit:
+
+```{r}
+net_density(net_resolve_missing(partial, "absent"))
+```
+
+## Self-loops and parallel edges
+
+Loops and parallel edges are kept, counted on the card, and drawn: a loop
+as a small circle, parallel edges as arcs. Two edges are parallel when
+they share endpoints *and* relation, layers, and time spell.
+
+```{r}
+multi <- data.frame(source = c("a", "a", "a", "b", "c", "c"),
+                    target = c("b", "b", "a", "c", "a", "a"),
+                    calls = c(1, 2, 1, 4, 1, 1))
+g <- net_frame(multi, weight = "calls", weight_type = "strength")
+g
+net_multiplicity(g)
+simple <- net_simplify(g, remove_loops = TRUE)
+simple
+```
+
+```{r, fig.height = 3.5}
+op <- par(mfrow = c(1, 2))
+xy <- plot(g, main = "multigraph", seed = 2)
+plot(simple, layout = xy, main = "simplified (weights summed)")
+par(op)
+```
+
+Declaring `loops = FALSE` or `multiple = FALSE` turns each violating row
+into an error that names it:
+
+```{r, error = TRUE}
+net_frame(multi, loops = FALSE, multiple = FALSE)
+```
+
+## Combining configurations
+
+Roles combine freely: Sampson's data are directed, multiplex, signed, and
+a panel at once, and the card says so.
+
+```{r}
+net_example("sampson")
+```
+
+## References
+
+Davis, A., Gardner, B. B., & Gardner, M. R. (1941). *Deep South: A Social
+Anthropological Study of Caste and Class*. University of Chicago Press.
+
+Kivela, M., Arenas, A., Barthelemy, M., Gleeson, J. P., Moreno, Y., &
+Porter, M. A. (2014). Multilayer networks. *Journal of Complex Networks*,
+2(3), 203-271. <https://doi.org/10.1093/comnet/cnu016>
+
+Knuth, D. E. (1993). *The Stanford GraphBase: A Platform for
+Combinatorial Computing*. Addison-Wesley.
+
+Krackhardt, D. (1987). Cognitive social structures. *Social Networks*,
+9(2), 109-134. <https://doi.org/10.1016/0378-8733(87)90009-8>
+
+Read, K. E. (1954). Cultures of the central highlands, New Guinea.
+*Southwestern Journal of Anthropology*, 10(1), 1-43.
+<https://doi.org/10.1086/soutjanth.10.1.3629074>
+
+Sampson, S. F. (1968). *A Novitiate in a Period of Change: An
+Experimental and Case Study of Social Relationships*. PhD thesis,
+Cornell University.

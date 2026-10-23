@@ -76,9 +76,11 @@ articles:
   - articles/coming-from-networkx
 - title: Concepts
   desc: >-
-    What the package means by a network, how it makes its choices, how to
-    look at results, spatial networks, and how results are checked.
+    Every kind of network the package holds, what it means by a network,
+    how it makes its choices, how to look at results, spatial networks,
+    and how results are checked.
   contents:
+  - articles/network-types
   - articles/definitions
   - articles/conventions
   - articles/plotting
