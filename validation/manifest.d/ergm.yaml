@@ -40,6 +40,12 @@ ergm_stats_dyadic:
       call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
     ergm:
       call: "summary(net ~ edges + nodecov('x') + nodefactor('a') + nodematch('a') + nodematch('a', diff = TRUE) + absdiff('x') + absdiff('x', pow = 2) + edgecov(w))"
+      undefined_on: [single_node, pair]
+      undefined_reason: >-
+        ergm creates nodefactor and nodematch statistics only for levels
+        present in the network, so with one or two nodes it reports fewer
+        statistics than the three-level attribute scheme; the engine (and
+        the definition oracle) report every requested level.
 
 ergm_stats_undirected:
   engine: {fn: ergm_stats, terms: undirected}
@@ -50,6 +56,8 @@ ergm_stats_undirected:
       call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
     ergm:
       call: "summary(net ~ kstar(2) + kstar(3) + triangle + gwesp(0.5, fixed = TRUE) + gwdsp(0.3, fixed = TRUE) + gwnsp(0.3, fixed = TRUE) + gwdegree(0.5, fixed = TRUE) + degree(1) + degree(2) + isolates)"
+      undefined_on: [single_node]
+      undefined_reason: a one-node network has no dyads.
 
 ergm_stats_directed:
   engine: {fn: ergm_stats, terms: directed}
@@ -60,6 +68,8 @@ ergm_stats_directed:
       call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
     ergm:
       call: "summary(net ~ mutual + istar(2) + ostar(2) + ttriple + ctriple + triangle + gwesp(0.5, fixed = TRUE) + gwdsp(0.3, fixed = TRUE) + gwnsp(0.3, fixed = TRUE) + gwidegree(0.5, fixed = TRUE) + gwodegree(0.5, fixed = TRUE) + idegree(1) + odegree(2) + isolates + nodeicov('x') + nodeocov('x') + nodeifactor('a') + nodeofactor('a'))"
+      undefined_on: [pair]
+      undefined_reason: nodeifactor and nodeofactor get statistics only for levels present (see ergm_stats_dyadic).
 
 ergm_mple_dyadic:
   engine: {fn: ergm_mple, terms: mple_dyadic}

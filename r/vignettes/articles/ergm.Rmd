@@ -1,0 +1,263 @@
+---
+title: "Exponential random graph models"
+description: >
+  Fitting, simulating, and checking ERGMs and temporal ERGMs with a
+  statnet-style formula interface, worked through on the Florentine
+  marriage network and compared with the ergm package.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+```
+
+An exponential random graph model (ERGM) describes a network $y$ on a
+fixed set of nodes by
+$$P(Y = y) = \frac{\exp(\theta' g(y))}{c(\theta)},$$
+where $g(y)$ is a vector of network statistics (the number of ties, of
+triangles, of ties between nodes with the same attribute, and so on),
+$\theta$ their coefficients, and $c(\theta)$ sums over every network on
+the same nodes. Each coefficient says how much a statistic is favored or
+suppressed relative to chance, given the others (Holland and Leinhardt
+1981; Frank and Strauss 1986; Wasserman and Pattison 1996; Snijders et
+al. 2006).
+
+The reference implementation is the statnet `ergm` package (Hunter et al.
+2008). knappnet uses the same formula syntax and the same term definitions
+and parameterizations, so a model written for `ergm()` can be fitted with
+`ergm_fit()` after replacing the `network` object with a netframe, and its
+statistics, pseudolikelihood estimates, Monte Carlo estimates, and
+log-likelihood are checked against `ergm` in the validation suite. The
+functions carry an `ergm_` prefix (`ergm_fit()`, `ergm_stats()`,
+`ergm_gof()`, `mcmc_diagnostics()`, `tergm_fit()`) so that attaching both
+packages masks nothing.
+
+```{r}
+library(knappnet)
+```
+
+## The data
+
+Padgett's marriage ties among fifteen Florentine families, with each
+family's wealth in thousands of lira, is the example of the `ergm`
+tutorial (`flomarriage`). The bundled network has the ties; the wealth
+values are added as a node attribute.
+
+```{r}
+flo <- example_network("florentine")
+wealth <- c(Acciaiuoli = 10, Albizzi = 36, Barbadori = 55, Bischeri = 44,
+            Castellani = 20, Ginori = 32, Guadagni = 8, Lamberteschi = 42,
+            Medici = 103, Pazzi = 48, Peruzzi = 49, Ridolfi = 27,
+            Salviati = 10, Strozzi = 146, Tornabuoni = 48)
+flo$nodes$wealth <- wealth[flo$nodes$name]
+flo
+```
+
+`ergm_stats()` evaluates model terms on the observed network, as
+`summary(flomarriage ~ ...)` does in `ergm`:
+
+```{r}
+ergm_stats(flo ~ edges + triangle + nodecov("wealth") + gwesp(0.5, fixed = TRUE))
+```
+
+## A dyad-independent model
+
+When every term depends on a dyad and its covariates only (`edges`,
+`nodecov`, `nodefactor`, `nodematch`, `absdiff`, `edgecov`), the ties are
+independent given $\theta$ and the model is a logistic regression of each
+dyad on its change statistics. The maximum pseudolikelihood estimate
+(Strauss and Ikeda 1990) is then the exact maximum likelihood estimate,
+with valid standard errors, and `ergm_fit()` uses it whatever `estimate`
+asks for.
+
+```{r}
+fit1 <- ergm_fit(flo ~ edges + nodecov("wealth"), estimate = "MPLE")
+summary(fit1)
+```
+
+Wealthier families have more marriage ties: each additional thousand lira
+on the two families of a dyad raises the log-odds of a tie by about 0.01.
+These are the numbers `ergm(flomarriage ~ edges + nodecov("wealth"))`
+prints, to every printed digit, because both are the same logistic
+regression.
+
+`predict()` gives each dyad's tie probability, and for this model their sum
+equals the observed number of ties, as it must at the MLE:
+
+```{r}
+p <- predict(fit1)
+head(p[order(-p$p), ], 5)
+sum(p$p)
+```
+
+## A dependent model
+
+Terms such as `triangle` and `gwesp` make dyads depend on one another, and
+the likelihood can no longer be written down. `ergm_fit()` then uses Monte
+Carlo maximum likelihood (Geyer and Thompson 1992): networks are simulated
+from the model by Metropolis-Hastings with tie/no-tie proposals, and the
+coefficients are moved toward the values whose expected statistics match
+the observed ones, following the stepping algorithm of Hummel, Hunter, and
+Handcock (2012) that `ergm` also uses. The control settings here are small
+so that the article builds quickly; the defaults are larger.
+
+```{r}
+ctl <- ergm_control(seed = 1, threads = 2, burnin = 5000, interval = 50,
+                    nsim = 1000, loglik_steps = 8)
+fit2 <- ergm_fit(flo ~ edges + nodecov("wealth") + gwesp(0.5, fixed = TRUE), control = ctl)
+summary(fit2)
+```
+
+The `MCMC %` column reports how much of each standard error is Monte Carlo
+error rather than sampling error in the data (Hunter and Handcock 2006);
+more samples drive it toward zero. The log-likelihood behind AIC and BIC
+is estimated by path sampling from the null model (Gelman and Meng 1998),
+and its Monte Carlo standard error is printed with the deviance.
+
+The estimates agree with `ergm()`'s for the same model within Monte Carlo
+error: both tools solve the same estimating equations with different random
+samples. On the Florentine network the validation suite requires the two
+sets of coefficients to agree within 0.2, several times the combined
+Monte Carlo standard error, and the log-likelihoods within 0.5.
+
+Markov chain diagnostics check that the sampler mixed. Each statistic of
+the final sample is centered on the observed value, with Geweke's
+convergence statistic and the effective sample size:
+
+```{r}
+d <- mcmc_diagnostics(fit2)
+d$summary
+plot(d, which = "edges")
+```
+
+## Goodness of fit
+
+A fitted model is checked by simulating networks from it and comparing
+structural features that were not in the model with the observed network
+(Hunter, Goodreau, and Handcock 2008): the degree distribution, shared
+partners, and geodesic distances.
+
+```{r}
+g <- ergm_gof(fit2, nsim = 100, seed = 2)
+g$degree$summary
+plot(g, which = "esp")
+```
+
+Observed values that fall outside the range of the simulated ones point to
+structure the model does not capture.
+
+## Exact likelihood on tiny networks
+
+For a network with at most 22 free dyads (seven undirected nodes), every
+network can be enumerated and the likelihood is exact. This is how the
+Monte Carlo estimator is validated: on such networks it must recover the
+exact MLE within Monte Carlo error.
+
+```{r}
+tiny <- netframe(data.frame(from = c(1, 1, 2, 2, 3, 4), to = c(2, 3, 3, 4, 5, 6)),
+                 directed = FALSE)
+exact <- ergm_fit(tiny ~ edges + gwesp(0.5, fixed = TRUE), estimate = "exact")
+mc <- ergm_fit(tiny ~ edges + gwesp(0.5, fixed = TRUE),
+               control = ergm_control(seed = 3, threads = 2, burnin = 2000,
+                                      interval = 20, nsim = 2000, loglik = FALSE))
+rbind(exact = coef(exact), monte_carlo = coef(mc))
+```
+
+## Temporal ERGMs
+
+A sequence of networks on the same nodes can be modeled as a discrete-time
+temporal ERGM (Hanneke, Fu, and Xing 2010), in which each network depends
+on the previous one through memory terms. `tergm_fit()` estimates the model
+by maximum pseudolikelihood pooled over the transitions, with bootstrap
+confidence intervals from resampling the transitions, the method of the
+`btergm` package (Desmarais and Cranmer 2012; Leifeld, Cranmer, and
+Desmarais 2018), and its point estimates equal `btergm()`'s.
+
+```{r}
+set.seed(4)
+n <- 15
+rewire <- function(e, k) {
+  e <- e[-sample(nrow(e), k), ]
+  add <- data.frame(from = sample(n, k, TRUE), to = sample(n, k, TRUE))
+  unique(rbind(e, add[add$from != add$to, ]))
+}
+e1 <- data.frame(from = sample(n, 45, TRUE), to = sample(n, 45, TRUE))
+e1 <- unique(e1[e1$from != e1$to, ])
+waves <- list(e1, rewire(e1, 8), rewire(rewire(e1, 8), 8))
+nodes <- data.frame(id = 1:n, group = rep(c("a", "b", "c"), 5))
+nets <- lapply(waves, netframe, nodes = nodes, directed = TRUE)
+
+tfit <- tergm_fit(nets ~ edges + mutual + memory("stability") + delrecip +
+                    nodematch("group"), boot = 200, seed = 5, threads = 2)
+summary(tfit)
+```
+
+`memory("stability")` counts dyads that keep their previous state, so a
+positive coefficient says ties and non-ties both persist; `delrecip`
+counts ties that reciprocate a tie of the previous wave.
+
+## Differences from ergm
+
+- Only fixed-decay geometrically weighted terms are supported
+  (`gwesp(0.5, fixed = TRUE)`); curved terms with estimated decay are not.
+- The supported terms are listed in `?ergm_fit`; `ergm`'s larger term
+  library (for example `nodemix`, `cycle`, `b1degree`) is not reproduced.
+- Degeneracy is reported as an error rather than a warning, and the Monte
+  Carlo covariance is estimated by batch means rather than a spectral
+  density.
+- Separable temporal ERGMs (formation and dissolution models) are not
+  available; `tergm_fit()` is the pooled-pseudolikelihood estimator of
+  `btergm`.
+
+## References
+
+Desmarais, B. A., and Cranmer, S. J. (2012). Statistical mechanics of
+networks: Estimation and uncertainty. *Physica A*, 391(4), 1865-1876.
+
+Frank, O., and Strauss, D. (1986). Markov graphs. *Journal of the American
+Statistical Association*, 81(395), 832-842.
+
+Gelman, A., and Meng, X.-L. (1998). Simulating normalizing constants: From
+importance sampling to bridge sampling to path sampling. *Statistical
+Science*, 13(2), 163-185.
+
+Geyer, C. J., and Thompson, E. A. (1992). Constrained Monte Carlo maximum
+likelihood for dependent data. *Journal of the Royal Statistical Society
+B*, 54(3), 657-699.
+
+Hanneke, S., Fu, W., and Xing, E. P. (2010). Discrete temporal models of
+social networks. *Electronic Journal of Statistics*, 4, 585-605.
+
+Holland, P. W., and Leinhardt, S. (1981). An exponential family of
+probability distributions for directed graphs. *Journal of the American
+Statistical Association*, 76(373), 33-50.
+
+Hummel, R. M., Hunter, D. R., and Handcock, M. S. (2012). Improving
+simulation-based algorithms for fitting ERGMs. *Journal of Computational
+and Graphical Statistics*, 21(4), 920-939.
+
+Hunter, D. R., Goodreau, S. M., and Handcock, M. S. (2008). Goodness of fit
+of social network models. *Journal of the American Statistical
+Association*, 103(481), 248-258.
+
+Hunter, D. R., and Handcock, M. S. (2006). Inference in curved exponential
+family models for networks. *Journal of Computational and Graphical
+Statistics*, 15(3), 565-583.
+
+Hunter, D. R., Handcock, M. S., Butts, C. T., Goodreau, S. M., and Morris,
+M. (2008). ergm: A package to fit, simulate and diagnose exponential-family
+models for networks. *Journal of Statistical Software*, 24(3), 1-29.
+
+Leifeld, P., Cranmer, S. J., and Desmarais, B. A. (2018). Temporal
+exponential random graph models with btergm: Estimation and bootstrap
+confidence intervals. *Journal of Statistical Software*, 83(6), 1-36.
+
+Snijders, T. A. B., Pattison, P. E., Robins, G. L., and Handcock, M. S.
+(2006). New specifications for exponential random graph models.
+*Sociological Methodology*, 36(1), 99-153.
+
+Strauss, D., and Ikeda, M. (1990). Pseudolikelihood estimation for social
+networks. *Journal of the American Statistical Association*, 85(409),
+204-212.
+
+Wasserman, S., and Pattison, P. (1996). Logit models and logistic
+regressions for social networks: I. *Psychometrika*, 61(3), 401-425.
