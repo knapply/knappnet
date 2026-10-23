@@ -212,14 +212,9 @@ leading_eigen:
         and the division, are not unique
 
     igraph:
-      call: "modularity of igraph::cluster_leading_eigen(g, weights = NA)"
+      call: "modularity of igraph::cluster_leading_eigen(g) with the weight attribute removed"
       undefined_on: [kite, two_triangles_isolate]
       undefined_when: [loops, multi_edges, edge_case]
-      differs_on: [les_miserables]
-      reason: >-
-        on les_miserables igraph stops with a partition of lower modularity
-        (0.494) than the one the division rules documented here reach
-        (0.532, which the definition oracle confirms)
       undefined_reason: >-
         kite and two_triangles_isolate have a degenerate leading eigenvalue
         (see the definition oracle), so the division is not unique; igraph's
@@ -242,9 +237,8 @@ leading_eigen_membership:
         and the division, are not unique
 
     igraph:
-      call: "igraph::membership(cluster_leading_eigen(g, weights = NA))"
+      call: "igraph::membership(cluster_leading_eigen(g)) with the weight attribute removed"
       undefined_on: [kite, two_triangles_isolate]
-      differs_on: [les_miserables]
       undefined_when: [loops, multi_edges, edge_case]
       undefined_reason: as for leading_eigen
       differs_when: [disconnected]
@@ -253,8 +247,7 @@ leading_eigen_membership:
         leaves isolated nodes, whose eigenvector components are zero, on
         the non-positive side of each division. Isolated nodes add nothing
         to modularity, so the modularity of the two partitions is the same
-        (checked by leading_eigen). On les_miserables igraph's partition has
-        lower modularity (see leading_eigen)
+        (checked by leading_eigen)
 
 leading_eigen_weighted:
   engine: {fn: leading_eigen, weighted: true}

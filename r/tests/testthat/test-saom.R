@@ -57,9 +57,17 @@ test_that("saom_data reads panels and covariates", {
   # Changing covariates come from node columns that differ between waves.
   nodes2 <- data.frame(id = c("a", "b", "c", "d"), v = c(1, 2, 6, 3))
   w3 <- netframe(data.frame(from = "a", to = "c"), nodes = nodes2)
+  # With two waves the second wave's values are never used, so the
+  # covariate is constant.
   d2 <- saom_data(list(net_on(three()$nodes, "a", "b"), w3), covariates = "v")
-  expect_true(is.matrix(d2$covariates$v))
-  expect_equal(d2$covariates$v[4, ], c(2, 3))
+  expect_false(is.matrix(d2$covariates$v))
+  expect_equal(d2$covariates$v, c(1, 2, 6, 2))
+  # With three waves the first two give one column per period.
+  w4 <- netframe(data.frame(from = "b", to = "c"), nodes = nodes2)
+  d4 <- saom_data(list(net_on(three()$nodes, "a", "b"), w3, w4), covariates = "v")
+  expect_true(is.matrix(d4$covariates$v))
+  expect_equal(dim(d4$covariates$v), c(4L, 2L))
+  expect_equal(d4$covariates$v[4, ], c(2, 3))
   # Nodes are matched by identifier, whatever their order.
   shuffled <- netframe(data.frame(from = "c", to = "a"),
                        nodes = three()$nodes[c(3, 1, 4, 2), ])
@@ -108,8 +116,9 @@ test_that("target statistics match hand-computed values", {
   # Covariate v = (1, 2, 6, 2): mean 2.75; centered (-1.75, -0.75, 3.25, -0.75).
   # Ties at wave 2: a->b, b->c, a->c, c->a. egoX: a has out-degree 2, b 1, c 1.
   v <- c(1, 2, 6, 2) - 2.75
+  # cycle3 is the number of 3-cycles (a -> b -> c -> a), as RSiena reports it.
   expect_equal(unname(t[1, c(1:10, 12)]), c(
-    4, 2, 1, 1, 3, 6, 6, 1,
+    4, 2, 1, 1, 1, 6, 6, 1,
     2 * v[1] + v[2] + v[3],
     v[2] + v[3] + v[3] + v[1],
     1))
