@@ -130,7 +130,8 @@ test_that("proximity networks join nearby points", {
   wk <- proximity_network(world, coords = c("lon", "lat"), k = 3)
   expect_equal(nrow(wk$edges), 3L * n)
   diag(d) <- Inf
-  nearest <- as.vector(t(apply(d, 1, function(r) order(r)[1:3])))
+  # apply() returns one column per node, so as.vector() lists each node's three in turn.
+  nearest <- as.vector(apply(d, 1, function(r) order(r)[1:3]))
   expect_equal(wk$edges$to, nearest)
   expect_error(proximity_network(pts, coords = c("x", "y"), crs = "planar"), "exactly one")
   expect_error(proximity_network(pts, coords = c("x", "y"), crs = "planar", within = 1, k = 1),

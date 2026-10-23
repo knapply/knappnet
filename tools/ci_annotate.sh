@@ -13,7 +13,7 @@ for f in "$@"; do
     *.Rout.fail)
       # Test logs can contain very long diffs; show each failure's header
       # and first lines, then the summary at the end.
-      text=$( (grep -n -A8 -E '^── (Failure|Error)' "$f" | head -n 200; echo '...'; tail -n 15 "$f") )
+      text=$( (grep -n -A8 -E '^── (Failure|Error|Warning)' "$f" | head -n 200; echo '...'; tail -n 15 "$f") )
       ;;
     *)
       text=$(tail -n 150 "$f")

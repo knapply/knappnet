@@ -52,7 +52,7 @@ test_that("distance-weighted reach is normalized harmonic centrality", {
 test_that("proximity prestige follows Wasserman and Faust", {
   # 1 -> 2 -> 3 and 4 -> 3: node 3 is reached by all three at distances
   # 2, 1, 1, so (3/3) / (4/3) = 3/4; node 2 by node 1 only: (1/3) / 1.
-  g <- netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 3)))
+  g <- netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 3)), nodes = data.frame(id = 1:4))
   expect_equal(proximity_prestige(g), c(0, 1 / 3, 3 / 4, 0))
   # Undirected: equal to the Wasserman-Faust closeness index.
   u <- netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 5)), directed = FALSE)
@@ -165,7 +165,8 @@ test_that("eigenvector centralization follows igraph's definition", {
 test_that("centralize() applies Freeman's index to any scores", {
   star <- netframe(data.frame(from = 1, to = 2:5), directed = FALSE)
   expect_equal(centralize(degree(star), 4 * 3), 1)
-  expect_equal(centralize(degree(star), 4 * 3), centralization(star))
+  # Freeman's maximum (n - 1)(n - 2) is igraph's without self-loops.
+  expect_equal(centralize(degree(star), 4 * 3), centralization(star, loops = FALSE))
   expect_equal(centralize(degree(star)), 12)
   expect_equal(centralize(c(2, 2, 2)), 0)
   expect_true(is.nan(centralize(numeric(0))))
@@ -197,7 +198,7 @@ test_that("results match igraph", {
                tolerance = 1e-9)
   expect_equal(edge_betweenness(d, weighted = FALSE), igraph::edge_betweenness(id, weights = NA),
                tolerance = 1e-9)
-  expect_equal(reach(d, k = 2, mode = "in"), igraph::ego_size(id, order = 2, mode = "in") - 1)
+  expect_equal(reach(d, k = 2, mode = "in", weighted = FALSE), igraph::ego_size(id, order = 2, mode = "in") - 1)
 })
 
 test_that("results match sna", {

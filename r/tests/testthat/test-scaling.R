@@ -13,8 +13,10 @@ kite <- function() {
 expect_same_configuration <- function(a, b, tolerance = 1e-8) {
   expect_equal(dim(a), dim(b))
   for (j in seq_len(ncol(a))) {
-    expect_true(isTRUE(all.equal(a[, j], b[, j], tolerance = tolerance)) ||
-                  isTRUE(all.equal(a[, j], -b[, j], tolerance = tolerance)))
+    x <- unname(a[, j])
+    y <- unname(b[, j])
+    expect_true(isTRUE(all.equal(x, y, tolerance = tolerance)) ||
+                  isTRUE(all.equal(x, -y, tolerance = tolerance)))
   }
 }
 

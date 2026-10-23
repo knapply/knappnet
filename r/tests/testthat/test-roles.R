@@ -98,7 +98,8 @@ test_that("blockmodel densities, image, and fit match hand values", {
   expect_equal(blockmodel(g, "part")$density, bm$density)
   expect_equal(blockmodel(g, regular_equivalence(g))$blocks, c(1L, 2L))
   # Weights are mean tie values; direction gives an asymmetric matrix.
-  w <- netframe(data.frame(from = c(1, 1, 3), to = c(2, 3, 1), w = c(2, 4, 6)), weight = "w")
+  w <- netframe(data.frame(from = c(1, 1, 3), to = c(2, 3, 1), w = c(2, 4, 6)),
+                nodes = data.frame(id = 1:3), weight = "w")
   bw <- blockmodel(w, c(1, 1, 2))
   expect_equal(unname(bw$density), matrix(c(1, 3, 2, NaN), 2))
   expect_equal(unname(blockmodel(w, c(1, 1, 2), weighted = FALSE)$density),
