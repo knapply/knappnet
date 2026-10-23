@@ -3,7 +3,8 @@ Title: Fast, Validated Network Analysis
 Version: 0.0.1
 Authors@R:
     person("Brendan", "Knapp", email = "knapply@users.noreply.github.com",
-           role = c("aut", "cre", "cph"))
+           role = c("aut", "cre", "cph"),
+           comment = c(ORCID = "0000-0003-3284-4972"))
 Description: Network analysis on networks represented as a pair of data
     frames, one for nodes and one for edges. Algorithms run in a compiled,
     multithreaded engine and every measure is validated against established

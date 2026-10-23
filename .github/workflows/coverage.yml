@@ -1,0 +1,71 @@
+# Test coverage, reported to Codecov for the README badge.
+#
+# Jobs (typical duration):
+#   rust  ~10 min  cargo-llvm-cov over the engine and C ABI test suites
+#   r     ~20 min  covr over the R package's tests (R code only; the
+#                  compiled engine is measured by the rust job)
+#
+# Uploads use the CODECOV_TOKEN repository secret when it is set; a
+# missing token or a Codecov outage does not fail the workflow.
+name: Coverage
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: llvm-tools-preview
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: Swatinem/rust-cache@v2
+      - name: Measure coverage
+        run: cargo llvm-cov --workspace --lcov --output-path lcov.info
+      - uses: codecov/codecov-action@v5
+        with:
+          files: lcov.info
+          flags: rust
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  r:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          working-directory: r
+          extra-packages: any::covr, any::xml2
+          needs: coverage
+      - name: Measure coverage
+        working-directory: r
+        run: |
+          cov <- covr::package_coverage(quiet = FALSE, clean = TRUE,
+                                        install_path = file.path(normalizePath(".", mustWork = FALSE), "covr-install"))
+          print(cov)
+          covr::to_cobertura(cov, filename = "cobertura.xml")
+        shell: Rscript {0}
+      - uses: codecov/codecov-action@v5
+        with:
+          files: r/cobertura.xml
+          flags: r
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false

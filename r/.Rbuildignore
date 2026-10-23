@@ -7,3 +7,5 @@
 ^pkgdown$
 ^docs$
 ^vignettes/articles$
+^covr-install$
+^cobertura\.xml$

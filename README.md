@@ -1,5 +1,18 @@
 # knappnet
 
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+[![CI](https://github.com/knapply/knappnet/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/knapply/knappnet/actions/workflows/ci.yml)
+[![R CMD check (extra platforms)](https://github.com/knapply/knappnet/actions/workflows/r-check.yml/badge.svg)](https://github.com/knapply/knappnet/actions/workflows/r-check.yml)
+[![Website](https://github.com/knapply/knappnet/actions/workflows/pkgdown.yml/badge.svg?branch=main)](https://knapply.github.io/knappnet/)
+[![Codecov test coverage](https://codecov.io/gh/knapply/knappnet/graph/badge.svg)](https://app.codecov.io/gh/knapply/knappnet)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/knapply/knappnet/blob/main/LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/knapply/knappnet)](https://github.com/knapply/knappnet/commits/main)
+[![Code size](https://img.shields.io/github/languages/code-size/knapply/knappnet)](https://github.com/knapply/knappnet)
+[![Visits](https://visitor-badge.laobi.icu/badge?page_id=knapply.knappnet)](https://github.com/knapply/knappnet)
+[![ORCID: Brendan Knapp](https://img.shields.io/badge/ORCID-0000--0003--3284--4972-A6CE39?logo=orcid&logoColor=white)](https://orcid.org/0000-0003-3284-4972)
+<!-- badges: end -->
+
 Fast, validated network analysis for R, with Python to follow.
 
 A network is two data frames, one for nodes and one for edges, with any
