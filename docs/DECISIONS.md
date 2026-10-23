@@ -282,3 +282,98 @@ only.
 **Reasoning.** The surveys show that the modelling chapters' difficulty is
 data preparation, which the bridges solve, and that the models deserve an
 API designed with the rest of the package rather than one carried over.
+
+## October 2026: follow-up decisions
+
+These amend the decisions above where they overlap.
+
+### 14. Missing ties are flagged rows; non-respondents are a node flag
+
+**Decision.** Two missing-data roles, both stored without materializing
+unobserved pairs: a logical edge column whose `TRUE` rows are pairs known
+to be unobserved (neither ties nor non-ties), and a logical node column
+marking non-respondents, whose unreported ties are implied by a rule
+rather than written out as rows. Measures refuse networks with unresolved
+missingness unless it is handled explicitly. This settles decision 11's
+provisional choice for missing data.
+
+**Alternatives.** A separate table of missing pairs; a node flag only;
+storing every unobserved pair (the large-object problem of matrix-based
+representations).
+
+**Reasoning.** Most missingness in practice is node-level non-response
+(survey designs; `rawlings2023network`, `borgatti2022analyzing`), which a
+node flag covers at the cost of one column. Pair-level flags are needed
+for partially observed covert networks, where the absence of a report is
+not evidence of no tie (`cunningham2016understanding`), and stay small
+because only the pairs a user names are stored.
+
+### 15. Multilayer networks are in scope, with layer columns on edges
+
+**Decision.** A multilayer network (`kivela2014multilayer`) keeps actors
+in the node table and gives each edge `source_layer` and `target_layer`
+columns: equal values make an intralayer edge, different values an
+interlayer edge, and an actor joined to itself across layers is a
+coupling edge. An optional layer table holds layer attributes. Multiplex
+networks remain the `relation` role (decision 8); a multiplex network is
+the special case of a multilayer network whose only interlayer edges are
+couplings.
+
+**Alternatives.** Node-layer rows (each actor-in-a-layer a row of the node
+table, edges between node-layer identifiers): the exact formal model, but
+the node table grows with layers times actors; both representations with
+conversion.
+
+**Reasoning.** Layer columns on edges are compact, match multinet and
+pymnet (`magnani2021analysis`, `nurmi2024pymnet`), and keep one row per
+actor, so actor-level measures need no aggregation step.
+
+### 16. The constructor is `net_frame()`; conversion is `as_net_frame()`
+
+**Decision.** `net_frame()` builds a network from data frames;
+`as_net_frame()` is the S3 generic that converts from other objects
+(igraph, network, tbl_graph, sf/sfnetworks, matrices, data frames).
+Conversions out are `net_to_igraph()`, `net_to_network()`, and so on.
+
+### 17. Class names follow the constructor, and classes compose
+
+**Decision.** Classes are `net_frame`, `temporal_net_frame`,
+`spatial_net_frame`, `spatiotemporal_net_frame`, and
+`multilayer_net_frame`. Each property adds its class in a fixed order, so
+any combination exists without new classes, for example
+`c("multilayer_net_frame", "temporal_net_frame", "net_frame")`; a network
+that is both spatial and temporal is `spatiotemporal_net_frame`, which
+inherits from both. This amends decision 3's class names.
+
+**Alternatives.** Keep `netframe`; a fixed set of combined classes, each
+with its own methods.
+
+**Reasoning.** Names that match the constructor are easier to learn, and
+composable classes let methods find what they need by inheritance without
+the number of classes multiplying with every new network type.
+
+### 18. Ego networks are a `net_frame` with an `ego` role
+
+**Decision.** Collections of ego networks (from surveys or extracted from
+a whole network) are one `net_frame` whose nodes and edges carry an ego
+identifier, so every measure can run per ego. Bridges convert to and from
+egor's three-table form (egos, alters, alter-alter ties).
+
+**Alternatives.** A separate three-table class like egor; both, with
+conversion.
+
+**Reasoning.** One structure keeps every function available to ego data;
+the three-table form is the common survey import format
+(`rawlings2023network`, `shafie2026r4sna`) and is supported through
+conversion.
+
+### 19. Several presence spells and time-varying attributes: optional long tables (provisional)
+
+**Decision (provisional; no preference stated).** Nodes with more than one
+presence spell, and node attributes that change over time, are stored in
+optional long tables attached to the network: node spells (id, start,
+end) and node changes (id, time, attribute values). The node table stays
+one row per node.
+
+**Alternatives.** Repeated node rows keyed by identifier and time, which
+breaks the one-row-per-node rule every measure relies on.
