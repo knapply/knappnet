@@ -70,7 +70,8 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
 - Direction views: `In` and `All` searches on directed graphs read the out-
   and in-CSR in place (`bitset::View`) instead of building a reversed or
   symmetrized copy (about 50 B/edge transient: edge list + two counting
-  sorts). Neighborhood sizes, order 2, densedir1k (300k arcs): see report.
+  sorts). Neighborhood sizes, order 2, mode all: densedir1k (300k arcs)
+  0.0110 -> 0.0030 s, peak heap 18.3 MB -> 55 KB; meddir3k 11.1 MB -> 186 KB.
 - Blocking: partitioning nodes into cache-sized ranges and bucketing the
   pushes by target range (X-Stream, Roy, Mihailovic and Zwaenepoel 2013;
   GridGraph, Zhu, Han and Chen 2015) turns the random ORs into sequential
