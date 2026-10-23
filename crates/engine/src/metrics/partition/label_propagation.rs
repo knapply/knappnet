@@ -180,8 +180,8 @@ fn links(g: &Graph, mode: LpaMode, weighted: bool) -> Result<Links> {
             }
         }
     }
-    for v in 0..n {
-        for &(u, _) in &reads[v] {
+    for (v, row) in reads.iter().enumerate() {
+        for &(u, _) in row {
             readers[u].push(v);
         }
     }
