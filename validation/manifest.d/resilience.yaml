@@ -247,7 +247,7 @@ flow_betweenness:
   applies_to: any
   tolerance: {rel: 1.0e-12, abs: 1.0e-12}
   oracles:
-    definition: &flow_definition
+    definition:
       call: "sum over pairs of other nodes of maxflow(G) - maxflow(G - v), Edmonds-Karp in integers for every pair and node"
       undefined_on: &flow_large [karate, southern_women, davis_twomode, les_miserables, gnp_dir_sparse,
                                  gnp_dir_dense, gnp_und_sparse, gnp_und_dense, weighted_dir, weighted_und,
@@ -259,6 +259,8 @@ flow_betweenness:
       reason: >-
         sna reads an adjacency matrix, so parallel edges collapse into one
         tie of capacity 1; the engine adds their capacities.
+      undefined_on: [single_node]
+      undefined_reason: sna's flow routines need at least two nodes.
 
 flow_betweenness_normalized:
   engine: {fn: flow_betweenness, scale: normalized}
@@ -291,6 +293,8 @@ flow_betweenness_fractional:
       call: "sna::flowbet(m, gmode, cmode = 'fracflow', ignore.eval = TRUE)"
       differs_when: [multi_edges]
       reason: sna collapses parallel edges.
+      undefined_on: [single_node]
+      undefined_reason: sna's flow routines need at least two nodes.
 
 flow_betweenness_capacity:
   engine: {fn: flow_betweenness, scale: raw, capacity: true}

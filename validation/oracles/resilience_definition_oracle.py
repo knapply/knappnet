@@ -9,8 +9,8 @@ This oracle shares no code or algorithmic strategy with the engine:
   union-find, masked searches, and a parallel enumeration;
 - group betweenness counts shortest paths pair by pair from the distance
   matrix, with exact integers or fractions;
-- flow betweenness runs Edmonds-Karp in exact integer arithmetic for every
-  pair, and again for every pair with every other node deleted, with no
+- flow betweenness runs Edmonds-Karp (Edmonds and Karp 1972,
+  `edmonds1972theoretical`) in exact arithmetic for every pair, and again for every pair with every other node deleted, with no
   shortcuts (the engine uses Dinic's algorithm and skips nodes that carry
   no flow).
 
