@@ -252,7 +252,7 @@ mode_labels <- function(x) frame_summary_cached(x)$modes
 
 # The mode of each node as the engine's 0-based code by first appearance.
 mode_codes <- function(x) {
-  engine_graph(x)
+  engine_graph(x, missing_ok = TRUE)
   engine_call("net_frame", .Call(C_frame_codes, x$cache$frame, 0L, as.double(nrow(x$nodes))))
 }
 

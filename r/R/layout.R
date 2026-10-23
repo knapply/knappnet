@@ -28,7 +28,9 @@ net_layout <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "c
     twomode = list(types = layout_types(x, types)),
     list()
   )
-  ptr <- engine_graph(x)
+  # A layout places the observed ties; it is not a measure, so unresolved
+  # missing data do not stop it.
+  ptr <- engine_graph(x, missing_ok = TRUE)
   xy <- engine_call("net_layout", switch(method,
     auto = , stress = , sparse_stress = {
       algorithm <- switch(method, auto = 0L, stress = 1L, sparse_stress = 2L)

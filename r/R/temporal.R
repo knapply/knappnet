@@ -504,15 +504,36 @@ node_presence <- function(x) {
 
 # Which nodes are present at time a (a == b) or in the window [a, b).
 node_present <- function(x, a, b) {
+  if (!is.null(x$node_spells)) return(node_present_spells(x, a, b))
   if (is.null(x$roles$node_start) && is.null(x$roles$node_end)) {
     return(rep(TRUE, nrow(x$nodes)))
   }
   p <- node_presence(x)
+  spell_hits(p$start, p$end, a, b)
+}
+
+# Whether each spell [start, end) is active at time a (a == b) or overlaps
+# the window [a, b).
+spell_hits <- function(start, end, a, b) {
   if (a == b) {
-    (p$start <= a & a < p$end) | (p$start == a & p$end == a)
+    (start <= a & a < end) | (start == a & end == a)
   } else {
-    ifelse(p$start == p$end, p$start >= a & p$start < b, p$start < b & p$end > a)
+    ifelse(start == end, start >= a & start < b, start < b & end > a)
   }
+}
+
+# node_present() for a node spells table, through the engine's resolved
+# spells (a node without spells is present throughout).
+node_present_spells <- function(x, a, b) {
+  n <- nrow(x$nodes)
+  engine_graph(x, missing_ok = TRUE)
+  r <- engine_call("net_frame", .Call(C_frame_node_spells, x$cache$frame, as.double(n)))
+  counts <- diff(r$offsets)
+  node <- rep(seq_len(n), counts)
+  hit <- spell_hits(r$start, r$end, a, b)
+  out <- counts == 0L
+  out[unique(node[hit])] <- TRUE
+  out
 }
 
 # The engine's temporal network for `x`, built on first use and cached

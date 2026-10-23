@@ -25,6 +25,7 @@ Imports:
     tools,
     utils
 Suggests:
+    egor,
     ergm,
     igraph,
     keyplayer,

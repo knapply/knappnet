@@ -77,7 +77,7 @@ draw_legends <- function(legends, usr, per_inch, cex) {
     args <- switch(l$type,
       fill = c(args, list(pch = 21, pt.bg = l$col, col = "gray40", pt.cex = 1.6)),
       size = c(args, list(pch = 21, pt.bg = "gray70", col = "gray40", pt.cex = l$cex)),
-      line = c(args, list(lty = 1, lwd = l$lwd, col = l$col))
+      line = c(args, list(lty = if (is.null(l$lty)) 1 else l$lty, lwd = l$lwd, col = l$col))
     )
     box <- do.call(graphics::legend, args)
     ytop <- ytop - box$rect$h - 0.1 * per_inch
@@ -335,7 +335,7 @@ plot_node_size <- function(x, value, n, base = plot_base_size(n)) {
   lo <- 0.6 * base
   hi <- 1.6 * base
   if (a$kind == "default") {
-    d <- if (n > 0) net_degree(x, loops = FALSE) else numeric()
+    d <- if (n > 0) plot_degree(x) else numeric()
     return(list(cex = map_numeric(d, lo, hi, area = TRUE)$values))
   }
   if (!is.numeric(a$values)) {
@@ -357,6 +357,13 @@ plot_node_size <- function(x, value, n, base = plot_base_size(n)) {
                        cex = map$f(breaks))
   }
   out
+}
+
+# Degree without self-loops or unobserved pairs, for default node sizes
+# (counted here so that networks with missing data still draw).
+plot_degree <- function(x) {
+  keep <- x$index$src != x$index$tgt & !edge_unobserved(x)
+  tabulate(c(x$index$src[keep], x$index$tgt[keep]) + 1L, nbins = nrow(x$nodes))
 }
 
 # Edge widths as `lwd`: constant, except that strength weights widen edges
@@ -422,10 +429,11 @@ twomode_fill <- function(x) {
 plot_layout <- function(x, layout, seed) {
   n <- nrow(x$nodes)
   methods <- c("auto", "stress", "sparse_stress", "fr", "circle", "star", "grid", "tree",
-               "twomode")
+               "twomode", "modes")
   if (is.null(layout)) {
     return(net_layout(x, seed = seed))
   }
+  if (identical(layout, "modes")) return(layout_modes(x, seed))
   if (is.character(layout) && length(layout) == 1L) {
     if (!layout %in% methods) {
       stop(sprintf("Unknown layout method `%s`; use one of %s.", layout,
@@ -453,32 +461,116 @@ plot_layout <- function(x, layout, seed) {
   out
 }
 
-# Straight edges between node positions, shortened to the node borders and
-# tipped with arrowheads when directed. `radius` is each node's symbol
-# radius in user units and `per_inch` the user units per inch.
-draw_edges <- function(xy, from, to, col, lwd, directed, radius, per_inch, n) {
-  if (!length(from)) return(invisible(NULL))
-  x0 <- xy[from, 1]
-  y0 <- xy[from, 2]
-  x1 <- xy[to, 1]
-  y1 <- xy[to, 2]
-  if (!directed) {
-    graphics::segments(x0, y0, x1, y1, col = col, lwd = lwd)
-    return(invisible(NULL))
+# One row per mode, in the order of the mode labels, with nodes ordered
+# within their row by the horizontal coordinate of the default layout so
+# that ties between rows cross as little as that layout allows.
+layout_modes <- function(x, seed) {
+  if (is.null(x$roles$mode)) {
+    stop("`layout = \"modes\"` needs a network with a mode role.", call. = FALSE)
   }
-  dx <- x1 - x0
-  dy <- y1 - y0
-  len <- sqrt(dx^2 + dy^2)
-  start <- radius[from]
-  end <- radius[to] + 0.01 * per_inch
-  ok <- len > start + end
-  if (any(ok)) {
-    ux <- dx[ok] / len[ok]
-    uy <- dy[ok] / len[ok]
-    graphics::arrows(x0[ok] + ux * start[ok], y0[ok] + uy * start[ok],
-                     x1[ok] - ux * end[ok], y1[ok] - uy * end[ok],
-                     length = if (n <= 100) 0.08 else 0.05, angle = 22, col = col[ok],
-                     lwd = lwd[ok])
+  n <- nrow(x$nodes)
+  base <- net_layout(x, seed = seed)
+  labels <- frame_summary_cached(x)$modes
+  code <- mode_codes(x) + 1L
+  out <- matrix(0, n, 2L, dimnames = list(NULL, c("x", "y")))
+  for (k in seq_along(labels)) {
+    idx <- which(code == k)
+    if (!length(idx)) next
+    ord <- idx[order(base[idx, 1L])]
+    out[ord, 1L] <- if (length(ord) > 1L) seq(0, 1, length.out = length(ord)) else 0.5
+    out[ord, 2L] <- (length(labels) - k) / max(1, length(labels) - 1) * 0.6
+  }
+  out
+}
+
+# Edges between node positions, shortened to the node borders and tipped
+# with arrowheads when directed. `radius` is each node's symbol radius in
+# user units and `per_inch` the user units per inch. Edges with a non-zero
+# `curve` are drawn as arcs (quadratic Bezier curves whose control point
+# lies `curve` times the edge length off the middle), and self-loops as
+# small circles above their node.
+draw_edges <- function(xy, from, to, col, lwd, directed, radius, per_inch, n,
+                       lty = rep(1L, length(from)), curve = rep(0, length(from))) {
+  if (!length(from)) return(invisible(NULL))
+  lty <- rep_len(lty, length(from))
+  curve <- rep_len(curve, length(from))
+  loop <- from == to
+  if (any(loop)) {
+    draw_loops(xy, from[loop], col[loop], lwd[loop], lty[loop], radius, per_inch, directed, n)
+  }
+  arrow_len <- if (n <= 100) 0.08 else 0.05
+  straight <- !loop & curve == 0
+  if (any(straight)) {
+    f <- from[straight]
+    t <- to[straight]
+    x0 <- xy[f, 1]
+    y0 <- xy[f, 2]
+    x1 <- xy[t, 1]
+    y1 <- xy[t, 2]
+    if (!directed) {
+      graphics::segments(x0, y0, x1, y1, col = col[straight], lwd = lwd[straight],
+                         lty = lty[straight])
+    } else {
+      dx <- x1 - x0
+      dy <- y1 - y0
+      len <- sqrt(dx^2 + dy^2)
+      start <- radius[f]
+      end <- radius[t] + 0.01 * per_inch
+      ok <- len > start + end
+      if (any(ok)) {
+        ux <- dx[ok] / len[ok]
+        uy <- dy[ok] / len[ok]
+        graphics::arrows(x0[ok] + ux * start[ok], y0[ok] + uy * start[ok],
+                         x1[ok] - ux * end[ok], y1[ok] - uy * end[ok],
+                         length = arrow_len, angle = 22, col = col[straight][ok],
+                         lwd = lwd[straight][ok], lty = lty[straight][ok])
+      }
+    }
+  }
+  for (e in which(!loop & curve != 0)) {
+    p0 <- xy[from[e], ]
+    p1 <- xy[to[e], ]
+    d <- p1 - p0
+    len <- sqrt(sum(d^2))
+    if (!(len > 0)) next
+    normal <- c(-d[2], d[1]) / len
+    ctrl <- (p0 + p1) / 2 + curve[e] * len * normal
+    t <- seq(0, 1, length.out = 30L)
+    px <- (1 - t)^2 * p0[1] + 2 * (1 - t) * t * ctrl[1] + t^2 * p1[1]
+    py <- (1 - t)^2 * p0[2] + 2 * (1 - t) * t * ctrl[2] + t^2 * p1[2]
+    keep <- sqrt((px - p0[1])^2 + (py - p0[2])^2) >= radius[from[e]] &
+      sqrt((px - p1[1])^2 + (py - p1[2])^2) >= radius[to[e]] + 0.01 * per_inch
+    if (sum(keep) < 2L) next
+    px <- px[keep]
+    py <- py[keep]
+    k <- length(px)
+    graphics::lines(px, py, col = col[e], lwd = lwd[e], lty = lty[e])
+    if (directed) {
+      graphics::arrows(px[k - 1L], py[k - 1L], px[k], py[k], length = arrow_len, angle = 22,
+                       col = col[e], lwd = lwd[e])
+    }
+  }
+  invisible(NULL)
+}
+
+# Self-loops as circles that touch the top of their node; several loops on
+# one node are drawn as nested circles.
+draw_loops <- function(xy, nodes, col, lwd, lty, radius, per_inch, directed, n) {
+  rank <- stats::ave(seq_along(nodes), nodes, FUN = seq_along)
+  theta <- seq(0, 2 * pi, length.out = 40L)
+  for (e in seq_along(nodes)) {
+    v <- nodes[e]
+    r <- max(radius[v], 0.05 * per_inch) * (0.6 + 0.35 * rank[e])
+    cx <- xy[v, 1]
+    cy <- xy[v, 2] + radius[v] + r * 0.8
+    graphics::lines(cx + r * cos(theta), cy + r * sin(theta), col = col[e], lwd = lwd[e],
+                    lty = lty[e])
+    if (directed) {
+      a <- c(-0.45, -0.3) * pi
+      graphics::arrows(cx + r * cos(a[1]), cy + r * sin(a[1]), cx + r * cos(a[2]),
+                       cy + r * sin(a[2]), length = if (n <= 100) 0.06 else 0.04,
+                       angle = 22, col = col[e], lwd = lwd[e])
+    }
   }
   invisible(NULL)
 }
