@@ -209,7 +209,7 @@ jobs:
         run: |
           bash tools/ci_annotate.sh "R CMD check (R ${{ matrix.r }})" \
             r/check/*.Rcheck/00install.out r/check/*.Rcheck/00check.log \
-            r/check/*.Rcheck/tests/*.Rout.fail
+            r/check/*.Rcheck/tests/*.Rout.fail r/check/*.Rcheck/*-Ex.Rout
 
   sanitizers:
     # The C glue under AddressSanitizer and UndefinedBehaviorSanitizer, with

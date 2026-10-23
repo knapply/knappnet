@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Shows the end of each given log file as a CI annotation (an error unless
-# LEVEL says otherwise), so it is visible on the run's summary page.
+# Shows the important part of each given log file as CI annotations (errors
+# unless LEVEL says otherwise), so it is visible on the run's summary page.
+# GitHub truncates long annotation messages, so the text is split into
+# numbered parts.
 #
 #   tools/ci_annotate.sh "R CMD check" check/*.Rcheck/00check.log
 #   LEVEL=notice tools/ci_annotate.sh Benchmarks bench.log
@@ -11,14 +13,28 @@ for f in "$@"; do
   [ -f "$f" ] || continue
   case "$f" in
     *.Rout.fail)
-      # Test logs can contain very long diffs; show each failure's header
-      # and first lines, then the summary at the end.
-      text=$( (grep -n -A8 -E '^── (Failure|Error|Warning)' "$f" | head -n 200; echo '...'; tail -n 15 "$f") )
+      # Failures and errors with their first lines, warnings as one line
+      # each, then the summary at the end.
+      text=$( (grep -n -A10 -E '^── (Failure|Error)' "$f" | head -n 300
+               echo '--- warnings ---'
+               grep -n -A1 -E '^── Warning' "$f" | grep -v '^--$' | head -n 60
+               echo '--- end of log ---'
+               tail -n 12 "$f") )
+      ;;
+    *-Ex.Rout)
+      text=$(tail -n 60 "$f")
       ;;
     *)
-      text=$(tail -n 150 "$f")
+      text=$(tail -n 120 "$f")
       ;;
   esac
-  body=$(printf '%s\n' "$text" | sed -e 's/%/%25/g' -e 's/\r/%0D/g' | awk '{printf "%s%%0A", $0}')
-  echo "::${LEVEL:-error} title=${title}: $(basename "$f")::${body}"
+  part=1
+  # Split into chunks of at most 60 lines.
+  printf '%s\n' "$text" | split -l 60 - "${TMPDIR:-/tmp}/annot_" 
+  for chunk in "${TMPDIR:-/tmp}"/annot_*; do
+    body=$(sed -e 's/%/%25/g' -e 's/\r/%0D/g' "$chunk" | awk '{printf "%s%%0A", $0}')
+    echo "::${LEVEL:-error} title=${title}: $(basename "$f") (part ${part})::${body}"
+    part=$((part + 1))
+    rm -f "$chunk"
+  done
 done
