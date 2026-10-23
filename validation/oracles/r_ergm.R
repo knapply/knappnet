@@ -3,20 +3,26 @@
 # network (Butts 2008) for exponential random graph models
 # (validation/manifest.d/ergm.yaml): summary statistics, maximum
 # pseudolikelihood estimates and their standard errors, Monte Carlo maximum
-# likelihood estimates, and bridge-sampled log-likelihoods.
+# likelihood estimates, and bridge-sampled log-likelihoods; and from btergm
+# (Leifeld, Cranmer, and Desmarais 2018) for pooled temporal
+# pseudolikelihood estimates, when it is installed.
 #
 #   Rscript validation/oracles/r_ergm.R
 #
-# Requires the ergm, network, and yaml packages. Run from the repository
-# root. Networks are built from the binary sociomatrix (self-loops dropped,
-# parallel edges collapsed). Node attributes follow the scheme of the
-# manifest: x = i mod 5 + 1, a = i mod 3, w[i, j] = ((7 i + 3 j) mod 5) / 2
-# for 0-based i, j, with (min, max) ordering when undirected.
+# Requires the ergm, network, and yaml packages (btergm optional). Run from
+# the repository root. Networks are built from the binary sociomatrix
+# (self-loops dropped, parallel edges collapsed). Node attributes follow the
+# scheme of the manifest: x = i mod 5 + 1, a = i mod 3,
+# w[i, j] = ((7 i + 3 j) mod 5) / 2 for 0-based i, j, with (min, max)
+# ordering when undirected. The second wave of a temporal model toggles
+# dyad (i, j) when (7 i + 3 j) mod 11 == 0.
 
 suppressPackageStartupMessages({
   library(network)
   library(ergm)
 })
+has_btergm <- requireNamespace("btergm", quietly = TRUE)
+if (has_btergm) suppressPackageStartupMessages(library(btergm))
 
 root <- normalizePath(".")
 fixtures_dir <- file.path(root, "validation", "fixtures")
@@ -74,8 +80,27 @@ term_sets <- list(
   edges = "edges",
   edges_triangle = "edges + triangle",
   edges_gwesp = "edges + gwesp(0.5, fixed = TRUE)",
-  edges_kstar2 = "edges + kstar(2)"
+  edges_kstar2 = "edges + kstar(2)",
+  tergm_undirected = "edges + nodecov('x') + memory(type = 'stability')",
+  tergm_directed = "edges + mutual + nodecov('x') + memory(type = 'stability') + delrecip"
 )
+
+# The sociomatrix of the second wave: dyad (i, j) (0-based, canonical order)
+# toggled when (7 i + 3 j) mod 11 == 0.
+second_wave <- function(m, directed) {
+  n <- nrow(m)
+  b <- m
+  for (i in seq_len(n)) {
+    for (j in seq_len(n)) {
+      if (i == j || (!directed && j < i)) next
+      if ((7 * (i - 1) + 3 * (j - 1)) %% 11 == 0) {
+        b[i, j] <- 1 - b[i, j]
+        if (!directed) b[j, i] <- b[i, j]
+      }
+    }
+  }
+  b
+}
 
 count <- 0L
 for (name in sort(list.dirs(fixtures_dir, full.names = FALSE, recursive = FALSE))) {
@@ -97,12 +122,26 @@ for (name in sort(list.dirs(fixtures_dir, full.names = FALSE, recursive = FALSE)
 
   for (variant in names(manifest)) {
     spec <- manifest[[variant]]
-    if (!applies(spec, meta) || !("ergm" %in% names(spec$oracles))) next
-    if (name %in% unlist(spec$oracles$ergm$undefined_on)) next
+    if (!applies(spec, meta)) next
+    oracle <- if ("ergm" %in% names(spec$oracles)) "ergm" else if ("btergm" %in% names(spec$oracles)) "btergm" else next
+    if (name %in% unlist(spec$oracles[[oracle]]$undefined_on)) next
     eng <- spec$engine
     if (!is.null(eng$fixtures) && !(name %in% unlist(eng$fixtures))) next
     rhs <- term_sets[[eng$terms]]
     f <- stats::as.formula(paste("net ~", rhs))
+    if (eng$fn == "tergm_mple") {
+      if (!has_btergm) next
+      net2 <- network::network(second_wave(m, meta$directed), directed = meta$directed,
+                               loops = FALSE)
+      network::set.vertex.attribute(net2, "x", attrs$x)
+      network::set.vertex.attribute(net2, "a", attrs$a)
+      waves <- list(net, net2)
+      tf <- stats::as.formula(paste("waves ~", rhs))
+      fit <- suppressMessages(suppressWarnings(btergm::btergm(tf, R = 10, verbose = FALSE)))
+      write_values("btergm", name, variant, unname(fit@coef))
+      count <- count + 1L
+      next
+    }
     values <- switch(eng$fn,
       ergm_stats = unname(summary(f)),
       ergm_mple = {
@@ -123,6 +162,12 @@ for (name in sort(list.dirs(fixtures_dir, full.names = FALSE, recursive = FALSE)
   }
 }
 
+dir.create(file.path(golden_dir, "ergm"), recursive = TRUE, showWarnings = FALSE)
 writeLines(sprintf("ergm %s", utils::packageVersion("ergm")),
            file.path(golden_dir, "ergm", "VERSION"))
-cat(sprintf("Wrote %d ergm golden files.\n", count))
+if (has_btergm) {
+  dir.create(file.path(golden_dir, "btergm"), recursive = TRUE, showWarnings = FALSE)
+  writeLines(sprintf("btergm %s", utils::packageVersion("btergm")),
+             file.path(golden_dir, "btergm", "VERSION"))
+}
+cat(sprintf("Wrote %d ergm and btergm golden files.\n", count))

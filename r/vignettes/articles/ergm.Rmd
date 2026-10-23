@@ -222,7 +222,7 @@ Science*, 13(2), 163-185.
 
 Geyer, C. J., and Thompson, E. A. (1992). Constrained Monte Carlo maximum
 likelihood for dependent data. *Journal of the Royal Statistical Society
-B*, 54(3), 657-699.
+B*, 54(3), 657-683.
 
 Hanneke, S., Fu, W., and Xing, E. P. (2010). Discrete temporal models of
 social networks. *Electronic Journal of Statistics*, 4, 585-605.

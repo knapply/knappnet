@@ -60,7 +60,48 @@ TERM_SETS = {
     "edges_triangle": [("edges", 0, -1, []), ("triangle", 0, -1, [])],
     "edges_gwesp": [("edges", 0, -1, []), ("gwesp", 0.5, -1, [])],
     "edges_kstar2": [("edges", 0, -1, []), ("kstar", 2, -1, [])],
+    # Temporal models: dyadic covariate 1 is the memory (stability) matrix
+    # 2 y_prev - 1 and covariate 2 the transpose of y_prev (delayed
+    # reciprocity).
+    "tergm_undirected": [("edges", 0, -1, []), ("nodecov", 0, 0, []), ("edgecov", 0, 1, [])],
+    "tergm_directed": [("edges", 0, -1, []), ("mutual", 0, -1, []), ("nodecov", 0, 0, []),
+                       ("edgecov", 0, 1, []), ("edgecov", 0, 2, [])],
 }
+
+
+def second_wave(fx):
+    """The fixture's ties after a deterministic rewiring: dyad (i, j), in
+    canonical order, is toggled when (7 i + 3 j) mod 11 == 0. Returns the
+    tie sets of both waves (loops dropped, parallel edges collapsed)."""
+    first = set()
+    for a, b in zip(fx.src, fx.tgt):
+        if a == b:
+            continue
+        first.add((a, b) if fx.directed else (min(a, b), max(a, b)))
+    second = set(first)
+    for i in range(fx.n):
+        for j in range(fx.n):
+            if i == j or (not fx.directed and j < i):
+                continue
+            if (7 * i + 3 * j) % 11 == 0:
+                second ^= {(i, j)}
+    return sorted(first), sorted(second)
+
+
+def memory_matrices(n, directed, first):
+    """Column-major 2 y_prev - 1 and t(y_prev) for the tie set `first`."""
+    prev = [[0.0] * n for _ in range(n)]
+    for a, b in first:
+        prev[a][b] = 1.0
+        if not directed:
+            prev[b][a] = 1.0
+    stability = [0.0] * (n * n)
+    reciprocal = [0.0] * (n * n)
+    for i in range(n):
+        for j in range(n):
+            stability[j * n + i] = 2 * prev[i][j] - 1
+            reciprocal[j * n + i] = prev[j][i]
+    return stability, reciprocal
 
 _declared = False
 
@@ -91,8 +132,12 @@ def _declare() -> ctypes.CDLL:
     lib.net_ergm_loglik.argtypes = [h, f64p, i32, i64, i64, i64, i32, i32, u64, i32, f64p, cp, sz]
     lib.net_ergm_simulate.argtypes = [h, f64p, i64, i64, i64, i32, i32, u64, i32, i32, i32, f64p,
                                       f64p, ctypes.POINTER(h), cp, sz]
+    lib.net_ergm_changestats.argtypes = [h, f64p, f64p, i64p, i64p, cp, sz]
+    lib.net_tergm_mple.argtypes = [f64p, f64p, i32p, i64, i64, i32, i64, u64, i32, i32, f64,
+                                   f64p, f64p, f64p, f64p, cp, sz]
     for fn in ("net_ergm_new", "net_ergm_stats", "net_ergm_mple", "net_ergm_exact",
-               "net_ergm_exact_mle", "net_ergm_mcmle", "net_ergm_loglik", "net_ergm_simulate"):
+               "net_ergm_exact_mle", "net_ergm_mcmle", "net_ergm_loglik", "net_ergm_simulate",
+               "net_ergm_changestats", "net_tergm_mple"):
         getattr(lib, fn).restype = i32
     _declared = True
     return lib
@@ -117,10 +162,13 @@ def attributes(n: int, directed: bool):
 class _Ergm:
     """A model handle over a fixture with the shared attribute scheme."""
 
-    def __init__(self, fx, terms: str):
+    def __init__(self, fx, terms: str, ties=None, extra_dyadic=()):
         self.lib = _declare()
         n = fx.n
-        pairs = [(a, b) for a, b in zip(fx.src, fx.tgt) if a != b]
+        if ties is None:
+            pairs = [(a, b) for a, b in zip(fx.src, fx.tgt) if a != b]
+        else:
+            pairs = list(ties)
         m = len(pairs)
         src = (ctypes.c_int64 * max(m, 1))(*[a for a, _ in pairs])
         tgt = (ctypes.c_int64 * max(m, 1))(*[b for _, b in pairs])
@@ -140,11 +188,13 @@ class _Ergm:
         x, a, w = attributes(n, fx.directed)
         num = (ctypes.c_double * max(n, 1))(*x)
         cat = (ctypes.c_int32 * max(n, 1))(*a)
-        dy = (ctypes.c_double * max(n * n, 1))(*w)
+        dyadic = [w] + list(extra_dyadic)
+        flat = [v for mat in dyadic for v in mat]
+        dy = (ctypes.c_double * max(len(flat), 1))(*flat)
         self.handle = ctypes.c_void_p()
         err = ctypes.create_string_buffer(ERR_LEN)
         _check(self.lib.net_ergm_new(n, src, tgt, m, int(fx.directed), codes, params, attrs, off,
-                                     lens, levels, k, num, 1, cat, 1, dy, 1, None,
+                                     lens, levels, k, num, 1, cat, 1, dy, len(dyadic), None,
                                      ctypes.byref(self.handle), err, ERR_LEN), err)
         self.p = self.lib.net_ergm_width(self.handle)
         self.n = n
@@ -159,6 +209,17 @@ class _Ergm:
         err = ctypes.create_string_buffer(ERR_LEN)
         _check(self.lib.net_ergm_stats(self.handle, out, err, ERR_LEN), err)
         return list(out)
+
+    def changestats(self):
+        d = self.lib.net_ergm_dyads(self.handle)
+        p = self.p
+        x = (ctypes.c_double * max(d * p, 1))()
+        y = (ctypes.c_double * max(d, 1))()
+        tail = (ctypes.c_int64 * max(d, 1))()
+        head = (ctypes.c_int64 * max(d, 1))()
+        err = ctypes.create_string_buffer(ERR_LEN)
+        _check(self.lib.net_ergm_changestats(self.handle, x, y, tail, head, err, ERR_LEN), err)
+        return list(x)[:d * p], list(y)[:d], d
 
     def mple(self):
         p = self.p
@@ -284,3 +345,28 @@ def _ergm_mcmle(g, spec, fx):
                          spec.get("nsim", 10000), spec.get("chains", 2), spec.get("seed", 1) + 1)
         return [ll]
     return theta
+
+
+@register("tergm_mple")
+def _tergm_mple(g, spec, fx):
+    """Pooled pseudolikelihood over the one transition from the fixture to
+    its deterministically rewired second wave."""
+    if fx.name not in spec.get("fixtures", []):
+        return []
+    first, second = second_wave(fx)
+    stability, reciprocal = memory_matrices(fx.n, fx.directed, first)
+    m = _Ergm(fx, spec["terms"], ties=second, extra_dyadic=[stability, reciprocal])
+    x, y, d = m.changestats()
+    p = m.p
+    lib = m.lib
+    xa = (ctypes.c_double * max(len(x), 1))(*x)
+    ya = (ctypes.c_double * max(d, 1))(*y)
+    period = (ctypes.c_int32 * max(d, 1))()
+    coef = (ctypes.c_double * p)()
+    cov = (ctypes.c_double * (p * p))()
+    fit = (ctypes.c_double * 5)()
+    boot = (ctypes.c_double * 1)()
+    err = ctypes.create_string_buffer(ERR_LEN)
+    _check(lib.net_tergm_mple(xa, ya, period, d, p, 1, 0, 1, 0, 0, 0.0, coef, cov, fit, boot,
+                              err, ERR_LEN), err)
+    return list(coef)

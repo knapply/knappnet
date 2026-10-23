@@ -269,3 +269,40 @@ ergm_loglik_gwesp:
       call: "logLik(ergm(net ~ edges + gwesp(0.5, fixed = TRUE), ...)), bridge sampled; the engine uses path sampling with 16 steps"
       undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
       undefined_reason: run on the Florentine network only (see ergm_mcmle_triangle).
+
+# ---- Temporal ERGMs ---------------------------------------------------------
+# One transition: from the fixture to a second wave in which dyad (i, j)
+# (canonical order, 0-based) is toggled when (7 i + 3 j) mod 11 == 0, so
+# ties persist, dissolve, form, and stay absent. The pooled pseudolikelihood
+# of edges + nodecov('x') + memory(type = 'stability') (+ mutual + delrecip
+# when directed) is a logistic regression whose point estimates btergm
+# reproduces exactly; its bootstrap intervals are Monte Carlo and are not
+# compared.
+
+tergm_mple_undirected:
+  engine: {fn: tergm_mple, terms: tergm_undirected, fixtures: [florentine, kite, karate, gnp_und_sparse]}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics of the second wave, memory as edgecov(2 y_prev - 1)"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on four representative networks.
+    btergm:
+      call: "btergm(list(net, net2) ~ edges + nodecov('x') + memory(type = 'stability'), R = 10)@coef"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on four representative networks.
+
+tergm_mple_directed:
+  engine: {fn: tergm_mple, terms: tergm_directed, fixtures: [gnp_dir_sparse, gnp_dir_dense, weighted_dir]}
+  applies_to: directed
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics of the second wave, memory as edgecov(2 y_prev - 1) and delrecip as edgecov(t(y_prev))"
+      undefined_on: [complete5_dir, cycle7_dir, empty, multi_loops_dir, pair, real_weights_dir]
+      undefined_reason: run on three representative networks.
+    btergm:
+      call: "btergm(list(net, net2) ~ edges + mutual + nodecov('x') + memory(type = 'stability') + delrecip, R = 10)@coef"
+      undefined_on: [complete5_dir, cycle7_dir, empty, multi_loops_dir, pair, real_weights_dir]
+      undefined_reason: run on three representative networks.

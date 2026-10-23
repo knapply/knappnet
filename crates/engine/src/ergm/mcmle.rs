@@ -139,10 +139,19 @@ pub fn mcmc_covariance(s: &Sample) -> Dense {
     let p = s.width;
     let mut total = Dense::zeros(p, p);
     let nsim = s.nsim;
-    let b = ((nsim as f64).sqrt().floor() as usize)
-        .max(2)
-        .min(nsim.max(2));
-    let k = (nsim / b).max(1);
+    if nsim < 4 {
+        // Too few draws for batches: treat every draw as independent.
+        let (_, cov) = moments(s);
+        let rows = s.rows().max(1) as f64;
+        for a in 0..p {
+            for c in 0..p {
+                total.set(a, c, cov.get(a, c) / rows);
+            }
+        }
+        return total;
+    }
+    let b = ((nsim as f64).sqrt().floor() as usize).max(2);
+    let k = nsim / b;
     for c in 0..s.chains {
         let base = c * nsim;
         let mut means = vec![vec![0.0; p]; b];
@@ -448,6 +457,11 @@ pub fn mcmle(model: &Model, theta0: &[f64], opts: &McmleOptions) -> Result<Mcmle
     if !(0.0..1.0).contains(&opts.margin) {
         return Err(Error::InvalidArgument(
             "the hull margin must be in [0, 1)".into(),
+        ));
+    }
+    if opts.sample.nsim * opts.sample.chains.max(1) < 2 {
+        return Err(Error::InvalidArgument(
+            "Monte Carlo estimation needs at least two draws per iteration".into(),
         ));
     }
     let g_obs = model.stats();

@@ -172,7 +172,7 @@
 #'
 #' Geyer, C. J., & Thompson, E. A. (1992). Constrained Monte Carlo maximum
 #' likelihood for dependent data. *Journal of the Royal Statistical Society
-#' B*, 54(3), 657-699. \doi{10.1111/j.2517-6161.1992.tb01443.x}
+#' B*, 54(3), 657-683. \doi{10.1111/j.2517-6161.1992.tb01443.x}
 #'
 #' Hunter, D. R., & Handcock, M. S. (2006). Inference in curved exponential
 #' family models for networks. *Journal of Computational and Graphical

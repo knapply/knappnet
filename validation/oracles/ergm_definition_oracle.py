@@ -62,6 +62,11 @@ TERM_SETS = {
     "edges_triangle": [("edges", 0, []), ("triangle", 0, [])],
     "edges_gwesp": [("edges", 0, []), ("gwesp", 0.5, [])],
     "edges_kstar2": [("edges", 0, []), ("kstar", 2, [])],
+    # Temporal models: "memory" is the stability covariate 2 y_prev - 1 and
+    # "delrecip" the transpose of y_prev.
+    "tergm_undirected": [("edges", 0, []), ("nodecov", 0, []), ("memory", 0, [])],
+    "tergm_directed": [("edges", 0, []), ("mutual", 0, []), ("nodecov", 0, []), ("memory", 0, []),
+                       ("delrecip", 0, [])],
 }
 
 
@@ -106,8 +111,10 @@ def choose(d, k):
 
 
 def statistics(A: np.ndarray, directed: bool, terms, cov) -> list[float]:
-    """Every statistic of the term list, by matrix formulas."""
-    x, a, w = cov
+    """Every statistic of the term list, by matrix formulas. `cov` holds x,
+    a, w, and optionally the previous wave's sociomatrix for temporal
+    terms."""
+    x, a, w = cov[:3]
     n = A.shape[0]
     od = A.sum(axis=1)
     idg = A.sum(axis=0)
@@ -147,6 +154,10 @@ def statistics(A: np.ndarray, directed: bool, terms, cov) -> list[float]:
             out.append(half * (A * D).sum())
         elif name == "edgecov":
             out.append(half * (A * w).sum())
+        elif name == "memory":
+            out.append(half * (A * (2 * cov[3] - 1)).sum())
+        elif name == "delrecip":
+            out.append(half * (A * cov[3].T).sum())
         elif name == "kstar":
             out.append(choose(deg, int(param)).sum())
         elif name == "istar":
@@ -242,7 +253,6 @@ def enumerate_stats(A, directed, terms, cov):
     """Statistics of every network on the free dyads, one row per network
     (bit d of the row index is dyad d), by vectorized definitions."""
     n = A.shape[0]
-    x, a, w = cov
     ds = dyads(n, directed)
     D = len(ds)
     count = 1 << D
@@ -311,6 +321,18 @@ def exact_mle(G, g_obs):
     return res.x, -res.fun
 
 
+def second_wave(A, directed):
+    """The sociomatrix after the deterministic rewiring of
+    validation/bindings/ergm.py: dyad (i, j) toggled when
+    (7 i + 3 j) mod 11 == 0."""
+    B = A.copy()
+    n = A.shape[0]
+    for i, j in dyads(n, directed):
+        if (7 * i + 3 * j) % 11 == 0:
+            B = set_dyad(B, i, j, 1 - B[i, j], directed)
+    return B
+
+
 def main() -> None:
     spec_all = manifest()
     written = 0
@@ -357,6 +379,16 @@ def main() -> None:
                 else:
                     theta, ll = exact_mle(G, g_obs)
                     values = [ll] if eng.get("output") == "loglik" else list(theta)
+            elif fn == "tergm_mple":
+                if name not in eng.get("fixtures", []):
+                    continue
+                B = second_wave(A, fx.directed)
+                X, y = change_matrix(B, fx.directed, terms, cov + (A,))
+                coef, se, _ = logistic_mle(X, y)
+                if separated(X, y, coef):
+                    print(f"   {variant} on {name}: no finite pseudolikelihood maximizer; skipped")
+                    continue
+                values = list(coef)
             else:
                 continue
             write_values(ORACLE, name, variant, values)
