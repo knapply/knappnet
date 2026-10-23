@@ -243,6 +243,6 @@ mod tests {
             .map(|x| if x / n == x % n { 0.0 } else { 1.0 })
             .collect();
         check(&k, n);
-        check(&vec![0.0; 16], 4);
+        check(&[0.0; 16], 4);
     }
 }

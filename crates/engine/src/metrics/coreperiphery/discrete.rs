@@ -313,9 +313,9 @@ fn search(
     while stall < opts.max_stall {
         step += 1;
         let mut chosen: Option<(f64, usize)> = None;
-        for v in 0..n {
+        for (v, &until) in tabu.iter().enumerate() {
             let s = value(&model.flipped(&st, v));
-            let allowed = tabu[v] < step || s > best;
+            let allowed = until < step || s > best;
             if allowed && chosen.map_or(true, |(b, _)| s > b) {
                 chosen = Some((s, v));
             }

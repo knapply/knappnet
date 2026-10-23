@@ -103,7 +103,7 @@ pub fn leading_eigen(g: &Graph, weighted: bool) -> Result<LeadingEigen> {
             let scale = b.iter().map(|x| x.abs()).sum::<f64>() / ng as f64;
             let (values, vectors) = symmetric_eigen(&b, ng);
             let lambda = values[ng - 1];
-            if !(lambda > 1e-10 * scale) {
+            if lambda.is_nan() || lambda <= 1e-10 * scale {
                 continue;
             }
             let u: Vec<f64> = (0..ng).map(|r| vectors[r * ng + ng - 1]).collect();
@@ -119,7 +119,7 @@ pub fn leading_eigen(g: &Graph, weighted: bool) -> Result<LeadingEigen> {
             let gain: f64 = (0..ng)
                 .map(|r| s[r] * (0..ng).map(|c| b[r * ng + c] * s[c]).sum::<f64>())
                 .sum();
-            if !(gain > 1e-10 * scale * ng as f64) {
+            if gain.is_nan() || gain <= 1e-10 * scale * ng as f64 {
                 continue;
             }
             let (plus, minus): (Vec<usize>, Vec<usize>) = (0..ng).partition(|&r| s[r] > 0.0);

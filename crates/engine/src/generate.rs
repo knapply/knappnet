@@ -160,7 +160,7 @@ fn isqrt(x: u64) -> u64 {
     while r > 0 && r.checked_mul(r).map_or(true, |s| s > x) {
         r -= 1;
     }
-    while (r + 1).checked_mul(r + 1).map_or(false, |s| s <= x) {
+    while (r + 1).checked_mul(r + 1).is_some_and(|s| s <= x) {
         r += 1;
     }
     r
@@ -224,7 +224,7 @@ fn bernoulli_indices(count: u64, p: f64, rng: &mut Stream, mut emit: impl FnMut(
         let u = rng.uniform();
         let skip = ((-u).ln_1p() / log_q).floor();
         let step = if first { skip } else { skip + 1.0 };
-        if !(step < (count - k) as f64) {
+        if step >= (count - k) as f64 {
             return;
         }
         k += step as u64;
@@ -491,9 +491,9 @@ fn uman_one(n: usize, mutual: u64, asym: u64, rng: &mut Stream) -> EdgeList {
         is_mutual[i] = true;
     }
     let mut out = EdgeList::new(n, true);
-    for i in 0..k {
+    for (i, &mutual_dyad) in is_mutual.iter().enumerate() {
         let (a, b) = (chosen.from[i] as u64, chosen.to[i] as u64);
-        if is_mutual[i] {
+        if mutual_dyad {
             out.push(a, b);
             out.push(b, a);
         } else if rng.next_u32() & 1 == 0 {
@@ -824,9 +824,9 @@ mod tests {
                 count[a as usize][b as usize] += 1;
             }
         }
-        for a in 0..5 {
-            for b in (a + 1)..5 {
-                assert!((5600..6400).contains(&count[a][b]), "{}", count[a][b]);
+        for (a, row) in count.iter().enumerate() {
+            for &c in &row[a + 1..] {
+                assert!((5600..6400).contains(&c), "{c}");
             }
         }
     }

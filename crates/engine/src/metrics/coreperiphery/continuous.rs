@@ -117,7 +117,7 @@ impl Objective {
         let mean_y = sy / self.pairs;
         let vyy = syy - self.pairs * mean_y * mean_y;
         let mut grad = vec![0.0; self.n];
-        if !(vyy > 0.0) {
+        if vyy.is_nan() || vyy <= 0.0 {
             return (f64::NAN, grad);
         }
         let den = (self.sxx * vyy).sqrt();
@@ -142,7 +142,7 @@ pub fn continuous_core_periphery(
 ) -> Result<ContinuousCorePeriphery> {
     let n = g.node_count();
     let obj = Objective::new(g, weighted)?;
-    if n < 2 || !(obj.sxx > 0.0) {
+    if n < 2 || obj.sxx.is_nan() || obj.sxx <= 0.0 {
         return Err(Error::InvalidArgument(
             "a core-periphery fit needs at least two nodes and pairs with different values \
              (some tied and some not)"
@@ -190,7 +190,7 @@ pub fn continuous_core_periphery(
             .map(|i| (0..n).map(|j| h[i * n + j] * gx[j]).sum())
             .collect();
         let mut slope: f64 = p.iter().zip(&gx).map(|(a, b)| a * b).sum();
-        if !(slope > 0.0) {
+        if slope.is_nan() || slope <= 0.0 {
             // Not an ascent direction: reset to steepest ascent.
             for i in 0..n {
                 for j in 0..n {
