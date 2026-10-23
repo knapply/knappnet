@@ -5,9 +5,60 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 8766 match, 42 documented differences, 0 FAIL, 3732 not run, 289 awaiting a manual run (UCINET), 1270 undefined for the oracle.
+Totals: 9570 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1309 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
+
+## communities
+
+| Measure | definition | igraph | networkx |
+|---|---|---|---|
+| `walktrap` | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 18 |  |
+| `walktrap_membership` | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 18 |  |
+| `walktrap_merges` | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 16 |  |
+| `walktrap_steps2` | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 18 |  |
+| `walktrap_weighted` | 5 / 0 / 0 / 0 | 0 / 0 / 0 / 5 |  |
+| `walktrap_cut2` | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 16 |  |
+| `girvan_newman_cut3` |  | 0 / 0 / 0 / 15 |  |
+| `label_prop_semisync` |  |  | 18 / 1 / 0 / 0 |
+| `label_prop_fixed_point` | 19 / 0 / 0 / 0 |  |  |
+| `label_prop_fixed_point_retention` | 19 / 0 / 0 / 0 |  |  |
+| `label_prop_fixed_point_fast` | 19 / 0 / 0 / 0 |  |  |
+| `label_prop_fixed_point_semisync` | 19 / 0 / 0 / 0 |  |  |
+| `label_prop_fixed_point_weighted` | 5 / 0 / 0 / 0 |  |  |
+| `label_prop_quality` |  | 0 / 0 / 0 / 19 |  |
+| `label_prop_quality_retention` |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |
+| `label_prop_quality_fast` |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |
+| `map_equation` | 28 / 0 / 0 / 0 |  |  |
+| `map_equation_weighted` | 7 / 0 / 0 / 0 |  |  |
+| `infomap_codelength` | 28 / 0 / 0 / 0 |  |  |
+| `infomap_quality` |  | 0 / 0 / 0 / 19 |  |
+| `leiden_modularity` | 19 / 0 / 0 / 0 |  |  |
+| `leiden_modularity_weighted` | 5 / 0 / 0 / 0 |  |  |
+| `leiden_cpm` | 19 / 0 / 0 / 0 |  |  |
+| `leiden_connected` | 19 / 0 / 0 / 0 |  |  |
+| `leiden_connected_cpm` | 19 / 0 / 0 / 0 |  |  |
+| `leiden_quality` |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |
+| `leiden_cpm_quality` |  | 0 / 0 / 0 / 19 |  |
+| `spinglass_energy` | 19 / 0 / 0 / 0 |  |  |
+| `spinglass_energy_simple` | 19 / 0 / 0 / 0 |  |  |
+| `spinglass_quality` |  | 0 / 0 / 0 / 15 |  |
+| `optimal_modularity` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 18 |  |
+| `optimal_modularity_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 1 |  |
+| `optimal_modularity_resolution` | 28 / 0 / 0 / 0 |  |  |
+| `fluid_groups` | 19 / 0 / 0 / 0 |  |  |
+| `fluid_quality` |  | 0 / 0 / 0 / 15 | 19 / 0 / 0 / 0 |
+| `voronoi_membership` | 28 / 0 / 0 / 0 |  |  |
+| `voronoi_modularity` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `voronoi_membership_all` | 9 / 0 / 0 / 0 |  |  |
+| `voronoi_weighted` | 7 / 0 / 0 / 0 |  |  |
+| `voronoi_radius1` | 28 / 0 / 0 / 0 |  |  |
+| `compare_vi` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `compare_nmi` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `compare_split_join` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `compare_rand` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 27 |  |
+| `compare_adjusted_rand` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 27 |  |
+| `compare_ami` | 28 / 0 / 0 / 0 |  |  |
 
 ## core
 
@@ -406,6 +457,10 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `edge_betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 55: engine 10.771428571428572, networkx 15.666666666666666
 - `edge_betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 55: engine 0.028345864661654136, networkx 0.04122807017543859
 - `coreness_all` vs networkx on `multi_loops_dir` (loops, multi_edges): index 18: engine 5.0, networkx 3.0
+- `label_prop_semisync` vs networkx on `multi_loops_und` (loops, multi_edges): index 10: engine 4.0, networkx 0.0
+- `label_prop_quality_retention` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.2753848379629629, networkx 0.13746527777777778
+- `label_prop_quality_fast` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.17135223765432098, networkx 0.057544367283950626
+- `leiden_quality` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.3554398148148148, networkx 0.31441454475308644
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909122, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.12111231459595977, networkx 0.14763297131718187
 - `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
