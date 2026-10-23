@@ -119,7 +119,7 @@ codes! {
     N_NODES_ADDED => Note, "nodes were added from edge endpoints absent from the node table";
     N_ISOLATES => Note, "some nodes have no edges";
     N_ZERO_BASED_IDS => Note, "the integer identifiers are 0 to n - 1; check that they are not positions in a 1-based table";
-    N_IDS_COERCED => Note, "whole-number doubles were matched to integer identifiers";
+    N_IDS_COERCED => Note, "identifiers of integer and double type were matched as numbers";
     N_LOOPS => Note, "the network has self-loops; each measure's documentation says how they count";
     N_PARALLEL => Note, "the network has parallel edges (same endpoints, relation, and time); each measure's documentation says how they count";
     N_MISSING_NODES => Note, "some nodes are marked as unobserved";

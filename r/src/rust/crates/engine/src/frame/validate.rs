@@ -2203,6 +2203,76 @@ mod tests {
     }
 
     #[test]
+    fn large_frames_give_the_same_report_on_every_thread_count() {
+        // More rows than a chunk, with faults spread across chunks and
+        // nodes added from the edges, so the parallel lookup, the
+        // row-order pass, and the chunked scans are all exercised.
+        let m = 3 * CHUNK + 1234;
+        let n = 50_000;
+        let mut src = Vec::with_capacity(m);
+        let mut tgt = Vec::with_capacity(m);
+        let mut w = Vec::with_capacity(m);
+        let mut x = 0x2545_F491_4F6C_DD1Du64;
+        for e in 0..m {
+            x ^= x << 13;
+            x ^= x >> 7;
+            x ^= x << 17;
+            let a = (x % n) as i64;
+            let b = ((x >> 20) % (n + 100)) as i64;
+            src.push(Some(format!("v{a}")));
+            tgt.push(if e % 70_001 == 5 {
+                None
+            } else {
+                Some(format!("v{b}"))
+            });
+            w.push(if e % 100_003 == 7 {
+                f64::NAN
+            } else {
+                1.0 + (e % 5) as f64
+            });
+        }
+        let ids: Vec<Option<String>> = (0..n).map(|i| Some(format!("v{i}"))).collect();
+        let mut f = Frame::new(true);
+        f.add_node_column("id", Column::Str(Strings::from_strs(&ids)))
+            .unwrap();
+        f.set_node_role(NodeRole::Id, "id").unwrap();
+        f.add_edge_column("from", Column::Str(Strings::from_strs(&src)))
+            .unwrap();
+        f.add_edge_column("to", Column::Str(Strings::from_strs(&tgt)))
+            .unwrap();
+        f.add_edge_column("w", Column::Float(w)).unwrap();
+        f.set_edge_role(EdgeRole::Source, "from").unwrap();
+        f.set_edge_role(EdgeRole::Target, "to").unwrap();
+        f.set_edge_role(EdgeRole::Weight, "w").unwrap();
+        f.set_weight_type(Some(WeightType::Strength));
+        f.declarations_mut().add_nodes = true;
+        let one = f.validate(1);
+        let three = f.validate(3);
+        assert_eq!(one.report, three.report);
+        assert!(one.report.has(Code::E_MISSING_ENDPOINT));
+        assert!(one.report.has(Code::E_WEIGHT_NOT_FINITE));
+        assert!(one.resolved.is_none());
+        // Without the missing endpoints, the added nodes come in first
+        // appearance order on every thread count.
+        let fixed: Vec<Option<String>> = tgt
+            .iter()
+            .map(|t| t.clone().or_else(|| Some("v1".into())))
+            .collect();
+        let mut g = f.clone();
+        g.add_edge_column("to2", Column::Str(Strings::from_strs(&fixed)))
+            .unwrap();
+        g.set_edge_role(EdgeRole::Target, "to2").unwrap();
+        let one = g.validate(1);
+        let three = g.validate(3);
+        assert_eq!(one.report, three.report);
+        let (r1, r3) = (one.resolved.unwrap(), three.resolved.unwrap());
+        assert_eq!(r1.added, r3.added);
+        assert_eq!((r1.src, r1.tgt), (r3.src, r3.tgt));
+        assert!(r1.n > n as usize);
+        assert!(three.report.has(Code::N_NODES_ADDED));
+    }
+
+    #[test]
     fn hasher_separates_short_keys() {
         let mut h1 = Fast::default();
         h1.write(b"ab");
