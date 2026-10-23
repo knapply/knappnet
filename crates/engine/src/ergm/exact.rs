@@ -38,6 +38,15 @@ pub struct Enumeration {
     observed: Vec<f64>,
 }
 
+fn no_mle() -> Error {
+    Error::InvalidArgument(
+        "the maximum likelihood estimate does not exist: the observed statistics lie on the \
+         boundary of their convex hull (for example a count that is as small or as large as it \
+         can be)"
+            .into(),
+    )
+}
+
 impl Enumeration {
     /// Enumerates every network that differs from the observed one only on
     /// free dyads.
@@ -172,13 +181,19 @@ impl Enumeration {
                 .zip(&mean)
                 .map(|(o, m)| o - m)
                 .collect();
-            let step = solve_spd(&cov, &score).ok_or_else(|| {
-                Error::InvalidArgument(
-                    "the Fisher information is singular: a statistic is constant over all \
-                     networks, or two statistics are collinear"
-                        .into(),
-                )
-            })?;
+            let step = match solve_spd(&cov, &score) {
+                Some(step) => step,
+                // As estimates run off toward a boundary the information
+                // underflows, so tell that case apart from collinearity.
+                None if self.observed_on_boundary() => return Err(no_mle()),
+                None => {
+                    return Err(Error::InvalidArgument(
+                        "the Fisher information is singular: a statistic is constant over \
+                         all networks, or two statistics are collinear"
+                            .into(),
+                    ))
+                }
+            };
             let mut scale = 1.0;
             let mut accepted = false;
             for _ in 0..30 {
@@ -208,12 +223,7 @@ impl Enumeration {
                 break;
             }
             if theta.iter().any(|t| t.abs() > 50.0) {
-                return Err(Error::InvalidArgument(
-                    "the maximum likelihood estimate does not exist: the observed \
-                     statistics lie on the boundary of their convex hull (for example a \
-                     count that is as small or as large as it can be)"
-                        .into(),
-                ));
+                return Err(no_mle());
             }
         }
         if !converged {
@@ -229,6 +239,43 @@ impl Enumeration {
             log_likelihood: ll,
             iterations,
         })
+    }
+
+    /// Whether the observed statistics lie on the boundary of the convex
+    /// hull of the attainable ones, in which case the MLE does not exist
+    /// (Rinaldo, Fienberg & Zhou 2009,
+    /// `rinaldo2009geometry`). The test moves the observed point a small
+    /// step away from the centroid of the distinct statistic vectors: an
+    /// interior point stays inside the hull, a boundary point leaves it.
+    fn observed_on_boundary(&self) -> bool {
+        let mut seen = std::collections::HashSet::new();
+        let mut rows: Vec<&[f64]> = Vec::new();
+        for k in 0..self.count {
+            let r = self.row(k);
+            if seen.insert(r.iter().map(|v| v.to_bits()).collect::<Vec<u64>>()) {
+                rows.push(r);
+            }
+        }
+        let p = self.width;
+        let mut centroid = vec![0.0; p];
+        for r in &rows {
+            for (c, v) in centroid.iter_mut().zip(r.iter()) {
+                *c += v / rows.len() as f64;
+            }
+        }
+        let x: Vec<f64> = self
+            .observed
+            .iter()
+            .zip(&centroid)
+            .map(|(o, c)| o + 1e-4 * (o - c))
+            .collect();
+        let mut points = Dense::zeros(rows.len(), p);
+        for (i, r) in rows.iter().enumerate() {
+            for (j, v) in r.iter().enumerate() {
+                points.set(i, j, *v);
+            }
+        }
+        !super::mcmle::in_convex_hull(&points, &x)
     }
 
     fn check(&self, theta: &[f64]) -> Result<()> {
@@ -329,6 +376,7 @@ mod tests {
             vec![Term::Edges],
         );
         let e = Enumeration::new(&m).unwrap();
-        assert!(e.mle(&[0.0], 100).is_err());
+        let err = e.mle(&[0.0], 100).unwrap_err().to_string();
+        assert!(err.contains("does not exist"), "{err}");
     }
 }

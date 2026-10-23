@@ -129,7 +129,10 @@ test_that("the pseudolikelihood matches glm() on the change statistics", {
   flo <- florentine_wealth()
   fit <- ergm_fit(flo ~ edges + triangle + nodecov("wealth") + nodematch("side"), estimate = "MPLE")
   cs <- knappnet:::ergm_changestats(fit$model)
-  ref <- stats::glm(cs$y ~ cs$x - 1, family = stats::binomial())
+  # glm()'s default convergence rule leaves standard errors accurate to
+  # about 1e-5, so it is tightened here.
+  ref <- stats::glm(cs$y ~ cs$x - 1, family = stats::binomial(),
+                    control = stats::glm.control(epsilon = 1e-14, maxit = 100))
   expect_equal(unname(coef(fit)), unname(coef(ref)), tolerance = 1e-6)
   expect_equal(unname(sqrt(diag(vcov(fit)))), unname(sqrt(diag(vcov(ref)))), tolerance = 1e-6)
   expect_equal(fit$mple$deviance, ref$deviance, tolerance = 1e-8)
