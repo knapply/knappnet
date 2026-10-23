@@ -128,13 +128,17 @@ static int add_columns(FrameHandle *h, int table, SEXP cols, char *err) {
 
 /* A frame from the role columns. `node_cols` is NULL when there is no
  * node table (nodes then come from the edges); `node_rows` gives the row
- * count of a node table that may have no columns. `roles` is a list of
- * three parallel vectors: table codes, role codes, and column names.
- * `declarations` holds the codes for loops, multiple, between_modes_only,
- * and add_nodes (-1 = not declared). `geometry` is a list of two flags and
- * a CRS string or NULL; `coordinates` the coordinate kind or NULL. */
-SEXP C_frame_new(SEXP directed, SEXP node_rows, SEXP node_cols, SEXP edge_cols, SEXP roles,
-                 SEXP weight_type, SEXP declarations, SEXP geometry, SEXP coordinates) {
+ * count of a node table that may have no columns. `extra_cols` is a list
+ * of three tables (layers, node spells, node changes), each NULL or a
+ * named list of columns. `roles` is a list of three parallel vectors:
+ * table codes, role codes, and column names. `declarations` holds the
+ * values of declarations 1 to 7 (loops, multiple, between_modes_only,
+ * add_nodes, egos_are_nodes, couplings_only, overlapping_spells; -1 = not
+ * declared). `geometry` is a list of two flags and a CRS string or NULL;
+ * `coordinates` the coordinate kind or NULL. */
+SEXP C_frame_new(SEXP directed, SEXP node_rows, SEXP node_cols, SEXP edge_cols, SEXP extra_cols,
+                 SEXP roles, SEXP weight_type, SEXP declarations, SEXP geometry,
+                 SEXP coordinates) {
   SEXP ptr = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(ptr, frame_finalizer, TRUE);
   FrameHandle *h = net_frame_new(Rf_asLogical(directed));
@@ -153,6 +157,16 @@ SEXP C_frame_new(SEXP directed, SEXP node_rows, SEXP node_cols, SEXP edge_cols, 
   }
   status = add_columns(h, 1, edge_cols, err);
   check_status(status, err, 1);
+  if (TYPEOF(extra_cols) != VECSXP || XLENGTH(extra_cols) != 3) {
+    UNPROTECT(1);
+    Rf_error("extra tables must be a list of three (internal error)");
+  }
+  for (int t = 0; t < 3; t++) {
+    SEXP cols = VECTOR_ELT(extra_cols, t);
+    if (Rf_isNull(cols)) continue;
+    status = add_columns(h, t + 2, cols, err);
+    check_status(status, err, 1);
+  }
 
   if (TYPEOF(roles) != VECSXP || XLENGTH(roles) != 3) {
     UNPROTECT(1);
@@ -175,13 +189,13 @@ SEXP C_frame_new(SEXP directed, SEXP node_rows, SEXP node_cols, SEXP edge_cols, 
   status = net_frame_set_weight_type(h, Rf_asInteger(weight_type), err, ERR_LEN);
   check_status(status, err, 1);
 
-  if (TYPEOF(declarations) != INTSXP || XLENGTH(declarations) != 4) {
+  if (TYPEOF(declarations) != INTSXP || XLENGTH(declarations) != 7) {
     UNPROTECT(1);
-    Rf_error("declarations must be four integers (internal error)");
+    Rf_error("declarations must be seven integers (internal error)");
   }
-  for (int d = 0; d < 4; d++) {
+  for (int d = 0; d < 7; d++) {
     int value = INTEGER(declarations)[d];
-    /* Declaration codes 1 to 4: loops, multiple, between_modes_only, add_nodes. */
+    /* Declaration 4 (add_nodes) is never undeclared. */
     if (d == 3 && value < 0) value = 0;
     status = net_frame_declare(h, d + 1, value, err, ERR_LEN);
     check_status(status, err, 1);
@@ -295,14 +309,17 @@ static SEXP int_vector_from(const int64_t *v, int64_t n, int offset) {
   return out;
 }
 
-/* The built graph's node count, the 0-based node index of every edge's
- * endpoints (m edges), and for each added node the edge row it first
- * appeared in (0-based) and whether as the target. */
+/* The built graph's node count, the 0-based node index of every edge
+ * row's endpoints (m rows), for each added node the edge row it first
+ * appeared in (0-based) and whether as the target, and the 0-based edge
+ * row of every graph edge (the observed ties; NULL when every row is an
+ * edge of the graph). */
 SEXP C_frame_index(SEXP ptr, SEXP m) {
   FrameHandle *h = frame_from_ptr(ptr);
   int64_t n = net_frame_node_count(h);
   int64_t added = net_frame_added_count(h);
-  if (n < 0 || added < 0) Rf_error("the frame has not been built (internal error)");
+  int64_t g = net_frame_graph_edge_count(h);
+  if (n < 0 || added < 0 || g < 0) Rf_error("the frame has not been built (internal error)");
   int64_t k = (int64_t)Rf_asReal(m);
   char err[ERR_LEN] = {0};
   int64_t *s = (int64_t *)R_alloc(k > 0 ? (size_t)k : 1, sizeof(int64_t));
@@ -315,8 +332,13 @@ SEXP C_frame_index(SEXP ptr, SEXP m) {
     status = net_frame_added(h, rows, is_target, err, ERR_LEN);
     check_status(status, err, 0);
   }
-  static const char *names[] = {"n", "src", "tgt", "added_row", "added_target"};
-  SEXP out = PROTECT(named_list(5, names));
+  int64_t *graph_rows = (int64_t *)R_alloc(g > 0 ? (size_t)g : 1, sizeof(int64_t));
+  if (g != k && g > 0) {
+    status = net_frame_edge_rows(h, graph_rows, err, ERR_LEN);
+    check_status(status, err, 0);
+  }
+  static const char *names[] = {"n", "src", "tgt", "added_row", "added_target", "graph_rows"};
+  SEXP out = PROTECT(named_list(6, names));
   SET_VECTOR_ELT(out, 0, Rf_ScalarReal((double)n));
   SET_VECTOR_ELT(out, 1, int_vector_from(s, k, 0));
   SET_VECTOR_ELT(out, 2, int_vector_from(t, k, 0));
@@ -324,6 +346,7 @@ SEXP C_frame_index(SEXP ptr, SEXP m) {
   SEXP target = PROTECT(Rf_allocVector(LGLSXP, (R_xlen_t)added));
   for (int64_t i = 0; i < added; i++) LOGICAL(target)[i] = is_target[i] != 0;
   SET_VECTOR_ELT(out, 4, target);
+  SET_VECTOR_ELT(out, 5, g == k ? R_NilValue : int_vector_from(graph_rows, g, 0));
   UNPROTECT(2);
   return out;
 }
@@ -350,8 +373,10 @@ static SEXP count_vector(const FrameHandle *h, int which, int64_t k, char *err, 
   return out;
 }
 
-/* The derived properties: the NET_FRAME_SUMMARY_LEN numbers, the mode and
- * relation labels with their counts, the weight column, and the CRS. */
+/* The derived properties: the NET_FRAME_SUMMARY_LEN numbers, the mode,
+ * relation, layer, and ego labels with their counts (nodes per mode,
+ * edges per relation, intralayer edges per layer, nodes and edge rows per
+ * ego), the weight column, and the CRS. */
 SEXP C_frame_summary(SEXP ptr, SEXP threads) {
   FrameHandle *h = frame_from_ptr(ptr);
   char err[ERR_LEN] = {0};
@@ -360,9 +385,12 @@ SEXP C_frame_summary(SEXP ptr, SEXP threads) {
   check_status(status, err, 1);
   int64_t modes = (int64_t)REAL(values)[3];
   int64_t relations = (int64_t)REAL(values)[9];
-  static const char *names[] = {"values",    "modes",          "mode_counts", "relations",
-                                "relation_counts", "weight", "crs"};
-  SEXP out = PROTECT(named_list(7, names));
+  int64_t layers = R_FINITE(REAL(values)[26]) ? (int64_t)REAL(values)[26] : 0;
+  int64_t egos = R_FINITE(REAL(values)[32]) ? (int64_t)REAL(values)[32] : 0;
+  static const char *names[] = {"values",       "modes",       "mode_counts", "relations",
+                                "relation_counts", "weight",   "crs",         "layers",
+                                "layer_counts", "egos",        "ego_nodes",   "ego_edges"};
+  SEXP out = PROTECT(named_list(12, names));
   SET_VECTOR_ELT(out, 0, values);
   SET_VECTOR_ELT(out, 1, label_vector(h, 0, modes));
   SET_VECTOR_ELT(out, 2, count_vector(h, 0, modes, err, 2));
@@ -372,12 +400,18 @@ SEXP C_frame_summary(SEXP ptr, SEXP threads) {
   SET_VECTOR_ELT(out, 5, w == NULL ? R_NilValue : Rf_mkString(w));
   const char *crs = net_frame_summary_label(h, 3, 0);
   SET_VECTOR_ELT(out, 6, crs == NULL ? R_NilValue : Rf_mkString(crs));
+  SET_VECTOR_ELT(out, 7, label_vector(h, 4, layers));
+  SET_VECTOR_ELT(out, 8, count_vector(h, 2, layers, err, 2));
+  SET_VECTOR_ELT(out, 9, label_vector(h, 5, egos));
+  SET_VECTOR_ELT(out, 10, count_vector(h, 3, egos, err, 2));
+  SET_VECTOR_ELT(out, 11, count_vector(h, 4, egos, err, 2));
   UNPROTECT(2);
   return out;
 }
 
-/* Integer codes of the modes (which 0, one per node row) or relations
- * (which 1, one per edge), 0-based by first appearance. */
+/* Integer codes of the modes (which 0, one per node row), relations
+ * (which 1, one per edge row), node egos (which 2, one per node row), or
+ * edge egos (which 3, one per edge row), 0-based by first appearance. */
 SEXP C_frame_codes(SEXP ptr, SEXP which, SEXP n) {
   FrameHandle *h = frame_from_ptr(ptr);
   int64_t k = (int64_t)Rf_asReal(n);
@@ -430,5 +464,84 @@ SEXP C_frame_simplify(SEXP ptr, SEXP m, SEXP combine, SEXP drop_loops, SEXP weig
   SET_VECTOR_ELT(out, 1, weight);
   SET_VECTOR_ELT(out, 2, Rf_ScalarReal((double)kept));
   UNPROTECT(2);
+  return out;
+}
+
+/* Layer codes (0-based indices into the layer labels) of every edge row's
+ * endpoints and each row's class (0 intralayer, 1 coupling, 2 interlayer);
+ * m values each. */
+SEXP C_frame_edge_layers(SEXP ptr, SEXP m) {
+  FrameHandle *h = frame_from_ptr(ptr);
+  int64_t k = (int64_t)Rf_asReal(m);
+  size_t alloc = k > 0 ? (size_t)k : 1;
+  int64_t *sl = (int64_t *)R_alloc(alloc, sizeof(int64_t));
+  int64_t *tl = (int64_t *)R_alloc(alloc, sizeof(int64_t));
+  int32_t *cl = (int32_t *)R_alloc(alloc, sizeof(int32_t));
+  char err[ERR_LEN] = {0};
+  int status = net_frame_edge_layers(h, sl, tl, cl, err, ERR_LEN);
+  check_status(status, err, 0);
+  static const char *names[] = {"source_layer", "target_layer", "class"};
+  SEXP out = PROTECT(named_list(3, names));
+  SET_VECTOR_ELT(out, 0, int_vector_from(sl, k, 0));
+  SET_VECTOR_ELT(out, 1, int_vector_from(tl, k, 0));
+  SEXP cls = PROTECT(Rf_allocVector(INTSXP, (R_xlen_t)k));
+  for (int64_t i = 0; i < k; i++) INTEGER(cls)[i] = (int)cl[i];
+  SET_VECTOR_ELT(out, 2, cls);
+  UNPROTECT(2);
+  return out;
+}
+
+/* The subgraph of layer i (which 0) or ego i (which 1), 0-based: a graph
+ * handle, the built graph's 0-based node index of each subgraph node, and
+ * the 0-based edge row of each subgraph edge. The external pointer exists,
+ * with its finalizer, before the engine builds the graph. */
+SEXP C_frame_subgraph(SEXP ptr, SEXP which, SEXP i) {
+  FrameHandle *h = frame_from_ptr(ptr);
+  int w = Rf_asInteger(which);
+  int64_t idx = (int64_t)Rf_asReal(i);
+  int64_t nn = 0, ne = 0;
+  char err[ERR_LEN] = {0};
+  int status = net_frame_subgraph_size(h, w, idx, &nn, &ne, err, ERR_LEN);
+  check_status(status, err, 0);
+  int64_t *node_index = (int64_t *)R_alloc(nn > 0 ? (size_t)nn : 1, sizeof(int64_t));
+  int64_t *edge_rows = (int64_t *)R_alloc(ne > 0 ? (size_t)ne : 1, sizeof(int64_t));
+  SEXP g = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(g, graph_release, TRUE);
+  GraphHandle *out = NULL;
+  status = net_frame_subgraph(h, w, idx, &out, node_index, edge_rows, err, ERR_LEN);
+  check_status(status, err, 1);
+  R_SetExternalPtrAddr(g, out);
+  static const char *names[] = {"ptr", "nodes", "edge_rows"};
+  SEXP res = PROTECT(named_list(3, names));
+  SET_VECTOR_ELT(res, 0, g);
+  SET_VECTOR_ELT(res, 1, int_vector_from(node_index, nn, 0));
+  SET_VECTOR_ELT(res, 2, int_vector_from(edge_rows, ne, 0));
+  UNPROTECT(2);
+  return res;
+}
+
+/* The resolved presence spells of the n nodes, sorted by node and start:
+ * offsets (n + 1 values, 0-based into the spells), start and end
+ * (infinite when unbounded), and the 0-based row of each spell. */
+SEXP C_frame_node_spells(SEXP ptr, SEXP n) {
+  FrameHandle *h = frame_from_ptr(ptr);
+  int64_t nodes = (int64_t)Rf_asReal(n);
+  int64_t k = net_frame_node_spell_count(h);
+  if (k < 0) Rf_error("the frame has not been built (internal error)");
+  int64_t *offsets = (int64_t *)R_alloc((size_t)nodes + 1, sizeof(int64_t));
+  int64_t *rows = (int64_t *)R_alloc(k > 0 ? (size_t)k : 1, sizeof(int64_t));
+  SEXP start = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)k));
+  SEXP end = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)k));
+  char err[ERR_LEN] = {0};
+  int status = net_frame_node_spells(h, offsets, k > 0 ? REAL(start) : NULL,
+                                     k > 0 ? REAL(end) : NULL, rows, err, ERR_LEN);
+  check_status(status, err, 2);
+  static const char *names[] = {"offsets", "start", "end", "rows"};
+  SEXP out = PROTECT(named_list(4, names));
+  SET_VECTOR_ELT(out, 0, int_vector_from(offsets, nodes + 1, 0));
+  SET_VECTOR_ELT(out, 1, start);
+  SET_VECTOR_ELT(out, 2, end);
+  SET_VECTOR_ELT(out, 3, int_vector_from(rows, k, 0));
+  UNPROTECT(3);
   return out;
 }

@@ -151,25 +151,31 @@ summary.net_frame <- function(object, paths = NULL, weighted = NULL, threads = 0
   w <- resolve_weighting(x, weighted, NULL)
   threads <- resolve_threads(threads)
   n <- nrow(x$nodes)
-  ptr <- engine_graph(x)
   s <- frame_summary_cached(x)
-  comp <- net_components(x, "weak")
-  largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
-  largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
-  if (is.null(paths)) paths <- largest_size <= summary_path_limit
+  # Measures refuse unresolved missing data; the tables are still described.
+  resolved <- !has_missing(x)
+  largest_size <- NA_integer_
+  ncomp <- s$components
   mean_dist <- diam <- NA_real_
-  if (paths && largest_size > 0L) {
-    src <- which(comp$membership == largest) - 1L
-    p <- engine_call("summary", .Call(C_path_summary, ptr, src, mode_code("out"), w$weighted,
-                                      w$code, TRUE, threads))
-    mean_dist <- p[[6L]]
-    diam <- p[[7L]]
-  }
-  deg <- net_degree(x)
-  deg <- if (n > 0L) {
-    c(mean = mean(deg), min = min(deg), max = max(deg))
+  deg <- c(mean = NaN, min = NaN, max = NaN)
+  if (resolved) {
+    ptr <- engine_graph(x)
+    comp <- net_components(x, "weak")
+    ncomp <- comp$no
+    largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
+    largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
+    if (is.null(paths)) paths <- largest_size <= summary_path_limit
+    if (paths && largest_size > 0L) {
+      src <- which(comp$membership == largest) - 1L
+      p <- engine_call("summary", .Call(C_path_summary, ptr, src, mode_code("out"),
+                                        w$weighted, w$code, TRUE, threads))
+      mean_dist <- p[[6L]]
+      diam <- p[[7L]]
+    }
+    d <- net_degree(x)
+    if (n > 0L) deg <- c(mean = mean(d), min = min(d), max = max(d))
   } else {
-    c(mean = NaN, min = NaN, max = NaN)
+    paths <- FALSE
   }
   column_types <- function(df) {
     types <- vapply(df, column_type, "")
@@ -192,22 +198,30 @@ summary.net_frame <- function(object, paths = NULL, weighted = NULL, threads = 0
       time = s$time,
       time_range = c(s$time_start, s$time_end),
       node_spells = s$node_spells,
+      spell_rows = s$spell_rows,
+      change_rows = s$change_rows,
+      layers = stats::setNames(as.integer(s$layer_counts), s$layers),
+      layer_edges = c(intralayer = s$intralayer, coupling = s$coupling,
+                      interlayer = s$interlayer),
+      egos = length(s$egos),
+      ego_sizes = if (length(s$egos)) range(s$ego_nodes) else c(NA_real_, NA_real_),
       space = space_text(x, s),
       loops = s$loops,
       multiple = s$parallel,
       declared = x$declared,
       isolates = s$isolates,
       density = s$density,
-      components = comp$no,
+      components = ncomp,
       largest_component = largest_size,
-      reciprocity = if (x$directed) net_reciprocity(x) else NA_real_,
-      transitivity = net_transitivity(x, threads = threads),
+      resolved = resolved,
+      reciprocity = if (x$directed && resolved) net_reciprocity(x) else NA_real_,
+      transitivity = if (resolved) net_transitivity(x, threads = threads) else NA_real_,
       paths = paths,
       path_weighted = w$weighted,
       mean_distance = mean_dist,
       diameter = diam,
       degree = deg,
-      centralization = net_centralization(x, "degree", threads = threads),
+      centralization = if (resolved) net_centralization(x, "degree", threads = threads) else NA_real_,
       node_columns = column_types(x$nodes),
       edge_columns = column_types(x$edges),
       missing_nodes = s$missing_nodes,
@@ -254,8 +268,16 @@ print.summary.net_frame <- function(x, digits = 3L, ...) {
     spells = sprintf("edge spells, %s to %s", num(x$time_range[[1L]]), num(x$time_range[[2L]])),
     waves = sprintf("waves %s to %s", num(x$time_range[[1L]]), num(x$time_range[[2L]]))
   )
-  if (isTRUE(x$node_spells)) time <- paste0(time, ", with node spells")
-  components <- if (x$components > 1L) {
+  if (identical(x$node_spells, "roles")) time <- paste0(time, ", with node spells")
+  if (identical(x$node_spells, "table")) {
+    time <- paste0(time, sprintf(", with %s node spells in a table", int(x$spell_rows)))
+  }
+  if (isTRUE(x$change_rows > 0)) {
+    time <- paste0(time, sprintf(", %s node attribute changes", int(x$change_rows)))
+  }
+  components <- if (!x$resolved) {
+    int(x$components)
+  } else if (x$components > 1L) {
     sprintf("%s (largest has %s nodes)", int(x$components), int(x$largest_component))
   } else {
     int(x$components)
@@ -269,6 +291,18 @@ print.summary.net_frame <- function(x, digits = 3L, ...) {
     "Relations" = relations
   )
   if (isTRUE(x$signed)) rows <- c(rows, "Signed" = sprintf("yes, %s negative", int(x$negative)))
+  if (length(x$layers)) {
+    rows <- c(rows, "Layers" = sprintf("%s; %s intralayer, %s coupling, %s interlayer edges",
+                                       paste(sprintf("%s: %s", names(x$layers), int(x$layers)),
+                                             collapse = ", "),
+                                       int(x$layer_edges[["intralayer"]]),
+                                       int(x$layer_edges[["coupling"]]),
+                                       int(x$layer_edges[["interlayer"]])))
+  }
+  if (x$egos > 0L) {
+    rows <- c(rows, "Egos" = sprintf("%s (%s to %s nodes each)", int(x$egos),
+                                     int(x$ego_sizes[[1L]]), int(x$ego_sizes[[2L]])))
+  }
   rows <- c(rows,
     "Time" = time,
     "Space" = x$space,
@@ -280,7 +314,9 @@ print.summary.net_frame <- function(x, digits = 3L, ...) {
   )
   if (x$directed) rows <- c(rows, "Reciprocity" = num(x$reciprocity))
   rows <- c(rows, "Transitivity" = num(x$transitivity))
-  if (x$paths) {
+  if (!x$resolved) {
+    rows <- c(rows, "Mean distance" = "not computed", "Diameter" = "not computed")
+  } else if (x$paths) {
     rows <- c(rows, "Mean distance" = num(x$mean_distance), "Diameter" = num(x$diameter))
   } else {
     rows <- c(rows, "Mean distance" = "not computed", "Diameter" = "not computed")
@@ -310,7 +346,10 @@ print.summary.net_frame <- function(x, digits = 3L, ...) {
   if (x$paths && isTRUE(x$path_weighted)) {
     notes <- c(notes, sprintf("Distances use the weights as %ss.", x$weight_type))
   }
-  if (!x$paths) {
+  if (!x$resolved) {
+    notes <- c(notes, paste0("Measures were skipped because the network has unresolved ",
+                             "missing data; see net_resolve_missing()."))
+  } else if (!x$paths) {
     notes <- c(notes, sprintf(paste0(
       "Mean distance and diameter were skipped because the largest component has %s ",
       "nodes; use summary(x, paths = TRUE) to compute them."), int(x$largest_component)))

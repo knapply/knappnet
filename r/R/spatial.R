@@ -27,14 +27,15 @@ net_spatial <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar")
     stop("`coords` must name two columns of `x$nodes`: longitude and latitude, or x and y.",
          call. = FALSE)
   }
-  cx <- resolve_column(x$nodes, coords[[1L]], "coords[1]", "nodes")
-  cy <- resolve_column(x$nodes, coords[[2L]], "coords[2]", "nodes")
+  cx <- role_column(x$nodes, coords[[1L]], "coords[1]", "nodes")
+  cy <- role_column(x$nodes, coords[[2L]], "coords[2]", "nodes")
   roles <- x$roles
   roles$x <- cx
   roles$y <- cy
   roles$crs <- crs
   roles$radius <- as.double(radius)
-  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
+  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph,
+                       tables = frame_tables(x))
   build_net_frame(out, quiet, "net_spatial")
 }
 

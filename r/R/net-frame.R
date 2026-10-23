@@ -1,46 +1,157 @@
 # The net_frame class: the constructor, which hands the role columns of the
-# node and edge tables to the engine for validation and construction, the
-# diagnostics it reports, the subclasses, and the print card. The argument
-# checks are in utils-checks.R, the engine handle in utils-engine.R, the
-# print card in print-net-frame.R, and summary() in descriptive.R.
+# node and edge tables (and of the optional layer, node spell, and node
+# change tables) to the engine for validation and construction, the
+# diagnostics it reports, the class vector, the summary, and parallel
+# edges. docs/DATA_MODEL.md is the specification. The argument checks are
+# in utils-checks.R, the engine handle in utils-engine.R, the print card
+# in print-net-frame.R, and summary() in descriptive.R.
 #
 # A net_frame is a list: `nodes` and `edges` (the two tables, untouched
-# except for nodes appended from the edges), `directed`, `roles` (which
-# columns carry structural meaning: id, source, target, weight and
-# weight_type, mode, relation, sign, start, end, duration, wave,
-# node_start, node_end, x, y, node_missing, edge_missing, plus the
-# geometry columns, the coordinate reference system, and how times are
-# stored), `declared` (loops, multiple, between_modes_only: TRUE, FALSE,
-# or NULL for not declared), `graph` (network-level attributes), `index`
-# (0-based node positions of every edge's endpoints, from the engine), and
-# `cache` (an environment holding the engine handles and the summary).
+# except for nodes appended from the edges), `layers`, `node_spells`, and
+# `node_changes` (the optional long tables, or NULL), `directed`, `roles`
+# (which columns carry structural meaning, plus the geometry columns, the
+# coordinate reference system, and how times are stored), `declared` (the
+# declared properties: TRUE or FALSE when declared, absent otherwise),
+# `graph` (network-level attributes), `index` (0-based node positions of
+# every edge row's endpoints, from the engine), and `cache` (an
+# environment holding the engine handles and the summary).
 
 # Create a network from node and edge data frames (man/net_frame.Rd).
 net_frame <- function(edges, nodes = NULL, directed = TRUE, source = "source",
                       target = "target", id = "id", weight = NULL, weight_type = NULL,
-                      mode = NULL, relation = NULL, sign = NULL, loops = NULL,
-                      multiple = NULL, add_nodes = FALSE, quiet = FALSE, graph = list()) {
+                      mode = NULL, between_modes_only = NULL, relation = NULL, sign = NULL,
+                      start = NULL, end = NULL, wave = NULL, node_start = NULL,
+                      node_end = NULL, coords = NULL, crs = NULL, source_layer = NULL,
+                      target_layer = NULL, layers = NULL, layer = "layer",
+                      couplings_only = NULL, ego = NULL, edge_ego = NULL,
+                      egos_are_nodes = NULL, node_missing = NULL, edge_missing = NULL,
+                      node_spells = NULL, node_changes = NULL, spell_start = "start",
+                      spell_end = "end", change_time = "time", overlapping_spells = NULL,
+                      loops = NULL, multiple = NULL, add_nodes = FALSE, quiet = FALSE,
+                      graph = list()) {
+  a <- as.list(environment())
+  quiet <- check_flag(quiet, "quiet")
+  build_net_frame(prepare_frame(a), quiet, "net_frame")
+}
+
+# An unbuilt net_frame from the arguments of net_frame() as a list `a`
+# (shared by the constructors that add to them, such as net_temporal()).
+prepare_frame <- function(a) {
+  formals_ <- formals(net_frame)
+  for (nm in names(formals_)) {
+    if (!nm %in% names(a)) a[nm] <- list(eval(formals_[[nm]]))
+  }
+  unknown <- setdiff(names(a), names(formals_))
+  if (length(unknown)) {
+    stop(sprintf("Unknown argument%s: %s.", if (length(unknown) > 1L) "s" else "",
+                 paste0("`", unknown, "`", collapse = ", ")), call. = FALSE)
+  }
+  edges <- a$edges
+  nodes <- a$nodes
+  directed <- a$directed
+  source <- a$source
+  target <- a$target
+  id <- a$id
+  weight <- a$weight
+  weight_type <- a$weight_type
+  mode <- a$mode
+  between_modes_only <- a$between_modes_only
+  relation <- a$relation
+  sign <- a$sign
+  start <- a$start
+  end <- a$end
+  wave <- a$wave
+  node_start <- a$node_start
+  node_end <- a$node_end
+  coords <- a$coords
+  crs <- a$crs
+  source_layer <- a$source_layer
+  target_layer <- a$target_layer
+  layers <- a$layers
+  layer <- a$layer
+  couplings_only <- a$couplings_only
+  ego <- a$ego
+  edge_ego <- a$edge_ego
+  egos_are_nodes <- a$egos_are_nodes
+  node_missing <- a$node_missing
+  edge_missing <- a$edge_missing
+  node_spells <- a$node_spells
+  node_changes <- a$node_changes
+  spell_start <- a$spell_start
+  spell_end <- a$spell_end
+  change_time <- a$change_time
+  overlapping_spells <- a$overlapping_spells
+  loops <- a$loops
+  multiple <- a$multiple
+  add_nodes <- a$add_nodes
+  graph <- a$graph
   check_tables(edges, nodes)
   directed <- check_flag(directed, "directed")
   add_nodes <- check_flag(add_nodes, "add_nodes")
-  quiet <- check_flag(quiet, "quiet")
   graph <- check_graph(graph)
+  for (nm in c("layers", "node_spells", "node_changes")) {
+    tb <- a[[nm]]
+    if (!is.null(tb) && !is.data.frame(tb)) {
+      stop(sprintf("`%s` must be a data frame or NULL, not %s.", nm, describe_class(tb)),
+           call. = FALSE)
+    }
+  }
+  if (!is.null(node_spells) && is.null(nodes)) {
+    stop("`node_spells` needs a node table: give `nodes`.", call. = FALSE)
+  }
+  if (!is.null(node_changes) && is.null(nodes)) {
+    stop("`node_changes` needs a node table: give `nodes`.", call. = FALSE)
+  }
   roles <- list(
     id = check_string(id, "id"),
-    source = resolve_column(edges, source, "source", "edges"),
-    target = resolve_column(edges, target, "target", "edges"),
-    weight = resolve_optional(edges, weight, "weight", "edges"),
+    source = role_column(edges, source, "source", "edges"),
+    target = role_column(edges, target, "target", "edges"),
+    weight = role_optional(edges, weight, "weight", "edges"),
     weight_type = check_weight_type(weight, weight_type),
-    mode = resolve_optional(nodes, mode, "mode", "nodes"),
-    relation = resolve_optional(edges, relation, "relation", "edges"),
-    sign = resolve_optional(edges, sign, "sign", "edges")
+    mode = role_optional(nodes, mode, "mode", "nodes"),
+    relation = role_optional(edges, relation, "relation", "edges"),
+    sign = role_optional(edges, sign, "sign", "edges"),
+    start = role_optional(edges, start, "start", "edges"),
+    end = role_optional(edges, end, "end", "edges"),
+    wave = role_optional(edges, wave, "wave", "edges"),
+    node_start = role_optional(nodes, node_start, "node_start", "nodes"),
+    node_end = role_optional(nodes, node_end, "node_end", "nodes"),
+    source_layer = role_optional(edges, source_layer, "source_layer", "edges"),
+    target_layer = role_optional(edges, target_layer, "target_layer", "edges"),
+    ego = role_optional(nodes, ego, "ego", "nodes"),
+    edge_ego = role_optional(edges, edge_ego, "edge_ego", "edges"),
+    node_missing = role_optional(nodes, node_missing, "node_missing", "nodes"),
+    edge_missing = role_optional(edges, edge_missing, "edge_missing", "edges")
   )
-  if (!is.null(nodes)) roles$id <- resolve_column(nodes, id, "id", "nodes")
-  declared <- list(loops = check_flag_or_null(loops, "loops"),
-                   multiple = check_flag_or_null(multiple, "multiple"),
-                   between_modes_only = NULL)
-  x <- new_net_frame(edges, nodes, directed, roles, declared, graph, add_nodes)
-  build_net_frame(x, quiet, "net_frame")
+  if (!is.null(nodes)) roles$id <- role_column(nodes, id, "id", "nodes")
+  if (!is.null(layers)) roles$layer <- role_column(layers, layer, "layer", "layers")
+  if (!is.null(node_spells)) {
+    role_column(node_spells, roles$id, "id", "node_spells")
+    roles$spell_start <- role_column(node_spells, spell_start, "spell_start", "node_spells")
+    roles$spell_end <- role_column(node_spells, spell_end, "spell_end", "node_spells")
+  }
+  if (!is.null(node_changes)) {
+    role_column(node_changes, roles$id, "id", "node_changes")
+    roles$change_time <- role_column(node_changes, change_time, "change_time",
+                                     "node_changes")
+  }
+  roles <- c(roles, time_roles(edges, nodes, node_spells, node_changes, roles))
+  if (!is.null(coords)) {
+    roles <- c(roles, coordinate_roles(nodes, coords, crs))
+  } else if (!is.null(crs)) {
+    stop("`crs` describes `coords`; give the coordinate columns too.", call. = FALSE)
+  }
+  declared <- list(
+    loops = check_flag_or_null(loops, "loops"),
+    multiple = check_flag_or_null(multiple, "multiple"),
+    between_modes_only = check_flag_or_null(between_modes_only, "between_modes_only"),
+    egos_are_nodes = check_flag_or_null(egos_are_nodes, "egos_are_nodes"),
+    couplings_only = check_flag_or_null(couplings_only, "couplings_only"),
+    overlapping_spells = check_flag_or_null(overlapping_spells, "overlapping_spells")
+  )
+  new_net_frame(edges, nodes, directed, roles, declared, graph, add_nodes,
+                tables = list(layers = layers, node_spells = node_spells,
+                              node_changes = node_changes))
 }
 
 # See man/net_frame.Rd.
@@ -99,7 +210,35 @@ check_weight_type <- function(weight, weight_type) {
   check_choice(weight_type, c("strength", "distance"), "weight_type")
 }
 
+# A role column given by name (never by position: decision 10).
+role_column <- function(df, col, role, what) {
+  if (!is.character(col) || length(col) != 1L || is.na(col) || !nzchar(col)) {
+    stop(sprintf("`%s` must be the name of a column of `%s`.", role, what), call. = FALSE)
+  }
+  if (!col %in% names(df)) {
+    shown <- if (ncol(df)) {
+      sprintf(" It has %s: %s.", plural(ncol(df), "column"),
+              paste0("`", utils::head(names(df), 10L), "`", collapse = ", "))
+    } else {
+      " It has no columns."
+    }
+    stop(sprintf("`%s` names column `%s`, which is not in `%s`.%s", role, col, what, shown),
+         call. = FALSE)
+  }
+  col
+}
+
 # A role column given by name, or NULL when the role is not used.
+role_optional <- function(df, col, role, what) {
+  if (is.null(col)) return(NULL)
+  if (is.null(df)) {
+    stop(sprintf("`%s` names a column of `%s`, but no `%s` were given.", role, what, what),
+         call. = FALSE)
+  }
+  role_column(df, col, role, what)
+}
+
+# Kept for the other constructors: a column by name or position.
 resolve_optional <- function(df, col, role, what) {
   if (is.null(col)) return(NULL)
   if (is.null(df)) {
@@ -109,14 +248,86 @@ resolve_optional <- function(df, col, role, what) {
   resolve_column(df, col, role, what)
 }
 
+# How times are stored: the class every time column shares ("numeric",
+# "Date", or "POSIXct") and the time zone of date-times. Waves are whole
+# numbers; node spells and changes then count waves too.
+time_roles <- function(edges, nodes, node_spells, node_changes, roles) {
+  cols <- list(
+    list(edges, roles$start, "Start times", "edges"),
+    list(edges, roles$end, "End times", "edges"),
+    list(nodes, roles$node_start, "Node start times", "nodes"),
+    list(nodes, roles$node_end, "Node end times", "nodes"),
+    list(node_spells, roles$spell_start, "Spell start times", "node_spells"),
+    list(node_spells, roles$spell_end, "Spell end times", "node_spells"),
+    list(node_changes, roles$change_time, "Change times", "node_changes")
+  )
+  cols <- Filter(function(c) !is.null(c[[2L]]), cols)
+  if (!is.null(roles$wave)) {
+    w <- edges[[roles$wave]]
+    if (!is.numeric(w) || is.object(w)) {
+      stop(sprintf("Waves (column `%s` of `edges`) must be whole numbers, not %s.",
+                   roles$wave, describe_class(w)), call. = FALSE)
+    }
+    if (!is.null(roles$start) || !is.null(roles$end)) {
+      stop("Give `wave`, or `start` (with `end`), not both: wave k is the spell [k, k + 1).",
+           call. = FALSE)
+    }
+  }
+  if (!is.null(roles$end) && is.null(roles$start)) {
+    stop("`end` needs `start`: an edge spell runs from `start` to `end`.", call. = FALSE)
+  }
+  if (!length(cols)) {
+    return(if (is.null(roles$wave)) list() else list(time_class = "numeric"))
+  }
+  first <- cols[[1L]]
+  kind <- time_kind(first[[1L]][[first[[2L]]]])
+  if (is.na(kind)) {
+    stop(sprintf("%s (column `%s` of `%s`) must be numbers, dates, or date-times, not %s.",
+                 first[[3L]], first[[2L]], first[[4L]],
+                 describe_class(first[[1L]][[first[[2L]]]])), call. = FALSE)
+  }
+  if (!is.null(roles$wave) && kind != "numeric") {
+    stop("Node spells of a panel count waves, so they must be numbers.", call. = FALSE)
+  }
+  for (c in cols[-1L]) {
+    check_same_kind(c[[1L]][[c[[2L]]]], kind,
+                    sprintf("%s (column `%s` of `%s`)", c[[3L]], c[[2L]], c[[4L]]))
+  }
+  out <- list(time_class = kind)
+  if (kind == "POSIXct") {
+    z <- attr(as.POSIXct(first[[1L]][[first[[2L]]]]), "tzone")
+    out$tz <- if (is.null(z)) "" else z[[1L]]
+  }
+  out
+}
+
+# The coordinate roles: two node columns and what they are.
+coordinate_roles <- function(nodes, coords, crs) {
+  if (is.null(nodes)) {
+    stop("`coords` names columns of `nodes`, but no `nodes` were given.", call. = FALSE)
+  }
+  if (!is.character(coords) || length(coords) != 2L) {
+    stop("`coords` must name two columns of `nodes`: longitude and latitude, or x and y.",
+         call. = FALSE)
+  }
+  if (is.null(crs)) crs <- "lonlat"
+  check_choice(crs, c("lonlat", "planar"), "crs")
+  list(x = role_column(nodes, coords[[1L]], "coords[1]", "nodes"),
+       y = role_column(nodes, coords[[2L]], "coords[2]", "nodes"), crs = crs)
+}
+
 # An unbuilt net_frame: the tables, roles, and declarations, with no index
 # or cache yet. build_net_frame() validates it and fills the rest in.
-new_net_frame <- function(edges, nodes, directed, roles, declared, graph, add_nodes = FALSE) {
+new_net_frame <- function(edges, nodes, directed, roles, declared, graph, add_nodes = FALSE,
+                          tables = list()) {
   roles <- roles[!vapply(roles, is.null, TRUE)]
   structure(
     list(
       nodes = nodes,
       edges = edges,
+      layers = tables$layers,
+      node_spells = tables$node_spells,
+      node_changes = tables$node_changes,
       directed = isTRUE(directed),
       roles = roles,
       declared = declared[!vapply(declared, is.null, TRUE)],
@@ -127,6 +338,11 @@ new_net_frame <- function(edges, nodes, directed, roles, declared, graph, add_no
     class = "net_frame",
     add_nodes = add_nodes
   )
+}
+
+# The long tables of a net_frame, for new_net_frame().
+frame_tables <- function(x) {
+  list(layers = x$layers, node_spells = x$node_spells, node_changes = x$node_changes)
 }
 
 # Validates and builds a net_frame through the engine: stops with every
@@ -161,6 +377,7 @@ build_net_frame <- function(x, quiet = FALSE, fn = "net_frame", threads = 1L) {
   cache$n <- nrow(x$nodes)
   cache$m <- nrow(x$edges)
   cache$weights <- if (is.null(x$roles$weight)) NULL else x$edges[[x$roles$weight]]
+  cache$graph_rows <- if (is.null(idx$graph_rows)) NULL else idx$graph_rows + 1L
   cache$summary <- frame_summary(f, threads)
   cache$diagnostics <- d
   class(x) <- net_frame_class(x)
@@ -206,51 +423,60 @@ append_nodes <- function(x, idx) {
   x
 }
 
-# The class vector a net_frame gets from its roles: temporal when edges
-# carry times or waves, spatial when nodes carry coordinates or either
-# table carries geometry, both when both.
+# The class vector a net_frame gets from its roles, in the fixed order of
+# DATA_MODEL.md section 20: multilayer when edges carry layers; temporal
+# when edges carry times or waves or nodes carry presence spells; spatial
+# when nodes carry coordinates or either table carries geometry;
+# spatio-temporal when both.
 net_frame_class <- function(x) {
   r <- x$roles
-  temporal <- !is.null(r$start) || !is.null(r$wave)
+  multilayer <- !is.null(r$source_layer) && !is.null(r$target_layer)
+  temporal <- !is.null(r$start) || !is.null(r$wave) || !is.null(r$node_start) ||
+    !is.null(r$node_end) || !is.null(x$node_spells)
   spatial <- (!is.null(r$x) && !is.null(r$y)) || !is.null(r$node_geometry) ||
     !is.null(r$edge_geometry)
-  if (temporal && spatial) {
-    c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame", "net_frame")
-  } else if (temporal) {
-    c("temporal_net_frame", "net_frame")
-  } else if (spatial) {
-    c("spatial_net_frame", "net_frame")
-  } else {
-    "net_frame"
-  }
+  c(if (multilayer) "multilayer_net_frame",
+    if (temporal && spatial) "spatiotemporal_net_frame",
+    if (spatial) "spatial_net_frame",
+    if (temporal) "temporal_net_frame",
+    "net_frame")
 }
 
+# Role names of each table, used when tables change.
+node_role_names <- c("id", "mode", "node_start", "node_end", "x", "y", "node_missing", "ego")
+edge_role_names <- c("source", "target", "weight", "relation", "sign", "start", "end",
+                     "duration", "wave", "edge_missing", "source_layer", "target_layer",
+                     "edge_ego")
+
 # A net_frame rebuilt from new tables with the same roles, declarations,
-# and network attributes (roles whose columns are gone are dropped, so the
-# class follows the columns). `...` overrides roles: `weight = NULL` drops
-# the weight role, `directed = FALSE` changes the direction.
+# long tables, and network attributes (roles whose columns are gone are
+# dropped, so the class follows the columns). `...` overrides roles:
+# `weight = NULL` drops the weight role, `directed = FALSE` changes the
+# direction, `declared = list(...)` replaces the declarations, and
+# `tables = list(...)` replaces long tables. Node spells and changes of
+# nodes that are no longer in the node table are dropped.
 rebuild_net_frame <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_frame") {
   changes <- list(...)
   roles <- x$roles
   directed <- x$directed
   declared <- x$declared
+  tables <- frame_tables(x)
   for (nm in names(changes)) {
     if (nm == "directed") {
       directed <- changes[[nm]]
     } else if (nm == "declared") {
       declared <- changes[[nm]]
+    } else if (nm == "tables") {
+      for (t in names(changes$tables)) tables[t] <- list(changes$tables[[t]])
     } else {
       roles[nm] <- list(changes[[nm]])
     }
   }
   if (is.null(roles$weight)) roles$weight_type <- NULL
-  node_roles <- c("id", "mode", "node_start", "node_end", "x", "y", "node_missing")
-  edge_roles <- c("source", "target", "weight", "relation", "sign", "start", "end",
-                  "duration", "wave", "edge_missing")
-  for (nm in node_roles) {
+  for (nm in node_role_names) {
     if (!is.null(roles[[nm]]) && !roles[[nm]] %in% names(nodes)) roles[nm] <- list(NULL)
   }
-  for (nm in edge_roles) {
+  for (nm in edge_role_names) {
     if (!is.null(roles[[nm]]) && !roles[[nm]] %in% names(edges)) roles[nm] <- list(NULL)
   }
   if (is.null(roles$x) || is.null(roles$y)) {
@@ -258,11 +484,38 @@ rebuild_net_frame <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_fram
     roles$y <- NULL
     if (is.character(roles$crs)) roles$crs <- NULL
   }
-  if (is.null(roles$start) && is.null(roles$wave)) {
+  if (is.null(roles$source_layer) || is.null(roles$target_layer)) {
+    roles$source_layer <- NULL
+    roles$target_layer <- NULL
+    tables$layers <- NULL
+    declared$couplings_only <- NULL
+  }
+  if (is.null(tables$layers)) roles$layer <- NULL
+  if (is.null(roles$start)) {
     roles$end <- NULL
     roles$duration <- NULL
-    roles$node_start <- NULL
-    roles$node_end <- NULL
+  }
+  ids <- as.character(nodes[[roles$id]])
+  for (t in c("node_spells", "node_changes")) {
+    tb <- tables[[t]]
+    if (!is.null(tb) && roles$id %in% names(tb)) {
+      keep <- as.character(tb[[roles$id]]) %in% ids
+      if (!all(keep)) {
+        tb <- tb[keep, , drop = FALSE]
+        rownames(tb) <- NULL
+      }
+      tables[t] <- list(tb)
+    }
+  }
+  if (is.null(tables$node_spells)) {
+    roles$spell_start <- NULL
+    roles$spell_end <- NULL
+    declared$overlapping_spells <- NULL
+  }
+  if (is.null(tables$node_changes)) roles$change_time <- NULL
+  timed <- !is.null(roles$start) || !is.null(roles$wave) || !is.null(roles$node_start) ||
+    !is.null(roles$node_end) || !is.null(tables$node_spells) || !is.null(tables$node_changes)
+  if (!timed) {
     roles$time_class <- NULL
     roles$tz <- NULL
   }
@@ -270,30 +523,35 @@ rebuild_net_frame <- function(x, edges, nodes, ..., quiet = TRUE, fn = "net_fram
     roles$mode_levels <- NULL
     declared$between_modes_only <- NULL
   }
+  if (is.null(roles$ego)) {
+    roles$edge_ego <- NULL
+    declared$egos_are_nodes <- NULL
+  }
   roles$node_geometry <- NULL
   roles$edge_geometry <- NULL
   if (inherits(roles$crs, "crs")) roles$crs <- NULL
-  out <- new_net_frame(edges, nodes, directed, roles, declared, x$graph)
+  out <- new_net_frame(edges, nodes, directed, roles, declared, x$graph, tables = tables)
   build_net_frame(out, quiet = quiet, fn = fn)
 }
 
 # ---- The engine frame -----------------------------------------------------------
 
-# Codes of the roles in the C interface.
+# Codes of the roles in the C interface (DATA_MODEL.md section 19).
 node_role_codes <- c(id = 0L, mode = 1L, node_start = 2L, node_end = 3L, x = 4L, y = 5L,
-                     node_missing = 6L)
+                     node_missing = 6L, ego = 7L)
 edge_role_codes <- c(source = 0L, target = 1L, weight = 2L, relation = 3L, sign = 4L,
-                     start = 5L, end = 6L, wave = 7L, edge_missing = 8L)
+                     start = 5L, end = 6L, wave = 7L, edge_missing = 8L, source_layer = 9L,
+                     target_layer = 10L, edge_ego = 11L)
+time_role_names <- c("node_start", "node_end", "start", "end")
 
-# The engine frame for `x`: the role columns of both tables as typed
+# The engine frame for `x`: the role columns of every table as typed
 # buffers, the roles, the declarations, and the geometry flags. Built on
 # demand; the handle is cached by build_net_frame() and engine_graph().
 engine_frame <- function(x) {
   roles <- x$roles
   nodes <- x$nodes
   edges <- x$edges
-  node_cols <- list()
-  edge_cols <- list()
+  cols <- list(list(), list(), list(), list(), list())
   tables <- integer()
   codes <- integer()
   names_ <- character()
@@ -301,58 +559,81 @@ engine_frame <- function(x) {
     tables <<- c(tables, table)
     codes <<- c(codes, role)
     names_ <<- c(names_, col)
-    if (table == 0L) node_cols[[col]] <<- values else edge_cols[[col]] <<- values
+    cols[[table + 1L]][[col]] <<- values
+  }
+  column_of <- function(df, col, role, what) {
+    if (!col %in% names(df)) {
+      stop(sprintf("Column `%s` (the %s role) is no longer in `x$%s`.", col, role, what),
+           call. = FALSE)
+    }
+    df[[col]]
   }
   for (nm in if (is.null(nodes)) character() else names(node_role_codes)) {
     col <- roles[[nm]]
     if (is.null(col)) next
-    if (!col %in% names(nodes)) {
-      stop(sprintf("Column `%s` (the %s role) is no longer in `x$nodes`.", col, nm),
-           call. = FALSE)
-    }
-    v <- nodes[[col]]
-    values <- if (nm %in% c("node_start", "node_end")) {
+    v <- column_of(nodes, col, nm, "nodes")
+    values <- if (nm %in% time_role_names) {
       time_values(v, col, "nodes")
     } else {
-      engine_column(v, col, "nodes", identifier = nm == "id", discrete = nm == "mode")
+      engine_column(v, col, "nodes", identifier = nm %in% c("id", "ego"),
+                    discrete = nm == "mode")
     }
     add(0L, node_role_codes[[nm]], col, values)
   }
   for (nm in names(edge_role_codes)) {
     col <- roles[[nm]]
     if (is.null(col)) next
-    if (!col %in% names(edges)) {
-      stop(sprintf("Column `%s` (the %s role) is no longer in `x$edges`.", col, nm),
-           call. = FALSE)
-    }
-    v <- edges[[col]]
-    values <- if (nm %in% c("start", "end")) {
+    v <- column_of(edges, col, nm, "edges")
+    values <- if (nm %in% time_role_names) {
       time_values(v, col, "edges")
     } else {
-      engine_column(v, col, "edges", identifier = nm %in% c("source", "target"),
-                    discrete = nm %in% c("relation", "sign"))
+      engine_column(v, col, "edges",
+                    identifier = nm %in% c("source", "target", "edge_ego"),
+                    discrete = nm %in% c("relation", "sign", "wave", "source_layer",
+                                         "target_layer"))
     }
     add(1L, edge_role_codes[[nm]], col, values)
   }
   # A duration column stands in for the end times: start plus duration.
   if (!is.null(roles$duration) && is.null(roles$end)) {
     col <- roles$duration
-    if (!col %in% names(edges)) {
-      stop(sprintf("Column `%s` (the duration role) is no longer in `x$edges`.", col),
-           call. = FALSE)
-    }
-    d <- edges[[col]]
+    d <- column_of(edges, col, "duration", "edges")
     d <- if (inherits(d, "difftime")) as.double(d, units = "secs") else as.double(d) * time_scale(x)
-    s <- edge_cols[[roles$start]]
+    s <- cols[[2L]][[roles$start]]
     add(1L, edge_role_codes[["end"]], col, s + d)
+  }
+  if (!is.null(x$layers)) {
+    add(2L, 0L, roles$layer, engine_column(column_of(x$layers, roles$layer, "layer", "layers"),
+                                           roles$layer, "layers", discrete = TRUE))
+  }
+  if (!is.null(x$node_spells)) {
+    sp <- x$node_spells
+    add(3L, 0L, roles$id, engine_column(column_of(sp, roles$id, "id", "node_spells"),
+                                        roles$id, "node_spells", identifier = TRUE))
+    add(3L, 1L, roles$spell_start,
+        time_values(column_of(sp, roles$spell_start, "spell_start", "node_spells"),
+                    roles$spell_start, "node_spells"))
+    add(3L, 2L, roles$spell_end,
+        time_values(column_of(sp, roles$spell_end, "spell_end", "node_spells"),
+                    roles$spell_end, "node_spells"))
+  }
+  if (!is.null(x$node_changes)) {
+    ch <- x$node_changes
+    add(4L, 0L, roles$id, engine_column(column_of(ch, roles$id, "id", "node_changes"),
+                                        roles$id, "node_changes", identifier = TRUE))
+    add(4L, 1L, roles$change_time,
+        time_values(column_of(ch, roles$change_time, "change_time", "node_changes"),
+                    roles$change_time, "node_changes"))
   }
   weight_type <- if (is.null(roles$weight_type)) -1L else {
     if (roles$weight_type == "strength") 1L else 0L
   }
   code_of <- function(v) if (is.null(v)) -1L else as.integer(isTRUE(v))
-  declarations <- c(code_of(x$declared$loops), code_of(x$declared$multiple),
-                    code_of(x$declared$between_modes_only),
-                    as.integer(isTRUE(attr(x, "add_nodes"))))
+  dec <- x$declared
+  declarations <- c(code_of(dec$loops), code_of(dec$multiple),
+                    code_of(dec$between_modes_only), as.integer(isTRUE(attr(x, "add_nodes"))),
+                    code_of(dec$egos_are_nodes), code_of(dec$couplings_only),
+                    code_of(dec$overlapping_spells))
   geometry <- NULL
   if (!is.null(roles$node_geometry) || !is.null(roles$edge_geometry)) {
     geometry <- list(!is.null(roles$node_geometry), !is.null(roles$edge_geometry),
@@ -361,9 +642,12 @@ engine_frame <- function(x) {
   coordinates <- if (!is.null(roles$x) && !is.null(roles$y)) {
     if (identical(crs_kind(x), "lonlat")) 1L else 2L
   }
+  extra <- list(if (is.null(x$layers)) NULL else cols[[3L]],
+                if (is.null(x$node_spells)) NULL else cols[[4L]],
+                if (is.null(x$node_changes)) NULL else cols[[5L]])
   engine_call("net_frame",
     .Call(C_frame_new, x$directed, if (is.null(nodes)) 0 else as.double(nrow(nodes)),
-          if (is.null(nodes)) NULL else node_cols, edge_cols,
+          if (is.null(nodes)) NULL else cols[[1L]], cols[[2L]], extra,
           list(tables, codes, names_), weight_type, declarations, geometry, coordinates))
 }
 
@@ -393,7 +677,7 @@ engine_column <- function(v, col, table, identifier = FALSE, discrete = FALSE) {
   if (is.double(v)) {
     v <- as.vector(unclass(v))
     # A whole-numbered double column is discrete enough for a mode,
-    # relation, or sign.
+    # relation, sign, wave, or layer.
     whole <- discrete && all(is.na(v) | (is.finite(v) & v == round(v) & abs(v) < 2^31))
     return(if (whole) as.integer(v) else v)
   }
@@ -420,16 +704,21 @@ crs_text <- function(crs) {
 
 # ---- Diagnostics ------------------------------------------------------------------
 
+table_names <- c("nodes", "edges", "layers", "node_spells", "node_changes")
+
 # The diagnostics of frame `f` as a data frame: code, severity ("error" or
-# "note"), table ("nodes", "edges", or NA for the network), message, count
-# (rows affected in all), and rows (a list column of the first 1-based
-# rows listed).
+# "note"), table ("nodes", "edges", "layers", "node_spells",
+# "node_changes", or NA for the network), message, count (rows affected in
+# all), and rows (a list column of the first 1-based rows listed).
 frame_diagnostics <- function(f, threads) {
   v <- .Call(C_frame_validate, f, as.integer(threads))
+  tab <- rep(NA_character_, length(v$table))
+  ok <- v$table >= 0L & v$table < length(table_names)
+  tab[ok] <- table_names[v$table[ok] + 1L]
   out <- data.frame(
     code = v$code,
     severity = ifelse(v$severity == 0L, "error", "note"),
-    table = ifelse(v$table == 0L, "nodes", ifelse(v$table == 1L, "edges", NA_character_)),
+    table = tab,
     message = v$message,
     count = as.integer(v$count),
     stringsAsFactors = FALSE
@@ -445,7 +734,7 @@ frame_diagnostics <- function(f, threads) {
 diagnostic_text <- function(d, x = NULL) {
   msg <- d$message
   rows <- d$rows[[1L]]
-  if (length(rows)) {
+  if (length(rows) && !is.na(d$table)) {
     msg <- sprintf("%s; %s of `%s`", msg, rows_text(rows, d$count), d$table)
   }
   detail <- if (is.null(x)) NULL else diagnostic_detail(d, rows, x)
@@ -453,7 +742,8 @@ diagnostic_text <- function(d, x = NULL) {
   paste0(msg, ".")
 }
 
-# The identifiers behind an identifier diagnostic, up to five.
+# The identifiers behind an identifier diagnostic, up to five, and the
+# argument that changes the rule where there is one.
 diagnostic_detail <- function(d, rows, x) {
   shown <- function(v) {
     v <- unique(as.character(v))
@@ -461,13 +751,16 @@ diagnostic_detail <- function(d, rows, x) {
     more <- if (length(v) > 5L) sprintf(", and %d more", length(v) - 5L) else ""
     paste0(paste(utils::head(v, 5L), collapse = ", "), more)
   }
-  if (d$code == "E_UNKNOWN_NODE" && !is.null(x$nodes)) {
+  if (d$code == "E_UNKNOWN_NODE" && identical(d$table, "edges") && !is.null(x$nodes)) {
     vals <- c(x$edges[[x$roles$source]][rows], x$edges[[x$roles$target]][rows])
     ids <- x$nodes[[x$roles$id]]
     unknown <- shown(vals[!as.character(vals) %in% as.character(ids)])
-    if (!is.null(unknown)) return(paste("not in `nodes`:", unknown))
+    if (!is.null(unknown)) {
+      return(sprintf("not in `nodes`: %s; add them to `nodes`, or set `add_nodes = TRUE`",
+                     unknown))
+    }
   }
-  if (d$code == "E_DUPLICATE_ID") {
+  if (d$code == "E_DUPLICATE_ID" && identical(d$table, "nodes")) {
     dup <- shown(x$nodes[[x$roles$id]][rows])
     if (!is.null(dup)) return(paste("repeated:", dup))
   }
@@ -491,29 +784,40 @@ frame_summary <- function(f, threads) {
   s <- .Call(C_frame_summary, f, as.integer(threads))
   v <- s$values
   time_kinds <- c("static", "contacts", "spells", "waves")
+  flag <- function(k) if (is.na(v[[k]]) || v[[k]] < 0) NULL else v[[k]] != 0
+  count <- function(k) if (is.na(v[[k]])) 0 else v[[k]]
   list(
     nodes = v[[1L]], edges = v[[2L]], directed = v[[3L]] != 0,
     modes = s$modes, mode_counts = s$mode_counts,
-    between_modes_only = if (v[[5L]] < 0) NULL else v[[5L]] != 0,
+    between_modes_only = flag(5L),
     weighted = v[[6L]] != 0,
     weight = s$weight,
     weight_type = if (v[[7L]] < 0) NULL else if (v[[7L]] == 1) "strength" else "distance",
     weight_min = v[[8L]], weight_max = v[[9L]],
     relations = s$relations, relation_counts = s$relation_counts,
-    signed = v[[11L]] != 0, negative = v[[12L]],
+    signed = v[[11L]] != 0, negative = count(12L),
     time = time_kinds[[v[[13L]] + 1L]], time_start = v[[14L]], time_end = v[[15L]],
-    node_spells = v[[16L]] != 0,
+    node_spells = c("none", "roles", "table")[[count(16L) + 1L]],
     node_geometry = v[[17L]] != 0, edge_geometry = v[[18L]] != 0,
-    coordinates = if (v[[19L]] < 0) NULL else c("unknown", "lonlat", "planar")[[v[[19L]] + 1L]],
+    coordinates = if (is.na(v[[19L]]) || v[[19L]] < 0) NULL else {
+      c("unknown", "lonlat", "planar")[[v[[19L]] + 1L]]
+    },
     crs = s$crs,
-    loops = v[[20L]], parallel = v[[21L]], isolates = v[[22L]], components = v[[23L]],
-    density = v[[24L]], missing_nodes = v[[25L]], missing_edges = v[[26L]]
+    loops = count(20L), parallel = count(21L), isolates = count(22L),
+    components = count(23L), density = v[[24L]],
+    missing_nodes = count(25L), missing_edges = count(26L),
+    layers = s$layers, layer_counts = s$layer_counts, layer_table = isTRUE(v[[28L]] != 0),
+    intralayer = count(29L), coupling = count(30L), interlayer = count(31L),
+    couplings_only = flag(32L),
+    egos = s$egos, ego_nodes = s$ego_nodes, ego_edges = s$ego_edges,
+    egos_as_nodes = count(34L), egos_are_nodes = flag(35L),
+    spell_rows = count(36L), change_rows = count(37L)
   )
 }
 
 # The cached summary of a net_frame, recomputed when the handle is stale.
 frame_summary_cached <- function(x) {
-  engine_graph(x)
+  engine_graph(x, missing_ok = TRUE)
   s <- x$cache$summary
   if (is.null(s)) {
     s <- frame_summary(x$cache$frame, 1L)
@@ -527,7 +831,7 @@ frame_summary_cached <- function(x) {
 # Edge multiplicity, simplicity, and simplification (man/net_simplify.Rd).
 net_multiplicity <- function(x) {
   check_net_frame(x)
-  engine_graph(x)
+  engine_graph(x, missing_ok = TRUE)
   engine_call("net_multiplicity",
               .Call(C_frame_multiplicity, x$cache$frame, as.double(nrow(x$edges))))
 }
@@ -535,17 +839,18 @@ net_multiplicity <- function(x) {
 # See man/net_simplify.Rd.
 net_is_simple <- function(x) {
   check_net_frame(x)
-  engine_graph(x)
+  engine_graph(x, missing_ok = TRUE)
   engine_call("net_is_simple", .Call(C_frame_is_simple, x$cache$frame))
 }
 
 # See man/net_simplify.Rd.
 net_simplify <- function(x, combine = c("sum", "mean", "min", "max", "first", "count"),
-                         remove_loops = FALSE) {
+                         remove_loops = FALSE, attributes = "first") {
   check_net_frame(x)
   combine <- match.arg(combine)
   remove_loops <- check_flag(remove_loops, "remove_loops")
-  engine_graph(x)
+  attributes <- check_attribute_rule(attributes)
+  engine_graph(x, missing_ok = TRUE)
   weighted <- !is.null(x$roles$weight)
   code <- match(combine, c("sum", "mean", "min", "max", "first", "count")) - 1L
   r <- engine_call("net_simplify",
@@ -554,6 +859,7 @@ net_simplify <- function(x, combine = c("sum", "mean", "min", "max", "first", "c
   group <- r$group
   keep <- group >= 0L & !duplicated(group)
   edges <- x$edges[keep, , drop = FALSE]
+  edges <- aggregate_edge_attributes(x, edges, group, keep, attributes)
   weight <- x$roles$weight
   if (weighted) {
     edges[[weight]] <- r$weight[keep]
@@ -566,6 +872,37 @@ net_simplify <- function(x, combine = c("sum", "mean", "min", "max", "first", "c
   declared$multiple <- FALSE
   if (remove_loops) declared$loops <- FALSE
   rebuild_net_frame(x, edges, x$nodes, weight = weight,
-                   weight_type = if (weighted) x$roles$weight_type else "strength",
-                   declared = declared, fn = "net_simplify")
+                    weight_type = if (weighted) x$roles$weight_type else "strength",
+                    declared = declared, fn = "net_simplify")
+}
+
+# The rule for edge attributes other than the roles when parallel edges
+# are merged: "first" keeps the first row's value, "concat" pastes the
+# distinct values, or a function of one vector that returns one value.
+check_attribute_rule <- function(attributes) {
+  if (is.function(attributes)) return(attributes)
+  check_choice(attributes, c("first", "concat"), "attributes")
+}
+
+# Aggregates the non-role edge columns of each group of parallel edges with
+# the rule (the kept row is each group's first row, so "first" is a no-op).
+aggregate_edge_attributes <- function(x, edges, group, keep, rule) {
+  if (identical(rule, "first")) return(edges)
+  roles <- unlist(x$roles[intersect(names(x$roles), edge_role_names)], use.names = FALSE)
+  cols <- setdiff(names(x$edges), c(roles, x$roles$edge_geometry))
+  if (!length(cols)) return(edges)
+  g <- group[group >= 0L]
+  rows <- which(group >= 0L)
+  kept_groups <- group[keep]
+  fun <- if (is.function(rule)) rule else function(v) {
+    v <- unique(as.character(v[!is.na(v)]))
+    if (!length(v)) NA_character_ else paste(v, collapse = "; ")
+  }
+  for (col in cols) {
+    v <- x$edges[[col]]
+    if (is.list(v)) next
+    vals <- lapply(split(rows, factor(g, levels = kept_groups)), function(r) fun(v[r]))
+    edges[[col]] <- unlist(vals, use.names = FALSE)
+  }
+  edges
 }

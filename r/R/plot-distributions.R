@@ -141,6 +141,7 @@ net_plot_triads <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...) 
 expected_triad_census <- function(x) {
   n <- nrow(x$nodes)
   if (n < 3L) return(rep(0, 16L))
+  require_resolved(x)
   src <- as.double(x$index$src)
   tgt <- as.double(x$index$tgt)
   keep <- src != tgt

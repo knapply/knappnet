@@ -4,101 +4,78 @@
 
 # Temporal networks (man/net_temporal.Rd).
 net_temporal <- function(edges, nodes = NULL, start = "time", end = NULL, duration = NULL,
-                         wave = NULL, node_start = NULL, node_end = NULL, directed = TRUE,
-                         source = "source", target = "target", id = "id", weight = NULL,
-                         weight_type = NULL, quiet = FALSE, graph = list()) {
+                         wave = NULL, node_start = NULL, node_end = NULL, ...,
+                         quiet = FALSE) {
   quiet <- check_flag(quiet, "quiet")
+  if (!is.null(end) && !is.null(duration)) {
+    stop("Give `end` or `duration`, not both.", call. = FALSE)
+  }
+  if (!is.null(wave)) {
+    if (!missing(start) || !is.null(end) || !is.null(duration)) {
+      stop("Give `wave`, or `start` (with `end` or `duration`), not both.", call. = FALSE)
+    }
+    start <- NULL
+  }
   if (inherits(edges, "net_frame")) {
     check_net_frame(edges)
     if (!is.null(nodes)) {
       stop("`nodes` must be NULL when `edges` is a net_frame; it already has nodes.",
            call. = FALSE)
     }
+    if (...length()) {
+      stop("Other net_frame() arguments apply only when `edges` is a data frame.",
+           call. = FALSE)
+    }
     x <- edges
-    if (missing(start) && is.null(wave) && !is.null(x$roles$start)) {
-      start <- x$roles$start
-      if (missing(end) && missing(duration)) {
-        end <- x$roles$end
-        duration <- x$roles$duration
+    if (missing(start) && is.null(wave)) {
+      if (!is.null(x$roles$start)) {
+        start <- x$roles$start
+        if (is.null(end) && is.null(duration)) {
+          end <- x$roles$end
+          duration <- x$roles$duration
+        }
+      } else if (!is.null(x$roles$wave)) {
+        start <- NULL
+        wave <- x$roles$wave
       }
     }
-    if (missing(start) && is.null(wave) && !is.null(x$roles$wave)) wave <- x$roles$wave
     if (is.null(node_start) && is.null(node_end)) {
       node_start <- x$roles$node_start
       node_end <- x$roles$node_end
     }
+    roles <- x$roles
+    roles[c("start", "end", "duration", "wave", "node_start", "node_end", "time_class",
+            "tz")] <- NULL
+    roles$start <- role_optional(x$edges, start, "start", "edges")
+    roles$end <- role_optional(x$edges, end, "end", "edges")
+    roles$wave <- role_optional(x$edges, wave, "wave", "edges")
+    roles$node_start <- role_optional(x$nodes, node_start, "node_start", "nodes")
+    roles$node_end <- role_optional(x$nodes, node_end, "node_end", "nodes")
+    roles <- c(roles[!vapply(roles, is.null, TRUE)],
+               time_roles(x$edges, x$nodes, x$node_spells, x$node_changes, roles))
+    out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph,
+                         tables = frame_tables(x))
   } else {
-    check_tables(edges, nodes)
-    roles <- list(id = check_string(id, "id"),
-                  source = resolve_column(edges, source, "source", "edges"),
-                  target = resolve_column(edges, target, "target", "edges"),
-                  weight = resolve_optional(edges, weight, "weight", "edges"),
-                  weight_type = check_weight_type(weight, weight_type))
-    if (!is.null(nodes)) roles$id <- resolve_column(nodes, id, "id", "nodes")
-    x <- new_net_frame(edges, nodes, check_flag(directed, "directed"), roles, list(),
-                      check_graph(graph))
-  }
-  if (!is.null(end) && !is.null(duration)) {
-    stop("Give `end` or `duration`, not both.", call. = FALSE)
-  }
-  roles <- x$roles
-  roles[c("start", "end", "duration", "wave", "node_start", "node_end", "time_class",
-          "tz")] <- NULL
-  if (!is.null(wave)) {
-    if (!missing(start) || !is.null(end) || !is.null(duration)) {
-      stop("Give `wave`, or `start` (with `end` or `duration`), not both.", call. = FALSE)
-    }
-    wave <- resolve_column(x$edges, wave, "wave", "edges")
-    w <- x$edges[[wave]]
-    if (!is.numeric(w) || is.object(w)) {
-      stop(sprintf("Waves (column `%s` of `edges`) must be whole numbers, not %s.", wave,
-                   describe_class(w)), call. = FALSE)
-    }
-    roles$wave <- wave
-    kind <- "numeric"
-  } else {
-    start <- resolve_column(x$edges, start, "start", "edges")
-    kind <- time_kind(x$edges[[start]])
-    if (is.na(kind)) {
-      stop(sprintf(paste0("Start times (column `%s` of `edges`) must be numbers, dates, ",
-                          "or date-times, not %s."), start, describe_class(x$edges[[start]])),
+    if (is.null(start) && is.null(wave)) {
+      stop("Give the edge times: `start` (with `end` or `duration`) or `wave`.",
            call. = FALSE)
     }
-    roles$start <- start
-    if (!is.null(end)) {
-      end <- resolve_column(x$edges, end, "end", "edges")
-      check_same_kind(x$edges[[end]], kind, sprintf("End times (column `%s` of `edges`)", end))
-      roles$end <- end
+    out <- prepare_frame(c(list(edges = edges, nodes = nodes, start = start, end = end,
+                                wave = wave, node_start = node_start, node_end = node_end),
+                           list(...)))
+  }
+  if (is.null(out$roles$start) && is.null(out$roles$wave)) {
+    stop("A temporal network needs edge times: `start` or `wave`.", call. = FALSE)
+  }
+  if (!is.null(duration)) {
+    duration <- role_column(out$edges, duration, "duration", "edges")
+    d <- out$edges[[duration]]
+    if (!(inherits(d, "difftime") || (is.numeric(d) && !is.object(d)))) {
+      stop(sprintf("Durations (column `%s` of `edges`) must be numbers or a difftime, not %s.",
+                   duration, describe_class(d)), call. = FALSE)
     }
-    if (!is.null(duration)) {
-      duration <- resolve_column(x$edges, duration, "duration", "edges")
-      d <- x$edges[[duration]]
-      if (!(inherits(d, "difftime") || (is.numeric(d) && !is.object(d)))) {
-        stop(sprintf("Durations (column `%s` of `edges`) must be numbers or a difftime, not %s.",
-                     duration, describe_class(d)), call. = FALSE)
-      }
-      roles$duration <- duration
-    }
+    out$roles$duration <- duration
   }
-  if (!is.null(node_start)) {
-    node_start <- resolve_column(x$nodes, node_start, "node_start", "nodes")
-    check_same_kind(x$nodes[[node_start]], kind,
-                    sprintf("Node start times (column `%s` of `nodes`)", node_start))
-    roles$node_start <- node_start
-  }
-  if (!is.null(node_end)) {
-    node_end <- resolve_column(x$nodes, node_end, "node_end", "nodes")
-    check_same_kind(x$nodes[[node_end]], kind,
-                    sprintf("Node end times (column `%s` of `nodes`)", node_end))
-    roles$node_end <- node_end
-  }
-  roles$time_class <- kind
-  if (kind == "POSIXct") {
-    z <- attr(as.POSIXct(x$edges[[start]]), "tzone")
-    roles$tz <- if (is.null(z)) "" else z[[1L]]
-  }
-  x$roles <- roles
-  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
   build_net_frame(out, quiet, "net_temporal")
 }
 
@@ -464,6 +441,10 @@ from_seconds <- function(s, x) {
 # Start and end times (seconds), checked. Instantaneous contacts end when
 # they start.
 temporal_times <- function(x) {
+  if (is.null(x$roles$start) && is.null(x$roles$wave)) {
+    stop(paste0("`x` has node spells but no edge times; time-respecting paths need edge ",
+                "times (`start` or `wave`)."), call. = FALSE)
+  }
   if (!is.null(x$roles$wave)) {
     w <- as.double(x$edges[[x$roles$wave]])
     return(list(start = w, end = w + 1))
@@ -538,6 +519,7 @@ node_present <- function(x, a, b) {
 # alongside the graph handle (see engine_graph()).
 engine_temporal <- function(x) {
   check_index(x)
+  require_resolved(x)
   tt <- temporal_times(x)
   cache <- x$cache
   ptr <- cache$temporal_ptr

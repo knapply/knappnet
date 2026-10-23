@@ -68,6 +68,7 @@ as_statistic <- function(value, where) {
 # Distinct non-loop ties of the simple reading, and the dyad census of a
 # directed network (mutual, asymmetric; null is the rest).
 simple_dyads <- function(x) {
+  require_resolved(x)
   src <- x$index$src
   tgt <- x$index$tgt
   keep <- src != tgt

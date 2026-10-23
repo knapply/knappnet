@@ -48,8 +48,15 @@ require_undirected <- function(x, what) {
 # the handle is also rebuilt when the weights or the number of nodes or
 # edges no longer match what it was built from, for example after
 # `x$edges$w <- 2 * x$edges$w`.
-engine_graph <- function(x) {
+#
+# The graph holds the observed ties only. Measures refuse a network with
+# unresolved missing data (unobserved pairs or non-respondents,
+# DATA_MODEL.md section 13) unless `missing_ok`, which only the functions
+# that describe the tables themselves (the summary, multiplicity,
+# simplification) set; net_resolve_missing() resolves it.
+engine_graph <- function(x, missing_ok = FALSE) {
   check_index(x)
+  if (!missing_ok) require_resolved(x)
   cache <- x$cache
   w <- if (is.null(x$roles$weight)) NULL else x$edges[[x$roles$weight]]
   ptr <- cache$ptr
@@ -81,8 +88,27 @@ engine_graph <- function(x) {
     cache$n <- nrow(x$nodes)
     cache$m <- nrow(x$edges)
     cache$weights <- w
+    cache$graph_rows <- if (is.null(idx$graph_rows)) NULL else idx$graph_rows + 1L
   }
   ptr
+}
+
+# Whether `x` flags any non-respondent or unobserved pair.
+has_missing <- function(x) {
+  r <- x$roles
+  (!is.null(r$edge_missing) && any(x$edges[[r$edge_missing]] %in% TRUE)) ||
+    (!is.null(r$node_missing) && any(x$nodes[[r$node_missing]] %in% TRUE))
+}
+
+# Stops when `x` has unresolved missing data.
+require_resolved <- function(x) {
+  if (has_missing(x)) {
+    stop(paste0("`x` has unresolved missing data (non-respondents or unobserved pairs), ",
+                "which measures do not guess about; resolve it first with ",
+                "net_resolve_missing(x, na_action = \"absent\") or \"present\"."),
+         call. = FALSE)
+  }
+  invisible(TRUE)
 }
 
 # The network as an adjacency matrix, the way sna and UCINET read it:

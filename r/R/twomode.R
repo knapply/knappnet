@@ -94,6 +94,7 @@ net_is_twomode <- function(x) {
 # See man/net_twomode.Rd.
 net_is_bipartite <- function(x) {
   check_net_frame(x)
+  require_resolved(x)
   n <- nrow(x$nodes)
   src <- x$index$src + 1L
   tgt <- x$index$tgt + 1L
