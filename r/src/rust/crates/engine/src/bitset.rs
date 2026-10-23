@@ -156,6 +156,79 @@ pub const BATCH: usize = 64;
 /// 1/`PULL_SHARE` of all arcs.
 const PULL_SHARE: usize = 8;
 
+/// Whether searching from [`BATCH`] sources at a time is expected to beat
+/// one plain search per source when searches stop after `max_level` levels.
+/// A batch saves work only where the searches of its sources overlap; with
+/// average out-degree d, a search of radius r reaches about d^r nodes, so
+/// the searches of a batch are likely to overlap once [`BATCH`] d^r reaches
+/// n. Below that, plain searches touch less memory per node reached.
+pub fn batches_pay(view: View, max_level: u32) -> bool {
+    let n = view.node_count();
+    if n == 0 {
+        return false;
+    }
+    let d = view.arc_count() as f64 / n as f64;
+    let ball = d.powf(max_level.min(64) as f64).min(n as f64);
+    BATCH as f64 * ball >= n as f64
+}
+
+/// Scratch space for plain breadth-first searches from one source along a
+/// [`View`], reused across sources.
+#[derive(Debug, Clone)]
+pub struct SingleBfs {
+    /// Level of every node reached by the last search; `u32::MAX` if not.
+    level: Vec<u32>,
+    /// Nodes reached by the last search, in order of discovery.
+    order: Vec<u32>,
+}
+
+impl SingleBfs {
+    /// Scratch space for a network with `n` nodes.
+    pub fn new(n: usize) -> SingleBfs {
+        SingleBfs {
+            level: vec![u32::MAX; n],
+            order: Vec::new(),
+        }
+    }
+
+    /// Searches from `source` along the arcs of `view`, stopping after
+    /// `max_level` levels, and returns the nodes reached (the source
+    /// first) in order of discovery, which is non-decreasing level.
+    pub fn run(&mut self, view: View, source: u32, max_level: u32) -> &[u32] {
+        for &v in &self.order {
+            self.level[v as usize] = u32::MAX;
+        }
+        self.order.clear();
+        self.level[source as usize] = 0;
+        self.order.push(source);
+        let mut head = 0;
+        while head < self.order.len() {
+            let v = self.order[head] as usize;
+            head += 1;
+            let next = self.level[v] + 1;
+            if next > max_level {
+                break;
+            }
+            let (a, b) = view.heads(v);
+            for list in [a, b] {
+                for &w in list {
+                    if self.level[w as usize] == u32::MAX {
+                        self.level[w as usize] = next;
+                        self.order.push(w);
+                    }
+                }
+            }
+        }
+        &self.order
+    }
+
+    /// Level of `v` in the last search; `u32::MAX` if it was not reached.
+    #[inline]
+    pub fn level(&self, v: u32) -> u32 {
+        self.level[v as usize]
+    }
+}
+
 /// What [`MultiBfs::run`] reports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
@@ -209,7 +282,7 @@ impl MultiBfs {
     /// of them; source i is bit i), stopping after `max_level` levels, and
     /// reports every [`Step`] to `on`. A source is at level 0 of its own
     /// search and is not reported for it. Within a level, nodes are
-    /// reported in increasing index order.
+    /// reported in an order fixed by the graph and the sources alone.
     ///
     /// Each level is expanded top-down (every frontier node ORs its set
     /// into the heads of its arcs) or, when the frontier's arcs are a large
@@ -284,11 +357,10 @@ impl MultiBfs {
                 self.frontier[v as usize] = 0;
             }
             self.active.clear();
-            // Visit the nodes with a non-empty `next` in increasing index
-            // order: sort the list when it is short, scan every node when
-            // it is long (or unknown, after a bottom-up step).
-            if !bottom_up && self.touched.len() < n / 32 {
-                self.touched.sort_unstable();
+            // Visit the nodes with a non-empty `next`: in the order they
+            // were first pushed to after a top-down step, by a scan of
+            // every node after a bottom-up step.
+            if !bottom_up {
                 for i in 0..self.touched.len() {
                     let w = self.touched[i] as usize;
                     self.settle(w, level, &mut on);

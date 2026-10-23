@@ -103,7 +103,7 @@
 
 use std::borrow::Cow;
 
-use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
+use crate::bitset::{batches_pay, for_each_bit, MultiBfs, SingleBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::{Csr, Graph};
 use crate::matrix::Dense;
@@ -935,6 +935,24 @@ fn within_hops(view: View, sources: Option<&[u32]>, max_level: u32, threads: usi
             &all
         }
     };
+    if !batches_pay(view, max_level) {
+        // Small balls that rarely overlap: one search per source.
+        let parts = parallel::for_each_item(
+            sources.len(),
+            threads,
+            || (SingleBfs::new(n), Vec::new()),
+            |(bfs, found): &mut (SingleBfs, Vec<(usize, usize)>), k| {
+                found.push((k, bfs.run(view, sources[k], max_level).len() - 1));
+            },
+        );
+        let mut out = vec![0usize; sources.len()];
+        for (_, found) in parts {
+            for (k, c) in found {
+                out[k] = c;
+            }
+        }
+        return out;
+    }
     let parts = parallel::for_each_item(
         (sources.len() + BATCH - 1) / BATCH,
         threads,
