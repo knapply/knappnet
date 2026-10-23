@@ -80,6 +80,11 @@ reciprocity_correlation:
         Every tie between distinct nodes is absent (or present), so the
         correlation is 0 / 0. This engine reports NaN; sna defines it as 1.
         Not compared.
+      differs_when: [edge_case]
+      reason: >-
+        On a two-node network with one arc the two ordered pairs give the
+        perfectly anticorrelated values (1, 0) and (0, 1), so the correlation
+        is -1, as the definition oracle confirms; sna reports 0.
 
 transitivity:
   engine: {fn: transitivity, undefined: nan}

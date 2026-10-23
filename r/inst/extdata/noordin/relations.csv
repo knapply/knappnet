@@ -1,0 +1,1015 @@
+from,to,relation
+Achmad Hasan,Son Hadi,business_finance
+Achmad Hasan,Suramto,business_finance
+Achmad Hasan,Usman bin Sef,business_finance
+Agus Ahmad,Rosihin Noor,business_finance
+Asep Jaja,Purnama Putra,business_finance
+Azhari Husin,Ismail,business_finance
+Azhari Husin,Mohamed Rais,business_finance
+Azhari Husin,Noordin Mohammed Top,business_finance
+Chandra,Son Hadi,business_finance
+Ismail,Mohamed Rais,business_finance
+Ismail,Noordin Mohammed Top,business_finance
+Mohamed Rais,Noordin Mohammed Top,business_finance
+Son Hadi,Suramto,business_finance
+Son Hadi,Usman bin Sef,business_finance
+Suramto,Usman bin Sef,business_finance
+Abdul Rauf,Abdullah Sungkar,classmates
+Abdul Rauf,Abu Bakar Ba'asyir,classmates
+Abdul Rauf,Asmar Latin Sani,classmates
+Abdul Rauf,Baharudin Soleh,classmates
+Abdul Rauf,Jabir,classmates
+Abdul Rauf,Mohamed Ihsan,classmates
+Abdul Rauf,Mohamed Rais,classmates
+Abdul Rauf,Sardona Siliwangi,classmates
+Abdul Rauf,Suramto,classmates
+Abdul Rauf,Tohir,classmates
+Abdul Rauf,Ubeid,classmates
+Abdullah Sunata,Asep Jaja,classmates
+Abdullah Sungkar,Abu Bakar Ba'asyir,classmates
+Abdullah Sungkar,Abu Dujanah,classmates
+Abdullah Sungkar,Adung,classmates
+Abdullah Sungkar,Ahmad Rofiq Ridho,classmates
+Abdullah Sungkar,Ali Ghufron,classmates
+Abdullah Sungkar,Asmar Latin Sani,classmates
+Abdullah Sungkar,Azhari Husin,classmates
+Abdullah Sungkar,Baharudin Soleh,classmates
+Abdullah Sungkar,Dulmatin,classmates
+Abdullah Sungkar,Fathurrahman al-Ghozi,classmates
+Abdullah Sungkar,Hambali,classmates
+Abdullah Sungkar,Heri Sigu Samboja,classmates
+Abdullah Sungkar,Imam Samudra,classmates
+Abdullah Sungkar,Ismail,classmates
+Abdullah Sungkar,Jabir,classmates
+Abdullah Sungkar,Joni Achmad Fauzan,classmates
+Abdullah Sungkar,Mohamed Ihsan,classmates
+Abdullah Sungkar,Mohamed Rais,classmates
+Abdullah Sungkar,Noordin Mohammed Top,classmates
+Abdullah Sungkar,Sardona Siliwangi,classmates
+Abdullah Sungkar,Son Hadi,classmates
+Abdullah Sungkar,Suramto,classmates
+Abdullah Sungkar,Tohir,classmates
+Abdullah Sungkar,Toni Togar,classmates
+Abdullah Sungkar,Ubeid,classmates
+Abdullah Sungkar,Zulkarnaen,classmates
+Abu Bakar Ba'asyir,Adung,classmates
+Abu Bakar Ba'asyir,Ahmad Rofiq Ridho,classmates
+Abu Bakar Ba'asyir,Asmar Latin Sani,classmates
+Abu Bakar Ba'asyir,Baharudin Soleh,classmates
+Abu Bakar Ba'asyir,Fathurrahman al-Ghozi,classmates
+Abu Bakar Ba'asyir,Jabir,classmates
+Abu Bakar Ba'asyir,Joni Achmad Fauzan,classmates
+Abu Bakar Ba'asyir,Mohamed Ihsan,classmates
+Abu Bakar Ba'asyir,Mohamed Rais,classmates
+Abu Bakar Ba'asyir,Sardona Siliwangi,classmates
+Abu Bakar Ba'asyir,Son Hadi,classmates
+Abu Bakar Ba'asyir,Suramto,classmates
+Abu Bakar Ba'asyir,Tohir,classmates
+Abu Bakar Ba'asyir,Toni Togar,classmates
+Abu Bakar Ba'asyir,Ubeid,classmates
+Abu Bakar Ba'asyir,Zulkarnaen,classmates
+Abu Dujanah,Ali Ghufron,classmates
+Abu Dujanah,Azhari Husin,classmates
+Abu Dujanah,Dulmatin,classmates
+Abu Dujanah,Fathurrahman al-Ghozi,classmates
+Abu Dujanah,Hambali,classmates
+Abu Dujanah,Imam Samudra,classmates
+Abu Dujanah,Ismail,classmates
+Abu Dujanah,Mohamed Rais,classmates
+Abu Dujanah,Noordin Mohammed Top,classmates
+Abu Fida,Iwan Dharmawan,classmates
+Abu Fida,Sardona Siliwangi,classmates
+Abu Fida,Suramto,classmates
+Abu Fida,Ubeid,classmates
+Abu Fida,Urwah,classmates
+Ahmad Rofiq Ridho,Joni Achmad Fauzan,classmates
+Ali Ghufron,Azhari Husin,classmates
+Ali Ghufron,Dulmatin,classmates
+Ali Ghufron,Fathurrahman al-Ghozi,classmates
+Ali Ghufron,Hambali,classmates
+Ali Ghufron,Imam Samudra,classmates
+Ali Ghufron,Ismail,classmates
+Ali Ghufron,Mohamed Rais,classmates
+Ali Ghufron,Noordin Mohammed Top,classmates
+Ali Ghufron,Tohir,classmates
+Ali Ghufron,Zulkarnaen,classmates
+Apuy,Heri Golun,classmates
+Apuy,Iwan Dharmawan,classmates
+Asmar Latin Sani,Baharudin Soleh,classmates
+Asmar Latin Sani,Jabir,classmates
+Asmar Latin Sani,Mohamed Ihsan,classmates
+Asmar Latin Sani,Mohamed Rais,classmates
+Asmar Latin Sani,Sardona Siliwangi,classmates
+Asmar Latin Sani,Son Hadi,classmates
+Asmar Latin Sani,Suramto,classmates
+Asmar Latin Sani,Tohir,classmates
+Asmar Latin Sani,Ubeid,classmates
+Azhari Husin,Dulmatin,classmates
+Azhari Husin,Fathurrahman al-Ghozi,classmates
+Azhari Husin,Hambali,classmates
+Azhari Husin,Imam Samudra,classmates
+Azhari Husin,Ismail,classmates
+Azhari Husin,Mohamed Rais,classmates
+Azhari Husin,Noordin Mohammed Top,classmates
+Azhari Husin,Tohir,classmates
+Azhari Husin,Zulkarnaen,classmates
+Baharudin Soleh,Jabir,classmates
+Baharudin Soleh,Mohamed Ihsan,classmates
+Baharudin Soleh,Mohamed Rais,classmates
+Baharudin Soleh,Sardona Siliwangi,classmates
+Baharudin Soleh,Suramto,classmates
+Baharudin Soleh,Tohir,classmates
+Baharudin Soleh,Ubeid,classmates
+Chandra,Son Hadi,classmates
+Dulmatin,Fathurrahman al-Ghozi,classmates
+Dulmatin,Hambali,classmates
+Dulmatin,Imam Samudra,classmates
+Dulmatin,Ismail,classmates
+Dulmatin,Mohamed Rais,classmates
+Dulmatin,Noordin Mohammed Top,classmates
+Dulmatin,Tohir,classmates
+Dulmatin,Zulkarnaen,classmates
+Fathurrahman al-Ghozi,Hambali,classmates
+Fathurrahman al-Ghozi,Imam Samudra,classmates
+Fathurrahman al-Ghozi,Ismail,classmates
+Fathurrahman al-Ghozi,Mohamed Ihsan,classmates
+Fathurrahman al-Ghozi,Mohamed Rais,classmates
+Fathurrahman al-Ghozi,Noordin Mohammed Top,classmates
+Fathurrahman al-Ghozi,Son Hadi,classmates
+Fathurrahman al-Ghozi,Tohir,classmates
+Fathurrahman al-Ghozi,Toni Togar,classmates
+Fathurrahman al-Ghozi,Zulkarnaen,classmates
+Imam Bukhori,Irun Hidayat,classmates
+Imam Samudra,Irun Hidayat,classmates
+Imam Samudra,Ismail,classmates
+Imam Samudra,Mohamed Rais,classmates
+Imam Samudra,Noordin Mohammed Top,classmates
+Imam Samudra,Tohir,classmates
+Imam Samudra,Zulkarnaen,classmates
+Ismail,Mohamed Rais,classmates
+Ismail,Noordin Mohammed Top,classmates
+Ismail,Tohir,classmates
+Ismail,Zulkarnaen,classmates
+Iwan Dharmawan,Sardona Siliwangi,classmates
+Iwan Dharmawan,Suramto,classmates
+Iwan Dharmawan,Ubeid,classmates
+Iwan Dharmawan,Urwah,classmates
+Jabir,Mohamed Ihsan,classmates
+Jabir,Mohamed Rais,classmates
+Jabir,Salik Firdaus,classmates
+Jabir,Sardona Siliwangi,classmates
+Jabir,Suramto,classmates
+Jabir,Tohir,classmates
+Jabir,Ubeid,classmates
+Joni Achmad Fauzan,Son Hadi,classmates
+Mohamed Ihsan,Mohamed Rais,classmates
+Mohamed Ihsan,Sardona Siliwangi,classmates
+Mohamed Ihsan,Son Hadi,classmates
+Mohamed Ihsan,Suramto,classmates
+Mohamed Ihsan,Tohir,classmates
+Mohamed Ihsan,Toni Togar,classmates
+Mohamed Ihsan,Ubeid,classmates
+Mohamed Rais,Noordin Mohammed Top,classmates
+Mohamed Rais,Sardona Siliwangi,classmates
+Mohamed Rais,Son Hadi,classmates
+Mohamed Rais,Suramto,classmates
+Mohamed Rais,Tohir,classmates
+Mohamed Rais,Ubeid,classmates
+Mohamed Rais,Zulkarnaen,classmates
+Noordin Mohammed Top,Tohir,classmates
+Sardona Siliwangi,Suramto,classmates
+Sardona Siliwangi,Tohir,classmates
+Sardona Siliwangi,Ubeid,classmates
+Sardona Siliwangi,Urwah,classmates
+Son Hadi,Tohir,classmates
+Son Hadi,Toni Togar,classmates
+Suramto,Tohir,classmates
+Suramto,Ubeid,classmates
+Suramto,Urwah,classmates
+Tohir,Toni Togar,classmates
+Tohir,Ubeid,classmates
+Ubeid,Urwah,classmates
+Abdul Malik,Akram,communications
+Abdul Rohim,Abu Bakar Ba'asyir,communications
+Abdul Rohim,Ahmad Rofiq Ridho,communications
+Abdul Rohim,Fathurrahman al-Ghozi,communications
+Abdul Rohim,Noordin Mohammed Top,communications
+Abdullah Sunata,Ahmad Rofiq Ridho,communications
+Abdullah Sunata,Ahmad Sayid Maulana,communications
+Abdullah Sunata,Akram,communications
+Abdullah Sunata,Asep Jaja,communications
+Abdullah Sunata,Dulmatin,communications
+Abdullah Sunata,Enceng Kurnia,communications
+Abdullah Sunata,Harun,communications
+Abdullah Sunata,Mohamed Saifuddin (alias Faiz),communications
+Abdullah Sunata,Muzayin Abdul Wahab,communications
+Abdullah Sunata,Noordin Mohammed Top,communications
+Abdullah Sunata,Purnama Putra,communications
+Abdullah Sunata,Umar Patek,communications
+Abdullah Sungkar,Abu Bakar Ba'asyir,communications
+Abdullah Sungkar,Adung,communications
+Abdullah Sungkar,Ahmad Rofiq Ridho,communications
+Abdullah Sungkar,Ajengan Masduki,communications
+Abdullah Sungkar,Ali Ghufron,communications
+Abdullah Sungkar,Noordin Mohammed Top,communications
+Abdullah Sungkar,Said Sungkar,communications
+Abu Dujanah,Azhari Husin,communications
+Abu Dujanah,Noordin Mohammed Top,communications
+Abu Dujanah,Qotadah,communications
+Abu Dujanah,Suramto,communications
+Abu Dujanah,Zulkarnaen,communications
+Abu Fida,Achmad Hasan,communications
+Abu Fida,Adung,communications
+Abu Fida,Chandra,communications
+Abu Fida,Munfiatun,communications
+Abu Fida,Noordin Mohammed Top,communications
+Abu Fida,Purnama Putra,communications
+Abu Fida,Son Hadi,communications
+Abu Fida,Suramto,communications
+Abu Fida,Ubeid,communications
+Abu Fida,Urwah,communications
+Aceng Kurnia,Akram,communications
+Achmad Hasan,Adung,communications
+Achmad Hasan,Munfiatun,communications
+Achmad Hasan,Noordin Mohammed Top,communications
+Achmad Hasan,Son Hadi,communications
+Achmad Hasan,Usman bin Sef,communications
+Adung,Hambali,communications
+Adung,Heri Sigu Samboja,communications
+Adung,Munfiatun,communications
+Adung,Noordin Mohammed Top,communications
+Adung,Qotadah,communications
+Adung,Son Hadi,communications
+Adung,Usman bin Sef,communications
+Agus Ahmad,Azhari Husin,communications
+Agus Ahmad,Engkos Kosasih,communications
+Agus Ahmad,Heri Sigu Samboja,communications
+Agus Ahmad,Iwan Dharmawan,communications
+Agus Ahmad,Noordin Mohammed Top,communications
+Ahmad Rofiq Ridho,Azhari Husin,communications
+Ahmad Rofiq Ridho,Baharudin Soleh,communications
+Ahmad Rofiq Ridho,Enceng Kurnia,communications
+Ahmad Rofiq Ridho,Fathurrahman al-Ghozi,communications
+Ahmad Rofiq Ridho,Imam Bukhori,communications
+Ahmad Rofiq Ridho,Iwan Dharmawan,communications
+Ahmad Rofiq Ridho,Jabir,communications
+Ahmad Rofiq Ridho,Joko Triharmanto,communications
+Ahmad Rofiq Ridho,Joni Achmad Fauzan,communications
+Ahmad Rofiq Ridho,Mohamed Saifuddin (alias Faiz),communications
+Ahmad Rofiq Ridho,Mus'ab Sahidi,communications
+Ahmad Rofiq Ridho,Noordin Mohammed Top,communications
+Ahmad Rofiq Ridho,Purnama Putra,communications
+Ahmad Rofiq Ridho,Ubeid,communications
+Ahmad Rofiq Ridho,Umar Patek,communications
+Ahmad Rofiq Ridho,Usman bin Sef,communications
+Akram,Dulmatin,communications
+Akram,Enceng Kurnia,communications
+Akram,Mohamed Saifuddin (alias Faiz),communications
+Akram,Noordin Mohammed Top,communications
+Akram,Usman bin Sef,communications
+Ali Ghufron,Misno,communications
+Ali Ghufron,Noordin Mohammed Top,communications
+Ali Ghufron,Salik Firdaus,communications
+Anif Solchanudin,Noordin Mohammed Top,communications
+Anif Solchanudin,Subur Sugiarto,communications
+Apuy,Baharudin Soleh,communications
+Apuy,Heri Golun,communications
+Aris Munandar,Muchtar,communications
+Aris Munandar,Umar Wayan,communications
+Aris Munandar,Zulkarnaen,communications
+Asep Jaja,Purnama Putra,communications
+Asmar Latin Sani,Azhari Husin,communications
+Asmar Latin Sani,Ismail,communications
+Asmar Latin Sani,Mohamed Rais,communications
+Asmar Latin Sani,Noordin Mohammed Top,communications
+Asmar Latin Sani,Sardona Siliwangi,communications
+Asmar Latin Sani,Tohir,communications
+Azhari Husin,Chandra,communications
+Azhari Husin,Cholily,communications
+Azhari Husin,Fathurrochman,communications
+Azhari Husin,Hambali,communications
+Azhari Husin,Heri Golun,communications
+Azhari Husin,Heri Sigu Samboja,communications
+Azhari Husin,Imam Bukhori,communications
+Azhari Husin,Ismail,communications
+Azhari Husin,Iwan Dharmawan,communications
+Azhari Husin,Jabir,communications
+Azhari Husin,Mohamed Rais,communications
+Azhari Husin,Noordin Mohammed Top,communications
+Azhari Husin,Qotadah,communications
+Azhari Husin,Son Hadi,communications
+Azhari Husin,Tohir,communications
+Azhari Husin,Toni Togar,communications
+Azhari Husin,Umar Patek,communications
+Azhari Husin,Usman bin Sef,communications
+Baharudin Soleh,Heri Golun,communications
+Baharudin Soleh,Iwan Dharmawan,communications
+Baharudin Soleh,Jabir,communications
+Baharudin Soleh,Noordin Mohammed Top,communications
+Chandra,Jabir,communications
+Chandra,Noordin Mohammed Top,communications
+Chandra,Son Hadi,communications
+Cholily,Noordin Mohammed Top,communications
+Cholily,Qotadah,communications
+Dani Chandra,Hari Kuncoro,communications
+Dani Chandra,Noordin Mohammed Top,communications
+Dani Chandra,Umar Patek,communications
+Dulmatin,Enceng Kurnia,communications
+Dulmatin,Hari Kuncoro,communications
+Dulmatin,Marwan,communications
+Dulmatin,Umar Patek,communications
+Enceng Kurnia,Noordin Mohammed Top,communications
+Enceng Kurnia,Purnama Putra,communications
+Fathurrahman al-Ghozi,Jabir,communications
+Fathurrochman,Iwan Dharmawan,communications
+Fathurrochman,Noordin Mohammed Top,communications
+Fathurrochman,Rosihin Noor,communications
+Hambali,Imam Samudra,communications
+Hambali,Ismail,communications
+Hambali,Jabir,communications
+Hambali,Noordin Mohammed Top,communications
+Hambali,Toni Togar,communications
+Hari Kuncoro,Iqbal Huseini,communications
+Hari Kuncoro,Joko Triharmanto,communications
+Hari Kuncoro,Purnama Putra,communications
+Hari Kuncoro,Usman bin Sef,communications
+Heri Golun,Irun Hidayat,communications
+Heri Golun,Iwan Dharmawan,communications
+Heri Golun,Noordin Mohammed Top,communications
+Heri Sigu Samboja,Qotadah,communications
+Heri Sigu Samboja,Usman bin Sef,communications
+Imam Bukhori,Jabir,communications
+Imam Bukhori,Noordin Mohammed Top,communications
+Imam Bukhori,Said Sungkar,communications
+Iqbal Huseini,Purnama Putra,communications
+Irun Hidayat,Iwan Dharmawan,communications
+Ismail,Mohamed Rais,communications
+Ismail,Noordin Mohammed Top,communications
+Ismail,Tohir,communications
+Iwan Dharmawan,Jabir,communications
+Iwan Dharmawan,Noordin Mohammed Top,communications
+Iwan Dharmawan,Rosihin Noor,communications
+Iwan Dharmawan,Salik Firdaus,communications
+Iwan Dharmawan,Saptono,communications
+Iwan Dharmawan,Suramto,communications
+Iwan Dharmawan,Ubeid,communications
+Iwan Dharmawan,Urwah,communications
+Jabir,Noordin Mohammed Top,communications
+Jabir,Salik Firdaus,communications
+Joko Triharmanto,Joni Achmad Fauzan,communications
+Joko Triharmanto,Noordin Mohammed Top,communications
+Joko Triharmanto,Purnama Putra,communications
+Joni Achmad Fauzan,Noordin Mohammed Top,communications
+Marwan,Umar Patek,communications
+Misno,Salik Firdaus,communications
+Mohamed Ihsan,Mohamed Rais,communications
+Mohamed Rais,Noordin Mohammed Top,communications
+Mohamed Rais,Tohir,communications
+Mohamed Rais,Toni Togar,communications
+Mohamed Saifuddin (alias Faiz),Noordin Mohammed Top,communications
+Mohamed Saifuddin (alias Faiz),Purnama Putra,communications
+Munfiatun,Noordin Mohammed Top,communications
+Noordin Mohammed Top,Purnama Putra,communications
+Noordin Mohammed Top,Qotadah,communications
+Noordin Mohammed Top,Sardona Siliwangi,communications
+Noordin Mohammed Top,Son Hadi,communications
+Noordin Mohammed Top,Subur Sugiarto,communications
+Noordin Mohammed Top,Tohir,communications
+Noordin Mohammed Top,Toni Togar,communications
+Noordin Mohammed Top,Ubeid,communications
+Noordin Mohammed Top,Urwah,communications
+Noordin Mohammed Top,Usman bin Sef,communications
+Purnama Putra,Ubeid,communications
+Qotadah,Usman bin Sef,communications
+Saptono,Urwah,communications
+Son Hadi,Umar Patek,communications
+Son Hadi,Usman bin Sef,communications
+Suramto,Ubeid,communications
+Suramto,Umar,communications
+Suramto,Urwah,communications
+Ubeid,Umar,communications
+Ubeid,Urwah,communications
+Abdul Rohim,Ahmad Rofiq Ridho,friendship
+Abdullah Sunata,Ahmad Rofiq Ridho,friendship
+Abdullah Sunata,Asep Jaja,friendship
+Abdullah Sunata,Enceng Kurnia,friendship
+Abdullah Sunata,Harun,friendship
+Abdullah Sunata,Iqbal Huseini,friendship
+Abdullah Sunata,Mohamed Saifuddin (alias Faiz),friendship
+Abdullah Sunata,Muzayin Abdul Wahab,friendship
+Abdullah Sungkar,Abu Bakar Ba'asyir,friendship
+Abu Dujanah,Azhari Husin,friendship
+Abu Dujanah,Noordin Mohammed Top,friendship
+Abu Dujanah,Qotadah,friendship
+Abu Dujanah,Suramto,friendship
+Abu Fida,Munfiatun,friendship
+Abu Fida,Noordin Mohammed Top,friendship
+Abu Fida,Son Hadi,friendship
+Abu Fida,Suramto,friendship
+Abu Fida,Ubeid,friendship
+Abu Fida,Urwah,friendship
+Aceng Kurnia,Akram,friendship
+Achmad Hasan,Munfiatun,friendship
+Achmad Hasan,Son Hadi,friendship
+Achmad Hasan,Usman bin Sef,friendship
+Adung,Hambali,friendship
+Adung,Heri Sigu Samboja,friendship
+Adung,Munfiatun,friendship
+Adung,Noordin Mohammed Top,friendship
+Agus Ahmad,Iwan Dharmawan,friendship
+Ahmad Rofiq Ridho,Imam Bukhori,friendship
+Ahmad Rofiq Ridho,Iwan Dharmawan,friendship
+Ahmad Rofiq Ridho,Joni Achmad Fauzan,friendship
+Ahmad Rofiq Ridho,Mohamed Saifuddin (alias Faiz),friendship
+Ahmad Rofiq Ridho,Mus'ab Sahidi,friendship
+Ahmad Rofiq Ridho,Purnama Putra,friendship
+Ahmad Rofiq Ridho,Ubeid,friendship
+Akram,Enceng Kurnia,friendship
+Akram,Usman bin Sef,friendship
+Ali Ghufron,Noordin Mohammed Top,friendship
+Anif Solchanudin,Noordin Mohammed Top,friendship
+Anif Solchanudin,Subur Sugiarto,friendship
+Apuy,Iwan Dharmawan,friendship
+Asep Jaja,Mohamed Saifuddin (alias Faiz),friendship
+Asep Jaja,Muchtar,friendship
+Asmar Latin Sani,Ismail,friendship
+Asmar Latin Sani,Mohamed Rais,friendship
+Asmar Latin Sani,Noordin Mohammed Top,friendship
+Azhari Husin,Hambali,friendship
+Azhari Husin,Imam Bukhori,friendship
+Azhari Husin,Ismail,friendship
+Azhari Husin,Jabir,friendship
+Azhari Husin,Noordin Mohammed Top,friendship
+Baharudin Soleh,Jabir,friendship
+Baharudin Soleh,Noordin Mohammed Top,friendship
+Chandra,Son Hadi,friendship
+Cholily,Qotadah,friendship
+Dulmatin,Umar Patek,friendship
+Enceng Kurnia,Umar Patek,friendship
+Fathurrahman al-Ghozi,Hambali,friendship
+Fathurrochman,Iwan Dharmawan,friendship
+Hambali,Toni Togar,friendship
+Hari Kuncoro,Joko Triharmanto,friendship
+Hari Kuncoro,Purnama Putra,friendship
+Heri Golun,Iwan Dharmawan,friendship
+Imam Bukhori,Jabir,friendship
+Imam Bukhori,Noordin Mohammed Top,friendship
+Imam Bukhori,Said Sungkar,friendship
+Imam Samudra,Irun Hidayat,friendship
+Irun Hidayat,Iwan Dharmawan,friendship
+Ismail,Mohamed Rais,friendship
+Ismail,Noordin Mohammed Top,friendship
+Ismail,Tohir,friendship
+Iwan Dharmawan,Ubeid,friendship
+Jabir,Noordin Mohammed Top,friendship
+Jabir,Salik Firdaus,friendship
+Jabir,Ubeid,friendship
+Joko Triharmanto,Purnama Putra,friendship
+Mohamed Rais,Noordin Mohammed Top,friendship
+Mohamed Rais,Tohir,friendship
+Mohamed Saifuddin (alias Faiz),Noordin Mohammed Top,friendship
+Mohamed Saifuddin (alias Faiz),Purnama Putra,friendship
+Mohamed Saifuddin (alias Faiz),Umar Patek,friendship
+Muchtar,Umar Wayan,friendship
+Muchtar,Zulkarnaen,friendship
+Noordin Mohammed Top,Purnama Putra,friendship
+Noordin Mohammed Top,Tohir,friendship
+Noordin Mohammed Top,Usman bin Sef,friendship
+Son Hadi,Usman bin Sef,friendship
+Suramto,Ubeid,friendship
+Suramto,Urwah,friendship
+Ubeid,Urwah,friendship
+Umar Wayan,Zulkarnaen,friendship
+Abdul Malik,Akram,kinship
+Abdul Rohim,Abu Bakar Ba'asyir,kinship
+Abdullah Sungkar,Said Sungkar,kinship
+Agus Ahmad,Engkos Kosasih,kinship
+Agus Ahmad,Rosihin Noor,kinship
+Ahmad Rofiq Ridho,Baharudin Soleh,kinship
+Ahmad Rofiq Ridho,Fathurrahman al-Ghozi,kinship
+Ahmad Rofiq Ridho,Jabir,kinship
+Aris Munandar,Muzayin Abdul Wahab,kinship
+Dulmatin,Hari Kuncoro,kinship
+Engkos Kosasih,Rosihin Noor,kinship
+Fathurrahman al-Ghozi,Jabir,kinship
+Iwan Dharmawan,Saptono,kinship
+Mohamed Rais,Noordin Mohammed Top,kinship
+Munfiatun,Noordin Mohammed Top,kinship
+Ubeid,Umar,kinship
+Abdul Malik,Akram,logistics
+Abdullah Sunata,Ahmad Rofiq Ridho,logistics
+Abdullah Sunata,Hari Kuncoro,logistics
+Abdullah Sunata,Purnama Putra,logistics
+Abdullah Sunata,Ubeid,logistics
+Abdullah Sunata,Usman bin Sef,logistics
+Abu Fida,Son Hadi,logistics
+Abu Fida,Usman bin Sef,logistics
+Ahmad Rofiq Ridho,Hari Kuncoro,logistics
+Ahmad Rofiq Ridho,Imam Bukhori,logistics
+Ahmad Rofiq Ridho,Iwan Dharmawan,logistics
+Ahmad Rofiq Ridho,Joko Triharmanto,logistics
+Ahmad Rofiq Ridho,Joni Achmad Fauzan,logistics
+Ahmad Rofiq Ridho,Mus'ab Sahidi,logistics
+Ahmad Rofiq Ridho,Purnama Putra,logistics
+Ahmad Rofiq Ridho,Ubeid,logistics
+Ahmad Rofiq Ridho,Usman bin Sef,logistics
+Hari Kuncoro,Purnama Putra,logistics
+Hari Kuncoro,Ubeid,logistics
+Hari Kuncoro,Usman bin Sef,logistics
+Imam Bukhori,Iwan Dharmawan,logistics
+Imam Bukhori,Mus'ab Sahidi,logistics
+Iwan Dharmawan,Mus'ab Sahidi,logistics
+Iwan Dharmawan,Said Sungkar,logistics
+Iwan Dharmawan,Usman bin Sef,logistics
+Purnama Putra,Ubeid,logistics
+Purnama Putra,Usman bin Sef,logistics
+Said Sungkar,Usman bin Sef,logistics
+Ubeid,Usman bin Sef,logistics
+Abdullah Sunata,Ahmad Rofiq Ridho,meetings
+Abdullah Sunata,Asep Jaja,meetings
+Abu Dujanah,Azhari Husin,meetings
+Abu Dujanah,Ismail,meetings
+Abu Dujanah,Noordin Mohammed Top,meetings
+Abu Dujanah,Qotadah,meetings
+Abu Fida,Adung,meetings
+Abu Fida,Noordin Mohammed Top,meetings
+Abu Fida,Purnama Putra,meetings
+Abu Fida,Son Hadi,meetings
+Abu Fida,Suramto,meetings
+Abu Fida,Ubeid,meetings
+Abu Fida,Urwah,meetings
+Adung,Son Hadi,meetings
+Ahmad Rofiq Ridho,Asep Jaja,meetings
+Ahmad Rofiq Ridho,Azhari Husin,meetings
+Ahmad Rofiq Ridho,Imam Bukhori,meetings
+Ahmad Rofiq Ridho,Iwan Dharmawan,meetings
+Ahmad Rofiq Ridho,Jabir,meetings
+Ahmad Rofiq Ridho,Joko Triharmanto,meetings
+Ahmad Rofiq Ridho,Mohamed Saifuddin (alias Faiz),meetings
+Ahmad Rofiq Ridho,Noordin Mohammed Top,meetings
+Ahmad Rofiq Ridho,Purnama Putra,meetings
+Akram,Mohamed Saifuddin (alias Faiz),meetings
+Azhari Husin,Cholily,meetings
+Azhari Husin,Imam Bukhori,meetings
+Azhari Husin,Ismail,meetings
+Azhari Husin,Iwan Dharmawan,meetings
+Azhari Husin,Jabir,meetings
+Azhari Husin,Noordin Mohammed Top,meetings
+Azhari Husin,Qotadah,meetings
+Azhari Husin,Son Hadi,meetings
+Azhari Husin,Usman bin Sef,meetings
+Cholily,Noordin Mohammed Top,meetings
+Heri Sigu Samboja,Usman bin Sef,meetings
+Imam Bukhori,Iwan Dharmawan,meetings
+Imam Bukhori,Jabir,meetings
+Imam Bukhori,Noordin Mohammed Top,meetings
+Ismail,Noordin Mohammed Top,meetings
+Ismail,Qotadah,meetings
+Iwan Dharmawan,Jabir,meetings
+Iwan Dharmawan,Noordin Mohammed Top,meetings
+Iwan Dharmawan,Saptono,meetings
+Iwan Dharmawan,Urwah,meetings
+Jabir,Noordin Mohammed Top,meetings
+Joko Triharmanto,Noordin Mohammed Top,meetings
+Joko Triharmanto,Purnama Putra,meetings
+Misno,Noordin Mohammed Top,meetings
+Mohamed Saifuddin (alias Faiz),Noordin Mohammed Top,meetings
+Mohamed Saifuddin (alias Faiz),Purnama Putra,meetings
+Noordin Mohammed Top,Purnama Putra,meetings
+Noordin Mohammed Top,Qotadah,meetings
+Noordin Mohammed Top,Saptono,meetings
+Noordin Mohammed Top,Son Hadi,meetings
+Noordin Mohammed Top,Suramto,meetings
+Noordin Mohammed Top,Ubeid,meetings
+Noordin Mohammed Top,Urwah,meetings
+Noordin Mohammed Top,Usman bin Sef,meetings
+Saptono,Urwah,meetings
+Son Hadi,Usman bin Sef,meetings
+Suramto,Ubeid,meetings
+Suramto,Urwah,meetings
+Ubeid,Urwah,meetings
+Abdul Rauf,Ali Ghufron,operations
+Abdul Rauf,Azhari Husin,operations
+Abdul Rauf,Dulmatin,operations
+Abdul Rauf,Hambali,operations
+Abdul Rauf,Imam Samudra,operations
+Abdul Rauf,Iqbal,operations
+Abdul Rauf,Mohamed Ihsan,operations
+Abdul Rauf,Toni Togar,operations
+Abdul Rauf,Umar Patek,operations
+Abu Bakar Ba'asyir,Azhari Husin,operations
+Abu Bakar Ba'asyir,Hambali,operations
+Abu Bakar Ba'asyir,Imam Samudra,operations
+Abu Bakar Ba'asyir,Mohamed Ihsan,operations
+Abu Bakar Ba'asyir,Toni Togar,operations
+Abu Fida,Achmad Hasan,operations
+Abu Fida,Agus Ahmad,operations
+Abu Fida,Apuy,operations
+Abu Fida,Azhari Husin,operations
+Abu Fida,Baharudin Soleh,operations
+Abu Fida,Chandra,operations
+Abu Fida,Harun,operations
+Abu Fida,Heri Golun,operations
+Abu Fida,Heri Sigu Samboja,operations
+Abu Fida,Iqbal Huseini,operations
+Abu Fida,Irun Hidayat,operations
+Abu Fida,Iwan Dharmawan,operations
+Abu Fida,Noordin Mohammed Top,operations
+Abu Fida,Son Hadi,operations
+Abu Fida,Ubeid,operations
+Abu Fida,Umar,operations
+Abu Fida,Urwah,operations
+Achmad Hasan,Agus Ahmad,operations
+Achmad Hasan,Apuy,operations
+Achmad Hasan,Azhari Husin,operations
+Achmad Hasan,Baharudin Soleh,operations
+Achmad Hasan,Chandra,operations
+Achmad Hasan,Harun,operations
+Achmad Hasan,Heri Golun,operations
+Achmad Hasan,Heri Sigu Samboja,operations
+Achmad Hasan,Iqbal Huseini,operations
+Achmad Hasan,Irun Hidayat,operations
+Achmad Hasan,Iwan Dharmawan,operations
+Achmad Hasan,Noordin Mohammed Top,operations
+Achmad Hasan,Son Hadi,operations
+Achmad Hasan,Ubeid,operations
+Achmad Hasan,Umar,operations
+Achmad Hasan,Urwah,operations
+Agus Ahmad,Apuy,operations
+Agus Ahmad,Azhari Husin,operations
+Agus Ahmad,Baharudin Soleh,operations
+Agus Ahmad,Chandra,operations
+Agus Ahmad,Harun,operations
+Agus Ahmad,Heri Golun,operations
+Agus Ahmad,Heri Sigu Samboja,operations
+Agus Ahmad,Iqbal Huseini,operations
+Agus Ahmad,Irun Hidayat,operations
+Agus Ahmad,Iwan Dharmawan,operations
+Agus Ahmad,Noordin Mohammed Top,operations
+Agus Ahmad,Son Hadi,operations
+Agus Ahmad,Ubeid,operations
+Agus Ahmad,Umar,operations
+Agus Ahmad,Urwah,operations
+Ali Ghufron,Azhari Husin,operations
+Ali Ghufron,Dulmatin,operations
+Ali Ghufron,Hambali,operations
+Ali Ghufron,Imam Samudra,operations
+Ali Ghufron,Iqbal,operations
+Ali Ghufron,Mohamed Ihsan,operations
+Ali Ghufron,Toni Togar,operations
+Ali Ghufron,Umar Patek,operations
+Anif Solchanudin,Azhari Husin,operations
+Anif Solchanudin,Baharudin Soleh,operations
+Anif Solchanudin,Jabir,operations
+Anif Solchanudin,Misno,operations
+Anif Solchanudin,Noordin Mohammed Top,operations
+Anif Solchanudin,Salik Firdaus,operations
+Anif Solchanudin,Subur Sugiarto,operations
+Apuy,Azhari Husin,operations
+Apuy,Baharudin Soleh,operations
+Apuy,Chandra,operations
+Apuy,Harun,operations
+Apuy,Heri Golun,operations
+Apuy,Heri Sigu Samboja,operations
+Apuy,Iqbal Huseini,operations
+Apuy,Irun Hidayat,operations
+Apuy,Iwan Dharmawan,operations
+Apuy,Noordin Mohammed Top,operations
+Apuy,Son Hadi,operations
+Apuy,Ubeid,operations
+Apuy,Umar,operations
+Apuy,Urwah,operations
+Asep Jaja,Harun,operations
+Asmar Latin Sani,Azhari Husin,operations
+Asmar Latin Sani,Hambali,operations
+Asmar Latin Sani,Ismail,operations
+Asmar Latin Sani,Mohamed Ihsan,operations
+Asmar Latin Sani,Mohamed Rais,operations
+Asmar Latin Sani,Noordin Mohammed Top,operations
+Asmar Latin Sani,Sardona Siliwangi,operations
+Asmar Latin Sani,Tohir,operations
+Asmar Latin Sani,Toni Togar,operations
+Azhari Husin,Baharudin Soleh,operations
+Azhari Husin,Chandra,operations
+Azhari Husin,Dulmatin,operations
+Azhari Husin,Hambali,operations
+Azhari Husin,Harun,operations
+Azhari Husin,Heri Golun,operations
+Azhari Husin,Heri Sigu Samboja,operations
+Azhari Husin,Imam Samudra,operations
+Azhari Husin,Iqbal,operations
+Azhari Husin,Iqbal Huseini,operations
+Azhari Husin,Irun Hidayat,operations
+Azhari Husin,Ismail,operations
+Azhari Husin,Iwan Dharmawan,operations
+Azhari Husin,Jabir,operations
+Azhari Husin,Misno,operations
+Azhari Husin,Mohamed Ihsan,operations
+Azhari Husin,Mohamed Rais,operations
+Azhari Husin,Noordin Mohammed Top,operations
+Azhari Husin,Salik Firdaus,operations
+Azhari Husin,Sardona Siliwangi,operations
+Azhari Husin,Son Hadi,operations
+Azhari Husin,Subur Sugiarto,operations
+Azhari Husin,Tohir,operations
+Azhari Husin,Toni Togar,operations
+Azhari Husin,Ubeid,operations
+Azhari Husin,Umar,operations
+Azhari Husin,Umar Patek,operations
+Azhari Husin,Urwah,operations
+Baharudin Soleh,Chandra,operations
+Baharudin Soleh,Harun,operations
+Baharudin Soleh,Heri Golun,operations
+Baharudin Soleh,Heri Sigu Samboja,operations
+Baharudin Soleh,Iqbal Huseini,operations
+Baharudin Soleh,Irun Hidayat,operations
+Baharudin Soleh,Iwan Dharmawan,operations
+Baharudin Soleh,Jabir,operations
+Baharudin Soleh,Misno,operations
+Baharudin Soleh,Noordin Mohammed Top,operations
+Baharudin Soleh,Salik Firdaus,operations
+Baharudin Soleh,Son Hadi,operations
+Baharudin Soleh,Subur Sugiarto,operations
+Baharudin Soleh,Ubeid,operations
+Baharudin Soleh,Umar,operations
+Baharudin Soleh,Urwah,operations
+Chandra,Harun,operations
+Chandra,Heri Golun,operations
+Chandra,Heri Sigu Samboja,operations
+Chandra,Iqbal Huseini,operations
+Chandra,Irun Hidayat,operations
+Chandra,Iwan Dharmawan,operations
+Chandra,Noordin Mohammed Top,operations
+Chandra,Son Hadi,operations
+Chandra,Ubeid,operations
+Chandra,Umar,operations
+Chandra,Urwah,operations
+Dulmatin,Hambali,operations
+Dulmatin,Imam Samudra,operations
+Dulmatin,Iqbal,operations
+Dulmatin,Mohamed Ihsan,operations
+Dulmatin,Toni Togar,operations
+Dulmatin,Umar Patek,operations
+Hambali,Imam Samudra,operations
+Hambali,Iqbal,operations
+Hambali,Ismail,operations
+Hambali,Mohamed Ihsan,operations
+Hambali,Mohamed Rais,operations
+Hambali,Noordin Mohammed Top,operations
+Hambali,Sardona Siliwangi,operations
+Hambali,Tohir,operations
+Hambali,Toni Togar,operations
+Hambali,Umar Patek,operations
+Harun,Heri Golun,operations
+Harun,Heri Sigu Samboja,operations
+Harun,Iqbal Huseini,operations
+Harun,Irun Hidayat,operations
+Harun,Iwan Dharmawan,operations
+Harun,Noordin Mohammed Top,operations
+Harun,Son Hadi,operations
+Harun,Ubeid,operations
+Harun,Umar,operations
+Harun,Urwah,operations
+Heri Golun,Heri Sigu Samboja,operations
+Heri Golun,Iqbal Huseini,operations
+Heri Golun,Irun Hidayat,operations
+Heri Golun,Iwan Dharmawan,operations
+Heri Golun,Noordin Mohammed Top,operations
+Heri Golun,Son Hadi,operations
+Heri Golun,Ubeid,operations
+Heri Golun,Umar,operations
+Heri Golun,Urwah,operations
+Heri Sigu Samboja,Iqbal Huseini,operations
+Heri Sigu Samboja,Irun Hidayat,operations
+Heri Sigu Samboja,Iwan Dharmawan,operations
+Heri Sigu Samboja,Noordin Mohammed Top,operations
+Heri Sigu Samboja,Son Hadi,operations
+Heri Sigu Samboja,Ubeid,operations
+Heri Sigu Samboja,Umar,operations
+Heri Sigu Samboja,Urwah,operations
+Imam Samudra,Iqbal,operations
+Imam Samudra,Mohamed Ihsan,operations
+Imam Samudra,Toni Togar,operations
+Imam Samudra,Umar Patek,operations
+Iqbal,Mohamed Ihsan,operations
+Iqbal,Toni Togar,operations
+Iqbal,Umar Patek,operations
+Iqbal Huseini,Irun Hidayat,operations
+Iqbal Huseini,Iwan Dharmawan,operations
+Iqbal Huseini,Noordin Mohammed Top,operations
+Iqbal Huseini,Son Hadi,operations
+Iqbal Huseini,Ubeid,operations
+Iqbal Huseini,Umar,operations
+Iqbal Huseini,Urwah,operations
+Irun Hidayat,Iwan Dharmawan,operations
+Irun Hidayat,Noordin Mohammed Top,operations
+Irun Hidayat,Son Hadi,operations
+Irun Hidayat,Ubeid,operations
+Irun Hidayat,Umar,operations
+Irun Hidayat,Urwah,operations
+Ismail,Mohamed Ihsan,operations
+Ismail,Mohamed Rais,operations
+Ismail,Noordin Mohammed Top,operations
+Ismail,Sardona Siliwangi,operations
+Ismail,Tohir,operations
+Ismail,Toni Togar,operations
+Iwan Dharmawan,Noordin Mohammed Top,operations
+Iwan Dharmawan,Son Hadi,operations
+Iwan Dharmawan,Ubeid,operations
+Iwan Dharmawan,Umar,operations
+Iwan Dharmawan,Urwah,operations
+Jabir,Misno,operations
+Jabir,Noordin Mohammed Top,operations
+Jabir,Salik Firdaus,operations
+Jabir,Subur Sugiarto,operations
+Misno,Noordin Mohammed Top,operations
+Misno,Salik Firdaus,operations
+Misno,Subur Sugiarto,operations
+Mohamed Ihsan,Mohamed Rais,operations
+Mohamed Ihsan,Noordin Mohammed Top,operations
+Mohamed Ihsan,Sardona Siliwangi,operations
+Mohamed Ihsan,Tohir,operations
+Mohamed Ihsan,Toni Togar,operations
+Mohamed Ihsan,Umar Patek,operations
+Mohamed Rais,Noordin Mohammed Top,operations
+Mohamed Rais,Sardona Siliwangi,operations
+Mohamed Rais,Tohir,operations
+Mohamed Rais,Toni Togar,operations
+Noordin Mohammed Top,Salik Firdaus,operations
+Noordin Mohammed Top,Sardona Siliwangi,operations
+Noordin Mohammed Top,Son Hadi,operations
+Noordin Mohammed Top,Subur Sugiarto,operations
+Noordin Mohammed Top,Tohir,operations
+Noordin Mohammed Top,Toni Togar,operations
+Noordin Mohammed Top,Ubeid,operations
+Noordin Mohammed Top,Umar,operations
+Noordin Mohammed Top,Urwah,operations
+Salik Firdaus,Subur Sugiarto,operations
+Sardona Siliwangi,Tohir,operations
+Sardona Siliwangi,Toni Togar,operations
+Son Hadi,Ubeid,operations
+Son Hadi,Umar,operations
+Son Hadi,Urwah,operations
+Tohir,Toni Togar,operations
+Toni Togar,Umar Patek,operations
+Ubeid,Umar,operations
+Ubeid,Urwah,operations
+Umar,Urwah,operations
+Achmad Hasan,Adung,soulmates
+Achmad Hasan,Qotadah,soulmates
+Achmad Hasan,Usman bin Sef,soulmates
+Adung,Qotadah,soulmates
+Adung,Usman bin Sef,soulmates
+Azhari Husin,Iwan Dharmawan,soulmates
+Azhari Husin,Noordin Mohammed Top,soulmates
+Iwan Dharmawan,Noordin Mohammed Top,soulmates
+Iwan Dharmawan,Urwah,soulmates
+Qotadah,Usman bin Sef,soulmates
+Ubeid,Usman bin Sef,soulmates
+Abdullah Sunata,Aris Munandar,training
+Abdullah Sunata,Asep Jaja,training
+Abdullah Sunata,Dani Chandra,training
+Abdullah Sunata,Dulmatin,training
+Abdullah Sunata,Enceng Kurnia,training
+Abdullah Sunata,Hari Kuncoro,training
+Abdullah Sunata,Harun,training
+Abdullah Sunata,Hence Malewa,training
+Abdullah Sunata,Marwan,training
+Abdullah Sunata,Mohamed Saifuddin (alias Faiz),training
+Abdullah Sunata,Muchtar,training
+Abdullah Sunata,Purnama Putra,training
+Abdullah Sunata,Salman,training
+Abdullah Sunata,Suramto,training
+Abdullah Sunata,Umar Patek,training
+Abdullah Sunata,Umar Wayan,training
+Abdullah Sunata,Zulkarnaen,training
+Achmad Hasan,Azhari Husin,training
+Achmad Hasan,Heri Sigu Samboja,training
+Anif Solchanudin,Misno,training
+Anif Solchanudin,Noordin Mohammed Top,training
+Anif Solchanudin,Salik Firdaus,training
+Apuy,Baharudin Soleh,training
+Apuy,Heri Golun,training
+Apuy,Iwan Dharmawan,training
+Apuy,Saptono,training
+Apuy,Suramto,training
+Apuy,Ubeid,training
+Apuy,Umar,training
+Apuy,Urwah,training
+Aris Munandar,Asep Jaja,training
+Aris Munandar,Dani Chandra,training
+Aris Munandar,Hari Kuncoro,training
+Aris Munandar,Mohamed Saifuddin (alias Faiz),training
+Aris Munandar,Muchtar,training
+Aris Munandar,Salman,training
+Aris Munandar,Suramto,training
+Aris Munandar,Umar Wayan,training
+Aris Munandar,Zulkarnaen,training
+Asep Jaja,Dani Chandra,training
+Asep Jaja,Enceng Kurnia,training
+Asep Jaja,Hari Kuncoro,training
+Asep Jaja,Harun,training
+Asep Jaja,Hence Malewa,training
+Asep Jaja,Mohamed Saifuddin (alias Faiz),training
+Asep Jaja,Muchtar,training
+Asep Jaja,Purnama Putra,training
+Asep Jaja,Salman,training
+Asep Jaja,Suramto,training
+Asep Jaja,Umar Wayan,training
+Asep Jaja,Zulkarnaen,training
+Azhari Husin,Cholily,training
+Azhari Husin,Heri Sigu Samboja,training
+Azhari Husin,Jabir,training
+Baharudin Soleh,Heri Golun,training
+Baharudin Soleh,Iwan Dharmawan,training
+Baharudin Soleh,Umar,training
+Cholily,Heri Sigu Samboja,training
+Cholily,Jabir,training
+Cholily,Noordin Mohammed Top,training
+Cholily,Qotadah,training
+Dani Chandra,Hari Kuncoro,training
+Dani Chandra,Mohamed Saifuddin (alias Faiz),training
+Dani Chandra,Muchtar,training
+Dani Chandra,Salman,training
+Dani Chandra,Suramto,training
+Dani Chandra,Umar Wayan,training
+Dani Chandra,Zulkarnaen,training
+Dulmatin,Hari Kuncoro,training
+Dulmatin,Marwan,training
+Dulmatin,Mohamed Saifuddin (alias Faiz),training
+Dulmatin,Salman,training
+Dulmatin,Umar Patek,training
+Enceng Kurnia,Harun,training
+Enceng Kurnia,Hence Malewa,training
+Enceng Kurnia,Irun Hidayat,training
+Enceng Kurnia,Iwan Dharmawan,training
+Enceng Kurnia,Mohamed Saifuddin (alias Faiz),training
+Enceng Kurnia,Purnama Putra,training
+Enceng Kurnia,Rosihin Noor,training
+Enceng Kurnia,Saptono,training
+Hari Kuncoro,Marwan,training
+Hari Kuncoro,Mohamed Saifuddin (alias Faiz),training
+Hari Kuncoro,Muchtar,training
+Hari Kuncoro,Salman,training
+Hari Kuncoro,Suramto,training
+Hari Kuncoro,Umar Patek,training
+Hari Kuncoro,Umar Wayan,training
+Hari Kuncoro,Zulkarnaen,training
+Harun,Hence Malewa,training
+Harun,Mohamed Saifuddin (alias Faiz),training
+Harun,Purnama Putra,training
+Hence Malewa,Mohamed Saifuddin (alias Faiz),training
+Hence Malewa,Purnama Putra,training
+Heri Golun,Irun Hidayat,training
+Heri Golun,Iwan Dharmawan,training
+Heri Golun,Saptono,training
+Heri Golun,Suramto,training
+Heri Golun,Ubeid,training
+Heri Golun,Umar,training
+Heri Golun,Urwah,training
+Heri Sigu Samboja,Jabir,training
+Irun Hidayat,Iwan Dharmawan,training
+Irun Hidayat,Rosihin Noor,training
+Irun Hidayat,Saptono,training
+Iwan Dharmawan,Rosihin Noor,training
+Iwan Dharmawan,Saptono,training
+Iwan Dharmawan,Suramto,training
+Iwan Dharmawan,Ubeid,training
+Iwan Dharmawan,Umar,training
+Iwan Dharmawan,Urwah,training
+Marwan,Mohamed Saifuddin (alias Faiz),training
+Marwan,Salman,training
+Marwan,Umar Patek,training
+Misno,Noordin Mohammed Top,training
+Misno,Salik Firdaus,training
+Mohamed Saifuddin (alias Faiz),Muchtar,training
+Mohamed Saifuddin (alias Faiz),Purnama Putra,training
+Mohamed Saifuddin (alias Faiz),Salman,training
+Mohamed Saifuddin (alias Faiz),Suramto,training
+Mohamed Saifuddin (alias Faiz),Umar Patek,training
+Mohamed Saifuddin (alias Faiz),Umar Wayan,training
+Mohamed Saifuddin (alias Faiz),Zulkarnaen,training
+Muchtar,Salman,training
+Muchtar,Suramto,training
+Muchtar,Umar Wayan,training
+Muchtar,Zulkarnaen,training
+Noordin Mohammed Top,Qotadah,training
+Noordin Mohammed Top,Salik Firdaus,training
+Rosihin Noor,Saptono,training
+Salman,Suramto,training
+Salman,Umar Patek,training
+Salman,Umar Wayan,training
+Salman,Zulkarnaen,training
+Saptono,Suramto,training
+Saptono,Ubeid,training
+Saptono,Umar,training
+Saptono,Urwah,training
+Suramto,Ubeid,training
+Suramto,Umar,training
+Suramto,Umar Wayan,training
+Suramto,Urwah,training
+Suramto,Zulkarnaen,training
+Ubeid,Umar,training
+Ubeid,Urwah,training
+Umar,Urwah,training
+Umar Wayan,Zulkarnaen,training
