@@ -1,23 +1,50 @@
 //! Community partitions: Girvan-Newman divisive clustering, Newman's
-//! leading eigenvector method, and Clauset-Newman-Moore greedy
-//! agglomeration ("fast greedy").
+//! leading eigenvector method, Clauset-Newman-Moore greedy agglomeration
+//! ("fast greedy"), Walktrap, label propagation, Infomap, Leiden,
+//! spinglass, exact maximum modularity, fluid communities, and Voronoi
+//! communities; dendrograms of hierarchical methods and their cuts; and
+//! measures comparing two partitions.
 //!
 //! Each method lives in its own submodule, which cites its sources and
 //! states its conventions. Shared conventions:
-//! - Undirected networks only, as igraph's `cluster_edge_betweenness()`
-//!   (for modularity), `cluster_leading_eigen()`, and
-//!   `cluster_fast_greedy()` require; directed networks are rejected rather
-//!   than silently symmetrized.
+//! - Girvan-Newman (for modularity), the leading eigenvector method, fast
+//!   greedy, Walktrap, Leiden, and fluid communities take undirected
+//!   networks only, as the corresponding igraph functions require;
+//!   directed networks are rejected rather than silently symmetrized. The
+//!   other methods state how they treat direction.
 //! - Modularity is that of [`crate::metrics::community::modularity`].
 //! - Groups are labelled 0, 1, ... in order of their first node.
 
+pub mod compare;
+pub mod dendrogram;
 pub mod fast_greedy;
+pub mod fluid;
 pub mod girvan_newman;
+pub mod infomap;
+pub mod label_propagation;
 pub mod leading_eigen;
+pub mod leiden;
+pub mod optimal;
+pub mod spinglass;
+pub mod voronoi;
+pub mod walktrap;
 
+pub use compare::{compare_partitions, split_join_distance, CompareMethod};
+pub use dendrogram::{
+    check_merges, cut_at_groups, cut_at_max_modularity, cut_dendrogram, dendrogram_modularity,
+    merges_from_edge_removals, merges_from_node_pairs,
+};
 pub use fast_greedy::{fast_greedy, FastGreedy};
+pub use fluid::fluid_communities;
 pub use girvan_newman::{girvan_newman, GirvanNewman};
+pub use infomap::{infomap, map_equation, Infomap};
+pub use label_propagation::{label_propagation, LabelPropagationOptions, LpaMode, LpaVariant};
 pub use leading_eigen::{leading_eigen, LeadingEigen};
+pub use leiden::{leiden, Leiden, LeidenObjective, LeidenOptions};
+pub use optimal::{optimal_modularity, OptimalModularity};
+pub use spinglass::{spinglass, Spinglass, SpinglassNull, SpinglassOptions};
+pub use voronoi::{voronoi, Voronoi, VoronoiMode};
+pub use walktrap::{walktrap, Walktrap};
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
