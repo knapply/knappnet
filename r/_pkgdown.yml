@@ -43,6 +43,8 @@ navbar:
     concepts:
       text: Concepts
       menu:
+      - text: What knappnet means by a network
+        href: articles/definitions.html
       - text: Conventions across tools
         href: articles/conventions.html
       - text: Plotting networks and results
@@ -74,9 +76,10 @@ articles:
   - articles/coming-from-networkx
 - title: Concepts
   desc: >-
-    How the package makes its choices, how to look at results, the
-    statistical models, spatial networks, and how results are checked.
+    What the package means by a network, how it makes its choices, how to
+    look at results, spatial networks, and how results are checked.
   contents:
+  - articles/definitions
   - articles/conventions
   - articles/plotting
   - articles/spatial-networks

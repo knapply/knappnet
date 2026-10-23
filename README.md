@@ -28,6 +28,7 @@ Coming from [igraph](https://knapply.github.io/knappnet/articles/coming-from-igr
 [statnet](https://knapply.github.io/knappnet/articles/coming-from-statnet.html),
 [UCINET, ORA, Pajek, and Gephi](https://knapply.github.io/knappnet/articles/coming-from-ucinet-ora-pajek-gephi.html), or
 [NetworkX](https://knapply.github.io/knappnet/articles/coming-from-networkx.html) ·
+[Definitions](https://knapply.github.io/knappnet/articles/definitions.html) ·
 [Conventions](https://knapply.github.io/knappnet/articles/conventions.html) ·
 [Validation](https://knapply.github.io/knappnet/articles/validation.html) ·
 [Performance](https://knapply.github.io/knappnet/articles/performance.html)
@@ -77,6 +78,25 @@ weight). Nodes that only appear in the edge list are added to the node
 table automatically. Every measure returns a vector aligned with the rows
 of `g$nodes`, so results can be stored as columns and analyzed with
 whatever data tools you already use.
+
+## What knappnet means by a network
+
+The words of network analysis mean different things in different
+programs: "weight" is a cost to [igraph](https://r.igraph.org/)'s path functions and a strength to
+every textbook, "bipartite" is a declared pairing of two node sets or a
+graph with no odd cycle, and "multiplex" means several relations to a
+social scientist and parallel edges to the `network` package. knappnet
+fixes one meaning per term and builds the data model on it: direction is
+a property of the network; loops and parallel edges are kept, and two
+edges are parallel only when they also share the same relation and time;
+a weight's meaning (distance or strength) must be declared; modes are a
+node role and the bipartite property is a separate test; relations are an
+edge role in one long edge table; spells are half-open, and a panel wave
+is the spell [k, k+1); geometry never decides adjacency. The
+[definitions article](https://knapply.github.io/knappnet/articles/definitions.html)
+gives each definition, its representation in the node and edge tables,
+how igraph, [statnet](https://statnet.org/), [tidygraph](https://tidygraph.data-imaginist.com/), [NetworkX](https://networkx.org/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [ORA](https://www.casos.cs.cmu.edu/projects/ora/), and the
+teaching texts differ, and why knappnet chose as it did.
 
 ## What is here
 
