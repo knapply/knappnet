@@ -345,10 +345,12 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
 #' the same size, which a star attains (Freeman 1978).
 #'
 #' @inheritParams closeness
-#' @param measure `"degree"`, `"betweenness"`, or `"closeness"`.
+#' @param measure `"degree"`, `"betweenness"`, `"closeness"`, or
+#'   `"eigenvector"`.
 #' @param mode For directed networks: which degree, or which direction of
-#'   paths for closeness. Ignored for betweenness and undirected networks.
-#'   `NULL` uses igraph's defaults (`"all"` for degree, `"out"` for
+#'   paths for closeness. Ignored for betweenness and undirected networks,
+#'   and always `"all"` for eigenvector centrality. `NULL` uses igraph's
+#'   defaults (`"all"` for degree and eigenvector centrality, `"out"` for
 #'   closeness), or out-degree under the UCINET convention, which reports
 #'   only in- and out-degree centralization.
 #' @param loops Whether self-loops count toward degree (igraph convention
@@ -366,6 +368,20 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
 #' under the UCINET convention unless every node reaches every other, as in
 #' those tools.
 #'
+#' Eigenvector centralization follows igraph's `centr_eigen()`: scores
+#' scaled so the largest is 1 (see [eigenvector_centrality()]), direction
+#' ignored, and the theoretical maximum \eqn{n - 2}, attained by a network
+#' of one edge and \eqn{n - 2} isolated nodes (scores 1, 1, and 0), which
+#' igraph's documentation gives as the most centralized network for this
+#' measure; a star then scores less than 1 (0.75 for ten nodes). It is
+#' `NaN` for fewer than three nodes. When more than one component has
+#' ties the eigenvector depends on more than the network (see
+#' [eigenvector_centrality()]; a warning is given), and so does its
+#' centralization. sna and UCINET compute eigenvector
+#' scores with unit norm and use maxima of their own that could not be
+#' verified from their documentation, so only the igraph convention is
+#' provided for this measure.
+#'
 #' The theoretical maxima are:
 #' \tabular{llll}{
 #'   Measure \tab igraph \tab sna \tab UCINET \cr
@@ -374,7 +390,8 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
 #'   total degree \tab \eqn{2(n-1)(n-2)}, or \eqn{2(n-1)^2} with loops \tab \eqn{2(n-1)(n-2)} \tab (not reported) \cr
 #'   betweenness \tab \eqn{(n-1)^2(n-2)}, halved if undirected \tab same \tab same \cr
 #'   closeness, undirected or `"all"` \tab \eqn{(n-1)(n-2)/(2n-3)} \tab same \tab same \cr
-#'   closeness, in or out \tab \eqn{(n-1)^2/n} \tab same \tab \eqn{(n-1)(n-2)/(2n-3)}
+#'   closeness, in or out \tab \eqn{(n-1)^2/n} \tab same \tab \eqn{(n-1)(n-2)/(2n-3)} \cr
+#'   eigenvector (largest score 1) \tab \eqn{n-2} \tab (not provided) \tab (not provided)
 #' }
 #' With the sna and UCINET conventions the network is read as an adjacency
 #' matrix: parallel edges collapse and self-loops are ignored. The igraph
@@ -390,7 +407,8 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
 #'
 #' @return A number.
 #' @export
-centralization <- function(x, measure = c("degree", "betweenness", "closeness"), mode = NULL,
+centralization <- function(x, measure = c("degree", "betweenness", "closeness", "eigenvector"),
+                           mode = NULL,
                            loops = TRUE, normalized = TRUE,
                            convention = c("igraph", "networkx", "sna", "ucinet"),
                            threads = 0L) {
@@ -401,16 +419,31 @@ centralization <- function(x, measure = c("degree", "betweenness", "closeness"),
     stop("NetworkX has no centralization index; use the igraph, sna, or UCINET convention.",
          call. = FALSE)
   }
+  if (measure == "eigenvector" && convention != "igraph") {
+    stop("Eigenvector centralization is provided for the igraph convention only.",
+         call. = FALSE)
+  }
   if (is.null(mode)) {
-    mode <- if (measure == "closeness" || convention == "ucinet") "out" else "all"
+    mode <- if (measure != "eigenvector" && (measure == "closeness" || convention == "ucinet")) {
+      "out"
+    } else {
+      "all"
+    }
   }
   mode <- check_choice(mode, c("all", "out", "in"), "mode")
   loops <- check_flag(loops, "loops")
   normalized <- check_flag(normalized, "normalized")
   threads <- resolve_threads(threads)
-  code <- switch(measure, degree = 0L, betweenness = 1L, closeness = 2L)
+  code <- switch(measure, degree = 0L, betweenness = 1L, closeness = 2L, eigenvector = 3L)
   conv <- switch(convention, igraph = 0L, sna = 2L, ucinet = 3L)
   ptr <- engine_graph(x)
+  if (measure == "eigenvector" && nrow(x$nodes) > 1L) {
+    csize <- components(x, "weak")$csize
+    if (sum(csize > 1L) > 1L) {
+      warning("More than one component has ties, so eigenvector centrality may not be ",
+              "unique and neither is its centralization.", call. = FALSE)
+    }
+  }
   engine_call("centralization", .Call(C_centralization, ptr, code, mode_code(mode), loops,
                                       normalized, conv, threads))
 }

@@ -2,18 +2,20 @@
 \alias{centralization}
 \title{Freeman centralization}
 \usage{
-centralization(x, measure = c("degree", "betweenness", "closeness"), mode = NULL,
+centralization(x, measure = c("degree", "betweenness", "closeness", "eigenvector"),
+               mode = NULL,
                loops = TRUE, normalized = TRUE,
                convention = c("igraph", "networkx", "sna", "ucinet"),
                threads = 0L)
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
-\item{measure}{\code{"degree"}, \code{"betweenness"}, or
-\code{"closeness"}.}
+\item{measure}{\code{"degree"}, \code{"betweenness"}, \code{"closeness"},
+or \code{"eigenvector"}.}
 \item{mode}{For directed networks: which degree, or which direction of paths
-for closeness. Ignored for betweenness and undirected networks. \code{NULL}
-uses igraph's defaults (\code{"all"} for degree, \code{"out"} for
+for closeness. Ignored for betweenness and undirected networks, and always
+\code{"all"} for eigenvector centrality. \code{NULL} uses igraph's defaults
+(\code{"all"} for degree and eigenvector centrality, \code{"out"} for
 closeness), or out-degree under the UCINET convention, which reports only
 in- and out-degree centralization.}
 \item{loops}{Whether self-loops count toward degree (igraph convention
@@ -41,6 +43,19 @@ igraph convention it is \code{NaN} if some node reaches no other, and under
 the UCINET convention unless every node reaches every other, as in those
 tools.
 
+Eigenvector centralization follows igraph's \code{centr_eigen()}: scores
+scaled so the largest is 1 (see \code{\link{eigenvector_centrality}}),
+direction ignored, and the theoretical maximum \eqn{n - 2}, attained by a
+network of one edge and \eqn{n - 2} isolated nodes (scores 1, 1, and 0),
+which igraph's documentation gives as the most centralized network for this
+measure; a star then scores less than 1 (0.75 for ten nodes). It is
+\code{NaN} for fewer than three nodes. When more than one component has
+ties the eigenvector depends on more than the network (see
+\code{\link{eigenvector_centrality}}; a warning is given), and so does its
+centralization. sna and UCINET compute eigenvector scores with unit norm
+and use maxima of their own that could not be verified from their
+documentation, so only the igraph convention is provided for this measure.
+
 The theoretical maxima are:
 \tabular{llll}{
   Measure \tab igraph \tab sna \tab UCINET \cr
@@ -49,7 +64,8 @@ The theoretical maxima are:
   total degree \tab \eqn{2(n-1)(n-2)}, or \eqn{2(n-1)^2} with loops \tab \eqn{2(n-1)(n-2)} \tab (not reported) \cr
   betweenness \tab \eqn{(n-1)^2(n-2)}, halved if undirected \tab same \tab same \cr
   closeness, undirected or \code{"all"} \tab \eqn{(n-1)(n-2)/(2n-3)} \tab same \tab same \cr
-  closeness, in or out \tab \eqn{(n-1)^2/n} \tab same \tab \eqn{(n-1)(n-2)/(2n-3)}
+  closeness, in or out \tab \eqn{(n-1)^2/n} \tab same \tab \eqn{(n-1)(n-2)/(2n-3)} \cr
+  eigenvector (largest score 1) \tab \eqn{n-2} \tab (not provided) \tab (not provided)
 }
 With the sna and UCINET conventions the network is read as an adjacency
 matrix: parallel edges collapse and self-loops are ignored. The igraph
@@ -78,4 +94,14 @@ centralization(star, convention = "ucinet")   # UCINET
 centralization(star, "closeness")                        # igraph
 centralization(star, "closeness", convention = "sna")    # sna
 centralization(star, "closeness", convention = "ucinet") # UCINET
+
+# Eigenvector centralization (igraph's centr_eigen() only): a star of
+# ten nodes scores 0.75, and one edge among ten nodes scores 1.
+centralization(netframe(data.frame(from = 1, to = 2:10), directed = FALSE), "eigenvector")
+centralization(netframe(data.frame(from = 1, to = 2), nodes = data.frame(id = 1:10),
+                        directed = FALSE), "eigenvector")
+
+# Centralization of any scores, given the theoretical maximum:
+centralize(degree(star), theoretical_max = 5 * 4)
 }
+\seealso{\code{\link{centralize}} for the index of any vector of scores.}

@@ -1,10 +1,11 @@
-#' Structural holes: constraint, effective size, and efficiency
+#' Structural holes: constraint, effective size, efficiency, and hierarchy
 #'
 #' Burt's (1992) measures of how far a node's contacts are redundant with
 #' one another. `constraint()` is high when a node's contacts are few or
 #' strongly tied to each other; `effective_size()` is the number of
 #' contacts, discounted for redundancy; `efficiency()` is effective size
-#' divided by the number of contacts.
+#' divided by the number of contacts; `hierarchy()` measures how far the
+#' constraint on a node is concentrated in a single contact.
 #'
 #' A node's contacts are its in- and out-neighbours other than itself.
 #' Proportional tie strength is \eqn{p_{ij} = z_{ij} / \sum_k z_{ik}} with
@@ -17,7 +18,15 @@
 #' \eqn{m_{jq} = z_{jq} / \max_k z_{jk}}, summing over contacts j and q,
 #' \eqn{q \ne j}. In binary undirected networks without parallel edges
 #' effective size equals \eqn{n - 2t/n} for n contacts with t ties among
-#' them (Borgatti 1997). All three are `NaN` for nodes without contacts.
+#' them (Borgatti 1997). Hierarchy is the Coleman-Theil disorder index of
+#' the constraint each contact contributes, \eqn{c_{ij} = (p_{ij} + \sum_q
+#' p_{iq} p_{qj})^2}: with \eqn{N} contacts and \eqn{r_j = c_{ij} / (C_i /
+#' N)}, \eqn{H_i = \sum_j r_j \ln r_j / (N \ln N)}, which is 0 when every
+#' contact constrains the node equally and approaches 1 as one contact
+#' accounts for all of the constraint; this is the definition in UCINET's
+#' structural holes routine. All four are `NaN` for nodes without
+#' contacts, and hierarchy also for nodes with a single contact, where
+#' \eqn{N \ln N = 0}.
 #'
 #' Weights are read as tie strengths (volume of contact) and used as given,
 #' whatever the network's `weight_type`; they must be positive. These
@@ -54,6 +63,12 @@ effective_size <- function(x, weighted = NULL, threads = 0L) {
 #' @export
 efficiency <- function(x, weighted = NULL, threads = 0L) {
   structural_holes(x, 2L, weighted, threads, "efficiency")
+}
+
+#' @rdname constraint
+#' @export
+hierarchy <- function(x, weighted = NULL, threads = 0L) {
+  structural_holes(x, 3L, weighted, threads, "hierarchy")
 }
 
 structural_holes <- function(x, measure, weighted, threads, fn) {

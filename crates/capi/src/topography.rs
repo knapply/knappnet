@@ -7,7 +7,8 @@
 //! - `kind` (components): 0 = weak, 1 = strong.
 //! - `unreachable` (closeness): 0 = ignore (igraph), 1 = Wasserman-Faust
 //!   (NetworkX), 2 = zero (sna), 3 = largest length plus 1 (UCINET).
-//! - `measure` (centralization): 0 = degree, 1 = betweenness, 2 = closeness.
+//! - `measure` (centralization): 0 = degree, 1 = betweenness, 2 = closeness,
+//!   3 = eigenvector (igraph convention, direction ignored, only).
 //! - `convention`: 0 = igraph, 1 = NetworkX, 2 = sna, 3 = UCINET.
 //! - `scale` (eigenvector): 0 = largest score 1, 1 = unit Euclidean norm.
 //! - `loops` (eigenvector): 0 = twice, 1 = once, 2 = ignore.
@@ -124,7 +125,8 @@ pub unsafe extern "C" fn net_fragmentation(
     })
 }
 
-/// Freeman centralization of degree, betweenness, or closeness.
+/// Freeman centralization of degree, betweenness, closeness, or
+/// eigenvector centrality.
 ///
 /// # Safety
 /// `h` must be a live handle; `out` must hold one double.

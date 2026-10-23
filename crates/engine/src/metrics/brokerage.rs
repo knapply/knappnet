@@ -26,6 +26,17 @@
 //!   `borgatti1997structural`); the unit tests check this identity.
 //! - **Efficiency** (Burt 1992, ch. 2): effective size divided by the number
 //!   of contacts.
+//! - **Hierarchy** (Burt 1992, ch. 2): how far the constraint on i is
+//!   concentrated in one contact. With c_ij = (p_ij + sum_q p_iq p_qj)^2 the
+//!   constraint i receives from contact j (so C_i = sum_j c_ij), N the
+//!   number of contacts, and r_j = c_ij / (C_i / N) each contact's share
+//!   relative to an even split,
+//!   H_i = sum_j r_j ln(r_j) / (N ln N),
+//!   the Coleman-Theil disorder index of the c_ij. It is 0 when every
+//!   contact constrains i equally and approaches 1 as the constraint
+//!   concentrates in a single contact. For a node with exactly one contact
+//!   the formula is 0/0 and the result is NaN (some programs, such as
+//!   JUNG, report 1 there).
 //!
 //! Conventions, matching igraph's `constraint()` and NetworkX's
 //! `constraint()` and `effective_size()`:
@@ -45,7 +56,7 @@
 //! - The sum over j covers i's contacts only, as in igraph and NetworkX.
 //!   (Burt's formula is sometimes written with j over all nodes; for a
 //!   non-contact j the term p_ij is zero but indirect terms may not be.)
-//! - All three measures are undefined, and returned as NaN, for a node
+//! - All four measures are undefined, and returned as NaN, for a node
 //!   without contacts (an isolate, or a node with only self-loops). igraph
 //!   returns 0 for constraint on a node with only self-loops.
 //!
@@ -119,6 +130,18 @@ pub fn efficiency(g: &Graph, opts: StructuralHoleOptions) -> Result<Vec<f64>> {
     Ok(per_node(&ties, opts.threads, |ties, acc, touched, i| {
         let contacts = ties.contacts(i).len();
         ties.effective_size(acc, touched, i) / contacts as f64
+    }))
+}
+
+/// Burt's hierarchy of every node, in node order: the Coleman-Theil
+/// disorder of the constraint each contact contributes. NaN for nodes
+/// with fewer than two contacts.
+///
+/// See the module documentation for conventions.
+pub fn hierarchy(g: &Graph, opts: StructuralHoleOptions) -> Result<Vec<f64>> {
+    let ties = MutualTies::new(g, opts.weighted)?;
+    Ok(per_node(&ties, opts.threads, |ties, acc, touched, i| {
+        ties.hierarchy(acc, touched, i)
     }))
 }
 
@@ -246,6 +269,45 @@ impl MutualTies {
 
     /// C_i, using `acc` (all zeros on entry and exit) as a scatter buffer.
     fn constraint(&self, acc: &mut [f64], touched: &mut Vec<u32>, i: usize) -> f64 {
+        self.scatter_constraint(acc, touched, i);
+        let mut c = 0.0;
+        for &j in self.contacts(i) {
+            let x = acc[j as usize];
+            c += x * x;
+        }
+        for &v in touched.iter() {
+            acc[v as usize] = 0.0;
+        }
+        c
+    }
+
+    /// H_i, using `acc` (all zeros on entry and exit) as a scatter buffer.
+    fn hierarchy(&self, acc: &mut [f64], touched: &mut Vec<u32>, i: usize) -> f64 {
+        let contacts = self.contacts(i);
+        let n = contacts.len();
+        if n < 2 {
+            return f64::NAN;
+        }
+        self.scatter_constraint(acc, touched, i);
+        let total: f64 = contacts
+            .iter()
+            .map(|&j| acc[j as usize] * acc[j as usize])
+            .sum();
+        let even = total / n as f64;
+        let mut h = 0.0;
+        for &j in contacts {
+            let r = acc[j as usize] * acc[j as usize] / even;
+            h += r * r.ln();
+        }
+        for &v in touched.iter() {
+            acc[v as usize] = 0.0;
+        }
+        h / (n as f64 * (n as f64).ln())
+    }
+
+    /// Leaves p_ij + sum_q p_iq p_qj in `acc[j]` for every contact j of i
+    /// (and indirect terms for other nodes, all listed in `touched`).
+    fn scatter_constraint(&self, acc: &mut [f64], touched: &mut Vec<u32>, i: usize) {
         touched.clear();
         let ti = self.total[i];
         for (&q, &ziq) in self.contacts(i).iter().zip(self.ties(i)) {
@@ -260,15 +322,6 @@ impl MutualTies {
                 }
             }
         }
-        let mut c = 0.0;
-        for &j in self.contacts(i) {
-            let x = acc[j as usize];
-            c += x * x;
-        }
-        for &v in touched.iter() {
-            acc[v as usize] = 0.0;
-        }
-        c
     }
 
     /// E_i, using `acc` (all zeros on entry and exit) as a scatter buffer.
@@ -444,6 +497,34 @@ mod tests {
         close(&constraint(&g, o).unwrap(), &[1.125; 3]);
         close(&effective_size(&g, o).unwrap(), &[1.0; 3]);
         close(&efficiency(&g, o).unwrap(), &[0.5; 3]);
+    }
+
+    #[test]
+    fn hierarchy_by_hand() {
+        let o = StructuralHoleOptions::default();
+        // Star: the centre's three contacts constrain it equally (H = 0);
+        // leaves have one contact (NaN).
+        let g = und(4, &[(0, 1), (0, 2), (0, 3)]);
+        let h = hierarchy(&g, o).unwrap();
+        assert_eq!(h[0], 0.0);
+        assert!(h[1..].iter().all(|x| x.is_nan()));
+        // Node 0 tied to 1, 2, 3 with 2 - 3 tied: p = 1/3 each;
+        // c_01 = 1/9, c_02 = c_03 = (1/3 + 1/6)^2 = 1/4. C = 11/18, N = 3.
+        let g = und(4, &[(0, 1), (0, 2), (0, 3), (2, 3)]);
+        let h = hierarchy(&g, o).unwrap();
+        let c = [1.0 / 9.0, 0.25, 0.25];
+        let total: f64 = c.iter().sum();
+        let expect: f64 = c
+            .iter()
+            .map(|&x| {
+                let r = x / (total / 3.0);
+                r * r.ln()
+            })
+            .sum::<f64>()
+            / (3.0 * 3f64.ln());
+        assert!((h[0] - expect).abs() < 1e-14, "{} vs {expect}", h[0]);
+        // Constraint is unchanged by the refactoring into scatter_constraint.
+        close(&constraint(&g, o).unwrap()[..1], &[total]);
     }
 
     #[test]

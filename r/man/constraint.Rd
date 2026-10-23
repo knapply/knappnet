@@ -2,13 +2,16 @@
 \alias{constraint}
 \alias{effective_size}
 \alias{efficiency}
-\title{Structural holes: constraint, effective size, and efficiency}
+\alias{hierarchy}
+\title{Structural holes: constraint, effective size, efficiency, and hierarchy}
 \usage{
 constraint(x, weighted = NULL, threads = 0L)
 
 effective_size(x, weighted = NULL, threads = 0L)
 
 efficiency(x, weighted = NULL, threads = 0L)
+
+hierarchy(x, weighted = NULL, threads = 0L)
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
@@ -24,7 +27,8 @@ Burt's (1992) measures of how far a node's contacts are redundant with one
 another. \code{constraint()} is high when a node's contacts are few or
 strongly tied to each other; \code{effective_size()} is the number of
 contacts, discounted for redundancy; \code{efficiency()} is effective size
-divided by the number of contacts.
+divided by the number of contacts; \code{hierarchy()} measures how far the
+constraint on a node is concentrated in a single contact.
 }
 \details{
 A node's contacts are its in- and out-neighbours other than itself.
@@ -46,7 +50,22 @@ m_jq = z_jq / max_k z_jk,}
 where j and q range over the contacts of i (Burt 1992, 2004). In binary
 undirected networks without parallel edges, effective size equals
 \eqn{n - 2t/n} for a node with n contacts and t ties among them (Borgatti
-1997). All three measures are \code{NaN} for nodes without contacts.
+1997).
+
+Hierarchy is the Coleman-Theil disorder index of the constraint each
+contact contributes, \eqn{c_{ij} = (p_{ij} + \sum_{q \ne j} p_{iq}
+p_{qj})^2}{c_ij = (p_ij + sum_{q != j} p_iq p_qj)^2} (so that
+\eqn{C_i = \sum_j c_{ij}}{C_i = sum_j c_ij}). With \eqn{N} contacts and
+\eqn{r_j = c_{ij} / (C_i / N)}{r_j = c_ij / (C_i / N)}, each contact's
+share of the constraint relative to an even split,
+\deqn{H_i = \frac{\sum_j r_j \ln r_j}{N \ln N},}{H_i = sum_j r_j ln(r_j) / (N ln N),}
+which is 0 when every contact constrains the node equally and approaches
+1 as a single contact accounts for all of the constraint (Burt 1992, ch.
+2). This is the definition UCINET's structural holes routine documents.
+
+All four measures are \code{NaN} for nodes without contacts, and hierarchy
+also for nodes with a single contact, where \eqn{N \ln N = 0}{N ln N = 0}
+(some programs report 1 there).
 
 Weights are read as tie strengths (volume of contact) and used as given,
 whatever the network's \code{weight_type}; they must be positive. These
@@ -70,4 +89,5 @@ g <- netframe(data.frame(from = c(1, 1, 1, 2), to = c(2, 3, 4, 3)),
 constraint(g)
 effective_size(g)
 efficiency(g)
+hierarchy(g)
 }

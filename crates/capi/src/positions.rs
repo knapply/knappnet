@@ -1,10 +1,11 @@
-//! C ABI for brokerage and positional measures: Burt's structural holes,
+//! C ABI for brokerage and positional measures: Burt's structural holes
+//! (constraint, effective size, efficiency, and hierarchy),
 //! Gould-Fernandez brokerage, structural equivalence, and CONCOR.
 
 use std::ffi::c_char;
 
 use engine::metrics::brokerage::{
-    brokerage, constraint, effective_size, efficiency, StructuralHoleOptions,
+    brokerage, constraint, effective_size, efficiency, hierarchy, StructuralHoleOptions,
 };
 use engine::metrics::equivalence::{
     concor, structural_equivalence, ConcorOptions, EquivalenceMethod, EquivalenceOptions,
@@ -14,7 +15,8 @@ use engine::Error;
 use crate::{guard, handle, slice, slice_mut, GraphHandle};
 
 /// Burt's structural-hole measures. `measure`: 0 = constraint, 1 =
-/// effective size, 2 = efficiency. With `weighted != 0`, edge weights are
+/// effective size, 2 = efficiency, 3 = hierarchy (NaN for nodes with
+/// fewer than two contacts). With `weighted != 0`, edge weights are
 /// tie strengths. Nodes without contacts get NaN. `threads == 0` uses all
 /// cores.
 ///
@@ -40,6 +42,7 @@ pub unsafe extern "C" fn net_structural_holes(
             0 => constraint(g, opts)?,
             1 => effective_size(g, opts)?,
             2 => efficiency(g, opts)?,
+            3 => hierarchy(g, opts)?,
             _ => {
                 return Err(Error::InvalidArgument(format!(
                     "unknown structural hole measure code {measure}"
