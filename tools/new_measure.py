@@ -251,47 +251,28 @@ int32_t net_{name}(const GraphHandle *h, int32_t threads, double *out,
 
 def c_glue(area: str, name: str) -> str:
     return f'''/*
- * R bindings for {area}. As in glue.c, R errors are raised only after the
- * engine call has returned, so no engine memory is leaked by a longjmp.
+ * R bindings for {area}. R errors are raised only after the engine call has
+ * returned, so no engine memory is leaked by a longjmp (see glue.h).
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
-
-static GraphHandle *{area}_graph(SEXP ptr) {{
-  if (TYPEOF(ptr) != EXTPTRSXP || R_ExternalPtrAddr(ptr) == NULL) {{
-    Rf_error("Invalid network handle.");
-  }}
-  return (GraphHandle *)R_ExternalPtrAddr(ptr);
-}}
+#include "glue.h"
 
 {c_glue_snippet(area, name)}'''
 
 
 def c_glue_snippet(area: str, name: str) -> str:
     return f'''SEXP C_{name}(SEXP ptr, SEXP threads) {{
-  GraphHandle *h = {area}_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)net_graph_node_count(h)));
   char err[ERR_LEN] = {{0}};
   int status = net_{name}(h, Rf_asInteger(threads), REAL(out), err, ERR_LEN);
-  if (status != 0) {{
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }}
-  UNPROTECT(1);
-  return out;
+  return vector_result(status, out, err);
 }}
 '''
 
 
 def init_snippet(name: str) -> str:
-    return f'''extern SEXP C_{name}(SEXP, SEXP);                 /* with the other externs */
-    {{"C_{name}", (DL_FUNC)&C_{name}, 2}},      /* in the R_CallMethodDef table */
+    return f'''extern SEXP C_{name}(SEXP, SEXP);  /* in the group for its C file, sorted by name */
+    {{"C_{name}", (DL_FUNC)&C_{name}, 2}},  /* in that file's group of call_methods[] */
 '''
 
 
