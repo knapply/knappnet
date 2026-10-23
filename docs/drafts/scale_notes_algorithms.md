@@ -12,8 +12,11 @@ Measurements: `cargo run --release --example bench_models` on a 2-vCPU
 Xeon (2.1 GHz, AVX-512 capable), 7 GB RAM, one thread unless stated; heap
 is the peak of live heap bytes from a counting allocator. Sparse = average
 degree 8, medium = density 2%, dense = density 30%. Timings on this
-virtual machine vary by up to 2x between runs; ratios below come from runs
-of both versions back to back.
+virtual machine vary by up to 2x between runs; before/after figures are
+the better of two alternating runs of each version (medians of 3), and
+untouched workloads moved by -10% to +80% in the same runs, so ratios
+under ~1.3x are noise. Thread scaling is not measurable here (2 vCPUs on
+one core).
 
 ## Per kernel
 
@@ -28,7 +31,8 @@ of both versions back to back.
 - Working set: CSR (8-12 bytes per arc) + ~5 arrays of n. Measured peak
   8.5 MB at n = 20k, m = 80k (106 B/edge incl. the input graph copy);
   14 MB at n = 1k, m = 150k (96 B/edge). Allocations per run fell from
-  98k to 208 after the aggregation rewrite.
+  98k to 208 after the aggregation rewrite; time 0.059 s -> 0.040 s
+  (sparse), within noise elsewhere.
 - Memory-mapped CSR: viable for level 0 (sequential row reads; community
   arrays random but O(n)). Coarse levels are small and stay in RAM.
 - Semi-external: yes. Node state O(n); each pass streams edges sorted by
@@ -58,9 +62,9 @@ of both versions back to back.
   upper bound unless the tie weight changed, which always pushes a fresh
   entry), so only the absorbed group's neighbours are re-pushed per merge.
   Same merges, ties and output as before.
-- Measured: sparse n = 10k, m = 40k: 4.46 s -> 0.086 s (52x), peak heap
-  169 MB -> 4.4 MB; medium n = 2k, m = 40k: 2.61 s -> 0.042 s; dense n =
-  600, m = 54k: 0.166 s -> 0.056 s.
+- Measured: sparse n = 10k, m = 40k: 2.50 s -> 0.077 s (33x), peak heap
+  169 MB -> 4.4 MB; medium n = 2k, m = 40k: 1.53 s -> 0.039 s (39x); dense
+  n = 600, m = 54k: 0.093 s -> 0.039 s.
 - Working set: O(m) maps + O(m) queue. ~110 B/edge measured.
 - Semi-external: no (global queue, arbitrary merges). Out-of-core variants
   are not practical; at scale use Louvain/Leiden.
@@ -72,7 +76,9 @@ of both versions back to back.
 - Change: the solver now works on the transpose of the EISPACK working
   matrix, so the Householder and rotation loops run over contiguous rows
   (same operations, same order, bit-identical). n = 1000 decomposition:
-  5.0 s -> 1.5 s; leading eigenvector n = 1000: 7-8 s -> 2.0 s.
+  3.24 s -> 1.44 s; leading eigenvector n = 1000: 4.1-4.5 s -> 1.9-2.0 s;
+  classical MDS n = 1000: 2.92 s -> 1.29 s. Peak memory 3 -> 4 n^2
+  doubles (the transposed copy).
   Compiling these loops for AVX2/AVX-512 made no difference (rotations are
   bound by memory traffic and dependent sums), so no wide copy is kept.
 - Scalable variant: Lanczos on the implicit B x = A x - k (k'x)/2m costs
@@ -88,8 +94,8 @@ of both versions back to back.
   remaining adjacency.
 - Change: removed edges are deleted from adjacency rows (order kept), so
   BFS no longer tests a liveness flag per arc; distances in 32 bits.
-  sparse n = 300: 6.6 s -> 5.2 s in back-to-back runs (allocations 1.47M
-  -> 43k with the earlier queue reuse).
+  sparse n = 300: 6.58 s -> 4.14 s (allocations 1.47M -> 43k with the
+  queue reuse).
 - Not a large-graph method: quadratic in m by definition. Sampled
   betweenness (Riondato and Kornaropoulos 2016) would make each round
   cheaper but changes results.
@@ -122,10 +128,11 @@ of both versions back to back.
   now a tiled product (8 x 4 register tiles over packed rows), compiled
   for AVX2 at run time with a baseline fallback; each sum is still in order
   so results are identical.
-- Measured (depth 3, directed): dense n = 1k, m = 300k: 29.5 s -> 1.5-2.5 s;
-  initial correlations 75% of the old time, now a few percent. Sparse
-  n = 2k, m = 16k: 149 s -> 11-14 s. AVX2 copy of the tile alone: 2x
-  (20.4 s -> 10.9 s back to back).
+- Measured (depth 3, directed): dense n = 1k, m = 300k: 26.4 s -> 1.26 s
+  (21x; the initial profile correlations were 75% of the old time).
+  Sparse n = 2k, m = 16k: 124.7 s -> 8.4 s (15x). The AVX2 copy of the
+  tile alone is worth 2x (20.4 s -> 10.9 s back to back); AVX2 copies of
+  the eigensolver and matmul gained nothing and were dropped.
 - Working set: 4-5 dense b x b matrices (145 MB at b = 2000). Inherently
   O(n^2) memory; at scale the iterated-correlation fixed point can be
   approximated by spectral bisection of the correlation matrix (not the
@@ -148,9 +155,12 @@ of both versions back to back.
 
 - Full stress: all-pairs distances (n BFS/Dijkstra), dense n x n
   reciprocal distances (8n^2 bytes: 8 MB at n = 1k, 800 MB at 10k), then
-  majorization passes over all pairs. Change: each pass processes four
-  rows at once in independent lanes (AVX2 copy at run time); per-row sums
-  in order, identical results.
+  majorization passes over all pairs (87-94% of the time at n = 1k:
+  0.47 s sparse, 0.64 s dense). Tried: four rows per pass in vector lanes
+  (interleaved rows, branch-free selects, AVX2 copy); no measurable gain,
+  reverted. A pivot-based start with fewer majorization passes, or a
+  stochastic-gradient solver (Zheng, Pawar and Goodman 2019), are the
+  remaining levers; both change results.
 - Sparse stress: k pivots (k x n distances in f32), edge terms, colour
   classes for Gauss-Seidel updates. Working set O(k n + m); n = 10k:
   0.78 s, 19 MB. Semi-external: pivot BFS passes are edge streams; the
@@ -171,7 +181,7 @@ of both versions back to back.
   instead of O(p^2 N) per draw); DSP refits only the permuted residual
   column. Operations and order as a fresh fit, so results are identical;
   residuals are no longer formed inside the loop. n = 100, 3 predictors,
-  1000 permutations: DSP 2.19 s -> 0.78 s; Y-permutation 0.54 s -> 0.17 s.
+  1000 permutations: DSP 1.43 s -> 0.73 s; Y-permutation 0.33 s -> 0.14 s.
 - Working set: (p + 1) N doubles per thread for N = n^2 dyads. n = 10k
   -> N = 10^8, 0.8 GB per column: dyad streaming in blocks (the reflector
   application is a sequence of dot products and axpys over N, i.e. one
@@ -189,7 +199,7 @@ of both versions back to back.
 ### Dense linear algebra
 
 - Matmul now blocked (64 x 512 panels), same accumulation order: n = 1000
-  0.42 s -> 0.25-0.30 s. Eigendecomposition as above. Cholesky unchanged
+  0.38 s -> 0.25 s. Eigendecomposition as above. Cholesky unchanged
   (0.14 s at n = 1000). All O(n^2) memory; not used on large graphs except
   through p x p systems.
 
