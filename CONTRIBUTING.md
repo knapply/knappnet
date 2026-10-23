@@ -183,6 +183,7 @@ R CMD build r && R CMD check --as-cran knappnet_*.tar.gz
 
 | Tool | Purpose |
 |---|---|
+| `tools/map.py` | Cross-layer index: for each exported R function, its R file, help page, C glue, C ABI functions, engine calls, and validation variants (`--find NAME` searches every layer; writes the ignored `docs/map.json`). |
 | `tools/new_measure.py <area> <name>` | Scaffold a measure through every layer; `--dry-run` prints only. |
 | `tools/check_bib.py` | Check `docs/references.bib` (unique sorted keys, fields, DOIs, cited keys exist) and that `docs/references.md` is current; `--update` sorts and regenerates. |
 | `tools/check_c_abi.sh` | Compile and run a C program against `netcapi.h`. |
