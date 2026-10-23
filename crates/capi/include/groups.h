@@ -104,16 +104,22 @@ int32_t net_core_periphery(const GraphHandle *h, int32_t links,
                            int32_t *core, double *correlation, char *err,
                            size_t err_len);
 
-/* Continuous core-periphery fit: coreness c (non-negative, unit
- * Euclidean norm) maximizing the correlation between the data and
- * c_i c_j, by BFGS from `starts` points (the degree start plus seeded
- * random ones), at most max_iter iterations each. Writes coreness to
- * coreness[0..n), the correlation to *correlation, and the iterations of
- * the best start to *iterations. */
-int32_t net_core_periphery_continuous(const GraphHandle *h, int32_t weighted,
-                                      int64_t max_iter, int64_t starts,
-                                      uint64_t seed, int32_t threads,
-                                      double *coreness, double *correlation,
+/* Continuous core-periphery fit: coreness c (non-negative, unit Euclidean
+ * norm) such that the pattern c_i c_j fits the data. fit: 0 = MINRES
+ * (least squares, sum over i != j of (a_ij - c_i c_j)^2, UCINET's method;
+ * deterministic coordinate descent with convergence tolerance tol on the
+ * relative change of coreness, at most max_iter sweeps), 1 = maximum
+ * correlation between the data and the pattern (Borgatti and Everett
+ * 1999), by BFGS from `starts` points (the degree start plus seeded random
+ * ones), at most max_iter iterations each. Writes coreness to
+ * coreness[0..n), the correlation of the final pattern to *correlation,
+ * the residual sum of squares to *residual (NaN for the correlation fit),
+ * and the iterations (sweeps) made to *iterations. */
+int32_t net_core_periphery_continuous(const GraphHandle *h, int32_t fit,
+                                      int32_t weighted, int64_t max_iter,
+                                      double tol, int64_t starts, uint64_t seed,
+                                      int32_t threads, double *coreness,
+                                      double *correlation, double *residual,
                                       int64_t *iterations, char *err,
                                       size_t err_len);
 

@@ -65,10 +65,10 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `factions_correlation_k2` | 11 / 0 / 0 / 0 |  |  |  |  |  |
 | `girvan_newman` | 15 / 0 / 0 / 0 |  | 0 / 0 / 0 / 19 | 19 / 0 / 0 / 0 |  |  |
 | `girvan_newman_membership` | 15 / 0 / 0 / 0 |  |  |  |  |  |
-| `leading_eigen` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 19 |  |  |  |
-| `leading_eigen_membership` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 19 |  |  |  |
+| `leading_eigen` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 15 |  |  |  |
+| `leading_eigen_membership` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 15 |  |  |  |
 | `leading_eigen_weighted` | 5 / 0 / 0 / 0 |  | 0 / 0 / 0 / 5 |  |  |  |
-| `fast_greedy` | 19 / 0 / 0 / 0 |  | 0 / 0 / 0 / 19 | 15 / 0 / 0 / 0 |  |  |
+| `fast_greedy` | 19 / 0 / 0 / 0 |  | 0 / 0 / 0 / 14 | 15 / 0 / 0 / 0 |  |  |
 | `fast_greedy_membership` | 19 / 0 / 0 / 0 |  |  |  |  |  |
 | `fast_greedy_weighted` | 5 / 0 / 0 / 0 |  | 0 / 0 / 0 / 5 | 5 / 0 / 0 / 0 |  |  |
 | `fast_greedy_resolution` | 19 / 0 / 0 / 0 |  |  | 17 / 0 / 0 / 0 |  |  |
