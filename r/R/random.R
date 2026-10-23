@@ -115,7 +115,8 @@ random_common <- function(reps, seed, threads) {
 random_result <- function(lists, n, directed) {
   nodes <- data.frame(id = seq_len(n))
   nets <- lapply(lists, function(e) {
-    netframe(data.frame(from = e[[1L]], to = e[[2L]]), nodes, directed = directed)
+    net_frame(data.frame(source = e[[1L]], target = e[[2L]]), nodes, directed = directed,
+              quiet = TRUE)
   })
   if (length(nets) == 1L) nets[[1L]] else nets
 }

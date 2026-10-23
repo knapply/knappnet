@@ -76,30 +76,76 @@ combine_relations <- function(x, relation = NULL,
   )
   pairs <- pairs[selected]
   ids <- x$nodes[[x$roles$id]]
-  edges <- data.frame(from = ids[pairs %/% n + 1L], to = ids[pairs %% n + 1L],
+  edges <- data.frame(source = ids[pairs %/% n + 1L], target = ids[pairs %% n + 1L],
                       relations = count[selected], stringsAsFactors = FALSE)
   weight <- NULL
-  weight_type <- "distance"
+  weight_type <- NULL
   if (method == "sum") {
     edges$weight <- as.numeric(total[selected])
     weight <- "weight"
     weight_type <- if (weighted) x$roles$weight_type else "strength"
   }
   rownames(edges) <- NULL
-  netframe(edges, x$nodes, directed = x$directed, from = "from", to = "to", id = x$roles$id,
-           weight = weight, weight_type = weight_type, graph = x$graph)
+  net_frame(edges, x$nodes, directed = x$directed, id = x$roles$id, weight = weight,
+            weight_type = weight_type, quiet = TRUE, graph = x$graph)
 }
 
+# The relation column: the network's relation role, or a column named
+# here.
 relation_column <- function(x, relation) {
   if (is.null(relation)) {
-    hit <- intersect(c("relation", "network"), names(x$edges))
-    if (!length(hit)) {
-      stop("No `relation` or `network` column in `x$edges`; name the column with `relation =`.",
-           call. = FALSE)
+    if (is.null(x$roles$relation)) {
+      stop(paste0("`x` has no relation role; build it with net_frame(relation = ...) or ",
+                  "name the column with `relation =`."), call. = FALSE)
     }
-    return(hit[[1L]])
+    return(x$roles$relation)
   }
   resolve_column(x$edges, relation, "relation", "edges")
+}
+
+# The edges of the chosen relations of a multiplex network, as a netframe
+# with the same roles; `relation` NULL keeps every edge. Measures that take
+# `relation =` go through this.
+relation_subset <- function(x, relation, fn) {
+  if (is.null(relation)) return(x)
+  if (is.null(x$roles$relation)) {
+    stop(sprintf("%s(): `relation` needs a network with a relation role; build it with ",
+                 "net_frame(relation = ...).", fn), call. = FALSE)
+  }
+  rel <- as.character(x$edges[[x$roles$relation]])
+  if (!is.atomic(relation) || anyNA(relation)) {
+    stop(sprintf("%s(): `relation` must be a vector of relation names.", fn), call. = FALSE)
+  }
+  relation <- as.character(relation)
+  bad <- setdiff(relation, unique(rel))
+  if (length(bad)) {
+    stop(sprintf("%s(): unknown relation(s) %s; the network has %s.", fn,
+                 paste0("\"", bad, "\"", collapse = ", "),
+                 paste0("\"", unique(rel), "\"", collapse = ", ")), call. = FALSE)
+  }
+  edges <- x$edges[rel %in% relation, , drop = FALSE]
+  rownames(edges) <- NULL
+  rebuild_netframe(x, edges, x$nodes)
+}
+
+# Split a multiplex network into one network per relation (man/net_combine_relations.Rd).
+net_split_relations <- function(x, relation = NULL) {
+  check_netframe(x)
+  relation <- relation_column(x, relation)
+  rel <- x$edges[[relation]]
+  if (anyNA(rel)) {
+    stop(sprintf("Column `%s` of `x$edges` has missing values; every edge needs a relation.",
+                 relation), call. = FALSE)
+  }
+  rel <- as.character(rel)
+  labels <- unique(rel)
+  out <- lapply(labels, function(label) {
+    edges <- x$edges[rel == label, , drop = FALSE]
+    rownames(edges) <- NULL
+    rebuild_netframe(x, edges, x$nodes, relation = NULL)
+  })
+  names(out) <- labels
+  out
 }
 
 # Dichotomize a weighted network (man/dichotomize.Rd).
@@ -184,18 +230,18 @@ symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "l
   )
   keep <- weight > 0
   ids <- x$nodes[[x$roles$id]]
-  edges <- data.frame(from = ids[pairs[keep] %/% n + 1L], to = ids[pairs[keep] %% n + 1L],
-                      stringsAsFactors = FALSE)
+  edges <- data.frame(source = ids[pairs[keep] %/% n + 1L],
+                      target = ids[pairs[keep] %% n + 1L], stringsAsFactors = FALSE)
   weight_col <- NULL
-  weight_type <- "distance"
+  weight_type <- NULL
   if (weighted || method %in% c("sum", "average")) {
     edges$weight <- weight[keep]
     weight_col <- "weight"
     weight_type <- if (weighted) x$roles$weight_type else "strength"
   }
   rownames(edges) <- NULL
-  netframe(edges, x$nodes, directed = FALSE, from = "from", to = "to", id = x$roles$id,
-           weight = weight_col, weight_type = weight_type, graph = x$graph)
+  net_frame(edges, x$nodes, directed = FALSE, id = x$roles$id, weight = weight_col,
+            weight_type = weight_type, quiet = TRUE, graph = x$graph)
 }
 
 # See man/symmetrize.Rd.
@@ -203,9 +249,9 @@ transpose_network <- function(x) {
   check_netframe(x)
   if (!x$directed) return(x)
   edges <- x$edges
-  from <- edges[[x$roles$from]]
-  edges[[x$roles$from]] <- edges[[x$roles$to]]
-  edges[[x$roles$to]] <- from
+  from <- edges[[x$roles$source]]
+  edges[[x$roles$source]] <- edges[[x$roles$target]]
+  edges[[x$roles$target]] <- from
   with_tables(x, edges, x$nodes)
 }
 
@@ -321,8 +367,8 @@ recode_attribute <- function(x, column, map, default = NULL, table = c("nodes", 
       # Edge endpoints must follow the identifiers.
       edges <- x$edges
       old <- x$nodes[[x$roles$id]]
-      edges[[x$roles$from]] <- new[match(edges[[x$roles$from]], old)]
-      edges[[x$roles$to]] <- new[match(edges[[x$roles$to]], old)]
+      edges[[x$roles$source]] <- new[match(edges[[x$roles$source]], old)]
+      edges[[x$roles$target]] <- new[match(edges[[x$roles$target]], old)]
       return(with_tables(x, edges, df))
     }
     with_tables(x, x$edges, df)

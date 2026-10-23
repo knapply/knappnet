@@ -15,7 +15,7 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
   label <- deparse(substitute(statistic))[[1L]]
 
   n <- nrow(x$nodes)
-  s <- edge_summary(x)
+  s <- netframe_summary(x)
   if (s$loops || s$parallel) {
     warning("The network has self-loops or parallel edges; the random networks are simple, ",
             "and the observed number of edges and dyad census ignore them.", call. = FALSE)
@@ -41,7 +41,8 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
   # any number of threads.
   lists <- engine_call("cug_test", draw(reps, seed), edge_rows = FALSE)
   null <- vapply(lists, function(e) {
-    g <- netframe(data.frame(from = e[[1L]], to = e[[2L]]), nodes, directed = x$directed)
+    g <- net_frame(data.frame(source = e[[1L]], target = e[[2L]]), nodes,
+                   directed = x$directed, quiet = TRUE)
     as_statistic(statistic(g, ...), "a random network")
   }, numeric(1))
   dropped <- sum(is.na(null))

@@ -152,7 +152,7 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
   threads <- resolve_threads(threads)
   n <- nrow(x$nodes)
   ptr <- engine_graph(x)
-  counts <- engine_call("summary", .Call(C_edge_counts, ptr))
+  s <- netframe_summary(x)
   comp <- components(x, "weak")
   largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
   largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
@@ -160,10 +160,10 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
   mean_dist <- diam <- NA_real_
   if (paths && largest_size > 0L) {
     src <- which(comp$membership == largest) - 1L
-    s <- engine_call("summary", .Call(C_path_summary, ptr, src, mode_code("out"), w$weighted,
+    p <- engine_call("summary", .Call(C_path_summary, ptr, src, mode_code("out"), w$weighted,
                                       w$code, TRUE, threads))
-    mean_dist <- s[[6L]]
-    diam <- s[[7L]]
+    mean_dist <- p[[6L]]
+    diam <- p[[7L]]
   }
   deg <- degree(x)
   deg <- if (n > 0L) {
@@ -171,17 +171,33 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
   } else {
     c(mean = NaN, min = NaN, max = NaN)
   }
+  column_types <- function(df) {
+    types <- vapply(df, column_type, "")
+    stats::setNames(substr(types, 2L, nchar(types) - 1L), names(df))
+  }
   structure(
     list(
+      class = class(x)[[1L]],
       nodes = n,
       edges = nrow(x$edges),
       directed = x$directed,
       weight = x$roles$weight,
       weight_type = x$roles$weight_type,
-      loops = counts[[1L]],
-      multiple = counts[[2L]],
-      isolates = counts[[3L]],
-      density = graph_density(x),
+      weight_range = c(s$weight_min, s$weight_max),
+      modes = stats::setNames(as.integer(s$mode_counts), s$modes),
+      between_modes_only = s$between_modes_only,
+      relations = stats::setNames(as.integer(s$relation_counts), s$relations),
+      signed = s$signed,
+      negative = s$negative,
+      time = s$time,
+      time_range = c(s$time_start, s$time_end),
+      node_spells = s$node_spells,
+      space = space_text(x, s),
+      loops = s$loops,
+      multiple = s$parallel,
+      declared = x$declared,
+      isolates = s$isolates,
+      density = s$density,
       components = comp$no,
       largest_component = largest_size,
       reciprocity = if (x$directed) reciprocity(x) else NA_real_,
@@ -191,7 +207,11 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
       mean_distance = mean_dist,
       diameter = diam,
       degree = deg,
-      centralization = centralization(x, "degree", threads = threads)
+      centralization = centralization(x, "degree", threads = threads),
+      node_columns = column_types(x$nodes),
+      edge_columns = column_types(x$edges),
+      missing_nodes = s$missing_nodes,
+      missing_edges = s$missing_edges
     ),
     class = "summary.netframe"
   )
@@ -204,11 +224,37 @@ summary_path_limit <- 5000L
 print.summary.netframe <- function(x, digits = 3L, ...) {
   num <- function(v) format(v, digits = digits)
   int <- function(v) format(v, big.mark = ",", scientific = FALSE, trim = TRUE)
+  columns <- function(types) {
+    if (!length(types)) return("none")
+    paste(sprintf("%s <%s>", names(types), types), collapse = ", ")
+  }
   weighting <- if (is.null(x$weight)) {
     "no"
   } else {
-    sprintf("yes, by `%s` (%ss)", x$weight, x$weight_type)
+    sprintf("yes, `%s` as %ss (%s to %s)", x$weight, x$weight_type,
+            num(x$weight_range[[1L]]), num(x$weight_range[[2L]]))
   }
+  modes <- if (!length(x$modes)) {
+    "one-mode"
+  } else {
+    sprintf("%s (%s)", if (isTRUE(x$between_modes_only)) {
+      if (length(x$modes) == 2L) "two-mode" else sprintf("%d-mode", length(x$modes))
+    } else {
+      "multimode"
+    }, paste(sprintf("%s: %s", names(x$modes), int(x$modes)), collapse = ", "))
+  }
+  relations <- if (!length(x$relations)) {
+    "none"
+  } else {
+    paste(sprintf("%s: %s", names(x$relations), int(x$relations)), collapse = ", ")
+  }
+  time <- switch(x$time,
+    static = "static",
+    contacts = sprintf("contacts, %s to %s", num(x$time_range[[1L]]), num(x$time_range[[2L]])),
+    spells = sprintf("edge spells, %s to %s", num(x$time_range[[1L]]), num(x$time_range[[2L]])),
+    waves = sprintf("waves %s to %s", num(x$time_range[[1L]]), num(x$time_range[[2L]]))
+  )
+  if (isTRUE(x$node_spells)) time <- paste0(time, ", with node spells")
   components <- if (x$components > 1L) {
     sprintf("%s (largest has %s nodes)", int(x$components), int(x$largest_component))
   } else {
@@ -218,9 +264,16 @@ print.summary.netframe <- function(x, digits = 3L, ...) {
     "Nodes" = int(x$nodes),
     "Edges" = int(x$edges),
     "Directed" = if (x$directed) "yes" else "no",
+    "Modes" = modes,
     "Weighted" = weighting,
-    "Self-loops" = int(x$loops),
-    "Multiple edges" = int(x$multiple),
+    "Relations" = relations
+  )
+  if (isTRUE(x$signed)) rows <- c(rows, "Signed" = sprintf("yes, %s negative", int(x$negative)))
+  rows <- c(rows,
+    "Time" = time,
+    "Space" = x$space,
+    "Self-loops" = paste0(int(x$loops), if (isFALSE(x$declared$loops)) " (declared absent)"),
+    "Parallel edges" = paste0(int(x$multiple), if (isFALSE(x$declared$multiple)) " (declared absent)"),
     "Isolates" = int(x$isolates),
     "Density" = num(x$density),
     "Components" = components
@@ -235,9 +288,15 @@ print.summary.netframe <- function(x, digits = 3L, ...) {
   rows <- c(rows,
     "Degree (mean, min, max)" = paste(num(x$degree[["mean"]]), num(x$degree[["min"]]),
                                       num(x$degree[["max"]]), sep = ", "),
-    "Degree centralization" = num(x$centralization)
+    "Degree centralization" = num(x$centralization),
+    "Node columns" = columns(x$node_columns),
+    "Edge columns" = columns(x$edge_columns)
   )
-  cat("<netframe summary>\n")
+  if (x$missing_nodes > 0 || x$missing_edges > 0) {
+    rows <- c(rows, "Unobserved" = sprintf("%s nodes, %s edges", int(x$missing_nodes),
+                                           int(x$missing_edges)))
+  }
+  cat(sprintf("<%s summary>\n", x$class))
   cat(paste0(format(names(rows)), "  ", rows, "\n"), sep = "")
   notes <- character(0)
   if (x$paths && x$components > 1L) {

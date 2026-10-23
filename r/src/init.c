@@ -13,6 +13,17 @@ extern SEXP C_graph_alive(SEXP);
 extern SEXP C_graph_new(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_triad_census(SEXP, SEXP);
 
+/* frame.c: The data model. */
+extern SEXP C_frame_build(SEXP, SEXP);
+extern SEXP C_frame_codes(SEXP, SEXP, SEXP);
+extern SEXP C_frame_index(SEXP, SEXP);
+extern SEXP C_frame_is_simple(SEXP);
+extern SEXP C_frame_multiplicity(SEXP, SEXP);
+extern SEXP C_frame_new(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_frame_simplify(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_frame_summary(SEXP, SEXP);
+extern SEXP C_frame_validate(SEXP, SEXP);
+
 /* files.c: Network files. */
 extern SEXP C_read_network(SEXP, SEXP, SEXP);
 extern SEXP C_write_network(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -143,6 +154,16 @@ static const R_CallMethodDef call_methods[] = {
     {"C_graph_alive", (DL_FUNC)&C_graph_alive, 1},
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
     {"C_triad_census", (DL_FUNC)&C_triad_census, 2},
+    /* frame.c */
+    {"C_frame_build", (DL_FUNC)&C_frame_build, 2},
+    {"C_frame_codes", (DL_FUNC)&C_frame_codes, 3},
+    {"C_frame_index", (DL_FUNC)&C_frame_index, 2},
+    {"C_frame_is_simple", (DL_FUNC)&C_frame_is_simple, 1},
+    {"C_frame_multiplicity", (DL_FUNC)&C_frame_multiplicity, 2},
+    {"C_frame_new", (DL_FUNC)&C_frame_new, 9},
+    {"C_frame_simplify", (DL_FUNC)&C_frame_simplify, 5},
+    {"C_frame_summary", (DL_FUNC)&C_frame_summary, 2},
+    {"C_frame_validate", (DL_FUNC)&C_frame_validate, 2},
     /* files.c */
     {"C_read_network", (DL_FUNC)&C_read_network, 3},
     {"C_write_network", (DL_FUNC)&C_write_network, 7},

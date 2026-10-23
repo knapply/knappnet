@@ -3,14 +3,15 @@
 # Networks whose tables are sf data frames are handled in sf.R, and the
 # map plot in plot-spatial.R.
 
-# Geospatial networks (man/spatial_network.Rd).
-spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
-                            radius = 6371008.7714,
-                            representative = c("point_on_surface", "centroid")) {
+# Geospatial networks (man/net_spatial.Rd).
+net_spatial <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
+                        radius = 6371008.7714,
+                        representative = c("point_on_surface", "centroid"), quiet = FALSE) {
   check_netframe(x)
   crs <- match.arg(crs)
   representative <- match.arg(representative)
   radius <- check_number(radius, "radius", lower = 0, open = TRUE)
+  quiet <- check_flag(quiet, "quiet")
   if (has_node_geometry(x)) {
     if (!missing(coords)) {
       stop(sprintf(paste0("`x$nodes` already carries geometry in column `%s`, from which ",
@@ -28,12 +29,25 @@ spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "plan
   }
   cx <- resolve_column(x$nodes, coords[[1L]], "coords[1]", "nodes")
   cy <- resolve_column(x$nodes, coords[[2L]], "coords[2]", "nodes")
-  check_coordinates(x$nodes[[cx]], x$nodes[[cy]], cx, cy, crs, "x$nodes")
-  x$roles$x <- cx
-  x$roles$y <- cy
-  x$roles$crs <- crs
-  x$roles$radius <- as.double(radius)
-  x
+  roles <- x$roles
+  roles$x <- cx
+  roles$y <- cy
+  roles$crs <- crs
+  roles$radius <- as.double(radius)
+  out <- new_netframe(x$edges, x$nodes, x$directed, roles, x$declared, x$graph)
+  build_netframe(out, quiet, "net_spatial")
+}
+
+# See man/net_spatial.Rd.
+net_is_spatial <- function(x) inherits(x, "spatial_netframe")
+
+check_spatial <- function(x) {
+  check_netframe(x)
+  if (!inherits(x, "spatial_netframe")) {
+    stop(paste0("`x` must be a spatial network (class `spatial_netframe`), with node ",
+                "coordinates or sf geometry; create one with net_spatial(x, coords = ...) ",
+                "or from sf tables."), call. = FALSE)
+  }
 }
 
 check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
@@ -71,7 +85,7 @@ node_coordinates <- function(x) {
     return(geometry_coordinates(x))
   }
   if (is.null(x$roles$x) || is.null(x$roles$y) || is.null(x$roles$crs)) {
-    stop("`x` has no coordinates; record them with spatial_network(x, coords = ...).",
+    stop("`x` has no coordinates; record them with net_spatial(x, coords = ...).",
          call. = FALSE)
   }
   cx <- x$roles$x
@@ -187,11 +201,11 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
                        radius, within, k, threads)
   r <- symmetrize_knn(r, k, knn)
   ids <- nodes[[id]]
-  edges <- data.frame(from = ids[r$from], to = ids[r$to], distance = r$distance,
+  edges <- data.frame(source = ids[r$from], target = ids[r$to], distance = r$distance,
                       stringsAsFactors = FALSE)
-  g <- netframe(edges, nodes, directed = r$directed, id = id, weight = "distance",
-                weight_type = "distance")
-  spatial_network(g, coords = c(cx, cy), crs = crs, radius = radius)
+  g <- net_frame(edges, nodes, directed = r$directed, id = id, weight = "distance",
+                 weight_type = "distance", quiet = TRUE)
+  net_spatial(g, coords = c(cx, cy), crs = crs, radius = radius, quiet = TRUE)
 }
 
 check_proximity_args <- function(within, k) {

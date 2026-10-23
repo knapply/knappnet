@@ -107,18 +107,11 @@ node_values <- function(x, values, name) {
 
 # ---- Derived networks -------------------------------------------------------------
 
-# A netframe with the same roles and network attributes as `x` but new
-# tables (and possibly no weight role). Roles that netframe() does not set
-# itself, such as a two-mode type column or temporal columns, are carried
-# over.
+# A netframe with the same roles, declarations, and network attributes as
+# `x` but new tables (and possibly no weight role or another direction);
+# see rebuild_netframe() in netframe.R.
 with_tables <- function(x, edges, nodes, directed = x$directed, weight = x$roles$weight) {
-  weight_type <- if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type
-  out <- netframe(edges, nodes, directed = directed, from = x$roles$from, to = x$roles$to,
-                  id = x$roles$id, weight = weight, weight_type = weight_type,
-                  graph = x$graph)
-  extra <- setdiff(names(x$roles), names(out$roles))
-  if (length(extra)) out$roles[extra] <- x$roles[extra]
-  out
+  rebuild_netframe(x, edges, nodes, directed = directed, weight = weight)
 }
 
 # The subgraph induced by the nodes at 1-based positions `keep` (in

@@ -4,10 +4,12 @@
 # structure, with the print and plot methods of the result classes.
 
 # Edge density (man/graph_density.Rd).
-graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet")) {
+graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet"),
+                          relation = NULL) {
   check_netframe(x)
   convention <- match.arg(convention)
   loops <- check_flag(loops, "loops")
+  x <- relation_subset(x, relation, "graph_density")
   if (convention %in% c("sna", "ucinet")) {
     if (loops) {
       stop("The sna and UCINET conventions ignore self-loops; use `loops = FALSE`.",

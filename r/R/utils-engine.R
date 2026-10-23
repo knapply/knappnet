@@ -25,9 +25,9 @@ check_index <- function(x) {
 }
 
 index_error <- function() {
-  stop(paste0("Rows of `x$nodes` or `x$edges` were added or removed after the ",
-              "netframe was created, so its edge index no longer matches. Rebuild ",
-              "it with netframe(x$edges, x$nodes, ...)."), call. = FALSE)
+  stop(paste0("Rows of `x$nodes` or `x$edges` were added, removed, or reordered after ",
+              "the netframe was created, so its edge index no longer matches. Rebuild ",
+              "it with net_frame(x$edges, x$nodes, ...)."), call. = FALSE)
 }
 
 # Stops unless the network is undirected; `what` names the measure.
@@ -43,9 +43,10 @@ require_undirected <- function(x, what) {
 
 # Returns the engine graph for `x`, building it on first use. The handle is
 # an external pointer, which does not survive saveRDS(); a dead handle is
-# rebuilt transparently. The cache is shared by copies of `x` (it is an
-# environment), so the handle is also rebuilt when the weights or the
-# number of nodes no longer match what it was built from, for example after
+# rebuilt transparently, through the frame, so the tables are validated
+# again. The cache is shared by copies of `x` (it is an environment), so
+# the handle is also rebuilt when the weights or the number of nodes or
+# edges no longer match what it was built from, for example after
 # `x$edges$w <- 2 * x$edges$w`.
 engine_graph <- function(x) {
   check_index(x)
@@ -53,31 +54,32 @@ engine_graph <- function(x) {
   w <- if (is.null(x$roles$weight)) NULL else x$edges[[x$roles$weight]]
   ptr <- cache$ptr
   fresh <- !is.null(ptr) && .Call(C_graph_alive, ptr) &&
-    identical(cache$n, nrow(x$nodes)) && identical(cache$weights, w)
+    !is.null(cache$frame) && .Call(C_graph_alive, cache$frame) &&
+    identical(cache$n, nrow(x$nodes)) && identical(cache$m, nrow(x$edges)) &&
+    identical(cache$weights, w)
   if (!fresh) {
     m <- length(x$index$src)
     if (m && max(x$index$src, x$index$tgt) >= nrow(x$nodes)) index_error()
-    if (!is.null(w)) {
-      if (!is.numeric(w)) {
-        stop(sprintf("Weight column `%s` must be numeric, not %s.", x$roles$weight,
-                     describe_class(w)), call. = FALSE)
-      }
-      bad <- which(!is.finite(w))
-      if (length(bad)) {
-        stop(sprintf(paste0(
-          "Weight column `%s` has missing or non-finite values (NA, NaN, or Inf) in %s ",
-          "of `x$edges`. Every measure needs finite weights, even when it ignores them: ",
-          "remove or replace those values, or rebuild the network without `weight =`."),
-          x$roles$weight, rows_text(bad)), call. = FALSE)
-      }
+    f <- engine_frame(x)
+    d <- frame_diagnostics(f, 1L)
+    errors <- d[d$severity == "error", , drop = FALSE]
+    if (nrow(errors)) {
+      stop(paste0(format_diagnostics(errors, "net_frame", x), "\nThe tables of `x` were ",
+                  "edited after the network was built; fix them or rebuild the network."),
+           call. = FALSE)
+    }
+    ptr <- engine_call("net_frame", .Call(C_frame_build, f, 1L))
+    idx <- .Call(C_frame_index, f, as.double(nrow(x$edges)))
+    if (length(idx$added_row) || !identical(idx$src, x$index$src) ||
+        !identical(idx$tgt, x$index$tgt)) {
+      index_error()
     }
     # Anything else cached was derived from the old handle.
     rm(list = ls(cache, all.names = TRUE), envir = cache)
-    ptr <- engine_call("netframe",
-      .Call(C_graph_new, nrow(x$nodes), x$index$src, x$index$tgt,
-            if (is.null(w)) NULL else as.double(w), x$directed))
+    cache$frame <- f
     cache$ptr <- ptr
     cache$n <- nrow(x$nodes)
+    cache$m <- nrow(x$edges)
     cache$weights <- w
   }
   ptr

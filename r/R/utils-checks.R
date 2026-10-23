@@ -222,16 +222,17 @@ is_classed <- function(v) is.object(v) && !is.factor(v)
 
 plural <- function(k, what) sprintf("%d %s%s", k, what, if (k == 1L) "" else "s")
 
-# "row 3", "rows 3 and 7", or "rows 3, 7, 9, 12, 15, ... (40 in all)".
-rows_text <- function(idx) {
+# "row 3", "rows 3 and 7", or "rows 3, 7, 9, 12, 15, and 35 more". `total`
+# is the number of rows affected when `idx` lists only the first of them.
+rows_text <- function(idx, total = length(idx)) {
   k <- length(idx)
   shown <- format(utils::head(idx, 5L), scientific = FALSE, trim = TRUE)
-  if (k == 1L) return(paste("row", shown))
-  if (k == 2L) return(paste("rows", shown[1], "and", shown[2]))
-  if (k <= 5L) {
+  if (k == 1L && total == 1L) return(paste("row", shown))
+  if (k == 2L && total == 2L) return(paste("rows", shown[1], "and", shown[2]))
+  if (k <= 5L && total == k) {
     return(paste0("rows ", paste(shown[-k], collapse = ", "), ", and ", shown[k]))
   }
-  sprintf("rows %s, ... (%d in all)", paste(shown, collapse = ", "), k)
+  sprintf("rows %s, and %d more", paste(shown, collapse = ", "), total - length(shown))
 }
 
 describe_class <- function(v) {

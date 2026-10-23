@@ -14,7 +14,7 @@ plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = NULL
       row_lines <- col_lines <- integer()
       if (!is.null(order)) {
         g <- plot_groups(x, order, "order")
-        second <- x$nodes[[x$roles$type]]
+        second <- twomode_types(x) == 1L
         r <- group_order(g[!second])
         c_ <- group_order(g[second])
         m <- m[r$order, c_$order, drop = FALSE]

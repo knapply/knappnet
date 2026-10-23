@@ -74,9 +74,10 @@ layout_tol <- function(tol) {
 layout_types <- function(x, types) {
   n <- nrow(x$nodes)
   if (is.null(types)) {
-    col <- if (!is.null(x$roles$type)) x$roles$type else "type"
+    if (is_twomode(x)) return(twomode_types(x))
+    col <- if (!is.null(x$roles$mode)) x$roles$mode else "type"
     if (!col %in% names(x$nodes)) {
-      stop(paste0("A two-mode layout needs node types: supply `types =`, use a network ",
+      stop(paste0("A two-mode layout needs node modes: supply `types =`, use a network ",
                   "made by twomode() or as_twomode(), or add a `type` column to the node ",
                   "table."), call. = FALSE)
     }

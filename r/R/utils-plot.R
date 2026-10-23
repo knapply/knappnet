@@ -405,14 +405,13 @@ plot_labels <- function(x, value, n) {
 }
 
 # Default node colors of a two-mode network: one per mode, labelled with
-# the two values recorded by twomode() or as_twomode() ("first" and
-# "second" for a logical type column).
+# the mode labels ("first" and "second" for a logical column).
 twomode_fill <- function(x) {
-  labels <- x$roles$type_labels
-  if (length(labels) != 2L || identical(labels, c("FALSE", "TRUE"))) {
+  labels <- x$roles$mode_levels
+  if (length(labels) != 2L || identical(sort(labels), c("FALSE", "TRUE"))) {
     labels <- c("first", "second")
   }
-  second <- x$nodes[[x$roles$type]]
+  second <- twomode_types(x)
   pal <- plot_qualitative(2L)
   list(col = pal[second + 1L], mapped = TRUE,
        legend = list(type = "fill", title = "mode", labels = labels, col = pal, lwd = 2))

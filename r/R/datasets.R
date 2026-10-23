@@ -25,19 +25,22 @@ example_network <- function(name = c("noordin", "noordin_affiliations", "jemaah_
         edges <- edges[edges$relation %in% relation, , drop = FALSE]
         rownames(edges) <- NULL
       }
-      netframe(edges, read("noordin", "nodes.csv"), directed = FALSE)
+      net_frame(edges, read("noordin", "nodes.csv"), directed = FALSE, relation = "relation",
+                quiet = TRUE)
     },
-    noordin_affiliations = twomode(read("noordin", "affiliations.csv"),
-                                   read("noordin", "affiliation_nodes.csv"), type = "event"),
-    jemaah_islamiyah = netframe(read("jemaah_islamiyah", "edges.csv"),
-                                read("jemaah_islamiyah", "nodes.csv"), directed = FALSE,
-                                weight = if (weighted) "strength",
-                                weight_type = "strength"),
-    karate = netframe(read("karate", "edges.csv"), read("karate", "nodes.csv"),
-                      directed = FALSE, weight = if (weighted) "contexts",
-                      weight_type = "strength"),
-    florentine = netframe(read("florentine", "edges.csv"), directed = FALSE),
-    southern_women = twomode(read("southern_women", "edges.csv"))
+    noordin_affiliations = net_twomode(read("noordin", "affiliations.csv"),
+                                       read("noordin", "affiliation_nodes.csv"),
+                                       source = "person", target = "event", quiet = TRUE),
+    jemaah_islamiyah = net_frame(read("jemaah_islamiyah", "edges.csv"),
+                                 read("jemaah_islamiyah", "nodes.csv"), directed = FALSE,
+                                 weight = if (weighted) "strength",
+                                 weight_type = if (weighted) "strength", quiet = TRUE),
+    karate = net_frame(read("karate", "edges.csv"), read("karate", "nodes.csv"),
+                       directed = FALSE, weight = if (weighted) "contexts",
+                       weight_type = if (weighted) "strength", quiet = TRUE),
+    florentine = net_frame(read("florentine", "edges.csv"), directed = FALSE, quiet = TRUE),
+    southern_women = net_twomode(read("southern_women", "edges.csv"), source = "woman",
+                                 target = "event", quiet = TRUE)
   )
 }
 

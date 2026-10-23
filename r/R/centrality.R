@@ -9,13 +9,14 @@
 
 # Degree and strength (man/degree.Rd).
 degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
-                   convention = c("igraph", "networkx", "sna", "ucinet")) {
+                   convention = c("igraph", "networkx", "sna", "ucinet"), relation = NULL) {
   check_netframe(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
   loops <- check_flag(loops, "loops")
   weighted <- check_flag(weighted, "weighted")
   if (weighted) require_weights(x)
+  x <- relation_subset(x, relation, if (weighted) "strength" else "degree")
   simple <- convention %in% c("sna", "ucinet")
   ptr <- if (simple) engine_graph_simple(x) else engine_graph(x)
   if (simple) loops <- FALSE
@@ -24,8 +25,8 @@ degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FAL
 }
 
 # See man/degree.Rd.
-strength <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
-  degree(x, mode = match.arg(mode), loops = loops, weighted = TRUE)
+strength <- function(x, mode = c("all", "out", "in"), loops = TRUE, relation = NULL) {
+  degree(x, mode = match.arg(mode), loops = loops, weighted = TRUE, relation = relation)
 }
 
 # Betweenness centrality (man/betweenness.Rd).
