@@ -17,11 +17,14 @@ BugReports: https://github.com/knapply/knappnet/issues
 Encoding: UTF-8
 Depends: R (>= 4.1)
 Imports:
+    graphics,
+    grDevices,
     methods,
     stats,
     tools,
     utils
 Suggests:
+    ergm,
     igraph,
     knitr,
     Matrix,

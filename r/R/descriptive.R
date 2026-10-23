@@ -305,9 +305,13 @@ path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, th
 }
 
 # Positions (1-based) of node identifiers in x$nodes, or NULL for NULL.
-node_positions <- function(x, nodes, what) {
+# Shared by every function that takes node identifiers.
+node_positions <- function(x, nodes, what = "nodes") {
   if (is.null(nodes)) return(NULL)
-  pos <- match(nodes, x$nodes[[x$roles$id]])
+  ids <- x$nodes[[x$roles$id]]
+  if (is.factor(ids)) ids <- as.character(ids)
+  if (is.factor(nodes)) nodes <- as.character(nodes)
+  pos <- match(nodes, ids)
   if (anyNA(pos)) {
     shown <- utils::head(unique(nodes[is.na(pos)]), 5L)
     stop(sprintf("%d node(s) in `%s` are not in the network, for example: %s.",

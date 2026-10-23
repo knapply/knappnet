@@ -1,0 +1,559 @@
+# PageRank, Katz centrality, Bonacich power centrality, hubs and
+# authorities, assortativity, mixing matrices, the E-I index, and
+# within-group tie shares. Format as in ../manifest.yaml.
+#
+# Undefined values (NaN) are written as empty lines, so they match only
+# undefined values. Fixtures have no node attributes, so attributes come
+# from deterministic rules named in the engine spec (validation/bindings/
+# spectral.py, `node_rule`): mod3 = v mod 3, id = v, mod3plus1 =
+# (v mod 3) + 1, num7 = 7v mod 11, num3 = 3v mod 5, for 0-based node v.
+# The R oracles name nodes "n1", "n2", ... and attach these rules as node
+# attributes.
+#
+# Engine options not in ../manifest.yaml:
+#   alpha_fraction, exponent_fraction: the parameter is this fraction of
+#       1 / lambda_max for the adjacency matrix the measure uses; each
+#       oracle computes lambda_max itself.
+#   simple: true  run on the adjacency-matrix reading of the network
+#       (parallel edges collapsed, self-loops dropped), as sna reads it.
+#   which: hubs | authorities  which vector of the hub and authority scores.
+#
+# The homophily oracle is the R package homophily (Knapp 2019), run by
+# validation/oracles/r_spectral.R when it is installed.
+
+pagerank:
+  engine: {fn: pagerank, damping: 0.85, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "solution of x = d P^T x + (d s + 1 - d) p by dense linear algebra (spectral_definition_oracle.py)"
+    igraph:
+      call: "igraph::page_rank(g, damping = 0.85, weights = NA)$vector"
+
+pagerank_networkx:
+  engine: {fn: pagerank, damping: 0.85, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank, with an undirected self-loop counted once"
+    networkx:
+      call: "nx.pagerank(MultiGraph/MultiDiGraph, alpha = 0.85, weight = None, tol = 1e-14)"
+
+pagerank_weighted:
+  engine: {fn: pagerank, damping: 0.85, weighted: true, loops: twice}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank, transition probabilities proportional to weights"
+    igraph:
+      call: "igraph::page_rank(g, damping = 0.85, weights = E(g)$weight)$vector"
+    networkx:
+      call: "nx.pagerank(G, weight = 'weight', tol = 1e-14)"
+
+pagerank_personalized:
+  engine: {fn: pagerank, damping: 0.85, personalization: mod3plus1, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank, jumps and dangling nodes following p proportional to (v mod 3) + 1"
+    igraph:
+      call: "igraph::page_rank(g, personalized = (0:(n - 1)) %% 3 + 1, weights = NA)$vector"
+
+pagerank_personalized_networkx:
+  engine: {fn: pagerank, damping: 0.85, personalization: mod3plus1, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank_personalized, with an undirected self-loop counted once"
+    networkx:
+      call: "nx.pagerank(G, personalization = {v: v % 3 + 1}, weight = None, tol = 1e-14)"
+
+pagerank_uniform_dangling:
+  engine: {fn: pagerank, damping: 0.85, personalization: mod3plus1, dangling: uniform, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank_personalized_networkx, dangling nodes jumping uniformly"
+    networkx:
+      call: "nx.pagerank(G, personalization = {v: v % 3 + 1}, dangling = {v: 1}, weight = None, tol = 1e-14)"
+
+pagerank_undirected:
+  engine: {fn: pagerank, damping: 0.85, directed: false, loops: twice}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as pagerank on the network with directions ignored"
+    igraph:
+      call: "igraph::page_rank(g, directed = FALSE, weights = NA)$vector"
+
+katz:
+  engine: {fn: katz, alpha_fraction: 0.5, mode: in, loops: once, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "solution of (I - alpha A^T) x = 1 by dense linear algebra, unit norm, alpha = 0.5 / lambda_max"
+    networkx:
+      call: "nx.katz_centrality_numpy(G, alpha, beta = 1) on the summed adjacency matrix"
+      undefined_on: [single_node]
+      undefined_reason: katz_centrality_numpy fails on a network with one node.
+
+katz_weighted:
+  engine: {fn: katz, alpha_fraction: 0.5, mode: in, weighted: true, loops: once, normalized: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "as katz with the weighted adjacency matrix"
+    networkx:
+      call: "nx.katz_centrality_numpy(G, alpha, weight = 'weight')"
+
+katz_igraph:
+  engine: {fn: katz, alpha_fraction: 0.5, mode: in, loops: ignore, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "solution of (I - alpha A^T) x = 1 without self-loops, unnormalized"
+    igraph:
+      call: "igraph::alpha_centrality(simplify(g, remove.multiple = FALSE), alpha, exo = 1, weights = NA)"
+
+katz_exogenous:
+  engine: {fn: katz, alpha_fraction: 0.9, mode: in, beta: mod3plus1, loops: ignore, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "solution of (I - alpha A^T) x = beta with beta_v = (v mod 3) + 1, alpha = 0.9 / lambda_max"
+    igraph:
+      call: "igraph::alpha_centrality(simplify(g, remove.multiple = FALSE), alpha, exo = (0:(n - 1)) %% 3 + 1, weights = NA)"
+
+bonacich:
+  engine: {fn: bonacich, exponent_fraction: 0.5, mode: out, loops: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "alpha (I - beta A)^-1 A 1 by dense linear algebra, sum of squares n, beta = 0.5 / lambda_max (spectral_definition_oracle.py)"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties A 1 = 0 and the scaling constant is 0 / 0.
+    igraph:
+      call: "igraph::power_centrality(g, exponent = beta)"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties A 1 = 0 and the scaling constant is 0 / 0.
+
+bonacich_negative:
+  engine: {fn: bonacich, exponent_fraction: -0.5, mode: out, loops: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as bonacich with beta = -0.5 / lambda_max"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties A 1 = 0 and the scaling constant is 0 / 0.
+    igraph:
+      call: "igraph::power_centrality(g, exponent = beta)"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties A 1 = 0 and the scaling constant is 0 / 0.
+
+bonacich_unit:
+  engine: {fn: bonacich, exponent: 1.0, mode: out, loops: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "as bonacich with beta = 1 (the default of igraph and sna), usually beyond 1 / lambda_max"
+      undefined_on: [cycle7_dir, gnp_dir_sparse, les_miserables]
+      undefined_reason: >-
+        1 is an eigenvalue of A, so I - A is singular and the
+        scores are undefined.
+    igraph:
+      call: "igraph::power_centrality(g, exponent = 1)"
+      undefined_on: [cycle7_dir, empty, gnp_dir_sparse, les_miserables, single_node]
+      undefined_reason: >-
+        1 is an eigenvalue of A, so I - A is singular and the scores are
+        undefined; without ties the scaling constant is 0 / 0.
+
+bonacich_sna:
+  engine: {fn: bonacich, exponent: 1.0, mode: out, loops: ignore, simple: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "as bonacich_unit on the binary adjacency matrix without its diagonal"
+      undefined_on: [cycle7_dir, gnp_dir_sparse, les_miserables]
+      undefined_reason: >-
+        1 is an eigenvalue of A, so I - A is singular and the
+        scores are undefined.
+    sna:
+      call: "sna::bonpow(m, gmode, exponent = 1)"
+      undefined_on: [cycle7_dir, empty, gnp_dir_sparse, les_miserables, single_node]
+      undefined_reason: >-
+        1 is an eigenvalue of A, so I - A is singular and the scores are
+        undefined; without ties the scaling constant is 0 / 0.
+
+bonacich_rescale:
+  engine: {fn: bonacich, exponent_fraction: 0.5, mode: out, loops: ignore, rescale: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as bonacich, divided by the sum of the scores"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties the scores sum to 0.
+    igraph:
+      call: "igraph::power_centrality(g, exponent = beta, rescale = TRUE)"
+      undefined_on: [empty, single_node]
+      undefined_reason: Without ties the scores sum to 0.
+
+hits_authorities:
+  engine: {fn: hits, which: authorities, loops: twice, scale: max}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "leading eigenvector of A^T A by dense eigendecomposition, largest 1; no answer when the leading eigenvalue is repeated"
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+    igraph:
+      call: "igraph::authority_score(g, weights = NA)$vector"
+      differs_when: [edge_case]
+      reason: >-
+        Without ties (the empty and one-node networks) the scores are
+        undefined; knappnet returns NaN where igraph fills in values.
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+
+hits_hubs:
+  engine: {fn: hits, which: hubs, loops: twice, scale: max}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "A times the leading eigenvector of A^T A, largest 1; no answer when the leading eigenvalue is repeated"
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+    igraph:
+      call: "igraph::hub_score(g, weights = NA)$vector"
+      differs_when: [edge_case]
+      reason: >-
+        Without ties (the empty and one-node networks) the scores are
+        undefined; knappnet returns NaN where igraph fills in values.
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+
+hits_authorities_networkx:
+  engine: {fn: hits, which: authorities, loops: once, scale: sum}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "leading eigenvector of A^T A with undirected loops counted once, sum 1; no answer when the leading eigenvalue is repeated"
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+    networkx:
+      call: "nx.hits(G, normalized = True)[1] on the summed adjacency matrix"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        Without edges NetworkX's iteration divides 0 by 0 and fails to
+        converge.
+
+hits_hubs_networkx:
+  engine: {fn: hits, which: hubs, loops: once, scale: sum}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "A a, sum 1; no answer when the leading eigenvalue is repeated"
+      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_reason: >-
+        Several blocks of the hub-authority graph share the largest
+        singular value (bipartite or disconnected networks, and the directed
+        cycle, where A^T A = I), so the leading eigenvector is not unique and
+        depends on the starting vector. knappnet returns the limit of
+        Kleinberg's iteration from h = 1, as NetworkX's hits() does.
+    networkx:
+      call: "nx.hits(G, normalized = True)[0] on the summed adjacency matrix"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        Without edges NetworkX's iteration divides 0 by 0 and fails to
+        converge.
+
+assortativity_degree:
+  engine: {fn: assortativity_degree, directed: true, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of out-degree at the source and in-degree at the target over all arcs (undirected edges both ways, loops twice) in exact arithmetic"
+    igraph:
+      call: "igraph::assortativity_degree(g, directed = TRUE)"
+    homophily:
+      call: "homophily::assort_degree(g)"
+
+assortativity_degree_networkx:
+  engine: {fn: assortativity_degree, directed: true, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_degree with an undirected self-loop contributing one arc"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(MultiGraph/MultiDiGraph)"
+
+assortativity_degree_undirected:
+  engine: {fn: assortativity_degree, directed: false, loops: twice}
+  applies_to: directed
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_degree with directions ignored and total degree"
+    igraph:
+      call: "igraph::assortativity_degree(g, directed = FALSE)"
+
+assortativity_degree_weighted:
+  engine: {fn: assortativity_degree, weighted: true, directed: true, loops: once}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_degree_networkx with strengths"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G, weight = 'weight')"
+
+assortativity_nominal:
+  engine: {fn: assortativity_nominal, types: mod3, directed: true, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Newman (2003) eq. 2 from the arc mixing matrix of v mod 3, exact arithmetic"
+    igraph:
+      call: "igraph::assortativity_nominal(g, types = (0:(n - 1)) %% 3 + 1, directed = TRUE)"
+
+assortativity_nominal_undirected:
+  engine: {fn: assortativity_nominal, types: mod3, directed: false, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_nominal with directions ignored"
+    igraph:
+      call: "igraph::assortativity_nominal(g, types, directed = FALSE)"
+    homophily:
+      call: "homophily::assort_discrete(g, 'group'), which symmetrizes the mixing matrix"
+
+assortativity_nominal_networkx:
+  engine: {fn: assortativity_nominal, types: mod3, directed: true, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_nominal with an undirected self-loop contributing one arc"
+    networkx:
+      call: "nx.attribute_assortativity_coefficient(MultiGraph/MultiDiGraph, 'group')"
+      differs_when: [edge_case]
+      reason: >-
+        Without edges the mixing matrix is empty and the coefficient is 0 / 0;
+        NetworkX returns 0, knappnet and igraph return NaN.
+
+assortativity_modularity:
+  engine: {fn: assortativity_nominal, types: mod3, directed: true, loops: twice, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum_i e_ii - sum_i a_i b_i"
+    igraph:
+      call: "igraph::assortativity_nominal(g, types, directed = TRUE, normalized = FALSE)"
+
+assortativity_values:
+  engine: {fn: assortativity_values, values: num7, directed: true, loops: twice}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of 7v mod 11 at both ends of every arc, exact arithmetic"
+    igraph:
+      call: "igraph::assortativity(g, values = 7 * (0:(n - 1)) %% 11, directed = TRUE)"
+    homophily:
+      call: "homophily::assort_scalar(g, 7 * (0:(n - 1)) %% 11)"
+
+assortativity_values_in:
+  engine: {fn: assortativity_values, values: num7, values_in: num3, directed: true, loops: twice}
+  applies_to: directed
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of 7v mod 11 at sources and 3v mod 5 at targets"
+    igraph:
+      call: "igraph::assortativity(g, values = 7v mod 11, values.in = 3v mod 5, directed = TRUE)"
+    homophily:
+      call: "homophily::assort_scalar(g, 7v mod 11, 3v mod 5)"
+
+assortativity_values_networkx:
+  engine: {fn: assortativity_values, values: num7, directed: true, loops: once}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as assortativity_values with an undirected self-loop contributing one arc"
+    networkx:
+      call: "nx.numeric_assortativity_coefficient(MultiGraph/MultiDiGraph, 'value')"
+
+assortativity_covariance:
+  engine: {fn: assortativity_values, values: num7, directed: true, loops: twice, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "covariance (divided by the number of arcs) of 7v mod 11 at both ends of every arc"
+    igraph:
+      call: "igraph::assortativity(g, values, directed = TRUE, normalized = FALSE)"
+
+mixing_matrix:
+  engine: {fn: mixing_matrix, dim1: mod3, direction: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "arc counts by category of v mod 3, folded into the upper triangle for undirected networks"
+    homophily:
+      call: "homophily::as_mixing_matrix(g, dim1 = 'group')"
+
+mixing_matrix_in:
+  engine: {fn: mixing_matrix, dim1: mod3, direction: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "transpose of the arc counts by source and target category"
+    homophily:
+      call: "homophily::as_mixing_matrix(g, dim1 = 'group', direction = 'in')"
+
+mixing_matrix_nodes:
+  engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "for each node, its ties to nodes in each category of v mod 3, both directions"
+    homophily:
+      call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group')"
+
+mixing_matrix_nodes_out:
+  engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: out}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "for each node, its out-ties to nodes in each category"
+    homophily:
+      call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group', direction = 'out')"
+
+mixing_matrix_nodes_in:
+  engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "category of the sender (rows) by receiving node (columns)"
+    homophily:
+      call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group', direction = 'in')"
+
+ei_index:
+  engine: {fn: ei_index, groups: mod3, scope: global}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "(E - I) / (E + I) over all edges, groups v mod 3 (Krackhardt and Stern 1988)"
+    homophily:
+      call: "homophily::ei_index(g, 'group', scope = 'global')"
+
+ei_index_group:
+  engine: {fn: ei_index, groups: mod3, scope: group, counting: standard}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "I_g = ties among members, E_g = ties between members and non-members"
+
+ei_index_group_out:
+  engine: {fn: ei_index, groups: mod3, scope: group, direction: out, counting: standard}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "I_g = arcs among members, E_g = arcs sent by members to non-members"
+
+ei_index_group_homophily:
+  engine: {fn: ei_index, groups: mod3, scope: group, counting: homophily}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "I_g from the diagonal and E_g from row g of the upper triangle of homophily's mixing matrix"
+    homophily:
+      call: "homophily::ei_index(g, 'group', scope = 'group')"
+
+ei_index_node:
+  engine: {fn: ei_index, groups: mod3, scope: node, counting: standard}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "each node's ties to its own group (I) and to others (E), sent and received; a self-loop is one internal tie"
+
+ei_index_node_homophily:
+  engine: {fn: ei_index, groups: mod3, scope: node, counting: homophily}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "as ei_index_node, with a self-loop counted twice when ties are counted both ways"
+    homophily:
+      call: "homophily::ei_index(g, 'group', scope = 'node')"
+
+group_shares:
+  engine: {fn: group_shares, groups: mod3}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "member-side counts of internal and external ties per group, observed share, and (size - 1) / (n - 1)"
