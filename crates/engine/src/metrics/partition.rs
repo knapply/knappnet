@@ -21,6 +21,7 @@ pub mod label_propagation;
 pub mod leading_eigen;
 pub mod leiden;
 pub mod optimal;
+pub mod spinglass;
 pub mod walktrap;
 
 pub use compare::{compare_partitions, split_join_distance, CompareMethod};
@@ -36,6 +37,7 @@ pub use label_propagation::{label_propagation, LabelPropagationOptions, LpaMode,
 pub use leading_eigen::{leading_eigen, LeadingEigen};
 pub use leiden::{leiden, Leiden, LeidenObjective, LeidenOptions};
 pub use optimal::{optimal_modularity, OptimalModularity};
+pub use spinglass::{spinglass, Spinglass, SpinglassNull, SpinglassOptions};
 pub use walktrap::{walktrap, Walktrap};
 
 use crate::error::{Error, Result};
