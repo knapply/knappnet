@@ -63,19 +63,22 @@
 #' Everton, S. F. (2012). *Disrupting Dark Networks*. Cambridge University
 #' Press. \doi{10.1017/CBO9781139136877}
 #'
-#' @return `classical_mds()` returns a list with `points` (a matrix with one
-#'   row per point, rownames from `d`, and up to `k` columns `Dim1`,
-#'   `Dim2`, ...), `eigenvalues` (all of them, in decreasing order), `gof`
-#'   (the two goodness-of-fit ratios), and `stress`. `mds_stress()` returns
-#'   a number.
-#' @seealso [mds_distances()], [layout_network()] for drawing networks.
+#' @return `classical_mds()` returns a list of class `"classical_mds"` with
+#'   `points` (a matrix with one row per point, rownames from `d`, and up
+#'   to `k` columns `Dim1`, `Dim2`, ...), `eigenvalues` (all of them, in
+#'   decreasing order), `gof` (the two goodness-of-fit ratios), and
+#'   `stress`, with `print()` and [plot()][plot.classical_mds] methods.
+#'   `mds_stress()` returns a number.
+#' @seealso [mds_distances()], [plot.classical_mds()], [layout_network()]
+#'   for drawing networks.
 #' @examples
 #' g <- example_network("florentine")
-#' fit <- classical_mds(mds_distances(g), k = 2)
-#' fit$stress
+#' d <- mds_distances(g)
+#' fit <- classical_mds(d, k = 2)
+#' fit
 #' head(fit$points)
-#' plot(fit$points, type = "n")
-#' text(fit$points, labels = rownames(fit$points), cex = 0.7)
+#' plot(fit)
+#' plot(fit, which = "shepard", d = d)
 #' @export
 classical_mds <- function(d, k = 2) {
   d <- as_dissimilarity(d)
@@ -100,7 +103,19 @@ classical_mds <- function(d, k = 2) {
   } else {
     NaN
   }
-  list(points = points, eigenvalues = r[[3L]], gof = r[[4L]], stress = stress)
+  structure(list(points = points, eigenvalues = r[[3L]], gof = r[[4L]], stress = stress),
+            class = "classical_mds")
+}
+
+#' @export
+print.classical_mds <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
+  cat(sprintf("<classical_mds> %d points in %d dimension%s\n", nrow(x$points), ncol(x$points),
+              if (ncol(x$points) == 1L) "" else "s"))
+  cat(sprintf("Stress: %s; goodness of fit: %s, %s\n", format(x$stress, digits = digits),
+              format(x$gof[[1L]], digits = digits), format(x$gof[[2L]], digits = digits)))
+  cat("Leading eigenvalues:\n")
+  print(utils::head(x$eigenvalues, 5L), digits = digits, ...)
+  invisible(x)
 }
 
 #' @rdname classical_mds
