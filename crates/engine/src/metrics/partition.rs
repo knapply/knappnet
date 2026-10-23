@@ -11,10 +11,12 @@
 //! - Modularity is that of [`crate::metrics::community::modularity`].
 //! - Groups are labelled 0, 1, ... in order of their first node.
 
+pub mod compare;
 pub mod fast_greedy;
 pub mod girvan_newman;
 pub mod leading_eigen;
 
+pub use compare::{compare_partitions, split_join_distance, CompareMethod};
 pub use fast_greedy::{fast_greedy, FastGreedy};
 pub use girvan_newman::{girvan_newman, GirvanNewman};
 pub use leading_eigen::{leading_eigen, LeadingEigen};
