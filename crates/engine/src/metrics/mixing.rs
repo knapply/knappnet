@@ -590,3 +590,85 @@ pub fn group_shares(
         })
         .collect())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nominal_and_numeric_assortativity() {
+        // Two separate edges within categories: perfect sorting.
+        let g = Graph::from_edges(4, &[0, 2], &[1, 3], None, false).unwrap();
+        let o = AssortOptions::default();
+        assert_eq!(assortativity_nominal(&g, &[0, 0, 1, 1], 2, o).unwrap(), 1.0);
+        let un = AssortOptions {
+            normalized: false,
+            ..o
+        };
+        assert_eq!(
+            assortativity_nominal(&g, &[0, 0, 1, 1], 2, un).unwrap(),
+            0.5
+        );
+        assert!(assortativity_nominal(&g, &[0, 0, 0, 0], 1, o)
+            .unwrap()
+            .is_nan());
+        // A path of four nodes: degree assortativity -1/2 (Newman), and
+        // values 1..4 give r = 5/11 and covariance 5/12.
+        let p = Graph::from_edges(4, &[0, 1, 2], &[1, 2, 3], None, false).unwrap();
+        assert!((assortativity_degree(&p, false, o).unwrap() + 0.5).abs() < 1e-15);
+        let v = [1.0, 2.0, 3.0, 4.0];
+        let r = assortativity_values(&p, &v, None, o).unwrap();
+        assert!((r - 5.0 / 11.0).abs() < 1e-15);
+        let c = assortativity_values(&p, &v, None, un).unwrap();
+        assert!((c - 5.0 / 12.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn mixing_matrix_layouts() {
+        // 0 -> 1, 0 -> 2, 1 -> 2, 2 -> 0; categories x, x, y.
+        let g = Graph::from_edges(3, &[0, 0, 1, 2], &[1, 2, 2, 0], None, true).unwrap();
+        let grp = [0, 0, 1];
+        let m = mixing_matrix(&g, &grp, 2, &grp, 2, true, DegreeMode::All).unwrap();
+        assert_eq!(m.counts, vec![1.0, 2.0, 1.0, 0.0]);
+        let ids = [0, 1, 2];
+        let i = mixing_matrix(&g, &ids, 3, &grp, 2, false, DegreeMode::In).unwrap();
+        assert!(i.transposed);
+        assert_eq!((i.rows, i.cols), (2, 3));
+        assert_eq!(i.counts, vec![0.0, 1.0, 2.0, 1.0, 0.0, 0.0]);
+        // Undirected: folded upper triangle summing to twice the edges.
+        let u = Graph::from_edges(3, &[0, 0, 1], &[1, 2, 2], None, false).unwrap();
+        let f = mixing_matrix(&u, &grp, 2, &grp, 2, true, DegreeMode::All).unwrap();
+        assert_eq!(f.counts, vec![2.0, 4.0, 0.0, 0.0]);
+    }
+
+    #[test]
+    fn ei_index_levels() {
+        // a - b (x, x), a - c and b - d (x, y), c - d (y, y), d - e (y, z).
+        let g = Graph::from_edges(5, &[0, 0, 1, 2, 3], &[1, 2, 3, 3, 4], None, false).unwrap();
+        let grp = [0, 0, 1, 1, 2];
+        let all = DegreeMode::All;
+        let std = EiCounting::Standard;
+        let net = ei_index(&g, &grp, 3, EiScope::Global, all, std).unwrap();
+        assert_eq!(net, vec![(3.0 - 2.0) / 5.0]);
+        let groups = ei_counts(&g, &grp, 3, EiScope::Group, all, std).unwrap();
+        assert_eq!(groups, vec![(2.0, 1.0), (3.0, 1.0), (1.0, 0.0)]);
+        // homophily: E only towards later groups, counts doubled.
+        let h = EiCounting::Homophily;
+        let groups = ei_counts(&g, &grp, 3, EiScope::Group, all, h).unwrap();
+        assert_eq!(groups, vec![(4.0, 2.0), (2.0, 2.0), (0.0, 0.0)]);
+        assert!(ei_index(&g, &grp, 3, EiScope::Group, all, h).unwrap()[2].is_nan());
+        let node = ei_index(&g, &grp, 3, EiScope::Node, all, std).unwrap();
+        assert_eq!(node[0], 0.0);
+        assert_eq!(node[4], 1.0);
+    }
+
+    #[test]
+    fn group_shares_counts() {
+        let g = Graph::from_edges(4, &[0, 0, 1, 2], &[1, 2, 3, 3], None, false).unwrap();
+        let s = group_shares(&g, &[0, 0, 1, 1], 2, DegreeMode::All).unwrap();
+        assert_eq!(s[0].internal, 2.0);
+        assert_eq!(s[0].external, 2.0);
+        assert_eq!(s[0].observed, 0.5);
+        assert!((s[0].expected - 1.0 / 3.0).abs() < 1e-15);
+    }
+}

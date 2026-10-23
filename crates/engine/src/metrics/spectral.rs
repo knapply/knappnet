@@ -399,9 +399,10 @@ pub fn katz(g: &Graph, opts: &KatzOptions) -> Result<Vec<f64>> {
     Ok(x)
 }
 
-/// Solves x = b + t A x by fixed-point iteration, for |t| lambda_max <= q <
-/// 1. Stops when the change, times q / (1 - q), is at most `tol` times the
-/// largest |x_i|: for a matrix whose norm is below q this bounds the error.
+/// Solves x = b + t A x by fixed-point iteration, for |t| lambda_max at
+/// most q, with q below 1. Stops when the change, times q / (1 - q), is at
+/// most `tol` times the largest |x_i|; for a matrix whose norm is below q
+/// this bounds the error.
 fn solve_series(
     op: &SparseOp,
     b: &[f64],
@@ -525,7 +526,7 @@ fn check_attenuation(g: &Graph, op: &SparseOp, t: f64, name: &str, max_iter: usi
 fn too_large(name: &str, t: f64, lambda: f64) -> Error {
     Error::InvalidArgument(format!(
         "{name} = {t} is not below 1 / lambda_max: the largest eigenvalue of the \
-         adjacency matrix is at least {lambda}, so {name} must be below {}",
+         adjacency matrix is at least {lambda}, so 1 / lambda_max is at most {}",
         1.0 / lambda
     ))
 }
@@ -977,5 +978,160 @@ fn rescale(x: &mut [f64], how: HitsScale) {
     };
     if d > 0.0 {
         x.iter_mut().for_each(|v| *v /= d);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn close(a: &[f64], b: &[f64], tol: f64) -> bool {
+        a.len() == b.len() && a.iter().zip(b).all(|(x, y)| (x - y).abs() <= tol)
+    }
+
+    // 0 -> 1, 0 -> 2, 1 -> 2, 2 -> 0, 3 -> 2, 2 -> 4; node 4 is dangling.
+    fn small() -> Graph {
+        Graph::from_edges(5, &[0, 0, 1, 2, 3, 2], &[1, 2, 2, 0, 2, 4], None, true).unwrap()
+    }
+
+    #[test]
+    fn pagerank_hand_values() {
+        // Dense solutions of the defining linear system.
+        let g = small();
+        let x = pagerank(&g, &PagerankOptions::default()).unwrap();
+        let want = [
+            0.2142011097,
+            0.1574496602,
+            0.3477339318,
+            0.0664141886,
+            0.2142011097,
+        ];
+        assert!(close(&x, &want, 1e-9));
+        let p = PagerankOptions {
+            personalization: Some(vec![1.0, 0.0, 0.0, 0.0, 0.0]),
+            ..Default::default()
+        };
+        let want = [0.3928645968, 0.1669674536, 0.3088897892, 0.0, 0.1312781604];
+        assert!(close(&pagerank(&g, &p).unwrap(), &want, 1e-9));
+        let u = PagerankOptions {
+            dangling: Dangling::Uniform,
+            ..p
+        };
+        let want = [
+            0.3166510816,
+            0.1629073936,
+            0.3254597594,
+            0.0283306839,
+            0.1666510816,
+        ];
+        assert!(close(&pagerank(&g, &u).unwrap(), &want, 1e-9));
+        let bad = PagerankOptions {
+            damping: 1.5,
+            ..Default::default()
+        };
+        assert!(pagerank(&g, &bad).is_err());
+    }
+
+    #[test]
+    fn katz_counts_walks_and_checks_alpha() {
+        // 0 -> 1 -> 2: x = 1 + alpha A^T x gives 1, 1 + a, 1 + a + a^2.
+        let dag = Graph::from_edges(3, &[0, 1], &[1, 2], None, true).unwrap();
+        let o = KatzOptions {
+            alpha: 10.0,
+            normalized: false,
+            ..Default::default()
+        };
+        assert_eq!(katz(&dag, &o).unwrap(), vec![1.0, 11.0, 111.0]);
+        // lambda_max of `small` is about 1.3247 (the plastic number).
+        let g = small();
+        let ok = KatzOptions {
+            alpha: 0.2,
+            normalized: false,
+            loops: LoopWeight::Ignore,
+            ..Default::default()
+        };
+        let want = [1.3445378151, 1.2689075630, 1.7226890756, 1.0, 1.3445378151];
+        assert!(close(&katz(&g, &ok).unwrap(), &want, 1e-9));
+        let too_big = KatzOptions {
+            alpha: 0.76,
+            ..ok.clone()
+        };
+        assert!(katz(&g, &too_big).is_err());
+    }
+
+    #[test]
+    fn power_centrality_hand_values() {
+        // Star around 0 with an extra edge 1 - 4.
+        let g = Graph::from_edges(5, &[0, 0, 0, 1], &[1, 2, 3, 4], None, false).unwrap();
+        let run = |exponent, rescale| {
+            bonacich_power(
+                &g,
+                BonacichOptions {
+                    exponent,
+                    rescale,
+                    ..Default::default()
+                },
+            )
+            .unwrap()
+        };
+        let want = [
+            1.4696735043,
+            1.1238679739,
+            0.7780624435,
+            0.7780624435,
+            0.6051596782,
+        ];
+        assert!(close(&run(0.5, false), &want, 1e-9));
+        let want = [
+            1.8605210188,
+            -0.6201736729,
+            -0.6201736729,
+            -0.6201736729,
+            0.6201736729,
+        ];
+        assert!(close(&run(-0.5, false), &want, 1e-9));
+        let s: f64 = run(0.5, true).iter().sum();
+        assert!((s - 1.0).abs() < 1e-12);
+        // exponent 1 is beyond 1 / lambda_max (about 1.9), so the dense
+        // solver is used; check that (I - A) y is proportional to A 1.
+        let y = run(1.0, false);
+        let a = [
+            [0., 1., 1., 1., 0.],
+            [1., 0., 0., 0., 1.],
+            [1., 0., 0., 0., 0.],
+            [1., 0., 0., 0., 0.],
+            [0., 1., 0., 0., 0.],
+        ];
+        let a1: Vec<f64> = a.iter().map(|r| r.iter().sum()).collect();
+        let lhs: Vec<f64> = (0..5)
+            .map(|i| y[i] - (0..5).map(|j| a[i][j] * y[j]).sum::<f64>())
+            .collect();
+        let k = lhs[0] / a1[0];
+        assert!((0..5).all(|i| (lhs[i] - k * a1[i]).abs() < 1e-9));
+        // A directed cycle has eigenvalue 1, so exponent 1 is singular.
+        let cyc = Graph::from_edges(3, &[0, 1, 2], &[1, 2, 0], None, true).unwrap();
+        assert!(bonacich_power(&cyc, BonacichOptions::default()).is_err());
+    }
+
+    #[test]
+    fn hits_hand_values_and_ties() {
+        let r = hits(&small(), HitsOptions::default()).unwrap();
+        let h = 0.5f64.sqrt();
+        assert!(close(&r.hubs, &[1.0, h, 0.0, h, 0.0], 1e-9));
+        assert!(close(
+            &r.authorities,
+            &[0.0, 2f64.sqrt() - 1.0, 1.0, 0.0, 0.0],
+            1e-9
+        ));
+        assert!(r.unique);
+        // A directed 4-cycle: A^T A = I, every block ties, and Kleinberg's
+        // iteration from equal scores stays put.
+        let cyc = Graph::from_edges(4, &[0, 1, 2, 3], &[1, 2, 3, 0], None, true).unwrap();
+        let r = hits(&cyc, HitsOptions::default()).unwrap();
+        assert!(!r.unique);
+        assert_eq!(r.hubs, vec![1.0; 4]);
+        let empty = Graph::from_edges(3, &[], &[], None, true).unwrap();
+        let r = hits(&empty, HitsOptions::default()).unwrap();
+        assert!(r.hubs.iter().all(|v| v.is_nan()));
     }
 }

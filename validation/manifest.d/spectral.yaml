@@ -231,6 +231,10 @@ hits_authorities:
         Kleinberg's iteration from h = 1, as NetworkX's hits() does.
     igraph:
       call: "igraph::authority_score(g, weights = NA)$vector"
+      differs_when: [edge_case]
+      reason: >-
+        Without ties (the empty and one-node networks) the scores are
+        undefined; knappnet returns NaN where igraph fills in values.
       undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
@@ -255,6 +259,10 @@ hits_hubs:
         Kleinberg's iteration from h = 1, as NetworkX's hits() does.
     igraph:
       call: "igraph::hub_score(g, weights = NA)$vector"
+      differs_when: [edge_case]
+      reason: >-
+        Without ties (the empty and one-node networks) the scores are
+        undefined; knappnet returns NaN where igraph fills in values.
       undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
@@ -467,12 +475,6 @@ mixing_matrix_nodes:
       call: "for each node, its ties to nodes in each category of v mod 3, both directions"
     homophily:
       call: "homophily::as_mixing_matrix(g, dim1 = 'name', dim2 = 'group')"
-      differs_when: [edge_case]
-      reason: >-
-        homophily folds every square mixing matrix of an undirected network,
-        including a node-by-category matrix that happens to be square (one
-        node and one category); knappnet folds only when both dimensions are
-        the same attribute.
 
 mixing_matrix_nodes_out:
   engine: {fn: mixing_matrix, dim1: id, dim2: mod3, direction: out}
