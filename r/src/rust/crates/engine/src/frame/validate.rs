@@ -106,7 +106,9 @@ pub struct Validation {
 /// A multiplicative hasher for identifiers and edge keys: the standard
 /// library's hasher is designed to resist collision attacks, which an
 /// identifier column does not need, and this one is several times faster
-/// on the short keys hashed here.
+/// on the short keys hashed here. Words are folded with a rotate, xor,
+/// and multiply, and the final avalanche is the SplitMix64 mixing
+/// function (`steele2014fast`).
 #[derive(Default, Clone, Copy)]
 struct Fast(u64);
 
@@ -163,8 +165,8 @@ impl Hasher for Fast {
 
     #[inline]
     fn finish(&self) -> u64 {
-        // A final avalanche so that the low bits, which the table indexes
-        // by, depend on every input word.
+        // So that the low bits, which the table indexes by, depend on every
+        // input word.
         let mut z = self.0;
         z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
         z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
