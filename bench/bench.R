@@ -110,7 +110,7 @@ dir_nf <- as_net_frame(dir)
 pa_nf <- as_net_frame(pa)
 small_nf <- as_net_frame(small)
 small_m <- as.matrix(small_nf)
-invisible(lapply(list(und_nf, dir_nf, pa_nf, small_nf), degree))  # build caches
+invisible(lapply(list(und_nf, dir_nf, pa_nf, small_nf), net_degree))  # build caches
 
 lab_und <- sprintf("G(n=%d, m=%d)", igraph::vcount(und), igraph::ecount(und))
 lab_dir <- sprintf("directed G(%d, %d)", igraph::vcount(dir), igraph::ecount(dir))
@@ -123,7 +123,7 @@ cat(sprintf("%-22s %-24s %-7s %9s %9s %9s %8s %8s\n", "graph", "measure", "tool"
 # ---- Building a network ------------------------------------------------
 e <- igraph::as_edgelist(pa, names = FALSE)
 edges <- data.frame(source = as.integer(e[, 1]), target = as.integer(e[, 2]))
-nodes <- data.frame(name = seq_len(igraph::vcount(pa)))
+nodes <- data.frame(id = seq_len(igraph::vcount(pa)))
 ours <- timing(function() net_degree(net_frame(edges, nodes, directed = FALSE)))
 theirs <- timing(function() igraph::degree(igraph::graph_from_data_frame(edges, FALSE, nodes)))
 record(lab_pa, "build + degree", ours, ours, "igraph", theirs,
@@ -172,7 +172,8 @@ weighted_case <- function(directed, integer) {
   igraph::E(g)$weight <- w
   e <- igraph::as_edgelist(g, names = FALSE)
   nf <- net_frame(data.frame(source = e[, 1], target = e[, 2], weight = w),
-                 data.frame(name = seq_len(n_w)), directed = directed, weight = "weight", weight_type = "distance")
+                  data.frame(id = seq_len(n_w)), directed = directed, weight = "weight",
+                  weight_type = "distance", quiet = TRUE)
   invisible(net_degree(nf))  # build the cache
   label <- sprintf("%s%s weights, %d / %d", if (directed) "directed, " else "",
                    if (integer) "integer (Dial)" else "real (Dijkstra)", n_w, m)
