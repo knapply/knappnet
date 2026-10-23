@@ -154,11 +154,11 @@ fn distances_and_reach_match_plain_search() {
         .unwrap();
         for s in 0..n {
             let want = plain_bfs(&g, s);
-            for t in 0..n {
-                let w = if want[t] == u32::MAX {
+            for (t, &h) in want.iter().enumerate() {
+                let w = if h == u32::MAX {
                     f64::INFINITY
                 } else {
-                    want[t] as f64
+                    h as f64
                 };
                 assert_eq!(d.get(s, t), w);
             }
