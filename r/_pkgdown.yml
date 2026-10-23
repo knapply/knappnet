@@ -45,6 +45,8 @@ navbar:
       menu:
       - text: Conventions across tools
         href: articles/conventions.html
+      - text: Plotting
+        href: articles/plotting.html
       - text: Spatial networks with sf
         href: articles/spatial-networks.html
       - text: How results are validated
@@ -76,6 +78,7 @@ articles:
   - articles/validation
   - articles/performance
   - articles/spatial-networks
+  - articles/plotting
 
 # Every help topic must appear below; pkgdown stops if one is missing.
 # Sections marked INTEGRATION are for topics being added in parallel:
@@ -226,11 +229,26 @@ reference:
 
 - title: Layouts and plotting
   desc: >-
-    Layouts computed in the engine and a default plot that needs no
-    arguments.
+    Layouts computed in the engine, a default plot that needs no arguments,
+    and plots of measures, matrices, distributions, and test results.
   contents:
   - plot.netframe
   - layout_network
+  - plot_centrality
+  - plot_partition
+  - plot_coreness
+  - plot_ego
+  - plot_scores
+  - plot_matrix
+  - plot_mixing_matrix
+  - plot_degree_distribution
+  - plot_component_sizes
+  - plot_triad_census
+  - plot_robustness
+  - plot.blockmodel
+  - plot.classical_mds
+  - plot.qap_cor
+  - plot.mrqap
 
 - title: Temporal networks
   desc: >-
@@ -245,6 +263,8 @@ reference:
   - temporal_reach
   - temporal_closeness
   - rolling
+  - plot_timeline
+  - plot_rolling
   - burstiness
 
 - title: Conventions
