@@ -20,6 +20,7 @@ use engine::metrics::degree::{degree, strength, DegreeMode};
 use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
+mod communities;
 mod cyber;
 mod descriptive;
 mod files;

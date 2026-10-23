@@ -788,6 +788,135 @@ int32_t net_factions(const GraphHandle *h, int64_t k, int32_t fit,
                      double *errors, double *correlation, char *err,
                      size_t err_len);
 
+/* ---- Community detection ------------------------------------------------
+ * Memberships are 0-based labels numbered by first appearance.
+ * Dendrograms use igraph's merges numbering (leaves 0..n, merge i creates
+ * cluster n + i), passed as merge_a / merge_b arrays of n_merges values.
+ * Optional arrays may be NULL. The same seed gives the same result.
+ * variant (label propagation): 0 = dominance, 1 = retention, 2 = fast,
+ *   3 = semi-synchronous.
+ * mode (label propagation, Voronoi): 1 = out, 2 = in, 3 = all.
+ * objective (Leiden): 0 = Constant Potts Model, 1 = modularity.
+ * null_model (spinglass): 0 = simple, 1 = config.
+ * method (comparison): 0 = variation of information, 1 = normalized mutual
+ *   information, 2 = split-join distance, 3 = Rand index, 4 = adjusted
+ *   Rand index, 5 = adjusted mutual information. */
+
+/* Walktrap communities of an undirected network (walks of `steps` steps).
+ * Labels of the level of highest modularity to membership[0..n), its
+ * modularity to *q; the merges to merge_a / merge_b (n - 1 values each,
+ * *n_merges used) and the modularity before any merge and after each to
+ * path (n values, *n_merges + 1 used). */
+int32_t net_walktrap(const GraphHandle *h, int64_t steps, int32_t weighted,
+                     int32_t threads, int64_t *membership, double *q,
+                     int64_t *merge_a, int64_t *merge_b, double *path,
+                     int64_t *n_merges, char *err, size_t err_len);
+
+/* Label propagation. initial (n labels, negative = unlabeled) and fixed
+ * (n flags, nonzero = never changes) may be NULL. Labels to
+ * membership[0..n). */
+int32_t net_label_propagation(const GraphHandle *h, int32_t variant,
+                              int32_t mode, int32_t weighted,
+                              const int64_t *initial, const int32_t *fixed,
+                              uint64_t seed, int64_t *membership, char *err,
+                              size_t err_len);
+
+/* Infomap: the best of `trials` searches minimizing the map equation.
+ * node_weights (n teleportation weights, directed networks) may be NULL.
+ * Labels to membership[0..n), codelength in bits to *codelength. */
+int32_t net_infomap(const GraphHandle *h, int32_t weighted,
+                    const double *node_weights, int64_t trials, uint64_t seed,
+                    int64_t *membership, double *codelength, char *err,
+                    size_t err_len);
+
+/* Map equation (bits per step) of a partition: membership holds n
+ * non-negative labels; node_weights may be NULL. */
+int32_t net_map_equation(const GraphHandle *h, const int64_t *membership,
+                         int64_t n, int32_t weighted,
+                         const double *node_weights, double *out, char *err,
+                         size_t err_len);
+
+/* Leiden communities of an undirected network. node_weights and initial
+ * (n values each) may be NULL; n_iterations < 0 runs until stable. Labels
+ * to membership[0..n), quality to *quality, iterations run to
+ * *iterations. */
+int32_t net_leiden(const GraphHandle *h, int32_t objective, double resolution,
+                   double beta, int64_t n_iterations, int32_t weighted,
+                   const double *node_weights, const int64_t *initial,
+                   uint64_t seed, int64_t *membership, double *quality,
+                   int64_t *iterations, char *err, size_t err_len);
+
+/* Spinglass communities of a connected network by simulated annealing
+ * (direction ignored). signed_ != 0 selects the Hamiltonian for negative
+ * weights. Labels to membership[0..n), modularity to *modularity (NaN
+ * with negative weights), final energy to *energy. */
+int32_t net_spinglass(const GraphHandle *h, int64_t spins, int32_t parallel,
+                      double start_temp, double stop_temp, double cool_fact,
+                      int32_t null_model, double gamma, int32_t signed_,
+                      double gamma_minus, int32_t weighted, uint64_t seed,
+                      int64_t *membership, double *modularity, double *energy,
+                      char *err, size_t err_len);
+
+/* A partition of maximum modularity, found exactly (components of at most
+ * 60 nodes; fails rather than return a partition that may not be
+ * optimal). Labels to membership[0..n), modularity to *q. */
+int32_t net_optimal_modularity(const GraphHandle *h, double resolution,
+                               int32_t weighted, int64_t *membership,
+                               double *q, char *err, size_t err_len);
+
+/* Fluid communities: k groups of a connected undirected network. Labels
+ * to membership[0..n). */
+int32_t net_fluid_communities(const GraphHandle *h, int64_t k, uint64_t seed,
+                              int64_t *membership, char *err, size_t err_len);
+
+/* Voronoi communities. lengths (m values) may be NULL for unit lengths; a
+ * negative or NaN radius chooses the radius of highest modularity. Labels
+ * to membership[0..n), generators to generators (n values, *n_generators
+ * used), modularity to *modularity, radius used to *radius_used. */
+int32_t net_voronoi(const GraphHandle *h, const double *lengths,
+                    int32_t weighted, int32_t mode, double radius,
+                    int32_t threads, int64_t *membership, int64_t *generators,
+                    int64_t *n_generators, double *modularity,
+                    double *radius_used, char *err, size_t err_len);
+
+/* Compares two partitions of n nodes (arbitrary integer labels). */
+int32_t net_compare_partitions(const int64_t *x, const int64_t *y, int64_t n,
+                               int32_t method, double *out, char *err,
+                               size_t err_len);
+
+/* The two projection distances of van Dongen: of x from y and of y from
+ * x (their sum is the split-join distance). */
+int32_t net_split_join_distance(const int64_t *x, const int64_t *y, int64_t n,
+                                int64_t *x_to_y, int64_t *y_to_x, char *err,
+                                size_t err_len);
+
+/* Membership of n leaves after the first `steps` merges of a dendrogram
+ * or, when groups > 0, cut at exactly `groups` groups. */
+int32_t net_cut_dendrogram(int64_t n, const int64_t *merge_a,
+                           const int64_t *merge_b, int64_t n_merges,
+                           int64_t steps, int64_t groups, int64_t *membership,
+                           char *err, size_t err_len);
+
+/* Modularity of an undirected network after 0, 1, ..., n_merges merges of
+ * a dendrogram on its nodes to path (n_merges + 1 values); labels of the
+ * first level of highest modularity to membership[0..n), its modularity
+ * to *q. */
+int32_t net_dendrogram_modularity(const GraphHandle *h, const int64_t *merge_a,
+                                  const int64_t *merge_b, int64_t n_merges,
+                                  double resolution, int32_t weighted,
+                                  double *path, int64_t *membership, double *q,
+                                  char *err, size_t err_len);
+
+/* Dendrogram on n leaves from len node pairs: merges whose groups are
+ * named by any of their nodes, or (removals != 0) edges in order of
+ * removal by a divisive method. merge_a / merge_b receive up to n - 1
+ * merges, *n_merges their number. */
+int32_t net_merges_from_pairs(int64_t n, const int64_t *node_a,
+                              const int64_t *node_b, int64_t len,
+                              int32_t removals, int64_t *merge_a,
+                              int64_t *merge_b, int64_t *n_merges, char *err,
+                              size_t err_len);
+
 /* ---- Key players, group centrality, and flow betweenness ----------------
  * Node sets are 0-based indices without repeats.
  * measure (key players): 0 = fragmentation, 1 = distance-weighted
