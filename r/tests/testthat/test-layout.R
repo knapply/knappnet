@@ -5,7 +5,7 @@
 
 # A triangle 1-2-3, a pendant 4 on node 3, a separate edge 5-6, and an
 # isolate 7.
-pieces <- function(directed = FALSE) {
+three_pieces <- function(directed = FALSE) {
   netframe(data.frame(from = c(1, 2, 3, 3, 5), to = c(2, 3, 1, 4, 6)),
            nodes = data.frame(id = 1:7), directed = directed)
 }
@@ -13,7 +13,7 @@ pieces <- function(directed = FALSE) {
 dist_xy <- function(xy, a, b) sqrt(sum((xy[a, ] - xy[b, ])^2))
 
 test_that("every method returns finite coordinates aligned with the nodes", {
-  g <- pieces()
+  g <- three_pieces()
   g$nodes$type <- c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE)
   for (method in c("auto", "stress", "sparse_stress", "fr", "circle", "star", "grid",
                    "tree", "twomode")) {
@@ -26,7 +26,7 @@ test_that("every method returns finite coordinates aligned with the nodes", {
 })
 
 test_that("layouts are reproducible from the seed and independent of threads", {
-  g <- pieces(directed = TRUE)
+  g <- three_pieces(directed = TRUE)
   for (method in c("stress", "sparse_stress", "fr")) {
     a <- layout_network(g, method, seed = 42, threads = 1)
     expect_identical(a, layout_network(g, method, seed = 42, threads = 2), info = method)
@@ -70,11 +70,11 @@ test_that("weights are lengths: distances as given, strengths as 1/weight", {
                tolerance = 1e-6)
   zero <- netframe(data.frame(from = 1, to = 2, w = 0), weight = "w")
   expect_error(layout_network(zero), "positive")
-  expect_error(layout_network(pieces(), weighted = TRUE), "no weights")
+  expect_error(layout_network(three_pieces(), weighted = TRUE), "no weights")
 })
 
 test_that("components are packed apart and isolates are placed", {
-  g <- pieces()
+  g <- three_pieces()
   for (method in c("stress", "fr", "tree")) {
     xy <- layout_network(g, method, seed = 7)
     comp <- components(g)$membership
@@ -87,7 +87,7 @@ test_that("components are packed apart and isolates are placed", {
 })
 
 test_that("simple layouts", {
-  g <- pieces()
+  g <- three_pieces()
   xy <- layout_network(g, "circle")
   expect_equal(sqrt(rowSums(xy^2)), rep(1, 7))
   expect_equal(unname(xy[1, ]), c(1, 0))
@@ -96,7 +96,7 @@ test_that("simple layouts", {
   expect_equal(sqrt(rowSums(star[-3, ]^2)), rep(1, 6))
   # The default center is the node with the most neighbors (node 3).
   expect_identical(layout_network(g, "star"), star)
-  expect_error(layout_network(g, "star", center = 99), "not nodes")
+  expect_error(layout_network(g, "star", center = 99), "not in the network")
   grid <- layout_network(g, "grid")
   expect_equal(unname(grid[, "x"]), c(0, 1, 2, 0, 1, 2, 0))
   expect_equal(unname(grid[, "y"]), c(0, 0, 0, -1, -1, -1, -2))
@@ -111,7 +111,7 @@ test_that("tree layouts are layered", {
   expect_equal(unname(xy[2, "x"]), mean(xy[4:5, "x"]))
   expect_equal(unname(xy[1, "x"]), mean(xy[2:3, "x"]))
   expect_error(layout_network(tree, "tree", root = c("r", "a")), "more than one root")
-  expect_error(layout_network(tree, "tree", root = "zz"), "not nodes")
+  expect_error(layout_network(tree, "tree", root = "zz"), "not in the network")
 })
 
 test_that("two-mode layouts put the modes in two rows", {
@@ -132,7 +132,7 @@ test_that("two-mode layouts put the modes in two rows", {
 })
 
 test_that("arguments are checked", {
-  g <- pieces()
+  g <- three_pieces()
   expect_error(layout_network(g, "nope"))
   expect_error(layout_network(g, max_iter = 0), "max_iter")
   expect_error(layout_network(g, pivots = -1), "pivots")

@@ -161,14 +161,6 @@ test_that("flow betweenness uses capacities when asked", {
   expect_error(flow_betweenness(neg, capacity = TRUE), "non-negative")
 })
 
-# Krackhardt's kite as an undirected edge list.
-kite_edges <- function() {
-  data.frame(
-    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
-  )
-}
-
 test_that("flow betweenness matches sna", {
   skip_if_not_installed("sna")
   g <- netframe(kite_edges(), nodes = data.frame(id = 1:10), directed = FALSE)
