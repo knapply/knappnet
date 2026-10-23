@@ -1,7 +1,7 @@
 //! Exact maximum modularity for small networks.
 //!
 //! Finding the partition of maximum modularity is NP-hard (Brandes,
-//! Delling, Gaertler, Goerke, Hoefer, Nikoloski, and Wagner 2008,
+//! Delling, Gaertler, Gorke, Hoefer, Nikoloski, and Wagner 2008,
 //! `brandes2008modularity`), who also give the integer linear program that
 //! igraph's `cluster_optimal()` solves with GLPK. Without a solver
 //! dependency, this module solves the same problem exactly by branch and

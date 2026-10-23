@@ -1,6 +1,6 @@
 //! Voronoi communities.
 //!
-//! Deritei, Lazar, Papp, Jarai-Szabo, Sumi, Varga, Ravasz, and
+//! Deritei, Lazar, Papp, Jarai-Szabo, Sumi, Varga, Ravasz Regan, and
 //! Ercsey-Ravasz (2014, `deritei2014community`) partition a network into
 //! the graph Voronoi cells of "generator" nodes of high local density;
 //! Molnar, Marton, Horvat, and Ercsey-Ravasz (2024, `molnar2024community`)
