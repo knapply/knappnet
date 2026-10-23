@@ -53,18 +53,34 @@ edges <- do.call(rbind, lapply(edges, function(d) {
   d[Reduce(union, lapply(edges, names))]
 }))
 names(edges)[1:2] <- c("from", "to")
-utils::write.csv(nodes, file.path(out, "nodes.csv"), row.names = FALSE, fileEncoding = "UTF-8")
-utils::write.csv(edges, file.path(out, "relations.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+# "NOORDINTOP_BUSINESS&FINANCE" -> "business_finance", and so on.
+short <- tolower(sub("^NOORDINTOP_", "", edges$relation))
+short <- sub("&", "_", short, fixed = TRUE)
+short[short == "trainingevents"] <- "training"
+edges$relation <- short
+utils::write.csv(nodes["name"], file.path(out, "nodes.csv"), row.names = FALSE,
+                 fileEncoding = "UTF-8", quote = FALSE)
+utils::write.csv(edges[c("from", "to", "relation")], file.path(out, "relations.csv"),
+                 row.names = FALSE, fileEncoding = "UTF-8", quote = FALSE)
 
 env2 <- new.env()
 load(file.path(manet, "data", "noordin.rda"), envir = env2)
 aff <- get("noordin", envir = env2)
 cat("noordin (manet):", paste(dim(aff), collapse = " x "), "\n")
 aff <- as.data.frame(aff, check.names = FALSE)
-long <- do.call(rbind, lapply(names(aff), function(ev) {
-  hit <- which(aff[[ev]] != 0)
-  if (length(hit)) data.frame(person = rownames(aff)[hit], event = ev) else NULL
+# manet records neither names nor event labels, so people and events are
+# labelled by position.
+people <- sprintf("person_%02d", seq_len(nrow(aff)))
+events <- sprintf("event_%02d", seq_len(ncol(aff)))
+long <- do.call(rbind, lapply(seq_along(events), function(j) {
+  hit <- which(aff[[j]] != 0)
+  if (length(hit)) data.frame(person = people[hit], event = events[j]) else NULL
 }))
-utils::write.csv(long, file.path(out, "affiliations.csv"), row.names = FALSE, fileEncoding = "UTF-8")
+long <- long[order(long$event, long$person), ]
+utils::write.csv(long, file.path(out, "affiliations.csv"), row.names = FALSE,
+                 fileEncoding = "UTF-8", quote = FALSE)
+utils::write.csv(data.frame(name = c(people, events),
+                            event = rep(c(FALSE, TRUE), c(length(people), length(events)))),
+                 file.path(out, "affiliation_nodes.csv"), row.names = FALSE, quote = FALSE)
 cat("rownames:", head(rownames(aff)), "\n")
 cat("written to", out, "\n")

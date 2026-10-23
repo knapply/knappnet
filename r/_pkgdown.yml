@@ -98,6 +98,13 @@ reference:
   - reachability
   - cut_points
 
+- title: Example data
+  desc: >-
+    Classic and dark networks for teaching and for reproducing published
+    analyses, including the Noordin Top network.
+  contents:
+  - example_network
+
 - title: Conversion and files
   desc: >-
     Convert to and from igraph, tidygraph, network (statnet), and adjacency
