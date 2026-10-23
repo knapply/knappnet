@@ -6,7 +6,7 @@
 [![R CMD check (extra platforms)](https://github.com/knapply/knappnet/actions/workflows/r-check.yml/badge.svg)](https://github.com/knapply/knappnet/actions/workflows/r-check.yml)
 [![Website](https://github.com/knapply/knappnet/actions/workflows/pkgdown.yml/badge.svg?branch=main)](https://knapply.github.io/knappnet/)
 [![Codecov test coverage](https://codecov.io/gh/knapply/knappnet/graph/badge.svg)](https://app.codecov.io/gh/knapply/knappnet)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/knapply/knappnet/blob/main/LICENSE)
+[![License: all rights reserved](https://img.shields.io/badge/license-all%20rights%20reserved-lightgrey.svg)](https://github.com/knapply/knappnet/blob/main/LICENSE)
 [![Last commit](https://img.shields.io/github/last-commit/knapply/knappnet)](https://github.com/knapply/knappnet/commits/main)
 [![Code size](https://img.shields.io/github/languages/code-size/knapply/knappnet)](https://github.com/knapply/knappnet)
 [![Visits](https://visitor-badge.laobi.icu/badge?page_id=knapply.knappnet)](https://github.com/knapply/knappnet)
@@ -283,4 +283,5 @@ original authors of the methods you use as well.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Copyright (c) 2026 Brendan Knapp. All rights reserved; no license is
+granted. Licensing terms will be announced. See [LICENSE](LICENSE).
