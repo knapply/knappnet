@@ -49,7 +49,7 @@
 #' 1-101. \doi{10.1016/j.physrep.2010.11.002}
 #'
 #' Sinnott, R. W. (1984). Virtues of the haversine. *Sky and Telescope*,
-#' 68(2), 158-159.
+#' 68(2), 159.
 #'
 #' Moritz, H. (2000). Geodetic Reference System 1980. *Journal of Geodesy*,
 #' 74(1), 128-133. \doi{10.1007/s001900050278}

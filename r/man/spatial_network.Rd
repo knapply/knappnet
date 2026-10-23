@@ -84,7 +84,7 @@ Barthelemy, M. (2011). Spatial networks. \emph{Physics Reports}, 499(1-3),
 1-101. \doi{10.1016/j.physrep.2010.11.002}
 
 Sinnott, R. W. (1984). Virtues of the haversine. \emph{Sky and Telescope},
-68(2), 158-159.
+68(2), 159.
 
 Moritz, H. (2000). Geodetic Reference System 1980. \emph{Journal of
 Geodesy}, 74(1), 128-133. \doi{10.1007/s001900050278}
