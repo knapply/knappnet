@@ -92,6 +92,9 @@ jobs:
         # same ABI is exercised by the validation job and by R CMD check.
         if: runner.os != 'Windows'
         run: ./tools/check_c_abi.sh
+      - name: Data model C ABI
+        if: runner.os != 'Windows'
+        run: ./tools/check_frame_abi.sh
 
   validation:
     # About 15 minutes per platform with cached R packages (the cache is

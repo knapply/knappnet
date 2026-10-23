@@ -11,6 +11,7 @@
 //! | Area | Modules |
 //! |---|---|
 //! | Storage and shared machinery | [`graph`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
+//! | Data model and validation | [`frame`] (typed node and edge tables, roles, declared properties, diagnostics, graph construction) |
 //! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
 //! | Network files | [`io`] |
 //! | Measures (centrality, cohesion, positions, structure) | [`metrics`] |
@@ -24,6 +25,7 @@
 pub mod bitset;
 pub mod conventions;
 pub mod error;
+pub mod frame;
 pub mod graph;
 pub mod linalg;
 pub mod matrix;
