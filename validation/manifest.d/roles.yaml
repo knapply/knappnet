@@ -210,11 +210,13 @@ information_centrality:
       call: "sna::infocent(m, gmode, cmode = 'weak')"
       undefined_on: [empty, single_node, two_triangles_isolate]
       undefined_reason: "sna::infocent() fails on networks with no ties, and its linear solve is singular when the network has an isolate."
-      differs_when: [disconnected]
+      differs_when: [disconnected, loops, multi_edges]
       reason: >-
         On networks with more than one component sna's results differ from
         Stephenson and Zelen's formula as evaluated exactly by the
-        definition oracle, which agrees with this engine.
+        definition oracle, which agrees with this engine. sna reads the
+        network as an adjacency matrix, so parallel edges collapse to one
+        tie, while this engine counts each edge.
 
 information_centrality_weighted:
   engine: {fn: information_centrality, weighted: true}
