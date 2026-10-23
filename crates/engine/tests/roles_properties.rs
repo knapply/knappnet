@@ -720,7 +720,7 @@ fn classical_mds_recovers_euclidean_configurations() {
             assert!(w[0] >= w[1] - 1e-9);
         }
         // Distances are reproduced when enough dimensions are kept.
-        if mds.points.cols() == p.min(n - 1) && p <= n - 1 {
+        if p < n && mds.points.cols() == p {
             let s = stress(&d, &mds.points).unwrap();
             assert!(s < 1e-7, "stress {s}");
             assert!(mds.gof[0] > 1.0 - 1e-7 && mds.gof[1] > 1.0 - 1e-7);
