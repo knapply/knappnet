@@ -1114,8 +1114,7 @@ plot.saom_gof <- function(x, violin = TRUE, ...) {
       w <- 0.4 * d$y / max(d$y)
       graphics::polygon(c(j - w, rev(j + w)), c(d$x, rev(d$x)), col = "grey85", border = "grey40")
     } else {
-      graphics::boxplot(v, at = j, add = TRUE, xaxt = "n", yaxt = "n", col = "grey85",
-                        outline = FALSE)
+      graphics::boxplot(v, at = j, add = TRUE, axes = FALSE, col = "grey85", outline = FALSE)
     }
   }
   graphics::lines(seq_len(k), x$observed, col = "firebrick", lwd = 2)
