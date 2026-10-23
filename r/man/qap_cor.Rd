@@ -25,7 +25,9 @@ for undirected or symmetric data.}
 \item{attr}{For netframe inputs, the edge column that fills the matrix.
 \code{NULL} uses the network's weight column if it has one, and counts
 edges otherwise.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{
 An object of class \code{"qap_cor"}: a list with the observed correlation

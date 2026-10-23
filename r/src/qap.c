@@ -20,7 +20,7 @@ static uint64_t as_seed(SEXP seed) { return (uint64_t)Rf_asReal(seed); }
 SEXP C_qap_cor(SEXP y, SEXP x, SEXP n, SEXP mode, SEXP diag, SEXP exact, SEXP reps,
                SEXP seed, SEXP threads, SEXP draws) {
   if (TYPEOF(y) != REALSXP || TYPEOF(x) != REALSXP) {
-    Rf_error("Matrices must be double vectors.");
+    Rf_error("matrices must be double vectors (internal error)");
   }
   double nd = Rf_asReal(draws);
   SEXP summary = PROTECT(Rf_allocVector(REALSXP, 7));
@@ -45,7 +45,7 @@ SEXP C_mrqap(SEXP y, SEXP x, SEXP n, SEXP k, SEXP intercept, SEXP mode, SEXP dia
              SEXP method, SEXP statistic, SEXP tol, SEXP exact, SEXP reps, SEXP seed,
              SEXP threads, SEXP draws) {
   if (TYPEOF(y) != REALSXP || TYPEOF(x) != REALSXP) {
-    Rf_error("Matrices must be double vectors.");
+    Rf_error("matrices must be double vectors (internal error)");
   }
   /* `draws` is as in C_qap_cor. */
   int p = Rf_asInteger(k) + (Rf_asLogical(intercept) == 1);

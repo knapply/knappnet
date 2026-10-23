@@ -22,7 +22,9 @@ them when the network has a weight column.}
 convention's default: unnormalized under igraph's convention and for
 NetworkX's harmonic centrality, normalized otherwise. NetworkX's closeness
 exists only in normalized form.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{weights_as}{Override the network's \code{weight_type}:
 \code{"distance"} or \code{"strength"}.}
 \item{convention}{Whose definition to follow; see Details and
@@ -91,8 +93,16 @@ Boldi, P., & Vigna, S. (2014). Axioms for centrality. \emph{Internet
 Mathematics}, 10(3-4), 222-262. \doi{10.1080/15427951.2013.865686}
 }
 \examples{
+# A path 1-2-3 and a separate pair 4-5: each tool treats unreachable
+# nodes differently.
 g <- netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 5)), directed = FALSE)
-closeness(g)
-closeness(g, convention = "networkx")
-harmonic_centrality(g, normalized = TRUE)
+closeness(g)                          # igraph: reachable nodes only
+closeness(g, convention = "networkx") # NetworkX: Wasserman-Faust scaling
+closeness(g, convention = "sna")      # sna: 0 unless every node is reached
+closeness(g, convention = "ucinet")   # UCINET: missing distances = longest + 1
+
+harmonic_centrality(g)                          # igraph: not normalized
+harmonic_centrality(g, convention = "networkx") # NetworkX: not normalized
+harmonic_centrality(g, convention = "sna")      # sna: normalized
+harmonic_centrality(g, convention = "ucinet")   # UCINET: normalized
 }

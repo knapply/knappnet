@@ -13,7 +13,9 @@ concor(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
 column.}
 \item{tolerance}{Convergence tolerance, between 0 and 1.}
 \item{max_iter}{Maximum number of iterations per split.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{An integer vector of block numbers (starting at 1) aligned with the
 rows of \code{x$nodes}.}

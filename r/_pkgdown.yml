@@ -1,0 +1,185 @@
+url: https://knapply.github.io/knappnet/
+
+# The home page is the repository README, copied to pkgdown/index.md by
+# pkgdown/home.R before the site is built (see .github/workflows/pkgdown.yml).
+
+template:
+  bootstrap: 5
+  # Render the formulas in help pages (\eqn, \deqn) and articles ($...$)
+  # with MathJax; pkgdown's default (MathML) displays LaTeX poorly.
+  math-rendering: mathjax
+  bslib:
+    primary: "#24577a"
+    link-color: "#24577a"
+    body-color: "#22262a"
+    border-radius: "0.3rem"
+    base_font: {google: "Source Sans 3"}
+    heading_font: {google: "Source Sans 3"}
+    code_font: {google: "Source Code Pro"}
+
+home:
+  title: "knappnet: fast, validated network analysis"
+  description: >-
+    Network analysis on two data frames, with a compiled, multithreaded
+    engine validated against igraph, sna, and NetworkX, and one argument to
+    reproduce the conventions of igraph, NetworkX, sna, or UCINET.
+
+navbar:
+  structure:
+    left: [intro, reference, switching, concepts]
+    right: [search, github]
+  components:
+    switching:
+      text: Coming from
+      menu:
+      - text: igraph
+        href: articles/coming-from-igraph.html
+      - text: statnet, sna, and network
+        href: articles/coming-from-statnet.html
+      - text: UCINET, ORA, Pajek, and Gephi
+        href: articles/coming-from-ucinet-ora-pajek-gephi.html
+      - text: NetworkX
+        href: articles/coming-from-networkx.html
+    concepts:
+      text: Concepts
+      menu:
+      - text: Conventions across tools
+        href: articles/conventions.html
+      - text: How results are validated
+        href: articles/validation.html
+      - text: Performance
+        href: articles/performance.html
+    github:
+      icon: fa-github
+      href: https://github.com/knapply/knappnet
+      aria-label: Source code on GitHub
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - knappnet
+- title: Coming from another tool
+  desc: >-
+    Function-by-function maps for analysts who already know another
+    package or program, with worked examples that compare results.
+  contents:
+  - articles/coming-from-igraph
+  - articles/coming-from-statnet
+  - articles/coming-from-ucinet-ora-pajek-gephi
+  - articles/coming-from-networkx
+- title: Concepts
+  contents:
+  - articles/conventions
+  - articles/validation
+  - articles/performance
+
+# Every help topic must appear below; pkgdown stops if one is missing.
+# Sections marked INTEGRATION are for topics being added in parallel:
+# uncomment the section (or extend an existing one) and list the new
+# topics when those changes are merged.
+reference:
+- title: Networks
+  desc: >-
+    A network is a pair of data frames, one row per node and one row per
+    edge, with any attributes as columns.
+  contents:
+  - netframe
+
+- title: Describing a network
+  desc: >-
+    Network summaries and descriptive statistics: reciprocity,
+    transitivity, distances, and cut structure.
+  contents:
+  - summary.netframe
+  - reciprocity
+  - transitivity
+  - distances
+  - reachability
+  - cut_points
+
+- title: Conversion and files
+  desc: >-
+    Convert to and from igraph, tidygraph, network (statnet), and adjacency
+    matrices, and read and write the file formats of other tools.
+  contents:
+  - as_netframe
+  - read_network
+
+- title: Centrality
+  desc: >-
+    Node-level measures. Each returns a vector aligned with the rows of the
+    node table.
+  contents:
+  - degree
+  - betweenness
+  - closeness
+  - eigenvector_centrality
+  # INTEGRATION (spectral centralities): PageRank, Katz, and Bonacich
+  # power centrality topics go here.
+
+- title: Cohesion and subgroups
+  contents:
+  - components
+  - coreness
+  - max_cliques
+  - modularity
+  - cluster_louvain
+
+# INTEGRATION (mixing): assortativity, the E-I index, and homophily.
+# - title: Mixing and homophily
+#   desc: >-
+#     Whether ties form within or across groups defined by node attributes.
+#   contents:
+#   - <new topics>
+
+- title: Brokerage and positions
+  contents:
+  - constraint
+  - brokerage
+  - structural_equivalence
+  - concor
+
+- title: Ego networks
+  desc: >-
+    Each node's neighborhood as a network of its own, and egocentric
+    measures computed for every node at once.
+  contents:
+  - ego_network
+  - ego_summary
+
+- title: Two-mode networks
+  desc: >-
+    People-by-event and people-by-organization data: construction,
+    projections, and two-mode centrality.
+  contents:
+  - twomode
+  - project
+  - twomode_degree
+
+- title: Topography
+  desc: Measures of the network as a whole.
+  contents:
+  - graph_density
+  - centralization
+  - triad_census
+
+- title: Statistical tests
+  desc: >-
+    Permutation tests for dyadic data that respect the dependence among
+    ties sharing a node.
+  contents:
+  - qap_cor
+  - mrqap
+
+# INTEGRATION (layouts and plotting).
+# - title: Layouts and plotting
+#   contents:
+#   - <new topics>
+
+- title: Conventions
+  desc: >-
+    How igraph, NetworkX, sna, and UCINET differ, and the `convention`
+    argument that reproduces each.
+  contents:
+  - conventions

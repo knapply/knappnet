@@ -240,3 +240,57 @@ test_that("writing .xml stays GraphML and reading .xml still reads GraphML", {
   expect_equal(back$nodes$id, g$nodes$id)
   expect_null(back$nodes$class)
 })
+
+test_that("non-ASCII identifiers round-trip through every reader and writer", {
+  # Latin, Greek, and Chinese text, written with escapes so this file is
+  # ASCII; the strings are UTF-8 on every platform.
+  ids <- c("José", "Zoë", "北京", "Ελλάδα",
+           "São Paulo")
+  g <- netframe(data.frame(from = ids[c(1, 2, 3, 4)], to = ids[c(2, 3, 4, 1)],
+                           weight = c(1, 2, 3, 4), stringsAsFactors = FALSE),
+                nodes = data.frame(id = ids, place = rev(ids), stringsAsFactors = FALSE),
+                weight = "weight")
+  for (ext in c(".graphml", ".gexf", ".gml", ".json", ".net", ".dl")) {
+    back <- round_trip(g, ext)
+    expect_equal(back$nodes$id, ids, info = ext)
+    expect_equal(back$edges$from, g$edges$from, info = ext)
+    expect_equal(back$edges$to, g$edges$to, info = ext)
+    expect_equal(betweenness(back), betweenness(g), info = ext)
+    if (ext %in% c(".graphml", ".gexf", ".gml", ".json")) {
+      expect_equal(back$nodes$place, rev(ids), info = ext)
+    }
+  }
+  path <- tempfile(fileext = ".xml")
+  on.exit(unlink(path))
+  write_network(g, path, format = "dynetml")
+  back <- read_network(path)
+  expect_equal(back$nodes$id, ids)
+  expect_equal(back$edges$to, g$edges$to)
+
+  # Edge lists go through write.table(), which before R 4.2 on Windows (and
+  # in other non-UTF-8 locales) can only write characters of the native
+  # encoding.
+  skip_if_not(isTRUE(l10n_info()[["UTF-8"]]), "not a UTF-8 locale")
+  csv <- tempfile(fileext = ".csv")
+  nodes_csv <- tempfile(fileext = ".csv")
+  on.exit(unlink(c(csv, nodes_csv)), add = TRUE)
+  write_network(g, csv, nodes_file = nodes_csv)
+  back <- read_network(csv, nodes = nodes_csv)
+  expect_equal(back$nodes$id, ids)
+  expect_equal(back$edges$from, g$edges$from)
+})
+
+test_that("file paths may contain non-ASCII characters", {
+  skip_if_not(isTRUE(l10n_info()[["UTF-8"]]) || .Platform$OS.type == "windows",
+              "the locale cannot represent the path")
+  g <- netframe(data.frame(from = c("a", "b"), to = c("b", "c")))
+  dir <- file.path(tempdir(), "réseau")
+  dir.create(dir, showWarnings = FALSE)
+  on.exit(unlink(dir, recursive = TRUE))
+  for (ext in c(".graphml", ".csv")) {
+    path <- file.path(dir, paste0("café", ext))
+    write_network(g, path)
+    expect_true(file.exists(path), info = ext)
+    expect_equal(read_network(path)$edges$to, c("b", "c"), info = ext)
+  }
+})

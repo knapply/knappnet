@@ -6,7 +6,9 @@ triad_census(x, threads = 0L)
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A named numeric vector of 16 counts in the standard order.}
 \description{

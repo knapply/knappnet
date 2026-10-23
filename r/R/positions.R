@@ -41,25 +41,27 @@
 #' @return A numeric vector aligned with the rows of `x$nodes`.
 #' @export
 constraint <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 0L, weighted, threads)
+  structural_holes(x, 0L, weighted, threads, "constraint")
 }
 
 #' @rdname constraint
 #' @export
 effective_size <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 1L, weighted, threads)
+  structural_holes(x, 1L, weighted, threads, "effective_size")
 }
 
 #' @rdname constraint
 #' @export
 efficiency <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 2L, weighted, threads)
+  structural_holes(x, 2L, weighted, threads, "efficiency")
 }
 
-structural_holes <- function(x, measure, weighted, threads) {
+structural_holes <- function(x, measure, weighted, threads, fn) {
   check_netframe(x)
-  .Call(C_structural_holes, engine_graph(x), measure,
-        positions_weighted(x, weighted), as.integer(threads))
+  weighted <- positions_weighted(x, weighted)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call(fn, .Call(C_structural_holes, ptr, measure, weighted, threads))
 }
 
 #' Gould-Fernandez brokerage roles
@@ -93,6 +95,7 @@ structural_holes <- function(x, measure, weighted, threads) {
 #' @export
 brokerage <- function(x, groups, threads = 0L) {
   check_netframe(x)
+  threads <- resolve_threads(threads)
   n <- nrow(x$nodes)
   if (is.character(groups) && length(groups) == 1L && groups %in% names(x$nodes)) {
     groups <- x$nodes[[groups]]
@@ -104,8 +107,13 @@ brokerage <- function(x, groups, threads = 0L) {
   if (anyNA(groups)) {
     stop("`groups` must not contain missing values.", call. = FALSE)
   }
+  if (!is.atomic(groups)) {
+    stop("`groups` must be an atomic vector (integer, character, factor, ...).",
+         call. = FALSE)
+  }
   codes <- match(groups, unique(groups)) - 1L
-  m <- .Call(C_brokerage, engine_graph(x), codes, as.integer(threads))
+  ptr <- engine_graph(x)
+  m <- engine_call("brokerage", .Call(C_brokerage, ptr, codes, threads))
   out <- data.frame(node = x$nodes[[x$roles$id]], stringsAsFactors = FALSE)
   roles <- c("coordinator", "itinerant", "representative", "gatekeeper",
              "liaison", "total")
@@ -162,8 +170,11 @@ structural_equivalence <- function(x, method = c("euclidean", "correlation", "ha
   check_netframe(x)
   method <- match.arg(method)
   code <- switch(method, euclidean = 0L, correlation = 1L, hamming = 2L)
-  m <- .Call(C_structural_equivalence, engine_graph(x), code,
-             positions_weighted(x, weighted), as.integer(threads))
+  weighted <- positions_weighted(x, weighted)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  m <- engine_call("structural_equivalence",
+                   .Call(C_structural_equivalence, ptr, code, weighted, threads))
   ids <- as.character(x$nodes[[x$roles$id]])
   dimnames(m) <- list(ids, ids)
   m
@@ -216,8 +227,20 @@ structural_equivalence <- function(x, method = c("euclidean", "correlation", "ha
 concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
                    threads = 0L) {
   check_netframe(x)
-  r <- .Call(C_concor, engine_graph(x), as.integer(depth), positions_weighted(x, weighted),
-             as.double(tolerance), as.integer(max_iter), as.integer(threads))
+  if (!is.numeric(depth) || length(depth) != 1L || is.na(depth) || depth < 1 ||
+      depth != floor(depth) || depth > .Machine$integer.max) {
+    stop("`depth` must be a whole number of at least 1.", call. = FALSE)
+  }
+  if (!is.numeric(tolerance) || length(tolerance) != 1L || !isTRUE(tolerance > 0) ||
+      !isTRUE(tolerance < 1)) {
+    stop("`tolerance` must be a number between 0 and 1.", call. = FALSE)
+  }
+  max_iter <- check_count(max_iter, "max_iter")
+  weighted <- positions_weighted(x, weighted)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  r <- engine_call("concor", .Call(C_concor, ptr, as.integer(depth), weighted,
+                                   as.double(tolerance), max_iter, threads))
   if (r[[2]][[1]] > 0L) {
     warning(sprintf("%d CONCOR split(s) did not converge to +1/-1 within `max_iter` iterations.",
                     r[[2]][[1]]), call. = FALSE)
@@ -232,6 +255,7 @@ concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 
 
 # Whether a measure that reads weights as given should use them.
 positions_weighted <- function(x, weighted) {
+  check_flag_or_null(weighted, "weighted")
   weighted <- if (is.null(weighted)) !is.null(x$roles$weight) else isTRUE(weighted)
   if (weighted) require_weights(x)
   weighted
