@@ -1,6 +1,11 @@
 \name{plot_rolling}
 \alias{plot_rolling}
 \title{Plot a measure over time}
+\description{
+Draws the result of \code{\link{rolling}}, a measure computed on every
+window of a temporal network, as lines over time: one line for a
+network-level measure, or one per node for a node-level measure.
+}
 \usage{
 plot_rolling(x, nodes = NULL, top = 8, ...)
 }
@@ -13,17 +18,12 @@ plot_rolling(x, nodes = NULL, top = 8, ...)
 \item{...}{Further arguments passed to \code{\link[graphics]{plot}}, such
 as \code{main} or \code{ylab}.}
 }
-\value{\code{x}, invisibly.}
-\description{
-Draws the result of \code{\link{rolling}}, a measure computed on every
-window of a temporal network, as lines over time: one line for a
-network-level measure, or one per node for a node-level measure.
-}
 \details{
 Each value is drawn at the start of its window. Windows where a node's
 value is undefined (\code{NaN}) leave a gap in its line. The time axis
 uses the type of the window times (numbers, dates, or date-times).
 }
+\value{\code{x}, invisibly.}
 \seealso{\code{\link{rolling}}, \code{\link{snapshots}},
 \code{\link{plot_timeline}}.}
 \examples{

@@ -1,6 +1,12 @@
 \name{ei_index}
 \alias{ei_index}
 \title{E-I index}
+\description{
+Krackhardt and Stern's (1988) E-I index compares the ties that cross group
+boundaries (external, E) with those inside groups (internal, I):
+\deqn{\frac{E - I}{E + I}}{(E - I) / (E + I)}
+It ranges from -1 (every tie inside a group) to 1 (every tie between groups).
+}
 \usage{
 ei_index(x, groups, scope = c("global", "group", "node"),
          direction = c("all", "out", "in"),
@@ -16,16 +22,6 @@ group, or \code{"node"} for each node.}
 (\code{"out"}), received (\code{"in"}), or both (\code{"all"}).}
 \item{convention}{How group-level ties are counted: \code{"krackhardt"} (see
 Details) or \code{"homophily"}, which reproduces the R package homophily.}
-}
-\value{For \code{"global"}, a number. For \code{"group"}, a vector named by
-group in order of first appearance. For \code{"node"}, a vector aligned with
-the rows of \code{x$nodes}. External and internal tie counts are attached as
-attributes \code{"external"} and \code{"internal"}.}
-\description{
-Krackhardt and Stern's (1988) E-I index compares the ties that cross group
-boundaries (external, E) with those inside groups (internal, I):
-\deqn{\frac{E - I}{E + I}}{(E - I) / (E + I)}
-It ranges from -1 (every tie inside a group) to 1 (every tie between groups).
 }
 \details{
 Network: E is the number of ties between nodes of different groups and I the
@@ -50,6 +46,10 @@ as external only for the group that appears first in \code{x$nodes}. UCINET
 also reports the index for groups and nodes; its documentation could not be
 consulted, so agreement with UCINET is not claimed for those levels.
 }
+\value{For \code{"global"}, a number. For \code{"group"}, a vector named by
+group in order of first appearance. For \code{"node"}, a vector aligned with
+the rows of \code{x$nodes}. External and internal tie counts are attached as
+attributes \code{"external"} and \code{"internal"}.}
 \references{
 Krackhardt, D., & Stern, R. N. (1988). Informal networks and organizational
 crises: An experimental simulation. \emph{Social Psychology Quarterly}, 51(2),

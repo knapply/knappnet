@@ -1,22 +1,6 @@
 \name{information_centrality}
 \alias{information_centrality}
 \title{Information centrality}
-\usage{
-information_centrality(x, weighted = NULL, convention = c("sna", "networkx"))
-}
-\arguments{
-\item{x}{A \code{\link{netframe}}.}
-\item{weighted}{Whether to use edge weights as tie strengths (conductances:
-a stronger tie carries more information), whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must be positive.}
-\item{convention}{\code{"sna"} returns \eqn{I_i} as below, the value of
-\code{sna::infocent()} and UCINET; \code{"networkx"} returns \eqn{I_i / n},
-the value of NetworkX's \code{information_centrality()}, which computes
-current-flow closeness (Brandes and Fleischer 2005 show the two agree up
-to that factor).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
 Stephenson and Zelen's (1989) centrality from the information carried by
 every path between a node and the others, not only the shortest. With
@@ -24,6 +8,21 @@ every path between a node and the others, not only the shortest. With
 plus a matrix of ones) and \eqn{C = B^{-1}},
 \deqn{I_i = \frac{1}{c_{ii} + (T - 2R)/n},}{I_i = 1 / (c_ii + (T - 2R)/n),}
 where \eqn{T} is the trace of \eqn{C} and \eqn{R} any of its row sums.
+}
+\usage{
+information_centrality(x, weighted = NULL, convention = c("sna", "networkx"))
+}
+\arguments{
+\item{x}{A \code{\link{netframe}}.}
+\item{weighted}{Whether to use edge weights as tie strengths (conductances: a
+stronger tie carries more information), whatever the network's
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must be positive.}
+\item{convention}{\code{"sna"} returns \eqn{I_i} as below, the value of
+\code{sna::infocent()} and UCINET; \code{"networkx"} returns \eqn{I_i / n},
+the value of NetworkX's \code{information_centrality()}, which computes
+current-flow closeness (Brandes and Fleischer 2005 show the two agree up
+to that factor).}
 }
 \details{
 The measure is defined for undirected ties: a directed network is
@@ -44,6 +43,7 @@ The inverse is computed by Cholesky factorization in the compiled engine.
 The validation suite compares the result with \code{sna::infocent()} and
 NetworkX's \code{information_centrality()}.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Stephenson, K., & Zelen, M. (1989). Rethinking centrality: Methods and
 examples. \emph{Social Networks}, 11(1), 1-37.

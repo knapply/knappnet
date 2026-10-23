@@ -2,6 +2,14 @@
 \alias{cluster_hierarchical}
 \alias{cut_clusters}
 \title{Hierarchical clustering of nodes}
+\description{
+Agglomerative hierarchical clustering (Johnson 1967) of the nodes from any
+distance or similarity matrix, such as \code{\link{distances}} or
+\code{\link{structural_equivalence}}, as in UCINET's Tools > Cluster
+Analysis > Hierarchical routine. \code{cluster_hierarchical()} wraps
+\code{\link[stats]{hclust}}; \code{cut_clusters()} cuts the tree into groups
+numbered in order of first appearance.
+}
 \usage{
 cluster_hierarchical(d, method = c("average", "single", "complete", "ward"),
                      similarity = FALSE)
@@ -21,20 +29,6 @@ rather than distances.}
 \code{height}.}
 \item{height}{Height at which to cut, when \code{k} is \code{NULL}.}
 }
-\value{
-\code{cluster_hierarchical()}: an object of class \code{hclust}, with the
-row names of \code{d} as labels. \code{cut_clusters()}: an integer vector of
-group labels in the order of the rows of \code{d}, numbered 1, 2, ... in
-order of first appearance.
-}
-\description{
-Agglomerative hierarchical clustering (Johnson 1967) of the nodes from any
-distance or similarity matrix, such as \code{\link{distances}} or
-\code{\link{structural_equivalence}}, as in UCINET's Tools > Cluster
-Analysis > Hierarchical routine. \code{cluster_hierarchical()} wraps
-\code{\link[stats]{hclust}}; \code{cut_clusters()} cuts the tree into groups
-numbered in order of first appearance.
-}
 \details{
 A similarity matrix (\code{similarity = TRUE}, for example correlations
 between rows of the adjacency matrix) is turned into distances by
@@ -48,6 +42,12 @@ UPGMA, nearest neighbor, and farthest neighbor (Sokal and Michener 1958;
 Johnson 1967). \code{"ward"} is Ward's (1963) method on squared distances,
 \code{hclust()}'s \code{"ward.D2"}. Ties between equal distances are broken
 as \code{hclust()} breaks them.
+}
+\value{
+\code{cluster_hierarchical()}: an object of class \code{hclust}, with the
+row names of \code{d} as labels. \code{cut_clusters()}: an integer vector of
+group labels in the order of the rows of \code{d}, numbered 1, 2, ... in
+order of first appearance.
 }
 \references{
 Johnson, S. C. (1967). Hierarchical clustering schemes.

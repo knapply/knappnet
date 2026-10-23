@@ -243,8 +243,8 @@ read_network(edges_csv, nodes = nodes_csv, directed = FALSE)
 
 Breiger, R. L., & Pattison, P. E. (1986). Cumulated social roles: The
 duality of persons and their algebras. *Social Networks*, 8(3), 215-256.
-https://doi.org/10.1016/0378-8733(86)90006-7
+<https://doi.org/10.1016/0378-8733(86)90006-7>
 
 Padgett, J. F., & Ansell, C. K. (1993). Robust action and the rise of the
 Medici, 1400-1434. *American Journal of Sociology*, 98(6), 1259-1319.
-https://doi.org/10.1086/230190
+<https://doi.org/10.1086/230190>

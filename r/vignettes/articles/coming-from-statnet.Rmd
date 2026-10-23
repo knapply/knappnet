@@ -36,16 +36,9 @@ networks a `mode` node column records the two sets. Matrices work in both
 directions too:
 
 ```{r}
-ties <- data.frame(
-  from = c("Acciaiuoli", "Medici", "Medici", "Medici", "Medici", "Medici",
-           "Castellani", "Castellani", "Castellani", "Peruzzi", "Peruzzi",
-           "Strozzi", "Strozzi", "Ridolfi", "Tornabuoni", "Albizzi", "Albizzi",
-           "Salviati", "Bischeri", "Guadagni"),
-  to   = c("Medici", "Barbadori", "Ridolfi", "Tornabuoni", "Albizzi", "Salviati",
-           "Peruzzi", "Strozzi", "Barbadori", "Strozzi", "Bischeri",
-           "Ridolfi", "Bischeri", "Tornabuoni", "Guadagni", "Ginori", "Guadagni",
-           "Pazzi", "Guadagni", "Lamberteschi")
-)
+# Padgett's Florentine marriage ties, with the Pucci family added as an
+# isolate (it married outside this group); see ?example_network.
+ties <- example_network("florentine")$edges
 families <- data.frame(name = sort(unique(c(ties$from, ties$to, "Pucci"))))
 flo <- netframe(ties, nodes = families, directed = FALSE)
 
@@ -260,21 +253,21 @@ are not comparable.
 
 Breiger, R. L., & Pattison, P. E. (1986). Cumulated social roles: The
 duality of persons and their algebras. *Social Networks*, 8(3), 215-256.
-https://doi.org/10.1016/0378-8733(86)90006-7
+<https://doi.org/10.1016/0378-8733(86)90006-7>
 
 Dekker, D., Krackhardt, D., & Snijders, T. A. B. (2007). Sensitivity of
 MRQAP tests to collinearity and autocorrelation conditions.
-*Psychometrika*, 72(4), 563-581. https://doi.org/10.1007/s11336-007-9016-1
+*Psychometrika*, 72(4), 563-581. <https://doi.org/10.1007/s11336-007-9016-1>
 
 Krackhardt, D. (1987). QAP partialling as a test of spuriousness.
 *Social Networks*, 9(2), 171-186.
-https://doi.org/10.1016/0378-8733(87)90012-8
+<https://doi.org/10.1016/0378-8733(87)90012-8>
 
 Krackhardt, D. (1988). Predicting with networks: Nonparametric multiple
 regression analysis of dyadic data. *Social Networks*, 10(4), 359-381.
-https://doi.org/10.1016/0378-8733(88)90004-4
+<https://doi.org/10.1016/0378-8733(88)90004-4>
 
 Phipson, B., & Smyth, G. K. (2010). Permutation p-values should never be
 zero: Calculating exact p-values when permutations are randomly drawn.
 *Statistical Applications in Genetics and Molecular Biology*, 9(1),
-Article 39. https://doi.org/10.2202/1544-6115.1585
+Article 39. <https://doi.org/10.2202/1544-6115.1585>

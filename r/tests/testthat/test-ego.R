@@ -27,7 +27,7 @@ test_that("ego_summary gives hand-checked values", {
   expect_equal(ego_density(g), s$density)
   expect_equal(ego_betweenness(g), s$ego_betweenness)
   expect_false("ego_betweenness" %in% names(ego_summary(g, betweenness = FALSE)))
-  expect_equal(ego_summary(g, threads = 1L), ego_summary(g, threads = 3L))
+  expect_equal(ego_summary(g, threads = 1L), ego_summary(g, threads = 2L))
 })
 
 test_that("ego_size counts ego unless asked not to", {

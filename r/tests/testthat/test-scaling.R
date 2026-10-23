@@ -1,13 +1,5 @@
-# Classical multidimensional scaling, stress, and the distance helpers,
-# checked against stats::cmdscale() and hand values.
-
-kite <- function() {
-  e <- data.frame(
-    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
-  )
-  netframe(e, nodes = data.frame(id = 1:10), directed = FALSE)
-}
+# Classical multidimensional scaling, stress, and the distance helpers
+# (R/scaling.R), checked against stats::cmdscale() and hand values.
 
 # Compares two configurations up to the sign of each dimension.
 expect_same_configuration <- function(a, b, tolerance = 1e-8) {
@@ -111,4 +103,29 @@ test_that("mds_distances() gives geodesic and structural-equivalence distances",
   expect_equal(unname(diag(cr)), rep(0, 10))
   expect_equal(cr[1, 2], 1 - structural_equivalence(g, "correlation")[1, 2])
   expect_equal(classical_mds(cr, k = 2)$stress, mds_stress(cr, classical_mds(cr, k = 2)$points))
+})
+
+test_that("classical_mds() results print and plot", {
+  g <- example_network("florentine")
+  d <- mds_distances(g)
+  fit <- classical_mds(d, k = 2)
+  expect_s3_class(fit, "classical_mds")
+  expect_named(fit, c("points", "eigenvalues", "gof", "stress"))
+  expect_output(print(fit), "15 points in 2 dimensions")
+  on_null_device({
+    expect_silent(out <- plot(fit))
+    expect_identical(out, fit)
+    expect_silent(plot(fit, labels = FALSE, main = "MDS"))
+    expect_silent(plot(fit, which = "shepard", d = d))
+    expect_silent(plot(fit, which = "shepard", d = stats::as.dist(d)))
+    expect_silent(plot(fit, which = "scree"))
+    expect_restores_par(plot(fit, which = "scree"))
+    expect_error(plot(fit, which = "shepard"), "pass `d`")
+    expect_error(plot(fit, which = "shepard", d = d[1:5, 1:5]), "5 points")
+    expect_error(plot(fit, dims = c(1, 3)), "at most 2")
+    expect_error(plot(fit, dims = 1), "two dimension")
+    one <- classical_mds(d, k = 1)
+    expect_silent(plot(one))
+    expect_output(print(one), "1 dimension\n")
+  })
 })

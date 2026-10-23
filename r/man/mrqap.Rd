@@ -4,6 +4,13 @@
 \alias{summary.mrqap}
 \alias{print.summary.mrqap}
 \title{Multiple regression QAP}
+\description{
+Regresses one network, or any \eqn{n \times n}{n x n} matrix of dyadic data,
+on others by ordinary least squares over the dyads, with p-values from the
+quadratic assignment procedure: double semi-partialling (Dekker,
+Krackhardt, and Snijders 2007) or permutation of the response (Krackhardt
+1988).
+}
 \usage{
 mrqap(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
       intercept = TRUE, mode = c("digraph", "graph"), diag = FALSE,
@@ -18,9 +25,9 @@ names become coefficient names (\code{x1}, \code{x2}, \ldots otherwise).}
 \item{reps}{Number of random permutations.}
 \item{method}{\code{"dsp"} (double semi-partialling, the default) or
 \code{"y"} (permutation of the response).}
-\item{seed}{Seed for the permutations, a whole number in [0, 2^53).
-\code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes results reproducible.}
+\item{seed}{Seed for the permutations, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{intercept}{Whether to include an intercept.}
 \item{mode}{\code{"digraph"} uses every ordered pair of distinct nodes;
 \code{"graph"} uses each unordered pair once, read from the lower triangle,
@@ -40,26 +47,6 @@ projected out.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-An object of class \code{"mrqap"}: a list with \code{coefficients},
-\code{std.error}, and \code{t}; \code{p.value}, a matrix with columns
-\code{Pr(<=b)}, \code{Pr(>=b)}, and \code{Pr(>=|b|)}; \code{counts}, the
-numbers of draws behind them and the number of valid draws; \code{dyads},
-\code{df.residual}, \code{rss}, \code{mss}, \code{r.squared},
-\code{adj.r.squared}, \code{sigma}, and \code{fstatistic}, as in
-\code{summary.lm()}; the \code{method} actually used; \code{draws};
-\code{dist}, a draws-by-coefficients matrix of the permuted statistics
-(\code{NA} where undefined); the settings used, including \code{seed}; and
-the \code{call}. \code{coef()} returns the coefficients. \code{summary()}
-gives a regression table.
-}
-\description{
-Regresses one network, or any \eqn{n \times n}{n x n} matrix of dyadic data,
-on others by ordinary least squares over the dyads, with p-values from the
-quadratic assignment procedure: double semi-partialling (Dekker,
-Krackhardt, and Snijders 2007) or permutation of the response (Krackhardt
-1988).
 }
 \details{
 \strong{Estimates.} Each matrix is vectorized over the dyads (see
@@ -120,6 +107,19 @@ The Monte Carlo p-values estimate the same quantities as
 \code{sna::netlm()} but use a different random number generator, so they
 agree with sna within Monte Carlo error, not exactly. Exact enumeration is
 validated against an independent implementation for small networks.
+}
+\value{
+An object of class \code{"mrqap"}: a list with \code{coefficients},
+\code{std.error}, and \code{t}; \code{p.value}, a matrix with columns
+\code{Pr(<=b)}, \code{Pr(>=b)}, and \code{Pr(>=|b|)}; \code{counts}, the
+numbers of draws behind them and the number of valid draws; \code{dyads},
+\code{df.residual}, \code{rss}, \code{mss}, \code{r.squared},
+\code{adj.r.squared}, \code{sigma}, and \code{fstatistic}, as in
+\code{summary.lm()}; the \code{method} actually used; \code{draws};
+\code{dist}, a draws-by-coefficients matrix of the permuted statistics
+(\code{NA} where undefined); the settings used, including \code{seed}; and
+the \code{call}. \code{coef()} returns the coefficients. \code{summary()}
+gives a regression table.
 }
 \references{
 Krackhardt, D. (1988). Predicting with networks: Nonparametric multiple

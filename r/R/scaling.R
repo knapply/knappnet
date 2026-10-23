@@ -1,91 +1,11 @@
-#' Classical multidimensional scaling
-#'
-#' Places nodes in `k` dimensions so that their Euclidean distances
-#' approximate a matrix of dissimilarities, by classical (metric) scaling
-#' (Torgerson 1952; Gower 1966): the squared dissimilarities are
-#' double-centred, and the coordinates are the leading eigenvectors of the
-#' result scaled by the square roots of their eigenvalues. This is the
-#' method of `stats::cmdscale()`, whose results it reproduces up to the sign
-#' of each dimension, and of UCINET's metric MDS, used in Everton (2012,
-#' Appendix 3) to draw networks by their geodesic or structural-equivalence
-#' distances (see [mds_distances()]). `mds_stress()` reports how well any
-#' configuration fits a dissimilarity matrix.
-#'
-#' @param d A square numeric matrix of dissimilarities (symmetric,
-#'   non-negative, zero on the diagonal), or a `"dist"` object.
-#' @param k The number of dimensions, between 1 and one less than the
-#'   number of points.
-#' @param points A numeric matrix with one row per point and one column per
-#'   dimension.
-#'
-#' @details
-#' Any dissimilarity can be scaled, Euclidean or not; for non-Euclidean
-#' input some eigenvalues are negative, and only dimensions with a
-#' positive eigenvalue get coordinates, so fewer than `k` columns can be
-#' returned (an eigenvalue counts as positive when it exceeds \eqn{10^{-12}}
-#' times the largest; `cmdscale()` keeps any positive value, so it can
-#' return extra dimensions of rounding error). The sign of each dimension
-#' is arbitrary in the method; here it is fixed so that the first
-#' coordinate of each dimension that is not negligible is positive, which
-#' makes results reproducible across platforms. Dimensions with equal
-#' eigenvalues are not unique: any rotation within them fits equally well.
-#'
-#' Goodness of fit is `cmdscale()`'s pair of ratios, the sum of the first
-#' `k` eigenvalues over the sum of the absolute values of all eigenvalues
-#' and over the sum of the positive ones (equal for Euclidean input).
-#' Stress is Kruskal's (1964) stress formula 1,
-#' \deqn{\sqrt{\sum_{i<j} (d_{ij} - \delta_{ij})^2 / \sum_{i<j} d_{ij}^2},}{sqrt(sum (d_ij - delta_ij)^2 / sum d_ij^2),}
-#' with \eqn{d} the distances between the points and \eqn{\delta} the
-#' dissimilarities themselves (metric stress, so no monotone regression is
-#' involved; it is 0 when the configuration reproduces the dissimilarities
-#' exactly). Non-metric scaling (Kruskal 1964) is not provided; see
-#' `MASS::isoMDS()`.
-#'
-#' The eigenproblem is solved in the compiled engine by Householder
-#' reduction to tridiagonal form and the implicit QL algorithm (Golub and
-#' Van Loan 2013), so results do not depend on R's LAPACK build.
-#'
-#' @references
-#' Torgerson, W. S. (1952). Multidimensional scaling: I. Theory and method.
-#' *Psychometrika*, 17(4), 401-419. \doi{10.1007/BF02288916}
-#'
-#' Gower, J. C. (1966). Some distance properties of latent root and vector
-#' methods used in multivariate analysis. *Biometrika*, 53(3-4), 325-338.
-#' \doi{10.1093/biomet/53.3-4.325}
-#'
-#' Kruskal, J. B. (1964). Multidimensional scaling by optimizing goodness
-#' of fit to a nonmetric hypothesis. *Psychometrika*, 29(1), 1-27.
-#' \doi{10.1007/BF02289565}
-#'
-#' Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* (4th ed.).
-#' Johns Hopkins University Press.
-#'
-#' Everton, S. F. (2012). *Disrupting Dark Networks*. Cambridge University
-#' Press. \doi{10.1017/CBO9781139136877}
-#'
-#' @return `classical_mds()` returns a list of class `"classical_mds"` with
-#'   `points` (a matrix with one row per point, rownames from `d`, and up
-#'   to `k` columns `Dim1`, `Dim2`, ...), `eigenvalues` (all of them, in
-#'   decreasing order), `gof` (the two goodness-of-fit ratios), and
-#'   `stress`, with `print()` and [plot()][plot.classical_mds] methods.
-#'   `mds_stress()` returns a number.
-#' @seealso [mds_distances()], [plot.classical_mds()], [layout_network()]
-#'   for drawing networks.
-#' @examples
-#' g <- example_network("florentine")
-#' d <- mds_distances(g)
-#' fit <- classical_mds(d, k = 2)
-#' fit
-#' head(fit$points)
-#' plot(fit)
-#' plot(fit, which = "shepard", d = d)
-#' @export
+# Multidimensional scaling: classical scaling with its print and plot
+# methods, stress, and distance matrices for scaling a network.
+
+# Classical multidimensional scaling (man/classical_mds.Rd).
 classical_mds <- function(d, k = 2) {
   d <- as_dissimilarity(d)
   n <- nrow(d)
-  if (!is.numeric(k) || length(k) != 1L || is.na(k) || k < 1 || k != floor(k)) {
-    stop("`k` must be a positive whole number.", call. = FALSE)
-  }
+  k <- check_count(k, "k", min = 1L)
   if (n < 2L) {
     stop("Classical scaling needs at least two points.", call. = FALSE)
   }
@@ -93,7 +13,6 @@ classical_mds <- function(d, k = 2) {
     stop(sprintf("`k` must be at most %d, one less than the number of points.", n - 1L),
          call. = FALSE)
   }
-  k <- as.integer(k)
   r <- engine_call("classical_mds", .Call(C_classical_mds, d, n, k), edge_rows = FALSE)
   dims <- r[[2L]]
   points <- r[[1L]][, seq_len(dims), drop = FALSE]
@@ -107,7 +26,7 @@ classical_mds <- function(d, k = 2) {
             class = "classical_mds")
 }
 
-#' @export
+# See man/classical_mds.Rd.
 print.classical_mds <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat(sprintf("<classical_mds> %d points in %d dimension%s\n", nrow(x$points), ncol(x$points),
               if (ncol(x$points) == 1L) "" else "s"))
@@ -118,8 +37,110 @@ print.classical_mds <- function(x, digits = max(3L, getOption("digits") - 3L), .
   invisible(x)
 }
 
-#' @rdname classical_mds
-#' @export
+# Plot a multidimensional scaling (man/plot.classical_mds.Rd).
+plot.classical_mds <- function(x, which = c("configuration", "shepard", "scree"), d = NULL,
+                               dims = c(1, 2), labels = NULL, ...) {
+  which <- match.arg(which)
+  check_flag_or_null(labels, "labels")
+  dots <- list(...)
+  pts <- x$points
+  n <- nrow(pts)
+  if (which == "configuration") {
+    if (ncol(pts) == 0L) {
+      stop("The scaling has no dimensions with a positive eigenvalue to draw.", call. = FALSE)
+    }
+    if (!is.numeric(dims) || length(dims) != 2L || anyNA(dims) || any(dims < 1) ||
+        any(dims != floor(dims))) {
+      stop("`dims` must be two dimension numbers.", call. = FALSE)
+    }
+    if (ncol(pts) == 1L) {
+      pts <- cbind(pts, 0)
+      colnames(pts)[2L] <- ""
+      dims <- c(1, 2)
+    }
+    if (any(dims > ncol(pts))) {
+      stop(sprintf("`dims` must be at most %d, the number of dimensions kept.", ncol(pts)),
+           call. = FALSE)
+    }
+    px <- pts[, dims[1L]]
+    py <- pts[, dims[2L]]
+    show <- if (is.null(labels)) n <= 60 else labels
+    nm <- rownames(pts)
+    if (show && is.null(nm)) nm <- as.character(seq_len(n))
+    if (is.null(dots$xlab)) dots$xlab <- colnames(pts)[dims[1L]]
+    if (is.null(dots$ylab)) dots$ylab <- colnames(pts)[dims[2L]]
+    if (is.null(dots$main)) dots$main <- "Classical scaling"
+    if (is.null(dots$asp)) dots$asp <- 1
+    if (is.null(dots$pch)) dots$pch <- 21
+    if (is.null(dots$bg)) dots$bg <- plot_blue
+    if (is.null(dots$col)) dots$col <- "white"
+    if (is.null(dots$cex)) dots$cex <- 1.4
+    old <- graphics::par(mar = c(4.6, 4.6, 4.1, 1.1))
+    on.exit(graphics::par(old), add = TRUE)
+    do.call(graphics::plot, c(list(x = px, y = py), dots))
+    graphics::abline(h = 0, v = 0, col = "gray85", lty = 3)
+    if (show) {
+      graphics::text(px, py, nm, pos = 3, offset = 0.6, cex = if (n <= 20) 0.8 else 0.65,
+                     col = "gray15")
+    }
+    graphics::mtext(sprintf("stress %s", format(x$stress, digits = 3)), side = 3,
+                    line = 0.3, cex = 0.8, col = "gray30")
+  } else if (which == "shepard") {
+    if (is.null(d)) {
+      stop("The Shepard diagram needs the dissimilarities: pass `d`.", call. = FALSE)
+    }
+    d <- as_dissimilarity(d)
+    if (nrow(d) != n) {
+      stop(sprintf("`d` has %d points but the scaling has %d.", nrow(d), n), call. = FALSE)
+    }
+    if (ncol(pts) == 0L) {
+      stop("The scaling has no dimensions with a positive eigenvalue to draw.", call. = FALSE)
+    }
+    fitted <- as.matrix(stats::dist(pts))
+    lower <- lower.tri(d)
+    delta <- d[lower]
+    fit_d <- fitted[lower]
+    if (is.null(dots$xlab)) dots$xlab <- "Dissimilarity"
+    if (is.null(dots$ylab)) dots$ylab <- "Distance in the configuration"
+    if (is.null(dots$main)) dots$main <- "Shepard diagram"
+    if (is.null(dots$pch)) dots$pch <- 16
+    if (is.null(dots$col)) {
+      dots$col <- grDevices::adjustcolor(plot_blue, alpha.f = if (length(delta) > 500) 0.3 else 0.7)
+    }
+    lim <- range(c(delta, fit_d, 0), na.rm = TRUE)
+    if (is.null(dots$xlim)) dots$xlim <- lim
+    if (is.null(dots$ylim)) dots$ylim <- lim
+    old <- graphics::par(mar = c(4.6, 4.6, 4.1, 1.1))
+    on.exit(graphics::par(old), add = TRUE)
+    do.call(graphics::plot, c(list(x = delta, y = fit_d), dots))
+    graphics::abline(0, 1, col = plot_accent, lwd = 1.5)
+    graphics::mtext(sprintf("stress %s over %d pairs", format(x$stress, digits = 3),
+                            length(delta)), side = 3, line = 0.3, cex = 0.8, col = "gray30")
+  } else {
+    ev <- x$eigenvalues
+    k <- ncol(pts)
+    cols <- ifelse(ev < 0, plot_accent, plot_gray)
+    cols[seq_len(k)] <- plot_blue
+    if (is.null(dots$main)) dots$main <- "Eigenvalues of the scaling"
+    if (is.null(dots$ylab)) dots$ylab <- "Eigenvalue"
+    if (is.null(dots$xlab)) dots$xlab <- "Dimension"
+    if (is.null(dots$col)) dots$col <- cols
+    if (is.null(dots$border)) dots$border <- NA
+    if (is.null(dots$names.arg)) {
+      dots$names.arg <- if (length(ev) <= 30) as.character(seq_along(ev)) else rep("", length(ev))
+    }
+    old <- graphics::par(mar = c(4.6, 4.6, 4.1, 1.1))
+    on.exit(graphics::par(old), add = TRUE)
+    do.call(graphics::barplot, c(list(height = ev), dots))
+    graphics::abline(h = 0, col = "gray40")
+    graphics::legend("topright", bty = "n", cex = 0.8, fill = c(plot_blue, plot_gray, plot_accent),
+                     border = NA, legend = c(sprintf("kept (%d)", k), "positive, not kept",
+                                             "negative (non-Euclidean)"))
+  }
+  invisible(x)
+}
+
+# See man/classical_mds.Rd.
 mds_stress <- function(d, points) {
   d <- as_dissimilarity(d)
   n <- nrow(d)
@@ -152,36 +173,7 @@ as_dissimilarity <- function(d) {
   d
 }
 
-#' Distances between nodes for scaling
-#'
-#' Dissimilarity matrices of the kinds Everton (2012, Appendix 3) scales
-#' with [classical_mds()]: geodesic distances, or structural-equivalence
-#' distances between nodes' tie profiles.
-#'
-#' @inheritParams betweenness
-#' @param method `"geodesic"` for shortest-path lengths with direction
-#'   ignored (see [distances()]); `"euclidean"`, `"hamming"`, or
-#'   `"correlation"` for [structural_equivalence()] distances, with
-#'   correlations \eqn{r} converted to the dissimilarity \eqn{1 - r}.
-#' @param unreachable For geodesic distances, what to use for pairs with no
-#'   path between them: `"max_plus_one"` (the default) uses the longest
-#'   finite distance plus 1, as UCINET does for closeness; `"diameter"`
-#'   uses the longest finite distance; or a number.
-#'
-#' @details
-#' Geodesic distances ignore direction so that the matrix is symmetric, as
-#' classical scaling requires. Weights are handled as in [distances()]:
-#' distances, or strengths converted to lengths 1/weight. Structural
-#' equivalence distances use ties as given (total weights when the
-#' network is weighted, or 0/1 otherwise).
-#'
-#' @references
-#' Everton, S. F. (2012). *Disrupting Dark Networks*. Cambridge University
-#' Press. \doi{10.1017/CBO9781139136877}
-#'
-#' @return A symmetric numeric matrix with node identifiers as dimnames.
-#' @seealso [classical_mds()], [distances()], [structural_equivalence()].
-#' @export
+# Distances between nodes for scaling (man/mds_distances.Rd).
 mds_distances <- function(x, method = c("geodesic", "euclidean", "hamming", "correlation"),
                           unreachable = "max_plus_one", weighted = NULL, weights_as = NULL,
                           threads = 0L) {

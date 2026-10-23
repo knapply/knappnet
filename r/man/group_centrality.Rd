@@ -1,6 +1,14 @@
 \name{group_centrality}
 \alias{group_centrality}
 \title{Group centrality}
+\description{
+Everett and Borgatti's (1999) extension of degree, closeness, and
+betweenness from single nodes to groups: how many outsiders a group is tied
+to, how close it is to them, and how much of the traffic between outsiders
+it can intercept. Applied to the members of a cell, a faction, or a set of
+key players (\code{\link{key_players}()}), these measure the group's
+position as a whole.
+}
 \usage{
 group_centrality(x, group, measure = c("degree", "closeness", "betweenness"),
                  mode = c("out", "in", "all"), normalized = TRUE,
@@ -22,21 +30,11 @@ networks.}
 \item{weighted}{Whether closeness and betweenness use edge weights as path
 lengths. \code{NULL} (the default) uses them when the network has a weight
 column. Degree is defined on binary ties and refuses \code{TRUE}.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
-\item{threads}{Number of threads for betweenness; \code{0} uses all
-available cores (see "Threads" in \code{\link{netframe}}).}
-}
-\value{
-A number.
-}
-\description{
-Everett and Borgatti's (1999) extension of degree, closeness, and
-betweenness from single nodes to groups: how many outsiders a group is tied
-to, how close it is to them, and how much of the traffic between outsiders
-it can intercept. Applied to the members of a cell, a faction, or a set of
-key players (\code{\link{key_players}()}), these measure the group's
-position as a whole.
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
+\item{threads}{Number of threads for betweenness, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 }
 \details{
 For a group \eqn{C} of \eqn{k} nodes in a network of \eqn{n}:
@@ -76,6 +74,9 @@ definitions with exact path counts. NetworkX counts parallel edges once in
 betweenness, and with non-integer weights it can lose shortest paths whose
 floating-point lengths differ in the last bits; the exact evaluation
 agrees with this function in both cases.
+}
+\value{
+A number.
 }
 \references{
 Everett, M. G., & Borgatti, S. P. (1999). The centrality of groups and

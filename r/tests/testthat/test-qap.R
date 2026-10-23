@@ -1,7 +1,6 @@
-# QAP correlation and MRQAP. Coefficients and observed statistics must
-# match lm() and sna exactly; Monte Carlo p-values must agree with sna
-# within Monte Carlo error. Exhaustive enumeration is checked against an
-# independent implementation in validation/qap_check.py.
+# QAP correlation and multiple regression QAP (R/qap.R): agreement with
+# lm() on the vectorized dyads and with sna's netlm(), gcor(), and
+# qaptest(), exact enumeration, reproducibility, and the plot methods.
 
 qap_data <- function(n = 10, seed = 3) {
   set.seed(seed)
@@ -162,4 +161,36 @@ test_that("one-column models use Y-permutation and printing works", {
                 "Pr\\(>=\\|b\\|\\)")
   expect_output(print(summary(qap_cor(d$y, d$x1, reps = 50, seed = 1))), "Pr\\(>=r\\)")
   expect_error(mrqap(d$y, list(d$x1, d$x1), reps = 0), "rank deficient")
+})
+
+test_that("QAP plots show the permutation distribution and refuse empty ones", {
+  set.seed(1)
+  a <- matrix(rbinom(100, 1, 0.3), 10)
+  b <- (a + matrix(rbinom(100, 1, 0.1), 10)) > 0
+  q <- qap_cor(a, b, reps = 200, seed = 1, threads = 1)
+  on_null_device({
+    expect_silent(out <- plot(q))
+    expect_identical(out, q)
+    expect_silent(plot(q, breaks = 10, main = "QAP", col = "gray50"))
+    expect_restores_par(plot(q))
+    none <- qap_cor(a, b, reps = 0)
+    expect_error(plot(none), "no permutation draws")
+  })
+  set.seed(2)
+  x1 <- matrix(rnorm(144), 12)
+  x2 <- matrix(rnorm(144), 12)
+  y <- 0.8 * x1 + matrix(rnorm(144), 12)
+  fit <- mrqap(y, list(same = x1, other = x2), reps = 200, seed = 1, threads = 1)
+  on_null_device({
+    expect_silent(out <- plot(fit))
+    expect_identical(out, fit)
+    expect_silent(plot(fit, intercept = TRUE, level = 0.9))
+    expect_silent(plot(fit, which = "distributions"))
+    expect_silent(plot(fit, which = "distributions", intercept = TRUE, main = "Null"))
+    expect_restores_par(plot(fit, which = "distributions"))
+    beta <- mrqap(y, x1, reps = 50, statistic = "beta", method = "y", seed = 1, threads = 1)
+    expect_silent(plot(beta))
+    expect_error(plot(fit, level = 1), "`level`")
+    expect_error(plot(mrqap(y, x1, reps = 0)), "no permutation draws")
+  })
 })

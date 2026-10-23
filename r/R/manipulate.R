@@ -1,58 +1,10 @@
-#' Combine the relations of a multiplex network
-#'
-#' A multiplex network stores several relations in one edge table, told
-#' apart by a column such as `relation` (as [example_network("noordin")]
-#' and files read from DyNetML have). `combine_relations()` builds a
-#' one-relation network from them:
-#' \describe{
-#'   \item{`"union"`}{A pair is tied if it is tied in any of the relations
-#'     (UCINET: Transform > Matrix Operations > Between Datasets >
-#'     Statistical Summaries, Maximum; Boolean OR).}
-#'   \item{`"intersection"`}{A pair is tied if it is tied in every one of the
-#'     relations (Statistical Summaries, Minimum; Boolean AND).}
-#'   \item{`"sum"`}{A pair is tied with weight equal to the number of
-#'     relations in which it is tied, or the sum of its weights over the
-#'     relations when the network is weighted (Statistical Summaries, Sum).}
-#'   \item{`"difference"`}{A pair is tied if it is tied in the first of two
-#'     relations and not in the second (Transform > Matrix Operations >
-#'     Between Datasets > Boolean Combinations).}
-#'   \item{`"select"`}{The edges of one relation, with all their columns
-#'     (Data > Unpack).}
-#' }
-#'
-#' @details
-#' Within one relation parallel edges count once (a pair is tied or not),
-#' except that `"sum"` adds the weights of parallel edges when the network
-#' is weighted. Self-loops are kept as ties of a node with itself. Pairs are
-#' ordered in directed networks and unordered in undirected ones. The result
-#' keeps the node table and the network's direction; its edge table has
-#' `from`, `to`, and `relations` (the number of selected relations in which
-#' the pair is tied), plus `weight` for `"sum"`, which becomes the weight
-#' column (with the network's `weight_type`, or `"strength"` for counts).
-#' Other edge columns are dropped, since they cannot be merged across
-#' relations; `"select"` keeps every column.
-#'
-#' The UCINET menu paths follow Hanneman and Riddle (2005, chapter 16),
-#' which also describes Transform > Multiplex, the inverse operation that
-#' stacks relations into one nominal-valued matrix.
-#'
-#' @inheritParams graph_density
-#' @param relation The edge column that names each edge's relation, by name
-#'   or position; `NULL` looks for a column named `relation` or `network`.
-#' @param method How to combine; see Description.
-#' @param which Which relations (values of the relation column) to combine;
-#'   `NULL` means all of them. `"difference"` needs exactly two, in order,
-#'   and `"select"` exactly one.
-#'
-#' @references
-#' Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
-#' Methods*. University of California, Riverside.
-#'
-#' Borgatti, S. P., Everett, M. G., & Freeman, L. C. (2002). *UCINET for
-#' Windows: Software for Social Network Analysis*. Analytic Technologies.
-#'
-#' @return A netframe.
-#' @export
+# Transformations of a network's tables: combining relations,
+# dichotomizing and symmetrizing, subnetworks and node filters, and recoding
+# or joining attributes. Each returns a new netframe built through
+# with_tables() or induced_netframe() (utils-nodes.R), which keep the
+# roles and attributes of the input.
+
+# Combine the relations of a multiplex network (man/combine_relations.Rd).
 combine_relations <- function(x, relation = NULL,
                               method = c("union", "intersection", "sum", "difference", "select"),
                               which = NULL) {
@@ -150,35 +102,12 @@ relation_column <- function(x, relation) {
   resolve_column(x$edges, relation, "relation", "edges")
 }
 
-#' Dichotomize a weighted network
-#'
-#' Keeps the edges whose weight passes a test against a threshold and
-#' drops the weight role, giving a binary network (UCINET: Transform >
-#' Dichotomize, with the same cut-off operators). Edges that fail the test
-#' are removed; the weight column stays on the surviving edges as an
-#' ordinary attribute, and every other column is kept.
-#'
-#' @inheritParams graph_density
-#' @param threshold The cut-off value.
-#' @param op The comparison applied as `weight op threshold`: `">"` (the
-#'   default, UCINET's "greater than"), `">="`, `"<"`, `"<="`, `"=="`, or
-#'   `"!="`.
-#' @param column The numeric edge column to test, by name or position;
-#'   `NULL` uses the network's weight column.
-#'
-#' @references
-#' Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
-#' Methods*. University of California, Riverside.
-#'
-#' @return An unweighted netframe.
-#' @export
+# Dichotomize a weighted network (man/dichotomize.Rd).
 dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="),
                         column = NULL) {
   check_netframe(x)
   op <- match.arg(op)
-  if (!is.numeric(threshold) || length(threshold) != 1L || is.na(threshold)) {
-    stop("`threshold` must be a single number.", call. = FALSE)
-  }
+  threshold <- check_number(threshold, "threshold", finite = FALSE)
   if (is.null(column)) {
     if (is.null(x$roles$weight)) {
       stop("The network has no weight column; name the column to test with `column =`.",
@@ -204,51 +133,7 @@ dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!=
   with_tables(x, edges, x$nodes, weight = NULL)
 }
 
-#' Symmetrize or transpose a directed network
-#'
-#' `symmetrize()` turns a directed network into an undirected one by
-#' combining the two directions of every pair, as UCINET's Transform >
-#' Symmetrize does with the method of the same name:
-#' \describe{
-#'   \item{`"max"`}{A pair is tied if either direction is, with the larger
-#'     weight (Boolean OR for binary ties).}
-#'   \item{`"min"`}{A pair is tied only if both directions are, with the
-#'     smaller weight (Boolean AND).}
-#'   \item{`"sum"`}{The weights of the two directions add up (1 + 1 = 2 for a
-#'     reciprocated binary tie); the result is weighted.}
-#'   \item{`"average"`}{Half the sum (an unreciprocated binary tie becomes
-#'     1/2); the result is weighted.}
-#'   \item{`"upper"`, `"lower"`}{The tie from the node that comes first
-#'     (`"upper"`) or last (`"lower"`) in `x$nodes` decides, as copying the
-#'     upper or lower triangle of the adjacency matrix onto the other.}
-#' }
-#' `transpose_network()` reverses every edge (UCINET: Transform >
-#' Transpose).
-#'
-#' @details
-#' An absent tie counts as weight 0, so for weighted networks `"max"`,
-#' `"sum"`, and `"average"` tie a pair when either direction is tied and
-#' `"min"` when both are. Parallel edges in one direction collapse first,
-#' keeping the largest weight (`"min"`, `"max"`, `"upper"`, `"lower"`) or
-#' adding up (`"sum"`, `"average"`). Self-loops are kept once per node, with
-#' the same rule. The result's edge table has `from`, `to`, and, for
-#' weighted input or the `"sum"` and `"average"` methods, `weight` (with the
-#' network's `weight_type`, or `"strength"` for counts of binary ties);
-#' other edge columns are dropped, since the two directions can carry
-#' different values. Each pair appears once with `from` before `to` in node
-#' order. `transpose_network()` keeps every column. An undirected network
-#' is returned unchanged by `transpose_network()` and is an error for
-#' `symmetrize()`.
-#'
-#' @inheritParams graph_density
-#' @param method How the two directions combine; see Description.
-#'
-#' @references
-#' Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
-#' Methods*. University of California, Riverside.
-#'
-#' @return A netframe: undirected for `symmetrize()`.
-#' @export
+# Symmetrize or transpose a directed network (man/symmetrize.Rd).
 symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "lower")) {
   check_netframe(x)
   method <- match.arg(method)
@@ -313,8 +198,7 @@ symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "l
            weight = weight_col, weight_type = weight_type, graph = x$graph)
 }
 
-#' @rdname symmetrize
-#' @export
+# See man/symmetrize.Rd.
 transpose_network <- function(x) {
   check_netframe(x)
   if (!x$directed) return(x)
@@ -325,57 +209,14 @@ transpose_network <- function(x) {
   with_tables(x, edges, x$nodes)
 }
 
-#' Subnetworks: node selection, filters, isolates, pendants, components
-#'
-#' Induced subnetworks keep a set of nodes and every edge between them:
-#' \describe{
-#'   \item{`subnetwork()`}{Keeps the nodes named in `nodes` (UCINET: Data >
-#'     Extract).}
-#'   \item{`filter_nodes()`}{Keeps the nodes for which a condition on the
-#'     columns of `x$nodes` holds, written as in [subset()]: for example
-#'     `filter_nodes(x, role == "leader")`.}
-#'   \item{`remove_isolates()`}{Drops nodes with no ties to other nodes
-#'     (UCINET: Data > Remove isolates).}
-#'   \item{`remove_pendants()`}{Drops nodes with exactly one neighbor, once
-#'     or repeatedly (UCINET: Data > Remove pendants).}
-#'   \item{`largest_component()`}{Keeps the largest weak or strong component
-#'     (UCINET: Data > Extract main component).}
-#' }
-#'
-#' @details
-#' Node and edge attributes, weights, direction, and network attributes are
-#' kept. Isolates and pendants are judged on the undirected simple graph
-#' underlying the network: a node is an isolate when it has no neighbor
-#' other than itself (a self-loop does not save it) and a pendant when it
-#' has exactly one such neighbor, whatever the direction and number of
-#' edges between them. With `recursive = TRUE`, `remove_pendants()` repeats
-#' until no pendant is left, which prunes trees to their core; otherwise
-#' only the nodes that are pendants in the original network are dropped.
-#' When several components are largest, the one containing the earliest
-#' node in `x$nodes` is kept.
-#'
-#' @inheritParams graph_density
-#' @param nodes Node identifiers (values of `x$nodes[[id]]`) to keep, or a
-#'   logical vector with one entry per row of `x$nodes`.
-#' @param condition A logical expression in the columns of `x$nodes`;
-#'   missing values count as `FALSE`.
-#' @param recursive Whether to keep removing pendants until none is left.
-#' @param mode `"weak"` or `"strong"` components; see [components()].
-#'
-#' @references
-#' Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
-#' Methods*. University of California, Riverside.
-#'
-#' @return A netframe.
-#' @export
+# Subnetworks: node selection, filters, isolates, pendants, components (man/subnetwork.Rd).
 subnetwork <- function(x, nodes) {
   check_netframe(x)
   keep <- node_selection(x, nodes)
   induced_netframe(x, keep)
 }
 
-#' @rdname subnetwork
-#' @export
+# See man/subnetwork.Rd.
 filter_nodes <- function(x, condition) {
   check_netframe(x)
   keep <- eval(substitute(condition), x$nodes, parent.frame())
@@ -386,15 +227,13 @@ filter_nodes <- function(x, condition) {
   induced_netframe(x, which(keep))
 }
 
-#' @rdname subnetwork
-#' @export
+# See man/subnetwork.Rd.
 remove_isolates <- function(x) {
   check_netframe(x)
   induced_netframe(x, which(neighbor_counts(x) > 0L))
 }
 
-#' @rdname subnetwork
-#' @export
+# See man/subnetwork.Rd.
 remove_pendants <- function(x, recursive = FALSE) {
   check_netframe(x)
   recursive <- check_flag(recursive, "recursive")
@@ -406,8 +245,7 @@ remove_pendants <- function(x, recursive = FALSE) {
   }
 }
 
-#' @rdname subnetwork
-#' @export
+# See man/subnetwork.Rd.
 largest_component <- function(x, mode = c("weak", "strong")) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -453,45 +291,7 @@ node_selection <- function(x, nodes) {
   sort(unique(pos))
 }
 
-#' Recode and join node attributes
-#'
-#' `recode_attribute()` replaces values of a column of `x$nodes` (or
-#' `x$edges`) according to a mapping, as UCINET's Transform > Recode does
-#' for data values. `join_attributes()` adds the columns of a data frame to
-#' `x$nodes`, matched by node identifier (UCINET: Data > Join > Columns, or
-#' Data > Attribute for loading an attribute file).
-#'
-#' @details
-#' `map` is a named vector, old value to new (`c(male = "M", female =
-#' "F")`), or a function applied to the whole column. Values not named in
-#' the vector are left unchanged unless `default` is given, in which case
-#' they become `default`; a factor column is recoded through its labels and
-#' returned as character. Recoding the identifier column rebuilds the edge
-#' index, so new identifiers must stay unique.
-#'
-#' `join_attributes()` matches `data[[by]]` to `x$nodes[[id]]`; nodes
-#' without a matching row get `NA`, rows of `data` without a matching node
-#' are dropped, and duplicate keys in `data` are an error. Columns of `data`
-#' that already exist in `x$nodes` replace them, except the identifier
-#' column.
-#'
-#' @inheritParams graph_density
-#' @param column The column to recode, by name or position.
-#' @param map A named vector (old value = new value) or a function.
-#' @param default Value for entries not named in `map` (ignored when `map`
-#'   is a function); `NULL` leaves them unchanged.
-#' @param table `"nodes"` or `"edges"`.
-#' @param data A data frame with one row per node to join.
-#' @param by The column of `data` holding node identifiers, by name or
-#'   position; `NULL` uses a column with the same name as the network's
-#'   identifier column, or else the first column.
-#'
-#' @references
-#' Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
-#' Methods*. University of California, Riverside.
-#'
-#' @return A netframe.
-#' @export
+# Recode and join node attributes (man/recode_attribute.Rd).
 recode_attribute <- function(x, column, map, default = NULL, table = c("nodes", "edges")) {
   check_netframe(x)
   table <- match.arg(table)
@@ -531,8 +331,7 @@ recode_attribute <- function(x, column, map, default = NULL, table = c("nodes", 
   }
 }
 
-#' @rdname recode_attribute
-#' @export
+# See man/recode_attribute.Rd.
 join_attributes <- function(x, data, by = NULL) {
   check_netframe(x)
   if (!is.data.frame(data)) {
@@ -558,16 +357,4 @@ join_attributes <- function(x, data, by = NULL) {
     nodes[[col]] <- data[[col]][pos]
   }
   with_tables(x, x$edges, nodes)
-}
-
-# A netframe with the same roles and attributes as `x` but new tables (and
-# possibly no weight role).
-with_tables <- function(x, edges, nodes, directed = x$directed, weight = x$roles$weight) {
-  weight_type <- if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type
-  out <- netframe(edges, nodes, directed = directed, from = x$roles$from, to = x$roles$to,
-                  id = x$roles$id, weight = weight, weight_type = weight_type,
-                  graph = x$graph)
-  extra <- setdiff(names(x$roles), names(out$roles))
-  if (length(extra)) out$roles[extra] <- x$roles[extra]
-  out
 }

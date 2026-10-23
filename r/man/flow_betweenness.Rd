@@ -1,6 +1,14 @@
 \name{flow_betweenness}
 \alias{flow_betweenness}
 \title{Flow betweenness}
+\description{
+Freeman, Borgatti, and White's (1991) flow betweenness: how much of the
+maximum flow between every pair of other nodes must pass through each
+node. Unlike shortest-path \code{\link{betweenness}()}, it credits nodes on
+every route between a pair, not only the shortest ones, which suits
+information or resources that travel by any available path, as in covert
+networks that route around exposed members.
+}
 \usage{
 flow_betweenness(x, scale = c("raw", "normalized", "fractional"),
                  capacity = NULL, threads = 0L)
@@ -17,19 +25,9 @@ default) uses them when the network's weights are strengths
 strength is how much can flow through a tie; distances are not capacities,
 so networks weighted by distance use unit capacities unless
 \code{capacity = TRUE}.}
-\item{threads}{Number of threads; \code{0} uses all available cores (see
-"Threads" in \code{\link{netframe}}).}
-}
-\value{
-A numeric vector aligned with the rows of \code{x$nodes}.
-}
-\description{
-Freeman, Borgatti, and White's (1991) flow betweenness: how much of the
-maximum flow between every pair of other nodes must pass through each
-node. Unlike shortest-path \code{\link{betweenness}()}, it credits nodes on
-every route between a pair, not only the shortest ones, which suits
-information or resources that travel by any available path, as in covert
-networks that route around exposed members.
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 Let \eqn{f(i, j)} be the maximum flow from \eqn{i} to \eqn{j} (the
@@ -69,6 +67,9 @@ brute-force evaluation of the definition (one maximum flow per pair and
 removed node, by the Edmonds-Karp algorithm in exact arithmetic). sna
 reads an adjacency matrix, so on networks with parallel edges it uses one
 tie per pair where this function adds the capacities.
+}
+\value{
+A numeric vector aligned with the rows of \code{x$nodes}.
 }
 \references{
 Freeman, L. C., Borgatti, S. P., & White, D. R. (1991). Centrality in

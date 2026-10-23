@@ -2,6 +2,15 @@
 \alias{temporal_reach}
 \alias{reachability_ratio}
 \title{Temporal reachability}
+\description{
+\code{temporal_reach()} counts, for every node, the other nodes it can
+reach by time-respecting walks (\code{mode = "out"}: the size of its
+\emph{set of influence}) or that can reach it (\code{mode = "in"}: its
+\emph{source set}), after Holme (2005). \code{reachability_ratio()} is
+the share of ordered pairs of distinct nodes joined by a time-respecting
+walk (Holme 2005), which is 1 in a network where everyone can eventually
+reach everyone in time order.
+}
 \usage{
 temporal_reach(x, mode = c("out", "in"), start = NULL, end = NULL,
   min_wait = 0, max_wait = Inf, strict = FALSE, traversal = 0,
@@ -23,23 +32,9 @@ than \code{min_wait}, so with \code{min_wait = 0} contacts at the same
 time never chain.}
 \item{traversal}{Time to traverse a contact: a number (or
 \code{difftime}), \code{0} by default, or \code{"duration"}.}
-\item{threads}{Number of threads, a whole number; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-\code{temporal_reach()} returns a numeric vector aligned with the rows of
-\code{x$nodes}; \code{reachability_ratio()} a number (\code{NaN} with
-fewer than two nodes).
-}
-\description{
-\code{temporal_reach()} counts, for every node, the other nodes it can
-reach by time-respecting walks (\code{mode = "out"}: the size of its
-\emph{set of influence}) or that can reach it (\code{mode = "in"}: its
-\emph{source set}), after Holme (2005). \code{reachability_ratio()} is
-the share of ordered pairs of distinct nodes joined by a time-respecting
-walk (Holme 2005), which is 1 in a network where everyone can eventually
-reach everyone in time order.
 }
 \details{
 Walks follow the rules described in \code{\link{temporal_distances}},
@@ -53,6 +48,11 @@ Saramäki 2011). Self-loops never count; in undirected networks
 costs one pass over the contacts (64 nodes per pass without
 \code{max_wait}), in parallel. Results are checked against a brute-force
 search over all walks.
+}
+\value{
+\code{temporal_reach()} returns a numeric vector aligned with the rows of
+\code{x$nodes}; \code{reachability_ratio()} a number (\code{NaN} with
+fewer than two nodes).
 }
 \references{
 Holme, P. (2005). Network reachability of real-world contact sequences.

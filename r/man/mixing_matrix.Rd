@@ -1,6 +1,12 @@
 \name{mixing_matrix}
 \alias{mixing_matrix}
 \title{Mixing matrices}
+\description{
+Counts ties by the categories of the nodes at their two ends. The categories
+can come from one node attribute (the classical mixing matrix) or from two
+different ones, such as node identifiers and a group attribute, which gives
+each node's ties to each group.
+}
 \usage{
 mixing_matrix(x, dim1, dim2 = NULL, direction = c("all", "out", "in"))
 }
@@ -13,13 +19,6 @@ vector with one value per node.}
 \item{direction}{For directed networks: \code{"out"} counts ties from
 \code{dim1} (rows) to \code{dim2} (columns), \code{"in"} ties received (see
 Details), and \code{"all"} both. Ignored for undirected networks.}
-}
-\value{A numeric matrix with dimnames.}
-\description{
-Counts ties by the categories of the nodes at their two ends. The categories
-can come from one node attribute (the classical mixing matrix) or from two
-different ones, such as node identifiers and a group attribute, which gives
-each node's ties to each group.
 }
 \details{
 The layout follows the R package homophily (Knapp 2019), so that results
@@ -49,6 +48,7 @@ undirected network). Weights are not used. homophily also folds a square
 matrix built from two different attributes; knappnet folds only when both
 dimensions are the same attribute.
 }
+\value{A numeric matrix with dimnames.}
 \references{
 Newman, M. E. J. (2003). Mixing patterns in networks. \emph{Physical Review
 E}, 67(2), 026126. \doi{10.1103/PhysRevE.67.026126}

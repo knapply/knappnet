@@ -1,21 +1,7 @@
 # Reciprocity, transitivity and clustering, distances, mean distance,
 # diameter, eccentricity, radius, reachability, cut points, bridges, and
-# summary(). Hand-checked values first, then spot checks against igraph and
-# sna. The full comparison lives in validation/.
-
-# A path 1 - 2 - 3, an edge 4 - 5, and an isolate 6.
-pieces <- function() {
-  netframe(data.frame(from = c(1, 2, 4), to = c(2, 3, 5)),
-           nodes = data.frame(id = 1:6), directed = FALSE)
-}
-
-kite <- function() {
-  e <- data.frame(
-    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
-    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
-  )
-  netframe(e, nodes = data.frame(id = 1:10), directed = FALSE)
-}
+# summary() (R/descriptive.R). Hand-checked values first, then spot checks
+# against igraph and sna. The full comparison lives in validation/.
 
 random_edges <- function(n, m, seed) {
   set.seed(seed)

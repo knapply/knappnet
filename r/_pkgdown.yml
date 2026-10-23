@@ -45,12 +45,12 @@ navbar:
       menu:
       - text: Conventions across tools
         href: articles/conventions.html
+      - text: Plotting networks and results
+        href: articles/plotting.html
       - text: Exponential random graph models
         href: articles/ergm.html
       - text: Stochastic actor-oriented models
         href: articles/saom.html
-      - text: Plotting
-        href: articles/plotting.html
       - text: Spatial networks with sf
         href: articles/spatial-networks.html
       - text: How results are validated
@@ -77,35 +77,35 @@ articles:
   - articles/coming-from-ucinet-ora-pajek-gephi
   - articles/coming-from-networkx
 - title: Concepts
+  desc: >-
+    How the package makes its choices, how to look at results, the
+    statistical models, spatial networks, and how results are checked.
   contents:
   - articles/conventions
-  - articles/validation
-  - articles/performance
-  - articles/spatial-networks
   - articles/plotting
   - articles/ergm
   - articles/saom
+  - articles/spatial-networks
+  - articles/validation
+  - articles/performance
 
-# Every help topic must appear below; pkgdown stops if one is missing.
+# Every help topic must appear below (tools/check_r_docs.py checks this;
+# pkgdown stops if one is missing). Sections follow the order in which a
+# reader meets the package: build a network, describe it, measure nodes
+# and groups, model it, then the specialised network types and plots.
 reference:
 - title: Networks
   desc: >-
     A network is a pair of data frames, one row per node and one row per
-    edge, with any attributes as columns.
+    edge, with any attributes as columns. Build one from data frames,
+    convert one from another package, read one from a file, or load an
+    example.
   contents:
   - netframe
-
-- title: Describing a network
-  desc: >-
-    Network summaries and descriptive statistics: reciprocity,
-    transitivity, distances, and cut structure.
-  contents:
   - summary.netframe
-  - reciprocity
-  - transitivity
-  - distances
-  - reachability
-  - cut_points
+  - as_netframe
+  - read_network
+  - example_network
 
 - title: Working with network data
   desc: >-
@@ -118,20 +118,12 @@ reference:
   - subnetwork
   - recode_attribute
 
-- title: Example data
+- title: Conventions
   desc: >-
-    Classic and dark networks for teaching and for reproducing published
-    analyses, including the Noordin Top network.
+    How igraph, NetworkX, sna, and UCINET differ, and the `convention`
+    argument that reproduces each.
   contents:
-  - example_network
-
-- title: Conversion and files
-  desc: >-
-    Convert to and from igraph, tidygraph, network (statnet), and adjacency
-    matrices, and read and write the file formats of other tools.
-  contents:
-  - as_netframe
-  - read_network
+  - conventions
 
 - title: Centrality
   desc: >-
@@ -151,41 +143,47 @@ reference:
   - edge_betweenness
   - information_centrality
   - bridging_centrality
+
+- title: The network as a whole
+  desc: >-
+    Density, components, reciprocity, transitivity, distances, cut
+    structure, centralization, the triad census, compactness, small worlds,
+    and core-periphery structure.
+  contents:
+  - graph_density
+  - average_degree
+  - components
+  - reciprocity
+  - transitivity
+  - distances
+  - reachability
+  - cut_points
+  - centralization
   - centralize
+  - triad_census
+  - compactness
+  - small_world
+  - core_periphery
 
 - title: Cohesion and subgroups
+  desc: >-
+    Cores, cliques and their relaxations, bicomponents, lambda sets,
+    modularity, community detection, factions, and hierarchical clustering.
   contents:
-  - components
   - coreness
   - max_cliques
+  - n_cliques
+  - bicomponents
+  - lambda_sets
   - modularity
   - cluster_louvain
-  - bicomponents
-  - n_cliques
-  - lambda_sets
-  - factions
   - cluster_girvan_newman
+  - factions
   - cluster_hierarchical
 
-- title: Mixing and homophily
+- title: Positions and brokerage
   desc: >-
-    Whether ties form within or across groups defined by node attributes.
-  contents:
-  - mixing_matrix
-  - ei_index
-  - assortativity
-  - homophily
-
-- title: Key players and group centrality
-  desc: >-
-    Which nodes, removed or targeted together, most fragment or reach a
-    network, and centrality for groups of nodes.
-  contents:
-  - key_players
-  - group_centrality
-  - flow_betweenness
-
-- title: Brokerage and positions
+    Structural holes, brokerage roles, equivalence, and blockmodels.
   contents:
   - constraint
   - brokerage
@@ -195,25 +193,14 @@ reference:
   - automorphic_equivalence
   - blockmodel
 
-- title: Scaling
+- title: Mixing and homophily
   desc: >-
-    Multidimensional scaling of distances and dissimilarities, as in
-    UCINET's MDS tools.
+    Whether ties form within or across groups defined by node attributes.
   contents:
-  - classical_mds
-  - mds_distances
-
-- title: Geospatial networks
-  desc: >-
-    Networks whose nodes have locations: great-circle or planar distances,
-    proximity networks, and the spatial spread of groups.
-  contents:
-  - spatial_network
-  - proximity_network
-  - to_sf
-  - from_lines
-  - to_sfnetwork
-  - plot_spatial
+  - mixing_matrix
+  - ei_index
+  - assortativity
+  - homophily
 
 - title: Ego networks
   desc: >-
@@ -232,16 +219,24 @@ reference:
   - project
   - twomode_degree
 
-- title: Topography
-  desc: Measures of the network as a whole.
+- title: Key players and group centrality
+  desc: >-
+    Which nodes, removed or targeted together, most fragment or reach a
+    network, and centrality for groups of nodes.
   contents:
-  - graph_density
-  - centralization
-  - triad_census
-  - core_periphery
-  - small_world
-  - compactness
-  - average_degree
+  - key_players
+  - group_centrality
+  - flow_betweenness
+
+- title: Statistical tests and random networks
+  desc: >-
+    Permutation and conditional uniform graph tests that respect the
+    dependence among ties sharing a node, and random network models.
+  contents:
+  - qap_cor
+  - mrqap
+  - cug_test
+  - random_gnp
 
 - title: Exponential random graph models
   desc: >-
@@ -269,15 +264,42 @@ reference:
   - saom_simulate
   - saom_gof
 
-- title: Statistical tests
+- title: Temporal networks
   desc: >-
-    Permutation tests for dyadic data that respect the dependence among
-    ties sharing a node.
+    Time-stamped contacts: snapshots and windows, time-respecting paths and
+    reachability, temporal closeness, measures over time, and burstiness.
   contents:
-  - qap_cor
-  - mrqap
-  - cug_test
-  - random_gnp
+  - temporal_network
+  - network_at
+  - snapshots
+  - aggregate_network
+  - temporal_distances
+  - temporal_reach
+  - temporal_closeness
+  - rolling
+  - burstiness
+  - plot_timeline
+  - plot_rolling
+
+- title: Geospatial networks
+  desc: >-
+    Networks whose nodes have locations: great-circle or planar distances,
+    proximity networks, the spatial spread of groups, and sf geometries.
+  contents:
+  - spatial_network
+  - proximity_network
+  - to_sf
+  - from_lines
+  - to_sfnetwork
+  - plot_spatial
+
+- title: Scaling
+  desc: >-
+    Multidimensional scaling of distances and dissimilarities, as in
+    UCINET's MDS tools.
+  contents:
+  - classical_mds
+  - mds_distances
 
 - title: Layouts and plotting
   desc: >-
@@ -301,27 +323,3 @@ reference:
   - plot.classical_mds
   - plot.qap_cor
   - plot.mrqap
-
-- title: Temporal networks
-  desc: >-
-    Time-stamped contacts: snapshots and windows, time-respecting paths and
-    reachability, temporal closeness, measures over time, and burstiness.
-  contents:
-  - temporal_network
-  - network_at
-  - snapshots
-  - aggregate_network
-  - temporal_distances
-  - temporal_reach
-  - temporal_closeness
-  - rolling
-  - plot_timeline
-  - plot_rolling
-  - burstiness
-
-- title: Conventions
-  desc: >-
-    How igraph, NetworkX, sna, and UCINET differ, and the `convention`
-    argument that reproduces each.
-  contents:
-  - conventions

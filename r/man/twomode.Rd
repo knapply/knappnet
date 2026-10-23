@@ -4,6 +4,16 @@
 \alias{is_twomode}
 \alias{incidence_matrix}
 \title{Two-mode networks}
+\description{
+A two-mode (bipartite, affiliation) network has two sets of nodes, such as
+people and the events they attend, or people and the organizations they
+belong to, with ties only between the sets. \code{twomode()} creates one
+from data frames, \code{as_twomode()} converts a netframe, an igraph or
+network object, an incidence matrix, or a network read from a file, and
+\code{is_twomode()} tests for one. \code{incidence_matrix()} returns the
+rectangular matrix with one row per node of the first mode and one column
+per node of the second.
+}
 \usage{
 twomode(edges, nodes = NULL, type = "type", first = NULL, directed = FALSE,
   from = 1L, to = 2L, id = 1L, weight = NULL,
@@ -42,22 +52,6 @@ treats any value other than 0 and 1 as a weight.}
 the matrix; \code{NULL} counts edges.}
 \item{sparse}{For \code{incidence_matrix()}, whether to return a sparse
 \code{Matrix}.}
-}
-\value{
-\code{twomode()} and \code{as_twomode()} return a \code{\link{netframe}}
-with a node type role. \code{is_twomode()} returns \code{TRUE} or
-\code{FALSE}. \code{incidence_matrix()} returns a matrix with first-mode
-nodes as rows and second-mode nodes as columns; parallel edges add up.
-}
-\description{
-A two-mode (bipartite, affiliation) network has two sets of nodes, such as
-people and the events they attend, or people and the organizations they
-belong to, with ties only between the sets. \code{twomode()} creates one
-from data frames, \code{as_twomode()} converts a netframe, an igraph or
-network object, an incidence matrix, or a network read from a file, and
-\code{is_twomode()} tests for one. \code{incidence_matrix()} returns the
-rectangular matrix with one row per node of the first mode and one column
-per node of the second.
 }
 \details{
 A two-mode network is a \code{\link{netframe}} whose node table has a
@@ -99,6 +93,12 @@ Two-mode measures (\code{\link{project}}, \code{\link{twomode_degree}} and
 its relatives) read the network as an affiliation matrix and ignore the
 direction of edges, so \code{twomode()} creates undirected networks by
 default.
+}
+\value{
+\code{twomode()} and \code{as_twomode()} return a \code{\link{netframe}}
+with a node type role. \code{is_twomode()} returns \code{TRUE} or
+\code{FALSE}. \code{incidence_matrix()} returns a matrix with first-mode
+nodes as rows and second-mode nodes as columns; parallel edges add up.
 }
 \references{
 Breiger, R. L. (1974). The duality of persons and groups. \emph{Social

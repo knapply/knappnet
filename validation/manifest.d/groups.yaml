@@ -420,12 +420,14 @@ core_periphery_minres_coreness:
   oracles:
     definition:
       call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; unit-norm coreness"
-      undefined_on: [star8, pair]
+      undefined_on: [star8, pair, path10]
       undefined_reason: >-
         star8 has no minimizer (see core_periphery_minres), so the leaves'
         coreness depends on where the iterations stop; pair has one arc, so
         only the product c_1 c_2 = 1/2 is determined and the coreness
-        direction is not unique
+        direction is not unique; on path10 the minimizer is not symmetric,
+        so its mirror image (nodes in reverse order) is a second minimizer
+        with the same residual, and which one is found depends on the start
 
 core_periphery_correlation:
   engine: {fn: core_periphery_continuous, fit: correlation, output: fit}

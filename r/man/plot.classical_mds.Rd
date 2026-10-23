@@ -1,6 +1,12 @@
 \name{plot.classical_mds}
 \alias{plot.classical_mds}
 \title{Plot a multidimensional scaling}
+\description{
+Draws the configuration of a \code{\link{classical_mds}} with its point
+labels, a Shepard diagram of fitted distances against the input
+dissimilarities, or a scree plot of the eigenvalues, the three displays
+used to judge a scaling solution (Kruskal 1964; Borg and Groenen 2005).
+}
 \usage{
 \method{plot}{classical_mds}(x, which = c("configuration", "shepard", "scree"), d = NULL,
      dims = c(1, 2), labels = NULL, ...)
@@ -17,13 +23,6 @@
 (configuration and Shepard diagram) or \code{\link[graphics]{barplot}}
 (scree plot), such as \code{main}.}
 }
-\value{\code{x}, invisibly.}
-\description{
-Draws the configuration of a \code{\link{classical_mds}} with its point
-labels, a Shepard diagram of fitted distances against the input
-dissimilarities, or a scree plot of the eigenvalues, the three displays
-used to judge a scaling solution (Kruskal 1964; Borg and Groenen 2005).
-}
 \details{
 The configuration is drawn with equal scales on both axes, so distances in
 the plot are the fitted distances. The Shepard diagram plots the Euclidean
@@ -34,6 +33,7 @@ shows every eigenvalue in decreasing order, negative ones (the sign of
 non-Euclidean input) in a contrasting color, and marks the dimensions
 kept.
 }
+\value{\code{x}, invisibly.}
 \references{
 Kruskal, J. B. (1964). Multidimensional scaling by optimizing goodness of
 fit to a nonmetric hypothesis. \emph{Psychometrika}, 29(1), 1-27.

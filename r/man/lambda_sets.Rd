@@ -3,6 +3,19 @@
 \alias{print.lambda_sets}
 \alias{plot.lambda_sets}
 \title{Lambda sets and edge connectivity}
+\description{
+The edge connectivity \eqn{\lambda(u, v)} of two nodes is the smallest
+number of edges whose removal disconnects them, which equals the number of
+edge-disjoint paths between them (Menger's theorem; Ford and Fulkerson
+1956). A lambda set is a set of nodes any two of which are more
+edge-connected to each other than either is to any node outside (Borgatti,
+Everett, and Shirey 1990). Because
+\eqn{\lambda(a, c) \ge \min(\lambda(a, b), \lambda(b, c))}, the relation
+"\eqn{\lambda(a, b) \ge k}" is an equivalence for every \eqn{k \ge 1}, and
+its classes with at least two members are exactly the lambda sets;
+increasing \eqn{k} gives the nested hierarchy that UCINET's Network >
+Subgroups > Lambda Sets routine reports.
+}
 \usage{
 lambda_sets(x)
 
@@ -17,6 +30,17 @@ lambda_sets(x)
 \code{\link[stats]{plot.hclust}}, such as \code{main}; ignored by
 \code{print}.}
 }
+\details{
+All pairwise connectivities come from \eqn{n - 1} maximum-flow
+computations with Gusfield's (1990) method (a Gomory-Hu tree; Gomory and
+Hu 1961), each flow found by breadth-first augmenting paths (Edmonds and
+Karp 1972). The undirected simple graph underlying the network is used:
+directions, parallel edges, self-loops, and weights are ignored. Nodes in
+different components have connectivity 0. The connectivity matrix matches
+igraph's \code{edge_connectivity(g, source, target)} and NetworkX's
+\code{edge_connectivity(G, s, t)} on the simple undirected graph, and the
+validation suite checks it against edge-disjoint paths counted directly.
+}
 \value{
 A list of class \code{lambda_sets} with \code{connectivity}, the
 \eqn{n \times n} matrix of pairwise edge connectivities (zero diagonal) with
@@ -28,30 +52,6 @@ identifiers). A set that is the same at several levels is listed once, with
 the nested sets as a dendrogram (single linkage on the connectivities, whose
 heights are labelled with the connectivity) and returns \code{x}
 invisibly.
-}
-\description{
-The edge connectivity \eqn{\lambda(u, v)} of two nodes is the smallest
-number of edges whose removal disconnects them, which equals the number of
-edge-disjoint paths between them (Menger's theorem; Ford and Fulkerson
-1956). A lambda set is a set of nodes any two of which are more
-edge-connected to each other than either is to any node outside (Borgatti,
-Everett, and Shirey 1990). Because
-\eqn{\lambda(a, c) \ge \min(\lambda(a, b), \lambda(b, c))}, the relation
-"\eqn{\lambda(a, b) \ge k}" is an equivalence for every \eqn{k \ge 1}, and
-its classes with at least two members are exactly the lambda sets;
-increasing \eqn{k} gives the nested hierarchy that UCINET's Network >
-Subgroups > Lambda Sets routine reports.
-}
-\details{
-All pairwise connectivities come from \eqn{n - 1} maximum-flow
-computations with Gusfield's (1990) method (a Gomory-Hu tree; Gomory and
-Hu 1961), each flow found by breadth-first augmenting paths (Edmonds and
-Karp 1972). The undirected simple graph underlying the network is used:
-directions, parallel edges, self-loops, and weights are ignored. Nodes in
-different components have connectivity 0. The connectivity matrix matches
-igraph's \code{edge_connectivity(g, source, target)} and NetworkX's
-\code{edge_connectivity(G, s, t)} on the simple undirected graph, and the
-validation suite checks it against edge-disjoint paths counted directly.
 }
 \references{
 Borgatti, S. P., Everett, M. G., & Shirey, P. R. (1990). LS sets, lambda
