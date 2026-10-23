@@ -64,14 +64,64 @@ A network is a pair of tables:
 - **nodes**: one row per node, with an identifier column and any attributes.
 - **edges**: one row per edge, with two endpoint columns and any attributes.
 
-Column roles record which columns carry structural meaning (node identifier,
-edge endpoints, weight). Planned roles include layer, mode, start and end
-times, and geometry, which together cover multilayer, multiplex,
-multipartite, temporal, and spatial networks without new data structures.
+Column roles record which columns carry structural meaning. The engine's
+`frame` module (`crates/engine/src/frame/`) defines them and their
+meaning, with sources, in its module documentation; in short:
 
-Attributes stay in the data frames. The engine only receives what an
-algorithm needs: 0-based integer endpoints and, when relevant, weights.
-Results come back as vectors aligned with the node table.
+| Role | Table | Meaning |
+|---|---|---|
+| `id`, `source`, `target` | nodes, edges | Identifiers: integer, double, or text; the endpoint columns share one type and the identifier column matches it. |
+| `weight` + weight type | edges | A numeric column whose meaning is declared once: `strength` or `distance`. No default. |
+| `mode` | nodes | Any discrete column; with `between_modes_only`, a two-mode or k-partite network. |
+| `relation` | edges | The relation of a multiplex network; one long edge table. |
+| `sign` | edges | `-1`/`1` or logical; the weight is then a non-negative magnitude. Provisional. |
+| `start`, `end`, `wave` | edges | Half-open spells `[start, end)`; `start` alone is a contact; wave `k` is `[k, k + 1)`. |
+| `node_start`, `node_end` | nodes | Presence spells; an edge is active only while both endpoints are present. |
+| `x`, `y` + geometry flags | nodes | Representative coordinates; geometry and its CRS stay with the binding, which reports the CRS of each table so they can be checked for agreement. |
+| `node_missing`, `edge_missing` | nodes, edges | Logical marks for non-respondents and unobserved dyads. Provisional. |
+
+Declared properties (`directed`, and optionally `loops`, `multiple`,
+`between_modes_only`, `add_nodes`) are enforced: violating rows are
+errors, contradictory declarations are errors, and an undeclared property
+is observed and reported as a note. Two edges are parallel when they have
+the same endpoints and the same relation and spell, so a multiplex or
+temporal network with one edge per relation and spell is simple.
+
+Attributes stay in the data frames. The engine receives the role columns
+as typed buffers (integer, double, text, logical, each with missing
+values), validates them, and builds the CSR graph; results come back as
+vectors aligned with the node table.
+
+### Validation and construction
+
+Every binding builds its network object through the frame, so the checks
+and their messages are shared. `frame::validate` runs every check in
+O(n + m) time (identifiers are hashed once; parallel edges are found by
+sorting the edge key; column scans run in parallel chunks merged in row
+order, so the result does not depend on the thread count) and returns a
+report rather than stopping at the first problem. Each diagnostic has a
+stable code (`E_UNKNOWN_NODE`, `E_WEIGHT_TYPE_MISSING`, `N_LOOPS`, ...;
+the full list is on `frame::Code`), a severity (errors stop construction,
+notes are advisory), the table it concerns, a message, and the first 50
+offending 0-based rows with the total count, so a binding phrases row
+lists its own way. The checks fall into four groups, modelled on the
+validation of `as.network.data.frame()` in the network package
+(`butts2008network`): structure (endpoint and identifier types, missing,
+duplicate, and unknown identifiers), declared properties, attribute
+sanity (weights, modes, relations, signs, times, coordinates, geometry),
+and advisory notes (nodes added from edges, isolates, 0-based-looking
+identifiers, coerced identifiers, loops and parallel edges when nothing
+was declared).
+
+`frame::build` validates and builds the graph: node `i` is row `i` of the
+node table, followed by nodes added from the edges in order of first
+appearance; edge `e` is row `e` of the edge table; the mapping is
+returned. `frame::multiplicity` implements the parallel-edge rule (edge
+multiplicity, the simplicity test, and `simplify`, which returns an index
+mapping plus combined weights so bindings aggregate other attributes
+themselves), and `frame::summary` computes everything a printed summary
+shows in one call. The C ABI section in `crates/capi/include/frame.h`
+exposes all of it over typed column buffers.
 
 ## Files and interoperability
 

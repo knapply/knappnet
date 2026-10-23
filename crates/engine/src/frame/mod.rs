@@ -106,8 +106,10 @@
 //!
 //! A self-loop is an edge whose endpoints are the same node; loops are
 //! kept (`csardi2006igraph` and NetworkX, `hagberg2008exploring`, allow
-//! them; `wasserman1994social` define graphs without them), counted, and
-//! each measure documents how it treats them. Two edges are parallel when
+//! them, and `newman2018networks`, chapter 6, defines multigraphs with
+//! self-edges and multiedges; `wasserman1994social` define graphs
+//! without them), counted, and each measure documents how it treats
+//! them. Two edges are parallel when
 //! they have the same endpoints (ordered in a directed network, unordered
 //! otherwise) **and** the same values of every role that distinguishes
 //! edges: the relation and the time spell. A friendship tie and an advice
