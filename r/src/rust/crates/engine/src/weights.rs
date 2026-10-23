@@ -16,7 +16,7 @@
 //! |---|---|---|
 //! | unweighted, or all equal | breadth-first search | O(m) |
 //! | positive integers up to [`DIAL_MAX`] | Dial's bucket queue | O(m + D) |
-//! | anything else | Dijkstra with a binary heap | O(m log n) |
+//! | anything else | Dijkstra with a 4-ary indexed heap | O(m log n) |
 //!
 //! where D is the largest finite distance. Uniform lengths do not change
 //! which paths are shortest or how many there are, so they reduce to the
@@ -152,6 +152,130 @@ fn integer(lens: Vec<f64>, max: u64) -> Lengths {
     Lengths::Integer(lens.into_iter().map(|x| x as u32).collect(), max as u32)
 }
 
+/// A 4-ary min-heap of nodes keyed by tentative distance, with a position
+/// index so that a node's key can be lowered in place (Johnson 1975,
+/// `johnson1975priority`). Dijkstra's algorithm then holds at most one
+/// entry per node instead of one per relaxation, and a 4-ary layout halves
+/// the depth of a binary heap, so a sift touches fewer cache lines.
+///
+/// Entries are ordered by (distance, node index), a total order, so nodes
+/// are settled in exactly the order a binary heap with the same ordering
+/// and lazy deletion settles them.
+#[derive(Debug, Clone)]
+pub(crate) struct IndexedHeap {
+    items: Vec<(f64, u32)>,
+    /// Position of each node in `items`; `u32::MAX` when absent.
+    pos: Vec<u32>,
+}
+
+impl IndexedHeap {
+    const ARITY: usize = 4;
+
+    /// An empty heap for nodes `0..n`.
+    pub(crate) fn new(n: usize) -> IndexedHeap {
+        IndexedHeap {
+            items: Vec::new(),
+            pos: vec![u32::MAX; n],
+        }
+    }
+
+    #[inline]
+    fn less(a: (f64, u32), b: (f64, u32)) -> bool {
+        match a.0.total_cmp(&b.0) {
+            std::cmp::Ordering::Less => true,
+            std::cmp::Ordering::Greater => false,
+            std::cmp::Ordering::Equal => a.1 < b.1,
+        }
+    }
+
+    /// Inserts `node` with key `dist`, or lowers its key to `dist` if it
+    /// is present with a larger key. A larger `dist` is ignored.
+    #[inline]
+    pub(crate) fn push_or_decrease(&mut self, node: u32, dist: f64) {
+        let p = self.pos[node as usize];
+        let i = if p == u32::MAX {
+            self.items.push((dist, node));
+            self.items.len() - 1
+        } else {
+            let i = p as usize;
+            if !Self::less((dist, node), self.items[i]) {
+                return;
+            }
+            self.items[i].0 = dist;
+            i
+        };
+        self.sift_up(i);
+    }
+
+    /// Removes and returns the entry with the smallest key.
+    #[inline]
+    pub(crate) fn pop(&mut self) -> Option<(f64, u32)> {
+        let top = *self.items.first()?;
+        self.pos[top.1 as usize] = u32::MAX;
+        let last = self.items.pop().expect("not empty");
+        if !self.items.is_empty() {
+            self.items[0] = last;
+            self.sift_down(0);
+        }
+        Some(top)
+    }
+
+    /// Removes every entry.
+    pub(crate) fn clear(&mut self) {
+        for &(_, v) in &self.items {
+            self.pos[v as usize] = u32::MAX;
+        }
+        self.items.clear();
+    }
+
+    /// The entries in no particular order.
+    pub(crate) fn entries(&self) -> &[(f64, u32)] {
+        &self.items
+    }
+
+    fn sift_up(&mut self, mut i: usize) {
+        let item = self.items[i];
+        while i > 0 {
+            let parent = (i - 1) / Self::ARITY;
+            let p = self.items[parent];
+            if !Self::less(item, p) {
+                break;
+            }
+            self.items[i] = p;
+            self.pos[p.1 as usize] = i as u32;
+            i = parent;
+        }
+        self.items[i] = item;
+        self.pos[item.1 as usize] = i as u32;
+    }
+
+    fn sift_down(&mut self, mut i: usize) {
+        let len = self.items.len();
+        let item = self.items[i];
+        loop {
+            let first = i * Self::ARITY + 1;
+            if first >= len {
+                break;
+            }
+            let mut best = first;
+            for c in first + 1..(first + Self::ARITY).min(len) {
+                if Self::less(self.items[c], self.items[best]) {
+                    best = c;
+                }
+            }
+            let b = self.items[best];
+            if !Self::less(b, item) {
+                break;
+            }
+            self.items[i] = b;
+            self.pos[b.1 as usize] = i as u32;
+            i = best;
+        }
+        self.items[i] = item;
+        self.pos[item.1 as usize] = i as u32;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -194,5 +318,36 @@ mod tests {
         ));
         assert!(path_lengths(&g(&[0.5]), true, d, PathAlgorithm::Dial).is_err());
         assert!(path_lengths(&g(&[0.0]), true, WeightKind::Strength, auto).is_err());
+    }
+
+    #[test]
+    fn indexed_heap_orders_and_decreases() {
+        let mut h = IndexedHeap::new(10);
+        let mut rng = crate::rng::Stream::new(7, 0);
+        let mut best = [f64::INFINITY; 10];
+        for _ in 0..200 {
+            let v = rng.below(10) as u32;
+            let d = (rng.below(20) as f64) / 4.0;
+            h.push_or_decrease(v, d);
+            best[v as usize] = best[v as usize].min(d);
+        }
+        let mut expected: Vec<(f64, u32)> = best
+            .iter()
+            .enumerate()
+            .filter(|p| p.1.is_finite())
+            .map(|(v, &d)| (d, v as u32))
+            .collect();
+        expected.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        let mut got = Vec::new();
+        while let Some(x) = h.pop() {
+            got.push(x);
+        }
+        assert_eq!(got, expected);
+        assert!(h.pos.iter().all(|&p| p == u32::MAX));
+        h.push_or_decrease(3, 1.0);
+        h.push_or_decrease(4, 2.0);
+        assert_eq!(h.entries().len(), 2);
+        h.clear();
+        assert!(h.pop().is_none() && h.pos.iter().all(|&p| p == u32::MAX));
     }
 }
