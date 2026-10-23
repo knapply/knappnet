@@ -48,7 +48,7 @@
 //! - `mindist` in [`neighborhood`] drops nodes closer than `mindist` steps,
 //!   as igraph's `mindist`; `mindist = 1` drops ego itself.
 
-use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
+use crate::bitset::{batches_pay, for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
@@ -268,6 +268,31 @@ pub fn neighborhood_sizes(
     // count.
     let view = View::new(g, opts.mode);
     let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
+    if !batches_pay(view, max_level) {
+        // Small neighborhoods that rarely overlap: one search per ego.
+        let partials = parallel::for_each_item(
+            count,
+            opts.threads,
+            || (Bfs::new(n), Vec::new()),
+            |(bfs, found): &mut (Bfs, Vec<(usize, usize)>), i| {
+                bfs.run(g, sources[i] as usize, opts.order, opts.mode);
+                let size = bfs
+                    .order
+                    .iter()
+                    .filter(|&&v| bfs.dist[v as usize] as usize >= opts.mindist)
+                    .count();
+                bfs.reset();
+                found.push((i, size));
+            },
+        );
+        let mut out = vec![0usize; count];
+        for (_, found) in partials {
+            for (i, size) in found {
+                out[i] = size;
+            }
+        }
+        return Ok(out);
+    }
     let partials = parallel::for_each_item(
         (count + BATCH - 1) / BATCH,
         opts.threads,

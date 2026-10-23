@@ -7,7 +7,7 @@
 
 extern crate knappnet as engine;
 
-use engine::bitset::{for_each_bit, MultiBfs, Step, View};
+use engine::bitset::{for_each_bit, MultiBfs, SingleBfs, Step, View};
 use engine::metrics::betweenness::{betweenness, BetweennessOptions};
 use engine::metrics::closeness::{closeness, harmonic_centrality, ClosenessOptions};
 use engine::metrics::degree::DegreeMode;
@@ -92,6 +92,20 @@ fn multi_source_search_equals_plain_search() {
     {
         let n = g.node_count();
         let plain = reoriented(&g, mode);
+        let mut one = SingleBfs::new(n);
+        for s in 0..n as u32 {
+            let want = plain_bfs(&plain, s as usize);
+            for max_level in [0, 1, 2, u32::MAX] {
+                let reached = one.run(View::new(&g, mode), s, max_level).len();
+                let got: Vec<u32> = (0..n as u32).map(|v| one.level(v)).collect();
+                let cut: Vec<u32> = want
+                    .iter()
+                    .map(|&l| if l <= max_level { l } else { u32::MAX })
+                    .collect();
+                assert_eq!(got, cut, "{mode:?}, source {s}, {max_level} levels");
+                assert_eq!(reached, cut.iter().filter(|&&l| l != u32::MAX).count());
+            }
+        }
         let mut ms = MultiBfs::new(n);
         // Batches of every size up to 64, including repeated sources.
         let mut sources: Vec<u32> = (0..n as u32).rev().collect();

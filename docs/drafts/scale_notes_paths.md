@@ -72,6 +72,13 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   symmetrized copy (about 50 B/edge transient: edge list + two counting
   sorts). Neighborhood sizes, order 2, mode all: densedir1k (300k arcs)
   0.0110 -> 0.0030 s, peak heap 18.3 MB -> 55 KB; meddir3k 11.1 MB -> 186 KB.
+- When batching pays: a 64-source batch saves work only where the searches
+  overlap. Depth-limited searches (neighborhood sizes, reach k) on sparse
+  graphs have balls of about d^r nodes; when 64 d^r < n the batch only adds
+  3 words/node of state traffic, so one plain search per source
+  (`bitset::SingleBfs`, 4 B/node state) is used instead
+  (`bitset::batches_pay`). Measured, neighborhood sizes order 2: sparse100k
+  0.47 s batched -> 0.10 s per source (main: 0.11 s).
 - Blocking: partitioning nodes into cache-sized ranges and bucketing the
   pushes by target range (X-Stream, Roy, Mihailovic and Zwaenepoel 2013;
   GridGraph, Zhu, Han and Chen 2015) turns the random ORs into sequential
