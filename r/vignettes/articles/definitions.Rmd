@@ -688,6 +688,7 @@ hypergraphs are out of scope until a need appears.
 | planar (graph) | | geometry: no crossing linestrings |
 | distance weight | cost, length | igraph's `strength()`: the same column as an intensity |
 | strength weight | intensity, frequency | igraph's `distances()`: the same column as a length |
+| whole-network structure (density, centralization, fragmentation, core-periphery) | network topology (network science), graph-level indices (Wasserman and Faust; sna's `gli`), topography (Everton 2012; Cunningham, Everton, and Murphy 2016) | topography: the description of surface relief; topology (mathematics): properties preserved under continuous deformation |
 
 ## References
 

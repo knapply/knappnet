@@ -25,7 +25,9 @@ use std::hash::{BuildHasherDefault, Hash, Hasher};
 
 use super::columns::{Column, Kind, Strings, Which};
 use super::diagnostics::{Code, Diagnostic, Report, ROW_CAP};
-use super::roles::{CoordinateKind, EdgeRole, NodeRole, WeightType};
+use super::roles::{
+    ChangeRole, CoordinateKind, EdgeRole, LayerRole, NodeRole, SpellRole, WeightType,
+};
 use super::Frame;
 use crate::parallel::for_each_item;
 
@@ -50,6 +52,108 @@ pub struct Groups {
     pub sizes: Vec<u32>,
     /// The first edge row of each group.
     pub first: Vec<usize>,
+}
+
+/// The layers of a multilayer network, resolved to codes.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Layers {
+    /// The layer labels: the layer table's identifiers in row order when
+    /// a table is given, else the edge layers in order of first
+    /// appearance (source before target within a row).
+    pub labels: Vec<String>,
+    /// Layer code of every edge's source endpoint.
+    pub src: Vec<u32>,
+    /// Layer code of every edge's target endpoint.
+    pub tgt: Vec<u32>,
+    /// Whether the labels come from a layer table.
+    pub from_table: bool,
+}
+
+/// How an edge of a multilayer network sits among the layers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EdgeClass {
+    /// Both endpoints in one layer.
+    Intralayer,
+    /// One actor joined to itself in another layer.
+    Coupling,
+    /// Two actors in different layers.
+    Interlayer,
+}
+
+impl EdgeClass {
+    /// The C interface code: 0 = intralayer, 1 = coupling, 2 = interlayer.
+    pub fn code(self) -> i32 {
+        match self {
+            EdgeClass::Intralayer => 0,
+            EdgeClass::Coupling => 1,
+            EdgeClass::Interlayer => 2,
+        }
+    }
+}
+
+impl Layers {
+    /// The class of edge `e`, given the resolved endpoints.
+    pub fn class(&self, e: usize, src: &[u32], tgt: &[u32]) -> EdgeClass {
+        if self.src[e] == self.tgt[e] {
+            EdgeClass::Intralayer
+        } else if src[e] == tgt[e] {
+            EdgeClass::Coupling
+        } else {
+            EdgeClass::Interlayer
+        }
+    }
+}
+
+/// The egos of a collection of ego networks, resolved to codes.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Egos {
+    /// The ego labels, in order of first appearance in the node table.
+    pub labels: Vec<String>,
+    /// Ego code of every node (`u32::MAX` for a node added from the
+    /// edges, which validation reports as an error).
+    pub node: Vec<u32>,
+    /// Ego code of every edge: its own ego column when set, else its
+    /// source's.
+    pub edge: Vec<u32>,
+    /// For every ego, the node index of the ego itself when the ego
+    /// identifier is a node identifier.
+    pub node_of: Vec<Option<u32>>,
+}
+
+/// Presence spells per node from the node spells table, sorted by start
+/// within each node; a node without rows has no entries and is present
+/// throughout.
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct NodeSpells {
+    /// `offsets[i]..offsets[i + 1]` are node `i`'s spells (`n + 1`
+    /// values).
+    pub offsets: Vec<usize>,
+    /// Start of each spell (`-inf` when unbounded).
+    pub start: Vec<f64>,
+    /// End of each spell (`inf` when unbounded).
+    pub end: Vec<f64>,
+    /// The table row of each spell.
+    pub rows: Vec<usize>,
+}
+
+impl NodeSpells {
+    /// Whether the spell `[s, e)` (a contact when `e == s`) lies inside
+    /// one of node `i`'s spells. Spells are searched by start; when they
+    /// may overlap (declared), every spell of the node is tried.
+    pub fn contains(&self, i: usize, s: f64, e: f64, overlapping: bool) -> bool {
+        let (lo, hi) = (self.offsets[i], self.offsets[i + 1]);
+        if lo == hi {
+            return true;
+        }
+        let inside = |a: f64, b: f64| a <= s && e <= b && (e > s || s < b || a == b);
+        if overlapping {
+            return (lo..hi).any(|k| inside(self.start[k], self.end[k]));
+        }
+        // The last spell starting at or before s.
+        let starts = &self.start[lo..hi];
+        let k = starts.partition_point(|&a| a <= s);
+        k > 0 && inside(self.start[lo + k - 1], self.end[lo + k - 1])
+    }
 }
 
 /// What validation resolved, available when the endpoints map to nodes.
@@ -82,13 +186,45 @@ pub struct Resolved {
     /// Node presence spells `(start, end)` with infinities for unbounded
     /// ends, when node spell roles are set and valid.
     pub node_spells: Option<Vec<(f64, f64)>>,
+    /// Presence spells from the node spells table, when the table is
+    /// given and valid.
+    pub spell_table: Option<NodeSpells>,
+    /// The layers, when the layer roles are set and valid.
+    pub layers: Option<Layers>,
+    /// The egos, when the ego role is set and valid.
+    pub egos: Option<Egos>,
+    /// Whether each edge row is an unobserved pair, when the
+    /// `edge_missing` role is set and valid.
+    pub missing: Option<Vec<bool>>,
     /// Parallel-edge groups, when every distinguishing role resolved.
     pub groups: Option<Groups>,
-    /// Number of self-loops.
+    /// Number of self-loops (same node, same layer).
     pub loops: usize,
     /// Whether edges are directed (the declaration, kept here so that
     /// later operations on the resolved edges need no frame).
     pub directed: bool,
+}
+
+impl Resolved {
+    /// Whether edge `e` is an observed tie (not flagged missing).
+    #[inline]
+    pub fn observed(&self, e: usize) -> bool {
+        !self.missing.as_ref().is_some_and(|m| m[e])
+    }
+
+    /// Number of observed ties.
+    pub fn observed_count(&self) -> usize {
+        match &self.missing {
+            Some(m) => m.iter().filter(|&&x| !x).count(),
+            None => self.src.len(),
+        }
+    }
+
+    /// Whether edge `e` is a self-loop: the same node in the same layer.
+    #[inline]
+    pub fn is_loop(&self, e: usize) -> bool {
+        self.src[e] == self.tgt[e] && self.layers.as_ref().map_or(true, |l| l.src[e] == l.tgt[e])
+    }
 }
 
 /// The outcome of validation.
@@ -347,12 +483,78 @@ impl<'a> StrKey<'a> {
 }
 
 /// The result of mapping identifiers to indices.
-struct Mapping {
+struct Mapped {
     n: usize,
     src: Vec<u32>,
     tgt: Vec<u32>,
     added: Vec<(usize, bool)>,
     ok: bool,
+}
+
+/// The mapping together with the identifier index it was built with.
+struct Mapping<'a> {
+    mapped: Mapped,
+    index: IdIndex<'a>,
+}
+
+/// The identifier table after mapping, for looking up the identifiers of
+/// the long tables.
+enum IdIndex<'a> {
+    Int(FastMap<i64, u32>),
+    Float(FastMap<u64, u32>),
+    Str(FastMap<StrKey<'a>, u32>),
+}
+
+/// What a lookup of one identifier found.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Lookup {
+    Missing,
+    Unknown,
+    Node(u32),
+}
+
+impl<'a> IdIndex<'a> {
+    /// Whether identifiers of `kind` can be looked up in this index
+    /// (numbers in a numeric index, text in a text index).
+    fn accepts(&self, kind: Kind) -> bool {
+        match self {
+            IdIndex::Str(_) => kind == Kind::Str,
+            _ => kind == Kind::Int || kind == Kind::Float,
+        }
+    }
+
+    /// Looks up row `i` of `view`.
+    fn find(&self, view: IdView<'a>, i: usize) -> Lookup {
+        let found = |x: Option<&u32>| x.map_or(Lookup::Unknown, |&n| Lookup::Node(n));
+        match self {
+            IdIndex::Int(map) => match view {
+                IdView::Int(..) => match view.int(i) {
+                    None => Lookup::Missing,
+                    Some(k) => found(map.get(&k)),
+                },
+                IdView::Float(v) => {
+                    if v[i].is_nan() {
+                        Lookup::Missing
+                    } else if v[i].fract() == 0.0 && v[i].abs() < 9.0e15 {
+                        found(map.get(&(v[i] as i64)))
+                    } else {
+                        Lookup::Unknown
+                    }
+                }
+                IdView::Str(_) => Lookup::Unknown,
+            },
+            IdIndex::Float(map) => match view.float(i) {
+                None if matches!(view, IdView::Str(_)) => Lookup::Unknown,
+                None => Lookup::Missing,
+                Some(k) => found(map.get(&k)),
+            },
+            IdIndex::Str(map) => match view.str(i) {
+                None if matches!(view, IdView::Str(_)) => Lookup::Missing,
+                None => Lookup::Unknown,
+                Some(b) => found(map.get(&StrKey::new(b))),
+            },
+        }
+    }
 }
 
 /// Endpoint states after the parallel lookup pass.
@@ -374,7 +576,7 @@ fn map_ids<K: Hash + Eq + Copy + Sync>(
     empty: impl Fn(K) -> bool + Sync,
     threads: usize,
     report: &mut Report,
-) -> Mapping {
+) -> (Mapped, FastMap<K, u32>) {
     let has_nodes = frame.nodes().is_some();
     let n0 = frame.node_rows();
     let m = frame.edge_rows();
@@ -568,13 +770,16 @@ fn map_ids<K: Hash + Eq + Copy + Sync>(
         ));
     }
     let n = n0 + added.len();
-    Mapping {
-        n,
-        src,
-        tgt,
-        added,
-        ok,
-    }
+    (
+        Mapped {
+            n,
+            src,
+            tgt,
+            added,
+            ok,
+        },
+        index,
+    )
 }
 
 #[inline]
@@ -666,7 +871,12 @@ fn id_kind(frame: &Frame, report: &mut Report) -> Option<(Kind, bool)> {
 }
 
 /// Maps identifiers to node indices by their resolved kind.
-fn resolve_endpoints(frame: &Frame, kind: Kind, threads: usize, report: &mut Report) -> Mapping {
+fn resolve_endpoints<'a>(
+    frame: &'a Frame,
+    kind: Kind,
+    threads: usize,
+    report: &mut Report,
+) -> Mapping<'a> {
     let src = IdView::of(frame.edge_role(EdgeRole::Source).expect("checked").1).expect("checked");
     let tgt = IdView::of(frame.edge_role(EdgeRole::Target).expect("checked").1).expect("checked");
     let id = frame
@@ -674,40 +884,126 @@ fn resolve_endpoints(frame: &Frame, kind: Kind, threads: usize, report: &mut Rep
         .and_then(|(_, c)| IdView::of(c));
     let no_nodes = frame.node_rows() == 0 || id.is_none();
     match kind {
-        Kind::Int => map_ids(
-            frame,
-            |i| if no_nodes { None } else { id.unwrap().int(i) },
-            |e| src.int(e),
-            |e| tgt.int(e),
-            |_| false,
-            threads,
-            report,
-        ),
-        Kind::Float => map_ids(
-            frame,
-            |i| if no_nodes { None } else { id.unwrap().float(i) },
-            |e| src.float(e),
-            |e| tgt.float(e),
-            |_| false,
-            threads,
-            report,
-        ),
-        _ => map_ids(
-            frame,
-            |i| {
-                if no_nodes {
-                    None
-                } else {
-                    id.unwrap().str(i).map(StrKey::new)
-                }
-            },
-            |e| src.str(e).map(StrKey::new),
-            |e| tgt.str(e).map(StrKey::new),
-            |k: StrKey| k.is_empty(),
-            threads,
-            report,
-        ),
+        Kind::Int => {
+            let (mapped, index) = map_ids(
+                frame,
+                |i| if no_nodes { None } else { id.unwrap().int(i) },
+                |e| src.int(e),
+                |e| tgt.int(e),
+                |_| false,
+                threads,
+                report,
+            );
+            Mapping {
+                mapped,
+                index: IdIndex::Int(index),
+            }
+        }
+        Kind::Float => {
+            let (mapped, index) = map_ids(
+                frame,
+                |i| if no_nodes { None } else { id.unwrap().float(i) },
+                |e| src.float(e),
+                |e| tgt.float(e),
+                |_| false,
+                threads,
+                report,
+            );
+            Mapping {
+                mapped,
+                index: IdIndex::Float(index),
+            }
+        }
+        _ => {
+            let (mapped, index) = map_ids(
+                frame,
+                |i| {
+                    if no_nodes {
+                        None
+                    } else {
+                        id.unwrap().str(i).map(StrKey::new)
+                    }
+                },
+                |e| src.str(e).map(StrKey::new),
+                |e| tgt.str(e).map(StrKey::new),
+                |k: StrKey| k.is_empty(),
+                threads,
+                report,
+            );
+            Mapping {
+                mapped,
+                index: IdIndex::Str(index),
+            }
+        }
     }
+}
+
+/// Looks every row of an identifier column of a long table up in the
+/// node index, reporting missing and unknown identifiers with the
+/// table's name; `None` when the column's type cannot be matched.
+fn lookup_ids(
+    index: &IdIndex<'_>,
+    which: Which,
+    name: &str,
+    column: &Column,
+    id_name: &str,
+    report: &mut Report,
+) -> Option<Vec<u32>> {
+    let view = match IdView::of(column) {
+        Some(v) if index.accepts(v.kind()) => v,
+        _ => {
+            report.push(Diagnostic::network(
+                Code::E_ID_TYPE,
+                format!(
+                    "identifiers in column `{name}` of `{which}` ({}) must have the same type as the node identifiers (column `{id_name}` of `nodes`)",
+                    column.kind().name()
+                ),
+            ));
+            return None;
+        }
+    };
+    let n = column.len();
+    let mut out = vec![0u32; n];
+    let mut missing = Vec::new();
+    let mut unknown = Vec::new();
+    let (mut n_missing, mut n_unknown) = (0, 0);
+    for (i, slot) in out.iter_mut().enumerate() {
+        match index.find(view, i) {
+            Lookup::Node(k) => *slot = k,
+            Lookup::Missing => {
+                n_missing += 1;
+                push_capped(&mut missing, i);
+            }
+            Lookup::Unknown => {
+                n_unknown += 1;
+                push_capped(&mut unknown, i);
+            }
+        }
+    }
+    let mut ok = true;
+    if n_missing > 0 {
+        ok = false;
+        report.push(Diagnostic::capped(
+            Code::E_MISSING_ENDPOINT,
+            which,
+            format!("identifiers (column `{name}` of `{which}`) must not be missing"),
+            missing,
+            n_missing,
+        ));
+    }
+    if n_unknown > 0 {
+        ok = false;
+        report.push(Diagnostic::capped(
+            Code::E_UNKNOWN_NODE,
+            which,
+            format!(
+                "identifiers (column `{name}` of `{which}`) must be identifiers in column `{id_name}` of `nodes`"
+            ),
+            unknown,
+            n_unknown,
+        ));
+    }
+    ok.then_some(out)
 }
 
 // ---- Discrete columns ----------------------------------------------------
@@ -777,6 +1073,85 @@ fn discrete(column: &Column) -> Option<(Discrete, Vec<usize>, usize)> {
     Some((Discrete { codes, labels }, missing, n_missing))
 }
 
+/// Codes the values of several discrete columns of one kind by first
+/// appearance (the layers of the two edge columns and the layer table;
+/// the egos of the node and edge columns), with lookup-only passes for
+/// columns whose values must already be known.
+struct Coder<'a> {
+    ints: FastMap<i64, u32>,
+    strs: FastMap<&'a [u8], u32>,
+    bools: [u32; 2],
+    labels: Vec<String>,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Coded {
+    Missing,
+    Unknown,
+    Code(u32),
+}
+
+impl<'a> Coder<'a> {
+    fn new() -> Coder<'a> {
+        Coder {
+            ints: fast_map(16),
+            strs: fast_map(16),
+            bools: [u32::MAX; 2],
+            labels: Vec::new(),
+        }
+    }
+
+    /// Codes row `i` of `column`, adding a new label when `insert`.
+    fn code(&mut self, column: &'a Column, i: usize, insert: bool) -> Coded {
+        let next = self.labels.len() as u32;
+        match column {
+            Column::Int(v, m) => {
+                if m.as_ref().is_some_and(|m| m[i]) {
+                    return Coded::Missing;
+                }
+                match (self.ints.get(&v[i]), insert) {
+                    (Some(&c), _) => Coded::Code(c),
+                    (None, false) => Coded::Unknown,
+                    (None, true) => {
+                        self.ints.insert(v[i], next);
+                        self.labels.push(v[i].to_string());
+                        Coded::Code(next)
+                    }
+                }
+            }
+            Column::Str(s) => match s.get(i) {
+                None => Coded::Missing,
+                Some(b) => match (self.strs.get(b), insert) {
+                    (Some(&c), _) => Coded::Code(c),
+                    (None, false) => Coded::Unknown,
+                    (None, true) => {
+                        self.strs.insert(b, next);
+                        self.labels.push(String::from_utf8_lossy(b).into_owned());
+                        Coded::Code(next)
+                    }
+                },
+            },
+            Column::Bool(v, m) => {
+                if m.as_ref().is_some_and(|m| m[i]) {
+                    return Coded::Missing;
+                }
+                let slot = v[i] as usize;
+                if self.bools[slot] != u32::MAX {
+                    Coded::Code(self.bools[slot])
+                } else if insert {
+                    self.bools[slot] = next;
+                    self.labels
+                        .push(if v[i] { "TRUE" } else { "FALSE" }.to_string());
+                    Coded::Code(next)
+                } else {
+                    Coded::Unknown
+                }
+            }
+            Column::Float(_) => Coded::Unknown,
+        }
+    }
+}
+
 /// A numeric column as doubles (`None` for text or logical).
 fn numeric(column: &Column) -> Option<Vec<f64>> {
     match column {
@@ -827,9 +1202,72 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             mapping = Some(resolve_endpoints(frame, kind, threads, &mut report));
         }
     }
+    // The long tables need their roles.
+    let layer_table_ok = frame.layers().is_none() || frame.layer_role(LayerRole::Layer).is_some();
+    if !layer_table_ok {
+        report.push(Diagnostic::network(
+            Code::E_TABLE_ROLE_UNDECLARED,
+            "the layer table needs a layer identifier column",
+        ));
+    }
+    let spell_table_ok = frame.node_spells().is_none()
+        || SpellRole::ALL
+            .iter()
+            .all(|&r| frame.spell_role(r).is_some());
+    if !spell_table_ok {
+        report.push(Diagnostic::network(
+            Code::E_TABLE_ROLE_UNDECLARED,
+            "the node spells table needs identifier, start, and end columns",
+        ));
+    }
+    let change_table_ok = frame.node_changes().is_none()
+        || ChangeRole::ALL
+            .iter()
+            .all(|&r| frame.change_role(r).is_some());
+    if !change_table_ok {
+        report.push(Diagnostic::network(
+            Code::E_TABLE_ROLE_UNDECLARED,
+            "the node changes table needs identifier and time columns",
+        ));
+    }
 
     // Declarations that contradict each other, whatever the data.
     let mode_role = frame.node_role(NodeRole::Mode);
+    let has_source_layer = frame.has_edge_role(EdgeRole::SourceLayer);
+    let has_target_layer = frame.has_edge_role(EdgeRole::TargetLayer);
+    if has_source_layer != has_target_layer {
+        report.push(Diagnostic::network(
+            Code::E_LAYER_ROLE_PAIR,
+            "a multilayer network needs both a source_layer and a target_layer column",
+        ));
+    }
+    if decl.couplings_only.is_some() && !(has_source_layer && has_target_layer) {
+        report.push(Diagnostic::network(
+            Code::E_DECLARATION_CONFLICT,
+            "interlayer edges were declared (couplings_only), but no layer columns are set",
+        ));
+    }
+    let has_node_ego = frame.has_node_role(NodeRole::Ego);
+    if decl.egos_are_nodes.is_some() && !has_node_ego {
+        report.push(Diagnostic::network(
+            Code::E_DECLARATION_CONFLICT,
+            "egos were declared (egos_are_nodes), but no ego column is set on `nodes`",
+        ));
+    }
+    if frame.has_edge_role(EdgeRole::Ego) && !has_node_ego {
+        report.push(Diagnostic::network(
+            Code::E_DECLARATION_CONFLICT,
+            "an ego column on `edges` needs an ego column on `nodes`",
+        ));
+    }
+    let has_spell_roles =
+        frame.has_node_role(NodeRole::NodeStart) || frame.has_node_role(NodeRole::NodeEnd);
+    if has_spell_roles && frame.node_spells().is_some() {
+        report.push(Diagnostic::network(
+            Code::E_DECLARATION_CONFLICT,
+            "node presence is given twice: by node_start or node_end columns and by a node spells table; use one",
+        ));
+    }
     if decl.between_modes_only == Some(true) {
         if mode_role.is_none() {
             report.push(Diagnostic::network(
@@ -1304,10 +1742,134 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
         Code::N_MISSING_EDGES,
         "edge_missing",
     );
+    let missing: Option<Vec<bool>> = match frame.edge_role(EdgeRole::EdgeMissing) {
+        Some((_, Column::Bool(v, None))) => Some(v.clone()),
+        _ => None,
+    };
+
+    // 3h. Layers: the two edge columns and the layer table share one
+    // coding.
+    let mut layers = None;
+    if let (Some((sn, sc)), Some((tn, tc))) = (
+        frame.edge_role(EdgeRole::SourceLayer),
+        frame.edge_role(EdgeRole::TargetLayer),
+    ) {
+        let table = frame.layer_role(LayerRole::Layer);
+        let kind_ok = sc.kind() == tc.kind()
+            && sc.kind() != Kind::Float
+            && table.map_or(true, |(_, lc)| lc.kind() == sc.kind());
+        if !kind_ok {
+            report.push(Diagnostic::network(
+                Code::E_LAYER_TYPE,
+                format!(
+                    "layer columns (`{sn}` and `{tn}` of `edges`{}) must be text, integer, or logical, and of one type",
+                    table.map_or(String::new(), |(ln, _)| format!(", `{ln}` of `layers`"))
+                ),
+            ));
+        } else {
+            let mut coder = Coder::new();
+            let mut ok = true;
+            if let Some((ln, lc)) = table {
+                let mut missing_ids = Vec::new();
+                let mut dups = Vec::new();
+                let (mut n_missing, mut n_dup) = (0, 0);
+                for i in 0..lc.len() {
+                    let before = coder.labels.len();
+                    match coder.code(lc, i, true) {
+                        Coded::Missing => {
+                            n_missing += 1;
+                            push_capped(&mut missing_ids, i);
+                        }
+                        Coded::Code(c) if (c as usize) < before => {
+                            n_dup += 1;
+                            push_capped(&mut dups, i);
+                        }
+                        _ => {}
+                    }
+                }
+                if n_missing > 0 {
+                    ok = false;
+                    report.push(Diagnostic::capped(
+                        Code::E_LAYER_ID_MISSING,
+                        Which::Layers,
+                        format!(
+                            "layer identifiers (column `{ln}` of `layers`) must not be missing"
+                        ),
+                        missing_ids,
+                        n_missing,
+                    ));
+                }
+                if n_dup > 0 {
+                    ok = false;
+                    report.push(Diagnostic::capped(
+                        Code::E_LAYER_ID_DUPLICATE,
+                        Which::Layers,
+                        format!("layer identifiers (column `{ln}` of `layers`) must be unique; the listed rows repeat an earlier identifier"),
+                        dups,
+                        n_dup,
+                    ));
+                }
+            }
+            let insert = table.is_none();
+            let mut lsrc = vec![0u32; m];
+            let mut ltgt = vec![0u32; m];
+            let mut missing_rows = Vec::new();
+            let mut unknown_rows = Vec::new();
+            let (mut n_missing, mut n_unknown) = (0, 0);
+            for e in 0..m {
+                let a = coder.code(sc, e, insert);
+                let b = coder.code(tc, e, insert);
+                if a == Coded::Missing || b == Coded::Missing {
+                    n_missing += 1;
+                    push_capped(&mut missing_rows, e);
+                } else if a == Coded::Unknown || b == Coded::Unknown {
+                    n_unknown += 1;
+                    push_capped(&mut unknown_rows, e);
+                }
+                if let Coded::Code(c) = a {
+                    lsrc[e] = c;
+                }
+                if let Coded::Code(c) = b {
+                    ltgt[e] = c;
+                }
+            }
+            if n_missing > 0 {
+                ok = false;
+                report.push(Diagnostic::capped(
+                    Code::E_LAYER_MISSING,
+                    Which::Edges,
+                    format!("every edge needs a layer at each endpoint; columns `{sn}` and `{tn}` of `edges` have missing values"),
+                    missing_rows,
+                    n_missing,
+                ));
+            }
+            if n_unknown > 0 {
+                ok = false;
+                report.push(Diagnostic::capped(
+                    Code::E_LAYER_UNKNOWN,
+                    Which::Edges,
+                    format!(
+                        "edge layers (columns `{sn}` and `{tn}` of `edges`) must be identifiers in column `{}` of `layers`; add the missing layers to the table",
+                        table.map(|(ln, _)| ln).unwrap_or_default()
+                    ),
+                    unknown_rows,
+                    n_unknown,
+                ));
+            }
+            if ok {
+                layers = Some(Layers {
+                    labels: coder.labels,
+                    src: lsrc,
+                    tgt: ltgt,
+                    from_table: table.is_some(),
+                });
+            }
+        }
+    }
 
     // 2. Structure-dependent checks and declared properties.
     let mapping = match mapping {
-        Some(map) if map.ok => map,
+        Some(map) if map.mapped.ok => map,
         _ => {
             return Validation {
                 report,
@@ -1315,13 +1877,22 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             }
         }
     };
-    let Mapping {
+    let Mapping { mapped, index } = mapping;
+    let Mapped {
         n, src, tgt, added, ..
-    } = mapping;
+    } = mapped;
     let (src_name, tgt_name) = endpoint_names(frame);
+    let id_name = frame
+        .node_role(NodeRole::Id)
+        .map(|(name, _)| name.to_string())
+        .unwrap_or_default();
 
-    // Loops.
-    let (loop_rows, loops) = scan_rows(m, threads, |e| src[e] == tgt[e]);
+    // Loops: the same node in the same layer. A coupling edge (the same
+    // actor in two layers) is not a loop.
+    let layer_codes = layers.as_ref().map(|l| (&l.src[..], &l.tgt[..]));
+    let (loop_rows, loops) = scan_rows(m, threads, |e| {
+        src[e] == tgt[e] && layer_codes.map_or(true, |(ls, lt)| ls[e] == lt[e])
+    });
     match decl.loops {
         Some(false) if loops > 0 => report.push(Diagnostic::capped(
             Code::E_LOOP_DECLARED,
@@ -1358,7 +1929,8 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
         ns.resize(n, (f64::NEG_INFINITY, f64::INFINITY));
     }
 
-    // Edges within a mode.
+    // Edges within a mode. A coupling edge joins one actor to itself
+    // across layers and is exempt.
     if let (Some(true), Some(md)) = (decl.between_modes_only, &modes) {
         let codes = &md.codes;
         report_rows(
@@ -1371,34 +1943,382 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             ),
             m,
             threads,
-            |e| codes[src[e] as usize] == codes[tgt[e] as usize],
-        );
-    }
-
-    // Edge spells within node spells.
-    if let (Some(s), Some(ns)) = (&start, &node_spells) {
-        let e_ = end.as_deref();
-        let inside = |node: u32, s: f64, e: f64| {
-            let (a, b) = ns[node as usize];
-            a <= s && e <= b && (e > s || s < b || a == b)
-        };
-        report_rows(
-            &mut report,
-            Code::E_SPELL_OUTSIDE_NODE,
-            Which::Edges,
-            "an edge can only be active while both of its endpoints are present; the listed edges fall outside a node's presence spell",
-            m,
-            threads,
-            |i| {
-                let e = e_.map_or(s[i], |e| e[i]);
-                !(inside(src[i], s[i], e) && inside(tgt[i], s[i], e))
+            |e| {
+                codes[src[e] as usize] == codes[tgt[e] as usize]
+                    && !(src[e] == tgt[e] && layer_codes.is_some_and(|(ls, lt)| ls[e] != lt[e]))
             },
         );
     }
 
-    // Parallel edges, keyed on endpoints, relation, and spell.
+    // Interlayer edges between different actors, when only couplings
+    // were declared.
+    if let (Some(true), Some((ls, lt))) = (decl.couplings_only, layer_codes) {
+        report_rows(
+            &mut report,
+            Code::E_INTERLAYER_DECLARED,
+            Which::Edges,
+            "interlayer edges were declared to be couplings only (couplings_only), but the listed edges join two different actors in different layers",
+            m,
+            threads,
+            |e| ls[e] != lt[e] && src[e] != tgt[e],
+        );
+    }
+
+    // Egos.
+    let mut egos = None;
+    if let Some((en, ec)) = frame.node_role(NodeRole::Ego) {
+        let edge_ego = frame.edge_role(EdgeRole::Ego);
+        let kind_ok = matches!(ec.kind(), Kind::Int | Kind::Str)
+            && edge_ego.map_or(true, |(_, c)| c.kind() == ec.kind());
+        if !kind_ok {
+            report.push(Diagnostic::network(
+                Code::E_EGO_TYPE,
+                format!(
+                    "ego columns (`{en}` of `nodes`{}) must be text or integer, and of one type",
+                    edge_ego.map_or(String::new(), |(n, _)| format!(", `{n}` of `edges`"))
+                ),
+            ));
+        } else {
+            let mut ok = true;
+            let mut coder = Coder::new();
+            let mut node_codes = vec![u32::MAX; n];
+            let (mut rows, mut count) = (Vec::new(), 0);
+            for (i, slot) in node_codes.iter_mut().enumerate().take(n0) {
+                match coder.code(ec, i, true) {
+                    Coded::Code(c) => *slot = c,
+                    _ => {
+                        count += 1;
+                        push_capped(&mut rows, i);
+                    }
+                }
+            }
+            if count > 0 {
+                ok = false;
+                report.push(Diagnostic::capped(
+                    Code::E_EGO_MISSING,
+                    Which::Nodes,
+                    format!("every node needs an ego; column `{en}` of `nodes` has missing values"),
+                    rows,
+                    count,
+                ));
+            }
+            if !added.is_empty() {
+                ok = false;
+                let rows: Vec<usize> = added.iter().map(|(e, _)| *e).collect();
+                report.push(Diagnostic::rows(
+                    Code::E_EGO_MISSING,
+                    Which::Edges,
+                    format!(
+                        "every node needs an ego, but the listed edges introduce {} node(s) absent from `nodes`; add them to `nodes` with an ego",
+                        added.len()
+                    ),
+                    &rows,
+                ));
+            }
+            // Which egos are nodes: every node identifier is looked up
+            // among the ego labels.
+            let mut node_of = vec![None; coder.labels.len()];
+            let mut ego_of_node = vec![None; n0];
+            if ok {
+                if let Some((_, idc)) = frame.node_role(NodeRole::Id) {
+                    for i in 0..n0 {
+                        let ego_of_id = match (idc, ec.kind()) {
+                            (Column::Int(..), Kind::Int) | (Column::Str(_), Kind::Str) => {
+                                match coder.code(idc, i, false) {
+                                    Coded::Code(c) => Some(c),
+                                    _ => None,
+                                }
+                            }
+                            (Column::Float(v), Kind::Int) => {
+                                let x = v[i];
+                                if x.is_finite() && x.fract() == 0.0 && x.abs() < 9.0e15 {
+                                    coder.ints.get(&(x as i64)).copied()
+                                } else {
+                                    None
+                                }
+                            }
+                            _ => None,
+                        };
+                        if let Some(c) = ego_of_id {
+                            node_of[c as usize] = Some(i as u32);
+                            ego_of_node[i] = Some(c);
+                        }
+                    }
+                }
+                let self_rows = report_rows(
+                    &mut report,
+                    Code::E_EGO_SELF,
+                    Which::Nodes,
+                    format!(
+                        "a node that is an ego must belong to its own ego network, but the listed nodes (column `{en}` of `nodes`) belong to another ego"
+                    ),
+                    n0,
+                    threads,
+                    |i| ego_of_node[i].is_some_and(|c| c != node_codes[i]),
+                );
+                if self_rows {
+                    ok = false;
+                }
+                if decl.egos_are_nodes == Some(true)
+                    && report_rows(
+                        &mut report,
+                        Code::E_EGO_UNKNOWN,
+                        Which::Nodes,
+                        format!(
+                            "egos were declared to be nodes (egos_are_nodes), but the ego of the listed nodes (column `{en}` of `nodes`) is not a node identifier (column `{id_name}`)"
+                        ),
+                        n0,
+                        threads,
+                        |i| node_of[node_codes[i] as usize].is_none(),
+                    )
+                {
+                    ok = false;
+                }
+            }
+            // Edge egos: the edge's own column, else the source's; both
+            // endpoints must agree.
+            let mut edge_codes = vec![u32::MAX; m];
+            if ok {
+                let (mut rows, mut count) = (Vec::new(), 0);
+                for (e, slot) in edge_codes.iter_mut().enumerate() {
+                    *slot = match edge_ego {
+                        Some((_, c)) => match coder.code(c, e, true) {
+                            Coded::Code(k) => k,
+                            _ => {
+                                count += 1;
+                                push_capped(&mut rows, e);
+                                u32::MAX
+                            }
+                        },
+                        None => node_codes[src[e] as usize],
+                    };
+                }
+                if count > 0 {
+                    ok = false;
+                    report.push(Diagnostic::capped(
+                        Code::E_EGO_MISSING,
+                        Which::Edges,
+                        format!(
+                            "every edge needs an ego; column `{}` of `edges` has missing values",
+                            edge_ego.map(|(n, _)| n).unwrap_or_default()
+                        ),
+                        rows,
+                        count,
+                    ));
+                }
+            }
+            if ok
+                && report_rows(
+                    &mut report,
+                    Code::E_EGO_MISMATCH,
+                    Which::Edges,
+                    "an edge must join two nodes of one ego and carry that ego; the listed edges join nodes of different egos, or carry an ego that differs from their endpoints'",
+                    m,
+                    threads,
+                    |e| {
+                        let c = edge_codes[e];
+                        node_codes[src[e] as usize] != c || node_codes[tgt[e] as usize] != c
+                    },
+                )
+            {
+                ok = false;
+            }
+            if ok {
+                egos = Some(Egos {
+                    labels: coder.labels,
+                    node: node_codes,
+                    edge: edge_codes,
+                    node_of,
+                });
+            }
+        }
+    }
+
+    // The node spells table: identifiers looked up, spells ordered, then
+    // sorted per node and checked for overlap.
+    let mut spell_table = None;
+    if spell_table_ok && frame.node_spells().is_some() {
+        let (idn, idc) = frame.spell_role(SpellRole::Id).expect("checked");
+        let rows_n = idc.len();
+        let ids = lookup_ids(&index, Which::NodeSpells, idn, idc, &id_name, &mut report);
+        let mut ok = true;
+        let mut bound = |role: SpellRole, fill: f64| -> Vec<f64> {
+            let (name, col) = frame.spell_role(role).expect("checked");
+            match numeric(col) {
+                Some(v) => v
+                    .into_iter()
+                    .map(|x| if x.is_nan() { fill } else { x })
+                    .collect(),
+                None => {
+                    ok = false;
+                    report.push(Diagnostic::network(
+                        Code::E_TIME_TYPE,
+                        format!(
+                            "spell {} times (column `{name}` of `node_spells`) must be numeric, not {}",
+                            role.name(),
+                            col.kind().name()
+                        ),
+                    ));
+                    vec![fill; rows_n]
+                }
+            }
+        };
+        let a = bound(SpellRole::Start, f64::NEG_INFINITY);
+        let b = bound(SpellRole::End, f64::INFINITY);
+        if ok
+            && report_rows(
+                &mut report,
+                Code::E_NODE_SPELL_ORDER,
+                Which::NodeSpells,
+                "nodes must not leave before they arrive (spell end earlier than spell start)",
+                rows_n,
+                threads,
+                |i| b[i] < a[i],
+            )
+        {
+            ok = false;
+        }
+        if let (true, Some(ids)) = (ok, ids) {
+            // Counting sort by node, then sort each node's spells by
+            // start and end.
+            let mut offsets = vec![0usize; n + 1];
+            for &i in &ids {
+                offsets[i as usize + 1] += 1;
+            }
+            for i in 0..n {
+                offsets[i + 1] += offsets[i];
+            }
+            let mut rows = vec![0usize; rows_n];
+            let mut fill = offsets.clone();
+            for (r, &i) in ids.iter().enumerate() {
+                rows[fill[i as usize]] = r;
+                fill[i as usize] += 1;
+            }
+            for i in 0..n {
+                rows[offsets[i]..offsets[i + 1]].sort_by(|&x, &y| {
+                    (a[x], b[x], x)
+                        .partial_cmp(&(a[y], b[y], y))
+                        .expect("no NaN")
+                });
+            }
+            let start: Vec<f64> = rows.iter().map(|&r| a[r]).collect();
+            let end: Vec<f64> = rows.iter().map(|&r| b[r]).collect();
+            if decl.overlapping_spells != Some(true) {
+                // A spell overlaps when it starts before an earlier spell
+                // of its node ends.
+                let mut overlapping = vec![false; rows_n];
+                for i in 0..n {
+                    let mut latest_end = f64::NEG_INFINITY;
+                    for k in offsets[i]..offsets[i + 1] {
+                        if start[k] < latest_end {
+                            overlapping[rows[k]] = true;
+                        }
+                        latest_end = latest_end.max(end[k]);
+                    }
+                }
+                if report_rows(
+                    &mut report,
+                    Code::E_NODE_SPELL_OVERLAP,
+                    Which::NodeSpells,
+                    "the presence spells of one node must not overlap (declare overlapping_spells to allow it); the listed spells start before an earlier spell of the same node ends",
+                    rows_n,
+                    threads,
+                    |r| overlapping[r],
+                ) {
+                    ok = false;
+                }
+            }
+            if ok {
+                spell_table = Some(NodeSpells {
+                    offsets,
+                    start,
+                    end,
+                    rows,
+                });
+            }
+        }
+    }
+
+    // The node changes table: identifiers looked up, times finite.
+    if change_table_ok && frame.node_changes().is_some() {
+        let (idn, idc) = frame.change_role(ChangeRole::Id).expect("checked");
+        lookup_ids(&index, Which::NodeChanges, idn, idc, &id_name, &mut report);
+        let (tn, tc) = frame.change_role(ChangeRole::Time).expect("checked");
+        match numeric(tc) {
+            None => report.push(Diagnostic::network(
+                Code::E_TIME_TYPE,
+                format!(
+                    "change times (column `{tn}` of `node_changes`) must be numeric, not {}",
+                    tc.kind().name()
+                ),
+            )),
+            Some(t) => {
+                report_rows(
+                    &mut report,
+                    Code::E_TIME_MISSING,
+                    Which::NodeChanges,
+                    format!("change times (column `{tn}` of `node_changes`) must not be missing"),
+                    t.len(),
+                    threads,
+                    |i| t[i].is_nan(),
+                );
+                report_rows(
+                    &mut report,
+                    Code::E_TIME_NOT_FINITE,
+                    Which::NodeChanges,
+                    format!("change times (column `{tn}` of `node_changes`) must be finite"),
+                    t.len(),
+                    threads,
+                    |i| t[i].is_infinite(),
+                );
+            }
+        }
+    }
+
+    // Edge spells within node spells, from the roles or the table.
+    if let Some(s) = &start {
+        let e_ = end.as_deref();
+        let message = "an edge can only be active while both of its endpoints are present; the listed edges fall outside a node's presence spell";
+        if let Some(ns) = &node_spells {
+            let inside = |node: u32, s: f64, e: f64| {
+                let (a, b) = ns[node as usize];
+                a <= s && e <= b && (e > s || s < b || a == b)
+            };
+            report_rows(
+                &mut report,
+                Code::E_SPELL_OUTSIDE_NODE,
+                Which::Edges,
+                message,
+                m,
+                threads,
+                |i| {
+                    let e = e_.map_or(s[i], |e| e[i]);
+                    !(inside(src[i], s[i], e) && inside(tgt[i], s[i], e))
+                },
+            );
+        } else if let Some(table) = &spell_table {
+            let overlapping = decl.overlapping_spells == Some(true);
+            report_rows(
+                &mut report,
+                Code::E_SPELL_OUTSIDE_NODE,
+                Which::Edges,
+                message,
+                m,
+                threads,
+                |i| {
+                    let e = e_.map_or(s[i], |e| e[i]);
+                    !(table.contains(src[i] as usize, s[i], e, overlapping)
+                        && table.contains(tgt[i] as usize, s[i], e, overlapping))
+                },
+            );
+        }
+    }
+
+    // Parallel edges, keyed on endpoints with their layers, relation, and
+    // spell.
     let groups_possible = (frame.edge_role(EdgeRole::Relation).is_none() || relations.is_some())
-        && (!(has_start || has_wave) || start.is_some());
+        && (!(has_start || has_wave) || start.is_some())
+        && (!(has_source_layer && has_target_layer) || layers.is_some());
     let mut groups = None;
     if groups_possible {
         let g = edge_groups(
@@ -1406,9 +2326,12 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             &src,
             &tgt,
             decl.directed,
-            relations.as_ref().map(|r| &r.codes[..]),
-            start.as_deref(),
-            end.as_deref(),
+            KeyColumns {
+                relation: relations.as_ref().map(|r| &r.codes[..]),
+                start: start.as_deref(),
+                end: end.as_deref(),
+                layers: layer_codes,
+            },
         );
         let parallel_rows: Vec<usize> = (0..m)
             .filter(|&e| g.first[g.group[e] as usize] != e)
@@ -1417,6 +2340,9 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
         let parallel = m - g.sizes.len();
         let what = {
             let mut parts = vec![format!("columns `{src_name}` and `{tgt_name}`")];
+            if layers.is_some() {
+                parts.push("layers".to_string());
+            }
             if let Some((rn, _)) = frame.edge_role(EdgeRole::Relation) {
                 parts.push(format!("relation `{rn}`"));
             }
@@ -1425,6 +2351,34 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             }
             parts.join(", ")
         };
+        // A pair cannot be both an observed tie and an unobserved pair.
+        if let Some(flags) = &missing {
+            let k = g.sizes.len();
+            let mut observed = vec![false; k];
+            let mut unobserved = vec![false; k];
+            for (&grp, &flag) in g.group.iter().zip(flags) {
+                if flag {
+                    unobserved[grp as usize] = true;
+                } else {
+                    observed[grp as usize] = true;
+                }
+            }
+            report_rows(
+                &mut report,
+                Code::E_MISSING_CONFLICT,
+                Which::Edges,
+                format!(
+                    "a pair cannot be both an observed tie and an unobserved pair; the listed rows are marked unobserved (column `{}` of `edges`) but another row with the same {what} is an observed tie",
+                    frame.edge_role(EdgeRole::EdgeMissing).map(|(n, _)| n).unwrap_or_default()
+                ),
+                m,
+                threads,
+                |e| {
+                    let grp = g.group[e] as usize;
+                    flags[e] && observed[grp] && unobserved[grp]
+                },
+            );
+        }
         match decl.multiple {
             Some(false) if parallel > 0 => report.push(Diagnostic::capped(
                 Code::E_PARALLEL_DECLARED,
@@ -1513,6 +2467,10 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
             start,
             end,
             node_spells,
+            spell_table,
+            layers,
+            egos,
+            missing,
             groups,
             loops,
             directed: decl.directed,
@@ -1520,33 +2478,69 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
     }
 }
 
-/// Groups edges by their key: endpoints (ordered when directed), relation
-/// code, and spell, as the module documentation defines parallel edges.
-/// Groups are numbered in order of first appearance.
+/// The resolved columns that distinguish edges with the same endpoints.
+#[derive(Clone, Copy, Default)]
+pub(super) struct KeyColumns<'a> {
+    pub relation: Option<&'a [u32]>,
+    pub start: Option<&'a [f64]>,
+    pub end: Option<&'a [f64]>,
+    pub layers: Option<(&'a [u32], &'a [u32])>,
+}
+
+impl<'a> KeyColumns<'a> {
+    /// The key columns of a resolved frame.
+    pub fn of(resolved: &'a Resolved) -> KeyColumns<'a> {
+        KeyColumns {
+            relation: resolved.relations.as_ref().map(|r| &r.codes[..]),
+            start: resolved.start.as_deref(),
+            end: resolved.end.as_deref(),
+            layers: resolved.layers.as_ref().map(|l| (&l.src[..], &l.tgt[..])),
+        }
+    }
+}
+
+/// Groups edges by their key: endpoints with their layers (ordered when
+/// directed), relation code, and spell, as the module documentation
+/// defines parallel edges. Groups are numbered in order of first
+/// appearance.
 ///
 /// Edges are ordered by endpoint pair with two stable counting sorts (the
 /// same O(n + m) passes that build the CSR rows), then each run of equal
-/// pairs is split by relation and spell. This touches memory
+/// pairs is split by layers, relation, and spell. This touches memory
 /// sequentially, where a hash table keyed on the whole tuple did not.
 pub(super) fn edge_groups(
     n: usize,
     src: &[u32],
     tgt: &[u32],
     directed: bool,
-    relation: Option<&[u32]>,
-    start: Option<&[f64]>,
-    end: Option<&[f64]>,
+    key: KeyColumns<'_>,
 ) -> Groups {
+    let KeyColumns {
+        relation,
+        start,
+        end,
+        layers,
+    } = key;
     let m = src.len();
     let mut a = Vec::with_capacity(m);
     let mut b = Vec::with_capacity(m);
+    // The layers of the oriented endpoints: in an undirected network the
+    // node-layer pairs are ordered, so (a, la) <= (b, lb).
+    let mut la = Vec::with_capacity(if layers.is_some() { m } else { 0 });
+    let mut lb = Vec::with_capacity(la.capacity());
     for e in 0..m {
-        if directed || src[e] <= tgt[e] {
-            a.push(src[e]);
-            b.push(tgt[e]);
-        } else {
+        let (ls, lt) = layers.map_or((0, 0), |(s, t)| (s[e], t[e]));
+        let swap = !directed && (src[e] > tgt[e] || (src[e] == tgt[e] && ls > lt));
+        if swap {
             a.push(tgt[e]);
             b.push(src[e]);
+        } else {
+            a.push(src[e]);
+            b.push(tgt[e]);
+        }
+        if layers.is_some() {
+            la.push(if swap { lt } else { ls });
+            lb.push(if swap { ls } else { lt });
         }
     }
     // Stable counting sort by b, then by a: equal pairs end up adjacent,
@@ -1577,16 +2571,21 @@ pub(super) fn edge_groups(
     }
     drop(order);
 
-    // Split each run of equal pairs by (relation, start, end).
+    // Split each run of equal pairs by (layers, relation, start, end).
     let key = |e: usize| {
+        let l = if layers.is_some() {
+            ((la[e] as u64) << 32) | lb[e] as u64
+        } else {
+            0
+        };
         let r = relation.map_or(0, |r| r[e]);
         let s = start.map_or(0, |s| (s[e] + 0.0).to_bits());
         let t = end.map_or(s, |t| (t[e] + 0.0).to_bits());
-        (r, s, t)
+        (l, r, s, t)
     };
     let mut tentative = vec![0u32; m];
     let mut first_row: Vec<usize> = Vec::new();
-    let mut run: Vec<(u32, u64, u64, usize)> = Vec::new();
+    let mut run: Vec<((u64, u32, u64, u64), usize)> = Vec::new();
     let mut i = 0;
     while i < m {
         let mut j = i + 1;
@@ -1599,15 +2598,12 @@ pub(super) fn edge_groups(
             first_row.push(sorted[i]);
         } else {
             run.clear();
-            run.extend(sorted[i..j].iter().map(|&e| {
-                let (r, s, t) = key(e);
-                (r, s, t, e)
-            }));
+            run.extend(sorted[i..j].iter().map(|&e| (key(e), e)));
             run.sort_unstable();
-            let mut prev: Option<(u32, u64, u64)> = None;
-            for &(r, s, t, e) in &run {
-                if prev != Some((r, s, t)) {
-                    prev = Some((r, s, t));
+            let mut prev = None;
+            for &(k, e) in &run {
+                if prev != Some(k) {
+                    prev = Some(k);
                     first_row.push(e);
                 }
                 tentative[e] = first_row.len() as u32 - 1;
@@ -2160,6 +3156,537 @@ mod tests {
         .unwrap();
         f.set_edge_role(EdgeRole::EdgeMissing, "na").unwrap();
         assert_eq!(codes(&f.validate(1)), vec![Code::E_MISSING_ROLE_TYPE]);
+    }
+
+    /// Nodes a, b; edges a-b in layer 1, a-b in layer 2, a-a across
+    /// layers 1 and 2 (a coupling), b-b in layer 2 (a loop), a-b from
+    /// layer 1 to layer 2 (interlayer).
+    fn multilayer() -> Frame {
+        let mut f = Frame::new(false);
+        f.add_node_column("id", strs(&["a", "b"])).unwrap();
+        f.set_node_role(NodeRole::Id, "id").unwrap();
+        f.add_edge_column("from", strs(&["a", "a", "a", "b", "a"]))
+            .unwrap();
+        f.add_edge_column("to", strs(&["b", "b", "a", "b", "b"]))
+            .unwrap();
+        f.add_edge_column("ls", ints(&[1, 2, 1, 2, 1])).unwrap();
+        f.add_edge_column("lt", ints(&[1, 2, 2, 2, 2])).unwrap();
+        f.set_edge_role(EdgeRole::Source, "from").unwrap();
+        f.set_edge_role(EdgeRole::Target, "to").unwrap();
+        f.set_edge_role(EdgeRole::SourceLayer, "ls").unwrap();
+        f.set_edge_role(EdgeRole::TargetLayer, "lt").unwrap();
+        f
+    }
+
+    #[test]
+    fn layers_are_classified_and_keyed() {
+        let f = multilayer();
+        let v = f.validate(1);
+        // The loop b-b is the only loop; the coupling is not one, and
+        // the two a-b edges in different layers are not parallel.
+        assert_eq!(codes(&v), vec![Code::N_LOOPS]);
+        assert_eq!(v.report.find(Code::N_LOOPS).unwrap().rows, vec![3]);
+        let r = v.resolved.unwrap();
+        let l = r.layers.as_ref().unwrap();
+        assert_eq!(l.labels, vec!["1", "2"]);
+        assert!(!l.from_table);
+        let classes: Vec<EdgeClass> = (0..5).map(|e| l.class(e, &r.src, &r.tgt)).collect();
+        assert_eq!(
+            classes,
+            vec![
+                EdgeClass::Intralayer,
+                EdgeClass::Intralayer,
+                EdgeClass::Coupling,
+                EdgeClass::Intralayer,
+                EdgeClass::Interlayer
+            ]
+        );
+        assert!(r.is_loop(3) && !r.is_loop(2));
+        assert_eq!(r.groups.unwrap().sizes, vec![1, 1, 1, 1, 1]);
+        // Undirected: a coupling written the other way round is parallel
+        // to the first, and so is b-a in layer 2 to a-b in layer 2.
+        let mut f = multilayer();
+        f.add_edge_column("from2", strs(&["a", "b", "a", "b", "a"]))
+            .unwrap();
+        f.add_edge_column("lt2", ints(&[1, 2, 1, 2, 2])).unwrap();
+        f.add_edge_column("ls2", ints(&[1, 2, 2, 2, 1])).unwrap();
+        f.set_edge_role(EdgeRole::Source, "from2").unwrap();
+        f.set_edge_role(EdgeRole::SourceLayer, "ls2").unwrap();
+        f.set_edge_role(EdgeRole::TargetLayer, "lt2").unwrap();
+        let mut g = Frame::new(false);
+        g.add_edge_column("from", strs(&["a", "b", "a", "a"]))
+            .unwrap();
+        g.add_edge_column("to", strs(&["b", "a", "a", "a"]))
+            .unwrap();
+        g.add_edge_column("ls", ints(&[2, 2, 1, 2])).unwrap();
+        g.add_edge_column("lt", ints(&[2, 2, 2, 1])).unwrap();
+        g.set_edge_role(EdgeRole::Source, "from").unwrap();
+        g.set_edge_role(EdgeRole::Target, "to").unwrap();
+        g.set_edge_role(EdgeRole::SourceLayer, "ls").unwrap();
+        g.set_edge_role(EdgeRole::TargetLayer, "lt").unwrap();
+        let v = g.validate(1);
+        assert_eq!(v.report.find(Code::N_PARALLEL).unwrap().rows, vec![1, 3]);
+        g.declarations_mut().directed = true;
+        let v = g.validate(1);
+        assert!(!v.report.has(Code::N_PARALLEL), "{:?}", v.report);
+        // Declarations.
+        let mut f = multilayer();
+        f.declarations_mut().couplings_only = Some(true);
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_INTERLAYER_DECLARED).unwrap().rows,
+            vec![4]
+        );
+        f.declarations_mut().loops = Some(false);
+        assert_eq!(v.report.find(Code::N_LOOPS).unwrap().rows, vec![3]);
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_LOOP_DECLARED).unwrap().rows, vec![3]);
+        // Modes: the coupling is exempt from the between-modes rule.
+        let mut f = multilayer();
+        f.add_node_column("mode", strs(&["p", "e"])).unwrap();
+        f.set_node_role(NodeRole::Mode, "mode").unwrap();
+        f.declarations_mut().between_modes_only = Some(true);
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_MODE_WITHIN).unwrap().rows, vec![3]);
+    }
+
+    #[test]
+    fn layer_roles_types_and_table() {
+        let mut f = multilayer();
+        f.clear_edge_role(EdgeRole::TargetLayer);
+        let v = f.validate(1);
+        assert!(v.report.has(Code::E_LAYER_ROLE_PAIR));
+        assert!(v.resolved.unwrap().layers.is_none());
+        let mut f = multilayer();
+        f.declarations_mut().couplings_only = Some(false);
+        f.clear_edge_role(EdgeRole::SourceLayer);
+        let v = f.validate(1);
+        assert!(v.report.has(Code::E_DECLARATION_CONFLICT));
+        let mut f = multilayer();
+        f.add_edge_column("lf", Column::Float(vec![1.0; 5]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::SourceLayer, "lf").unwrap();
+        assert!(f.validate(1).report.has(Code::E_LAYER_TYPE));
+        let mut f = multilayer();
+        f.add_edge_column("lsx", strs(&["1", "2", "1", "2", "1"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::SourceLayer, "lsx").unwrap();
+        assert!(f.validate(1).report.has(Code::E_LAYER_TYPE));
+        let mut f = multilayer();
+        f.add_edge_column(
+            "lsm",
+            Column::Int(
+                vec![1, 2, 1, 2, 1],
+                Some(vec![false, true, false, false, false]),
+            ),
+        )
+        .unwrap();
+        f.set_edge_role(EdgeRole::SourceLayer, "lsm").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_LAYER_MISSING).unwrap().rows, vec![1]);
+        // A layer table fixes the labels and their order; unknown layers
+        // are errors.
+        let mut f = multilayer();
+        f.add_column(Which::Layers, "layer", ints(&[2, 1, 3]))
+            .unwrap();
+        f.add_column(Which::Layers, "medium", strs(&["x", "y", "z"]))
+            .unwrap();
+        let v = f.validate(1);
+        assert!(v.report.has(Code::E_TABLE_ROLE_UNDECLARED));
+        f.set_layer_role(super::super::roles::LayerRole::Layer, "layer")
+            .unwrap();
+        let v = f.validate(1);
+        assert_eq!(codes(&v), vec![Code::N_LOOPS]);
+        let l = v.resolved.unwrap().layers.unwrap();
+        assert_eq!(l.labels, vec!["2", "1", "3"]);
+        assert!(l.from_table);
+        assert_eq!(l.src, vec![1, 0, 1, 0, 1]);
+        assert_eq!(l.tgt, vec![1, 0, 0, 0, 0]);
+        f.add_column(Which::Layers, "layer2", ints(&[2, 1, 1]))
+            .unwrap();
+        f.set_layer_role(super::super::roles::LayerRole::Layer, "layer2")
+            .unwrap();
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_LAYER_ID_DUPLICATE).unwrap().rows,
+            vec![2]
+        );
+        f.add_column(
+            Which::Layers,
+            "layer3",
+            Column::Int(vec![1, 0, 0], Some(vec![false, true, true])),
+        )
+        .unwrap();
+        f.set_layer_role(super::super::roles::LayerRole::Layer, "layer3")
+            .unwrap();
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_LAYER_ID_MISSING).unwrap().rows,
+            vec![1, 2]
+        );
+        assert_eq!(
+            v.report.find(Code::E_LAYER_UNKNOWN).unwrap().rows,
+            vec![1, 2, 3, 4]
+        );
+        f.add_column(Which::Layers, "layer4", strs(&["1", "2", "3"]))
+            .unwrap();
+        f.set_layer_role(super::super::roles::LayerRole::Layer, "layer4")
+            .unwrap();
+        assert!(f.validate(1).report.has(Code::E_LAYER_TYPE));
+    }
+
+    /// Egos ann and bob as nodes, each with alters; edges within egos.
+    fn ego_frame() -> Frame {
+        let mut f = Frame::new(false);
+        f.add_node_column("id", strs(&["ann", "a1", "a2", "bob", "b1"]))
+            .unwrap();
+        f.add_node_column("ego", strs(&["ann", "ann", "ann", "bob", "bob"]))
+            .unwrap();
+        f.set_node_role(NodeRole::Id, "id").unwrap();
+        f.set_node_role(NodeRole::Ego, "ego").unwrap();
+        f.add_edge_column("from", strs(&["ann", "ann", "a1", "bob"]))
+            .unwrap();
+        f.add_edge_column("to", strs(&["a1", "a2", "a2", "b1"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Source, "from").unwrap();
+        f.set_edge_role(EdgeRole::Target, "to").unwrap();
+        f
+    }
+
+    #[test]
+    fn egos() {
+        let mut f = ego_frame();
+        f.declarations_mut().egos_are_nodes = Some(true);
+        let v = f.validate(1);
+        assert!(codes(&v).is_empty(), "{:?}", v.report);
+        let eg = v.resolved.unwrap().egos.unwrap();
+        assert_eq!(eg.labels, vec!["ann", "bob"]);
+        assert_eq!(eg.node, vec![0, 0, 0, 1, 1]);
+        assert_eq!(eg.edge, vec![0, 0, 0, 1]);
+        assert_eq!(eg.node_of, vec![Some(0), Some(3)]);
+        // An explicit edge ego column must agree.
+        f.add_edge_column("ego", strs(&["ann", "ann", "bob", "bob"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Ego, "ego").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_MISMATCH).unwrap().rows, vec![2]);
+        // An edge across egos.
+        let mut f = ego_frame();
+        f.add_edge_column("to2", strs(&["a1", "a2", "b1", "b1"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Target, "to2").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_MISMATCH).unwrap().rows, vec![2]);
+        // An ego that belongs to another ego's network.
+        let mut f = ego_frame();
+        f.add_node_column("ego2", strs(&["ann", "ann", "ann", "ann", "bob"]))
+            .unwrap();
+        f.set_node_role(NodeRole::Ego, "ego2").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_SELF).unwrap().rows, vec![3]);
+        // Egos that are not nodes: fine unless declared.
+        let mut f = ego_frame();
+        f.add_node_column("ego3", strs(&["e1", "e1", "e1", "e2", "e2"]))
+            .unwrap();
+        f.set_node_role(NodeRole::Ego, "ego3").unwrap();
+        let v = f.validate(1);
+        assert!(codes(&v).is_empty(), "{:?}", v.report);
+        assert_eq!(v.resolved.unwrap().egos.unwrap().node_of, vec![None, None]);
+        f.declarations_mut().egos_are_nodes = Some(true);
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_EGO_UNKNOWN).unwrap().rows,
+            vec![0, 1, 2, 3, 4]
+        );
+        // Types and missing values.
+        let mut f = ego_frame();
+        f.add_node_column("egof", Column::Float(vec![1.0; 5]))
+            .unwrap();
+        f.set_node_role(NodeRole::Ego, "egof").unwrap();
+        assert!(f.validate(1).report.has(Code::E_EGO_TYPE));
+        let mut f = ego_frame();
+        f.add_edge_column("egoi", ints(&[1, 1, 1, 2])).unwrap();
+        f.set_edge_role(EdgeRole::Ego, "egoi").unwrap();
+        assert!(f.validate(1).report.has(Code::E_EGO_TYPE));
+        let mut f = ego_frame();
+        f.add_node_column(
+            "egom",
+            Column::Str(Strings::from_strs(&[
+                Some("ann"),
+                None,
+                Some("ann"),
+                Some("bob"),
+                Some("bob"),
+            ])),
+        )
+        .unwrap();
+        f.set_node_role(NodeRole::Ego, "egom").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_MISSING).unwrap().rows, vec![1]);
+        let mut f = ego_frame();
+        f.add_edge_column(
+            "egom",
+            Column::Str(Strings::from_strs(&[
+                Some("ann"),
+                None,
+                Some("ann"),
+                Some("bob"),
+            ])),
+        )
+        .unwrap();
+        f.set_edge_role(EdgeRole::Ego, "egom").unwrap();
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_MISSING).unwrap().rows, vec![1]);
+        assert_eq!(
+            v.report.find(Code::E_EGO_MISSING).unwrap().table,
+            Some(Which::Edges)
+        );
+        // Added nodes have no ego; an edge ego column needs the node one.
+        let mut f = ego_frame();
+        f.add_edge_column("to3", strs(&["a1", "a2", "a2", "zed"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Target, "to3").unwrap();
+        f.declarations_mut().add_nodes = true;
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_EGO_MISSING).unwrap().rows, vec![3]);
+        let mut f = ego_frame();
+        f.clear_node_role(NodeRole::Ego);
+        f.add_edge_column("ego", strs(&["ann", "ann", "ann", "bob"]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Ego, "ego").unwrap();
+        assert!(f.validate(1).report.has(Code::E_DECLARATION_CONFLICT));
+        f.clear_edge_role(EdgeRole::Ego);
+        f.declarations_mut().egos_are_nodes = Some(false);
+        assert!(f.validate(1).report.has(Code::E_DECLARATION_CONFLICT));
+        // Integer egos against double identifiers match as numbers.
+        let mut f = Frame::new(true);
+        f.add_node_column("id", Column::Float(vec![1.0, 2.0, 3.0]))
+            .unwrap();
+        f.add_node_column("ego", ints(&[1, 1, 3])).unwrap();
+        f.set_node_role(NodeRole::Id, "id").unwrap();
+        f.set_node_role(NodeRole::Ego, "ego").unwrap();
+        f.add_edge_column("from", ints(&[1])).unwrap();
+        f.add_edge_column("to", ints(&[2])).unwrap();
+        f.set_edge_role(EdgeRole::Source, "from").unwrap();
+        f.set_edge_role(EdgeRole::Target, "to").unwrap();
+        let v = f.validate(1);
+        assert_eq!(
+            v.resolved.unwrap().egos.unwrap().node_of,
+            vec![Some(0), Some(2)]
+        );
+    }
+
+    fn with_spell_table(f: &mut Frame, ids: &[&str], s: &[f64], e: &[f64]) {
+        use super::super::roles::SpellRole;
+        f.add_column(Which::NodeSpells, "id", strs(ids)).unwrap();
+        f.add_column(Which::NodeSpells, "s", Column::Float(s.to_vec()))
+            .unwrap();
+        f.add_column(Which::NodeSpells, "e", Column::Float(e.to_vec()))
+            .unwrap();
+        f.set_spell_role(SpellRole::Id, "id").unwrap();
+        f.set_spell_role(SpellRole::Start, "s").unwrap();
+        f.set_spell_role(SpellRole::End, "e").unwrap();
+    }
+
+    #[test]
+    fn node_spell_table() {
+        use super::super::roles::SpellRole;
+        let mut f = triangle();
+        // a: [8, 20) then [0, 5); b: [0, 20); c: unbounded.
+        with_spell_table(
+            &mut f,
+            &["a", "a", "b"],
+            &[8.0, 0.0, 0.0],
+            &[20.0, 5.0, 20.0],
+        );
+        f.add_edge_column("s", Column::Float(vec![1.0, 6.0, 6.0]))
+            .unwrap();
+        f.add_edge_column("e", Column::Float(vec![10.0, 6.0, 7.0]))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Start, "s").unwrap();
+        f.set_edge_role(EdgeRole::End, "e").unwrap();
+        let v = f.validate(1);
+        // a-b at [1, 10) spans a's absence; c-a at [6, 7) falls in it.
+        assert_eq!(codes(&v), vec![Code::E_SPELL_OUTSIDE_NODE]);
+        assert_eq!(
+            v.report.find(Code::E_SPELL_OUTSIDE_NODE).unwrap().rows,
+            vec![0, 2]
+        );
+        let t = v.resolved.unwrap().spell_table.unwrap();
+        assert_eq!(t.offsets, vec![0, 2, 3, 3]);
+        assert_eq!(t.start, vec![0.0, 8.0, 0.0]);
+        assert_eq!(t.end, vec![5.0, 20.0, 20.0]);
+        assert_eq!(t.rows, vec![1, 0, 2]);
+        assert!(t.contains(2, 100.0, 200.0, false));
+        assert!(t.contains(0, 4.0, 5.0, false) && !t.contains(0, 4.0, 6.0, false));
+        assert!(!t.contains(0, 5.0, 5.0, false));
+        assert!(t.contains(0, 8.0, 8.0, false));
+        // Overlap unless declared; the spell that starts inside an
+        // earlier one is listed.
+        let mut f = triangle();
+        with_spell_table(&mut f, &["a", "a", "a"], &[0.0, 5.0, 3.0], &[5.0, 9.0, 4.0]);
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_NODE_SPELL_OVERLAP).unwrap().rows,
+            vec![2]
+        );
+        let mut g = triangle();
+        with_spell_table(
+            &mut g,
+            &["a", "a", "a"],
+            &[0.0, 5.0, 3.0],
+            &[10.0, 9.0, 4.0],
+        );
+        let v = g.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_NODE_SPELL_OVERLAP).unwrap().rows,
+            vec![1, 2]
+        );
+        f.declarations_mut().overlapping_spells = Some(true);
+        let v = f.validate(1);
+        assert!(codes(&v).is_empty(), "{:?}", v.report);
+        let t = v.resolved.unwrap().spell_table.unwrap();
+        assert_eq!(t.rows, vec![0, 2, 1]);
+        assert!(t.contains(0, 3.5, 4.0, true) && t.contains(0, 6.0, 8.0, true));
+        assert!(!t.contains(0, 3.5, 8.0, true));
+        // Missing times are unbounded; order and identifiers are checked.
+        let mut f = triangle();
+        with_spell_table(
+            &mut f,
+            &["a", "z", "b"],
+            &[f64::NAN, 1.0, 5.0],
+            &[3.0, 2.0, 4.0],
+        );
+        let v = f.validate(1);
+        assert_eq!(v.report.find(Code::E_UNKNOWN_NODE).unwrap().rows, vec![1]);
+        assert_eq!(
+            v.report.find(Code::E_UNKNOWN_NODE).unwrap().table,
+            Some(Which::NodeSpells)
+        );
+        assert_eq!(
+            v.report.find(Code::E_NODE_SPELL_ORDER).unwrap().rows,
+            vec![2]
+        );
+        let mut f = triangle();
+        with_spell_table(&mut f, &["a"], &[f64::NAN], &[3.0]);
+        let v = f.validate(1);
+        assert_eq!(
+            v.resolved.unwrap().spell_table.unwrap().start,
+            vec![f64::NEG_INFINITY]
+        );
+        // Roles and conflicts.
+        let mut f = triangle();
+        f.add_column(Which::NodeSpells, "id", strs(&["a"])).unwrap();
+        f.set_spell_role(SpellRole::Id, "id").unwrap();
+        assert!(f.validate(1).report.has(Code::E_TABLE_ROLE_UNDECLARED));
+        let mut f = triangle();
+        with_spell_table(&mut f, &["a"], &[0.0], &[1.0]);
+        f.add_node_column("arrive", Column::Float(vec![0.0; 3]))
+            .unwrap();
+        f.set_node_role(NodeRole::NodeStart, "arrive").unwrap();
+        assert!(f.validate(1).report.has(Code::E_DECLARATION_CONFLICT));
+        let mut f = triangle();
+        f.add_column(Which::NodeSpells, "id", ints(&[1])).unwrap();
+        f.add_column(Which::NodeSpells, "s", strs(&["x"])).unwrap();
+        f.add_column(Which::NodeSpells, "e", Column::Float(vec![1.0]))
+            .unwrap();
+        f.set_spell_role(SpellRole::Id, "id").unwrap();
+        f.set_spell_role(SpellRole::Start, "s").unwrap();
+        f.set_spell_role(SpellRole::End, "e").unwrap();
+        let v = f.validate(1);
+        assert!(v.report.has(Code::E_ID_TYPE) && v.report.has(Code::E_TIME_TYPE));
+        let mut f = triangle();
+        with_spell_table(&mut f, &["a"], &[0.0], &[1.0]);
+        f.add_column(
+            Which::NodeSpells,
+            "idm",
+            Column::Str(Strings::from_strs(&[None::<&str>])),
+        )
+        .unwrap();
+        f.set_spell_role(SpellRole::Id, "idm").unwrap();
+        let v = f.validate(1);
+        assert_eq!(
+            v.report.find(Code::E_MISSING_ENDPOINT).unwrap().table,
+            Some(Which::NodeSpells)
+        );
+    }
+
+    #[test]
+    fn node_change_table() {
+        use super::super::roles::ChangeRole;
+        let mut f = triangle();
+        f.add_column(Which::NodeChanges, "id", strs(&["a", "z", "b", "c"]))
+            .unwrap();
+        f.add_column(
+            Which::NodeChanges,
+            "t",
+            Column::Float(vec![1.0, 2.0, f64::NAN, f64::INFINITY]),
+        )
+        .unwrap();
+        let v = f.validate(1);
+        assert!(v.report.has(Code::E_TABLE_ROLE_UNDECLARED));
+        f.set_change_role(ChangeRole::Id, "id").unwrap();
+        f.set_change_role(ChangeRole::Time, "t").unwrap();
+        let v = f.validate(1);
+        assert_eq!(
+            codes(&v),
+            vec![
+                Code::E_UNKNOWN_NODE,
+                Code::E_TIME_MISSING,
+                Code::E_TIME_NOT_FINITE
+            ]
+        );
+        assert_eq!(v.report.find(Code::E_UNKNOWN_NODE).unwrap().rows, vec![1]);
+        assert_eq!(v.report.find(Code::E_TIME_MISSING).unwrap().rows, vec![2]);
+        assert_eq!(
+            v.report.find(Code::E_TIME_NOT_FINITE).unwrap().table,
+            Some(Which::NodeChanges)
+        );
+        f.add_column(Which::NodeChanges, "ts", strs(&["x"; 4]))
+            .unwrap();
+        f.set_change_role(ChangeRole::Time, "ts").unwrap();
+        assert!(f.validate(1).report.has(Code::E_TIME_TYPE));
+        let mut f = triangle();
+        f.add_column(Which::NodeChanges, "id", strs(&["a", "a"]))
+            .unwrap();
+        f.add_column(Which::NodeChanges, "t", ints(&[1, 2]))
+            .unwrap();
+        f.set_change_role(ChangeRole::Id, "id").unwrap();
+        f.set_change_role(ChangeRole::Time, "t").unwrap();
+        assert!(codes(&f.validate(1)).is_empty());
+    }
+
+    #[test]
+    fn unobserved_pairs_are_kept_but_not_ties() {
+        let mut f = Frame::new(false);
+        f.add_edge_column("from", ints(&[1, 1, 2, 2])).unwrap();
+        f.add_edge_column("to", ints(&[2, 3, 1, 3])).unwrap();
+        f.add_edge_column("na", Column::Bool(vec![false, true, true, true], None))
+            .unwrap();
+        f.set_edge_role(EdgeRole::Source, "from").unwrap();
+        f.set_edge_role(EdgeRole::Target, "to").unwrap();
+        f.set_edge_role(EdgeRole::EdgeMissing, "na").unwrap();
+        let v = f.validate(1);
+        // 2-1 is both observed (row 0) and unobserved (row 2).
+        assert_eq!(
+            codes(&v),
+            vec![
+                Code::N_MISSING_EDGES,
+                Code::E_MISSING_CONFLICT,
+                Code::N_PARALLEL
+            ]
+        );
+        assert_eq!(
+            v.report.find(Code::E_MISSING_CONFLICT).unwrap().rows,
+            vec![2]
+        );
+        let r = v.resolved.unwrap();
+        assert_eq!(r.missing, Some(vec![false, true, true, true]));
+        assert!(r.observed(0) && !r.observed(1));
+        assert_eq!(r.observed_count(), 1);
+        f.declarations_mut().directed = true;
+        let v = f.validate(1);
+        assert!(v.report.is_valid(), "{:?}", v.report);
     }
 
     #[test]
