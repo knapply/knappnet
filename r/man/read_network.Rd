@@ -12,7 +12,8 @@ write_network(x, file, format = NULL, weight = NULL, nodes_file = NULL)
 \item{file}{Path to the file.}
 \item{format}{Format name (\code{"graphml"}, \code{"gexf"}, \code{"gml"},
 \code{"pajek"}, \code{"dl"}, \code{"json"}, \code{"dynetml"}, \code{"csv"},
-\code{"tsv"}, or \code{"dot"}), or \code{NULL} to use the file extension.}
+\code{"tsv"}, \code{"gpkg"}, or \code{"dot"}), or \code{NULL} to use the
+file extension.}
 \item{directed}{For formats that do not record direction (UCINET DL and edge
 lists), whether edges are directed. Defaults to \code{TRUE}.}
 \item{nodes}{For edge lists only: a data frame of nodes, or the path to a CSV
@@ -49,6 +50,7 @@ JSON node-link \tab .json \tab yes \tab yes \tab NetworkX, D3 \cr
 DyNetML \tab .xml \tab yes \tab yes \tab ORA (CASOS, Carnegie Mellon) \cr
 Edge list \tab .csv, .tsv \tab yes \tab yes \tab spreadsheets, any tool \cr
 DOT \tab .dot, .gv \tab no \tab yes \tab Graphviz \cr
+GeoPackage \tab .gpkg \tab yes \tab yes \tab QGIS, GDAL, sf (spatial networks; needs sf) \cr
 }
 Attributes keep their types where the format records them (GraphML, GEXF,
 JSON) and are inferred otherwise. Node identifiers that are all whole numbers
@@ -69,6 +71,20 @@ DyNetML \code{<DynamicNetwork>}, \code{<DynamicMetaNetwork>},
 \code{<MetaNetwork>}, or \code{<MetaMatrix>}). Writing a \code{.xml} file
 without \code{format} produces GraphML; use \code{format = "dynetml"} (or
 \code{"ora"}) to write DyNetML.
+}
+\section{GeoPackage}{
+A GeoPackage (\code{.gpkg}) holds a spatial network (see
+\code{\link{to_sf}}) as two layers, \code{nodes} and \code{edges}, each
+written with \code{\link[sf]{st_write}} when it has geometry and as a plain
+table otherwise, plus a small table layer \code{network} with the
+direction, the identifier, endpoint, and weight columns, and network-level
+attributes (as text). Reading needs only the \code{nodes} and \code{edges}
+layers: without \code{network}, the first node column is the identifier,
+the edge columns are \code{from} and \code{to}, the network is directed
+unless \code{directed} says otherwise, and the weight is found as for other
+formats. Geometries and their CRS round-trip; attribute types follow GDAL's
+GeoPackage driver (logical columns come back as integers). Requires the sf
+package.
 }
 \section{DyNetML}{
 DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA for

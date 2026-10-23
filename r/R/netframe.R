@@ -59,6 +59,14 @@
 #'   edge points past the last node; other changes to rows, such as
 #'   reordering, cannot be detected and would misalign results.
 #'
+#' @section Spatial tables:
+#' `nodes` and `edges` may be sf data frames (simple features). Their
+#' geometry columns stay in place and are recorded in `x$roles`
+#' (`node_geometry`, `edge_geometry`, `crs`); both tables must then have
+#' the same coordinate reference system. Connectivity still comes from
+#' `from` and `to`, never from the geometry. See [to_sf()] for what the
+#' geometries are used for.
+#'
 #' @section Threads:
 #' Measures that run in parallel take `threads`. `0` (the default) uses all
 #' available cores, except that only 2 are used when the environment
@@ -142,7 +150,7 @@ netframe <- function(edges, nodes = NULL, directed = TRUE,
     ), call. = FALSE)
   }
 
-  structure(
+  out <- structure(
     list(
       nodes = nodes,
       edges = edges,
@@ -155,6 +163,8 @@ netframe <- function(edges, nodes = NULL, directed = TRUE,
     ),
     class = "netframe"
   )
+  # sf node or edge tables also record their geometry columns and CRS.
+  record_geometry(out)
 }
 
 #' @export
@@ -177,6 +187,7 @@ print.netframe <- function(x, ...) {
                 paste(notes, collapse = " and ")))
   }
   if (!is.null(x$roles$start)) cat(temporal_summary(x))
+  cat(spatial_summary(x))
   if (s$bad_weights) {
     cat(sprintf(paste0("%s in weight column `%s` %s missing or not finite; ",
                        "measures will refuse the network until %s fixed\n"),

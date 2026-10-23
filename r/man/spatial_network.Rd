@@ -6,7 +6,8 @@
 \title{Geospatial networks}
 \usage{
 spatial_network(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
-                radius = 6371008.7714)
+                radius = 6371008.7714,
+                representative = c("point_on_surface", "centroid"))
 
 edge_lengths(x)
 
@@ -18,10 +19,16 @@ group_geometry(x, groups)
 \arguments{
 \item{x}{A \code{\link{netframe}}; for every function but
 \code{spatial_network()}, one returned by \code{spatial_network()} or
-\code{\link{proximity_network}}.}
+\code{\link{proximity_network}}, or one with sf node geometry (see
+\code{\link{to_sf}}).}
 \item{coords}{The two columns of \code{x$nodes} holding the coordinates, by
 name or position: longitude then latitude for \code{crs = "lonlat"}, x
-then y for \code{"planar"}.}
+then y for \code{"planar"}. Not used, and an error if given, when
+\code{x$nodes} carries sf geometry.}
+\item{representative}{For sf node geometries other than points, how each
+is reduced to one point: \code{\link[sf]{st_point_on_surface}} (the
+default; always on the geometry) or \code{\link[sf]{st_centroid}}. See
+\code{\link{to_sf}}.}
 \item{crs}{\code{"lonlat"} for longitude and latitude in degrees on a
 sphere (distances are great-circle distances in the units of
 \code{radius}), or \code{"planar"} for Euclidean distances in the units of
@@ -40,8 +47,11 @@ for kilometres.}
 }
 \value{\code{spatial_network()} returns \code{x} with the coordinate
 columns and coordinate system recorded in \code{x$roles} (\code{x},
-\code{y}, \code{crs}, \code{radius}). \code{edge_lengths()} returns a
-numeric vector aligned with the rows of \code{x$edges};
+\code{y}, \code{crs}, \code{radius}; for sf nodes \code{representative}
+and \code{radius} only, since \code{crs} then holds the sf CRS).
+\code{edge_lengths()} returns a numeric vector aligned with the rows of
+\code{x$edges} (from the edge geometries when the edge table has them, with
+the unit in \code{attr(, "unit")}; see \code{\link{to_sf}});
 \code{distance_decay()} a numeric vector the length of \code{d}.
 \code{group_geometry()} returns a data frame with one row per group:
 \code{group}, \code{size}, the centroid coordinates (named after the
@@ -50,7 +60,11 @@ coordinate columns), \code{mean_distance}, and \code{standard_distance}.}
 A spatial network is a netframe whose nodes have coordinates: longitude
 and latitude in degrees, or planar x and y. \code{spatial_network()}
 records which node columns hold them; the other functions here use that
-record. Spatial networks in general are reviewed by Barthelemy (2011).
+record. Networks whose node table is an sf data frame (see
+\code{\link{to_sf}}) need no such record: their geometries, of any type,
+are reduced to representative points, and
+\code{spatial_network(x, representative = )} chooses how. Spatial networks
+in general are reviewed by Barthelemy (2011).
 }
 \details{
 Great-circle distances use the haversine formula (Sinnott 1984), which is

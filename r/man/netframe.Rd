@@ -80,6 +80,15 @@ cannot be detected and would misalign results.
 }
 }
 
+\section{Spatial tables}{
+\code{nodes} and \code{edges} may be sf data frames (simple features). Their
+geometry columns stay in place and are recorded in \code{x$roles}
+(\code{node_geometry}, \code{edge_geometry}, \code{crs}); both tables must
+then have the same coordinate reference system. Connectivity still comes
+from \code{from} and \code{to}, never from the geometry. See
+\code{\link{to_sf}} for what the geometries are used for.
+}
+
 \section{Threads}{
 Measures that run in parallel take \code{threads}. \code{0} (the default)
 uses all available cores, except that only 2 are used when the environment
