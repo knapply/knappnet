@@ -215,10 +215,9 @@ pub fn continuous_core_periphery(
         };
         acc.push((s, ascend(&obj, t, opts.max_iter)));
     });
-    let mut runs: Vec<(usize, Option<(Vec<f64>, f64, usize)>)> =
-        parts.into_iter().flatten().collect();
+    let mut runs: Vec<(usize, Option<Run>)> = parts.into_iter().flatten().collect();
     runs.sort_by_key(|r| r.0);
-    let mut best: Option<(Vec<f64>, f64, usize)> = None;
+    let mut best: Option<Run> = None;
     for (_, run) in runs {
         if let Some(run) = run {
             if best.as_ref().map_or(true, |b| run.1 > b.1) {
@@ -244,10 +243,13 @@ pub fn continuous_core_periphery(
     })
 }
 
+/// Final point of one start, its correlation, and the iterations made.
+type Run = (Vec<f64>, f64, usize);
+
 /// BFGS ascent of the correlation over t (c = t^2) from `t`, returning the
 /// final point, its correlation, and the iterations made, or None when the
 /// correlation is undefined at the start (a constant pattern).
-fn ascend(obj: &Objective, mut t: Vec<f64>, max_iter: usize) -> Option<(Vec<f64>, f64, usize)> {
+fn ascend(obj: &Objective, mut t: Vec<f64>, max_iter: usize) -> Option<Run> {
     let n = obj.n;
     let norm = t.iter().map(|x| x * x).sum::<f64>().sqrt();
     for x in t.iter_mut() {
@@ -403,7 +405,17 @@ mod tests {
     fn starts_do_not_depend_on_threads() {
         let g = und(
             8,
-            &[(0, 1), (0, 2), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (3, 7)],
+            &[
+                (0, 1),
+                (0, 2),
+                (1, 2),
+                (2, 3),
+                (3, 4),
+                (4, 5),
+                (5, 6),
+                (6, 7),
+                (3, 7),
+            ],
         );
         let one = continuous_core_periphery(&g, ContinuousOptions::default()).unwrap();
         let opts = ContinuousOptions {

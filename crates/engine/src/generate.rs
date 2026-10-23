@@ -27,7 +27,7 @@
 //!   Batagelj and Brandes (2005) for linear time.
 //! - Stochastic block models (Holland, Laskey, and Leinhardt 1983,
 //!   `holland1983stochastic`) join a node of block r and a node of block s
-//!   independently with probability P[r][s].
+//!   independently with probability `P[r][s]`.
 //!
 //! Conventions:
 //! - Nodes are `0..n`. Every generator returns an edge list in increasing
