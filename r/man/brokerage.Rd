@@ -9,7 +9,9 @@ brokerage(x, groups, threads = 0L)
 \item{groups}{The group of each node: a vector aligned with the rows of
 \code{x$nodes}, or the name of a column of \code{x$nodes}. Only equality of
 values matters. Missing values are not allowed.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A data frame with one row per node: \code{node} (the identifier),
 then the counts \code{coordinator}, \code{itinerant}, \code{representative},

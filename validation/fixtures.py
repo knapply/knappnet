@@ -35,6 +35,9 @@ class Fixture:
     weights: list[float] | None = None
     source: str = "synthetic"
     tags: list[str] = field(default_factory=list)
+    # Two-mode fixtures: 0 (first mode) or 1 (second mode) for every node,
+    # written to meta.json as `type`.
+    types: list[int] | None = None
 
     def finalize(self) -> "Fixture":
         tags = set(self.tags)
@@ -114,6 +117,44 @@ def messy(name: str, n: int, m: int, directed: bool, seed: int) -> Fixture:
                    f"random multigraph n={n}, m={len(edges)}, seed {seed}").finalize()
 
 
+def davis_twomode() -> Fixture:
+    """Davis's Southern Women as a two-mode network: women first (type 0),
+    then events (type 1)."""
+    g = nx.davis_southern_women_graph()
+    f = from_networkx("davis_twomode", g,
+                      "Davis, Gardner, and Gardner (1941); davis1941deep; women type 0, events type 1")
+    f.types = [int(g.nodes[v]["bipartite"]) for v in g.nodes()]
+    f.tags = sorted(set(f.tags) | {"twomode"})
+    return f
+
+
+def random_twomode(name: str, n1: int, n2: int, p: float, seed: int,
+                   weighted: bool = False) -> Fixture:
+    """A connected random bipartite graph. Node order is shuffled so the two
+    modes are interleaved, and each edge's orientation is random; the first
+    seed from `seed` upward that gives a connected graph is used."""
+    for s in range(seed, seed + 1000):
+        rng = random.Random(s)
+        types = [0] * n1 + [1] * n2
+        rng.shuffle(types)
+        first = [v for v, t in enumerate(types) if t == 0]
+        second = [v for v, t in enumerate(types) if t == 1]
+        edges = []
+        for a in first:
+            for b in second:
+                if rng.random() < p:
+                    edges.append((a, b) if rng.random() < 0.5 else (b, a))
+        g = nx.Graph()
+        g.add_nodes_from(range(n1 + n2))
+        g.add_edges_from(edges)
+        if nx.is_connected(g):
+            weights = [float(rng.randint(1, 4)) for _ in edges] if weighted else None
+            source = f"random bipartite graph, {n1} + {n2} nodes, p={p}, seed {s}"
+            return Fixture(name, n1 + n2, edges, False, weights, source,
+                           tags=["twomode"], types=types).finalize()
+    raise RuntimeError(f"no connected graph for {name}")
+
+
 def build() -> list[Fixture]:
     fx = [
         from_networkx("karate", nx.karate_club_graph(), "Zachary (1977); zachary1977information"),
@@ -147,6 +188,9 @@ def build() -> list[Fixture]:
                 False).finalize(),
         Fixture("complete5_dir", 5, [(a, b) for a in range(5) for b in range(5) if a != b],
                 True).finalize(),
+        davis_twomode(),
+        random_twomode("twomode_random", 12, 9, 0.3, 31),
+        random_twomode("twomode_weighted", 9, 6, 0.45, 41, weighted=True),
     ]
     return fx
 
@@ -163,6 +207,8 @@ def write(fixtures: list[Fixture]) -> None:
                 w.writerow([a, b] + ([f.weights[i]] if f.weights is not None else []))
         meta = {"n": f.n, "directed": f.directed, "weighted": f.weights is not None,
                 "tags": f.tags, "source": f.source}
+        if f.types is not None:
+            meta["type"] = f.types
         (d / "meta.json").write_text(json.dumps(meta, indent=2) + "\n", newline="")
 
 

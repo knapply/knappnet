@@ -16,21 +16,24 @@
 graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet")) {
   check_netframe(x)
   convention <- match.arg(convention)
+  loops <- check_flag(loops, "loops")
   if (convention %in% c("sna", "ucinet")) {
-    if (isTRUE(loops)) {
+    if (loops) {
       stop("The sna and UCINET conventions ignore self-loops; use `loops = FALSE`.",
            call. = FALSE)
     }
-    return(.Call(C_density, engine_graph_simple(x), FALSE))
+    ptr <- engine_graph_simple(x)
+    return(engine_call("graph_density", .Call(C_density, ptr, FALSE), edge_rows = FALSE))
   }
   if (convention == "networkx") {
-    if (isTRUE(loops)) {
+    if (loops) {
       stop("NetworkX's density() has no option for self-loops; use `loops = FALSE`.",
            call. = FALSE)
     }
     if (nrow(x$nodes) == 1L) return(0)
   }
-  .Call(C_density, engine_graph(x), isTRUE(loops))
+  ptr <- engine_graph(x)
+  engine_call("graph_density", .Call(C_density, ptr, loops))
 }
 
 #' Connected components
@@ -77,7 +80,9 @@ graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx",
 components <- function(x, mode = c("weak", "strong")) {
   check_netframe(x)
   mode <- match.arg(mode)
-  m <- .Call(C_components, engine_graph(x), if (mode == "strong") 1L else 0L) + 1L
+  ptr <- engine_graph(x)
+  m <- engine_call("components",
+                   .Call(C_components, ptr, if (mode == "strong") 1L else 0L)) + 1L
   csize <- tabulate(m, nbins = if (length(m)) max(m) else 0L)
   list(membership = m, csize = csize, no = length(csize))
 }
@@ -87,7 +92,8 @@ components <- function(x, mode = c("weak", "strong")) {
 fragmentation <- function(x, mode = c("weak", "strong")) {
   check_netframe(x)
   mode <- match.arg(mode)
-  .Call(C_fragmentation, engine_graph(x), if (mode == "strong") 1L else 0L)
+  ptr <- engine_graph(x)
+  engine_call("fragmentation", .Call(C_fragmentation, ptr, if (mode == "strong") 1L else 0L))
 }
 
 #' Closeness and harmonic centrality
@@ -168,7 +174,7 @@ closeness <- function(x, mode = NULL, weighted = NULL, normalized = NULL, thread
                       weights_as = NULL,
                       convention = c("igraph", "networkx", "sna", "ucinet")) {
   closeness_common(x, FALSE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention))
+                   match.arg(convention), "closeness")
 }
 
 #' @rdname closeness
@@ -177,14 +183,17 @@ harmonic_centrality <- function(x, mode = NULL, weighted = NULL, normalized = NU
                                 threads = 0L, weights_as = NULL,
                                 convention = c("igraph", "networkx", "sna", "ucinet")) {
   closeness_common(x, TRUE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention))
+                   match.arg(convention), "harmonic_centrality")
 }
 
 closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, weights_as,
-                             convention) {
+                             convention, fn) {
   check_netframe(x)
   if (is.null(mode)) mode <- if (convention == "networkx") "in" else "out"
-  mode <- match.arg(mode, c("out", "in", "all"))
+  mode <- check_choice(mode, c("out", "in", "all"), "mode")
+  check_flag_or_null(weighted, "weighted")
+  check_flag_or_null(normalized, "normalized")
+  threads <- resolve_threads(threads)
   if (is.null(normalized)) {
     normalized <- !(convention == "igraph" || (harmonic && convention == "networkx"))
   }
@@ -196,8 +205,8 @@ closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, w
   w <- resolve_weighting(x, if (binary) FALSE else weighted, weights_as)
   unreachable <- switch(convention, igraph = 0L, networkx = 1L, sna = 2L, ucinet = 3L)
   ptr <- if (binary) engine_graph_simple(x) else engine_graph(x)
-  .Call(C_closeness, ptr, harmonic, mode_code(mode), w$weighted, w$code, isTRUE(normalized),
-        unreachable, as.integer(threads))
+  engine_call(fn, .Call(C_closeness, ptr, harmonic, mode_code(mode), w$weighted, w$code,
+                        normalized, unreachable, threads), edge_rows = !binary)
 }
 
 #' Eigenvector centrality
@@ -282,15 +291,18 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
   if (is.null(mode)) {
     mode <- switch(convention, igraph = "in", networkx = "in", sna = "out", ucinet = "all")
   }
-  mode <- match.arg(mode, c("in", "out", "all"))
+  mode <- check_choice(mode, c("in", "out", "all"), "mode")
   if (is.null(scale)) scale <- if (convention == "igraph") "max" else "unit"
-  scale <- match.arg(scale, c("max", "unit"))
+  scale <- check_choice(scale, c("max", "unit"), "scale")
+  check_flag_or_null(weighted, "weighted")
+  threads <- resolve_threads(threads)
   weighted <- if (is.null(weighted)) !is.null(x$roles$weight) else isTRUE(weighted)
   if (weighted) require_weights(x)
   if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
     stop("`tol` must be a positive number.", call. = FALSE)
   }
-  if (!is.numeric(max_iter) || length(max_iter) != 1L || !isTRUE(max_iter >= 1)) {
+  if (!is.numeric(max_iter) || length(max_iter) != 1L || !isTRUE(max_iter >= 1) ||
+      max_iter != floor(max_iter)) {
     stop("`max_iter` must be a positive whole number.", call. = FALSE)
   }
 
@@ -308,9 +320,10 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
            "another convention or analyse components separately.", call. = FALSE)
     }
   }
-  res <- .Call(C_eigenvector, ptr, mode_code(mode), weighted,
-               if (scale == "max") 0L else 1L, loops, as.double(tol),
-               as.double(max_iter), as.integer(threads))
+  res <- engine_call("eigenvector_centrality",
+    .Call(C_eigenvector, ptr, mode_code(mode), weighted, if (scale == "max") 0L else 1L,
+          loops, as.double(tol), as.double(max_iter), threads),
+    edge_rows = convention %in% c("igraph", "networkx"))
   if (!res[[3]] && length(res[[1]]) > 1L) {
     if (convention == "networkx") {
       stop("The network is not ", if (x$directed && mode != "all") "strongly ",
@@ -391,11 +404,15 @@ centralization <- function(x, measure = c("degree", "betweenness", "closeness"),
   if (is.null(mode)) {
     mode <- if (measure == "closeness" || convention == "ucinet") "out" else "all"
   }
-  mode <- match.arg(mode, c("all", "out", "in"))
+  mode <- check_choice(mode, c("all", "out", "in"), "mode")
+  loops <- check_flag(loops, "loops")
+  normalized <- check_flag(normalized, "normalized")
+  threads <- resolve_threads(threads)
   code <- switch(measure, degree = 0L, betweenness = 1L, closeness = 2L)
   conv <- switch(convention, igraph = 0L, sna = 2L, ucinet = 3L)
-  .Call(C_centralization, engine_graph(x), code, mode_code(mode), isTRUE(loops),
-        isTRUE(normalized), conv, as.integer(threads))
+  ptr <- engine_graph(x)
+  engine_call("centralization", .Call(C_centralization, ptr, code, mode_code(mode), loops,
+                                      normalized, conv, threads))
 }
 
 mode_code <- function(mode) switch(mode, out = 1L, `in` = 2L, all = 3L)
@@ -407,10 +424,12 @@ mode_code <- function(mode) switch(mode, out = 1L, `in` = 2L, all = 3L)
 engine_graph_simple <- function(x, undirected = FALSE, keep = c("max", "min")) {
   keep <- match.arg(keep)
   key <- paste("simple", isTRUE(undirected), keep, sep = "_")
+  # engine_graph() first: it empties the cache when the handle is stale.
+  base <- engine_graph(x)
   ptr <- x$cache[[key]]
   if (is.null(ptr) || !.Call(C_graph_alive, ptr)) {
-    ptr <- .Call(C_graph_simplify, engine_graph(x), isTRUE(undirected),
-                 if (keep == "max") 0L else 1L)
+    ptr <- engine_call("netframe", .Call(C_graph_simplify, base, isTRUE(undirected),
+                                         if (keep == "max") 0L else 1L))
     assign(key, ptr, envir = x$cache)
   }
   ptr

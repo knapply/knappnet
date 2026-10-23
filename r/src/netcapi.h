@@ -261,6 +261,310 @@ int32_t net_eigenvector(const GraphHandle *h, int32_t mode, int32_t weighted,
                         double *eigenvalue, int32_t *connected, char *err,
                         size_t err_len);
 
+/* ---- Descriptive and structural measures ------------------------------
+ * Codes: mode 1 = out, 2 = in, 3 = all; weights_as 0 = distance,
+ * 1 = strength; reciprocity mode 0 = default (reciprocated arcs over
+ * arcs), 1 = ratio (mutual over non-null dyads), 2 = dyadic (symmetric
+ * over all dyads), 3 = correlation (Garlaschelli-Loffredo rho);
+ * weighting 0 = binary, 1 = Barrat, 2 = Onnela; undefined 0 = NaN
+ * (igraph), 1 = zero (NetworkX). sources are 0-based node indices; a NULL
+ * pointer or n_sources < 0 means every node. threads == 0 uses all
+ * cores. */
+
+/* Edge count (parallel edges and loops included), or -1 for NULL. */
+int64_t net_graph_edge_count(const GraphHandle *h);
+
+/* Reciprocity on the adjacency matrix (parallel arcs once, loops
+ * ignored); writes one double, NaN when the denominator is 0. */
+int32_t net_reciprocity(const GraphHandle *h, int32_t mode, double *out,
+                        char *err, size_t err_len);
+
+/* Global transitivity of the simple undirected reading: closed over
+ * connected triples. Writes one double. */
+int32_t net_transitivity(const GraphHandle *h, int32_t undefined,
+                         int32_t threads, double *out, char *err,
+                         size_t err_len);
+
+/* Local clustering coefficients (average == 0; out holds n doubles) or
+ * their mean (average != 0; one double). With undefined == 0 the mean
+ * leaves out nodes with fewer than two neighbors. Weighted coefficients
+ * need positive weights. */
+int32_t net_clustering(const GraphHandle *h, int32_t average,
+                       int32_t weighting, int32_t undefined, int32_t threads,
+                       double *out, char *err, size_t err_len);
+
+/* Shortest-path distances as a column-major matrix with one row per
+ * source and one column per node; unreachable nodes are at distance
+ * infinity. out holds (number of sources) * n doubles. */
+int32_t net_distances(const GraphHandle *h, const int64_t *sources,
+                      int64_t n_sources, int32_t mode, int32_t weighted,
+                      int32_t weights_as, int32_t threads, double *out,
+                      char *err, size_t err_len);
+
+/* Totals over the searches from the sources; out holds 7 doubles: sources,
+ * ordered pairs joined by a path, sum of their distances, longest finite
+ * distance, sources not reaching every other node, mean distance, and
+ * diameter (both infinite when unconnected == 0 and some source does not
+ * reach every other node). */
+int32_t net_path_summary(const GraphHandle *h, const int64_t *sources,
+                         int64_t n_sources, int32_t mode, int32_t weighted,
+                         int32_t weights_as, int32_t unconnected,
+                         int32_t threads, double *out, char *err,
+                         size_t err_len);
+
+/* Largest distance from each node to the nodes it reaches (0 if none);
+ * out holds n doubles. */
+int32_t net_eccentricity(const GraphHandle *h, int32_t mode, int32_t weighted,
+                         int32_t weights_as, int32_t threads, double *out,
+                         char *err, size_t err_len);
+
+/* Number of other nodes each node reaches (mode 1), is reached from (2),
+ * or is joined to ignoring direction (3); out holds n doubles. */
+int32_t net_reachability(const GraphHandle *h, int32_t mode, int32_t threads,
+                         double *out, char *err, size_t err_len);
+
+/* Cut points (cut_point: n flags) and bridges (bridge: one flag per edge,
+ * in input order) of the undirected reading in which parallel edges and
+ * opposite arcs stay separate edges and loops are ignored. */
+int32_t net_cut_structure(const GraphHandle *h, int32_t *cut_point,
+                          int32_t *bridge, char *err, size_t err_len);
+
+/* Writes 3 doubles: self-loops, edges repeating an earlier edge between the
+ * same (ordered, if directed) pair of nodes, and nodes without an edge to
+ * another node. */
+int32_t net_edge_counts(const GraphHandle *h, double *out, char *err,
+                        size_t err_len);
+
+/* ---- Ego networks and two-mode networks -------------------------------
+ * Declarations to be merged into netcapi.h, after the topography section.
+ * Codes: mode 1 = out, 2 = in, 3 = all; types holds one value per node,
+ * 0 for the first mode and 1 for the second; two-mode measure
+ * 0 = degree, 1 = closeness, 2 = betweenness; unreachable 0 = ignore,
+ * 1 = Wasserman-Faust (NetworkX); projection weight 0 = shared partners,
+ * 1 = Newman's collaboration weights, 2 = sum of weight products.
+ * threads == 0 uses all cores. Weights are ignored except by the product
+ * projection. */
+
+/* Number of nodes within order steps of each ego and at least mindist
+ * steps away (igraph's ego_size(); mindist 0 counts the ego). With
+ * egos == NULL every node is an ego and out holds n doubles; otherwise
+ * egos holds k node indices and out k doubles. */
+int32_t net_ego_sizes(const GraphHandle *h, const int64_t *egos, int64_t k,
+                      int64_t order, int32_t mode, int64_t mindist,
+                      int32_t threads, double *out, char *err,
+                      size_t err_len);
+
+/* Neighborhood members of k egos in ascending node order: those of ego i
+ * are members[offsets[i] .. offsets[i + 1]). offsets holds k + 1 values,
+ * members capacity values (the sum of net_ego_sizes with the same
+ * arguments); a smaller capacity is an error. */
+int32_t net_ego_members(const GraphHandle *h, const int64_t *egos, int64_t k,
+                        int64_t order, int32_t mode, int64_t mindist,
+                        int32_t threads, int64_t *offsets, int64_t *members,
+                        int64_t capacity, char *err, size_t err_len);
+
+/* Egocentric measures of every node (alters within order steps): number
+ * of alters, distinct ties among them, pairs of alters (ordered if
+ * directed), density (NaN without pairs), weak components among the
+ * alters without ego, and ego betweenness (skipped when ego_betweenness
+ * is NULL). Each output holds n doubles. */
+int32_t net_ego_summary(const GraphHandle *h, int64_t order, int32_t mode,
+                        int32_t threads, double *size, double *ties,
+                        double *pairs, double *density, double *components,
+                        double *ego_betweenness, char *err, size_t err_len);
+
+/* Distinct ties divided by n1 * n2; writes one double (NaN if a mode is
+ * empty). Fails if an edge joins two nodes of the same mode. */
+int32_t net_twomode_density(const GraphHandle *h, const int32_t *types,
+                            double *out, char *err, size_t err_len);
+
+/* Degree, closeness, or betweenness; normalized != 0 applies Borgatti and
+ * Everett's (1997) two-mode normalization. unreachable is used by
+ * closeness only (Wasserman-Faust requires normalized != 0). out holds n
+ * doubles. */
+int32_t net_twomode_centrality(const GraphHandle *h, const int32_t *types,
+                               int32_t measure, int32_t normalized,
+                               int32_t unreachable, int32_t threads,
+                               double *out, char *err, size_t err_len);
+
+/* Leading singular vectors of the binary incidence matrix, each mode
+ * scaled to Euclidean length 1 (NaN for every node without ties). tol <= 0
+ * and max_iter <= 0 select the defaults (1e-12, 10000). *eigenvalue
+ * receives the largest singular value, *connected 1 if the network is
+ * connected. */
+int32_t net_twomode_eigenvector(const GraphHandle *h, const int32_t *types,
+                                double tol, int64_t max_iter, int32_t threads,
+                                double *out, double *eigenvalue,
+                                int32_t *connected, char *err,
+                                size_t err_len);
+
+/* A one-mode projection, read in two steps like GroupsHandle. */
+typedef struct ProjectionHandle ProjectionHandle;
+
+/* Projection onto the first (second == 0) or second mode; loops != 0
+ * keeps the diagonal as self-loops (not with Newman weights). Release
+ * *out with net_projection_free. */
+int32_t net_project(const GraphHandle *h, const int32_t *types, int32_t second,
+                    int32_t weight, int32_t loops, int32_t threads,
+                    ProjectionHandle **out, char *err, size_t err_len);
+
+/* Number of edges, or -1 for a NULL handle. */
+int64_t net_projection_count(const ProjectionHandle *p);
+
+/* Copies the edges (0-based indices of the original network, from <= to,
+ * ordered by from and then to) and their weights; each array holds
+ * net_projection_count(p) values. */
+int32_t net_projection_copy(const ProjectionHandle *p, int64_t *from,
+                            int64_t *to, double *weights, char *err,
+                            size_t err_len);
+
+void net_projection_free(ProjectionHandle *p);
+
+/* ---- Spectral centralities and mixing patterns -------------------------
+ * Codes: mode and direction 1 = out, 2 = in, 3 = all; loops 0 = an
+ * undirected self-loop counts twice (igraph), 1 = once (NetworkX),
+ * 2 = not at all; dangling 0 = jump by the personalization vector,
+ * 1 = jump uniformly; hits scale 0 = largest score 1, 1 = sum 1, 2 = unit
+ * Euclidean norm; E-I scope 0 = network, 1 = groups, 2 = nodes; E-I
+ * counting 0 = Krackhardt and Stern, 1 = the R package homophily.
+ * Category codes are 0-based (-1 = missing, for mixing matrices only).
+ * tol <= 0 and max_iter <= 0 select the defaults (1e-12, 10000).
+ * threads == 0 uses all cores. */
+
+/* PageRank; out holds n doubles summing to 1. personalization is NULL
+ * (uniform) or n nonnegative values. directed == 0 ignores directions. */
+int32_t net_pagerank(const GraphHandle *h, double damping, int32_t directed,
+                     int32_t weighted, const double *personalization,
+                     int32_t dangling, int32_t loops, double tol,
+                     int64_t max_iter, int32_t threads, double *out,
+                     char *err, size_t err_len);
+
+/* Katz centrality x = alpha A' x + beta; beta holds 1 or n values. An
+ * alpha not below 1 / lambda_max is an error. normalized != 0 scales to
+ * unit Euclidean norm. */
+int32_t net_katz(const GraphHandle *h, double alpha, const double *beta,
+                 int64_t beta_len, int32_t mode, int32_t weighted,
+                 int32_t loops, int32_t normalized, double tol,
+                 int64_t max_iter, int32_t threads, double *out, char *err,
+                 size_t err_len);
+
+/* Bonacich power centrality alpha (I - exponent A)^-1 A 1, scaled so the
+ * squares sum to n, or (rescale != 0) so the scores sum to 1. A singular
+ * system is an error. */
+int32_t net_bonacich_power(const GraphHandle *h, double exponent,
+                           int32_t mode, int32_t weighted, int32_t loops,
+                           int32_t rescale, double tol, int64_t max_iter,
+                           int32_t threads, double *out, char *err,
+                           size_t err_len);
+
+/* Hub and authority scores (n doubles each). *value receives the largest
+ * eigenvalue of A^T A, *unique 1 if the leading singular value is simple. */
+int32_t net_hits(const GraphHandle *h, int32_t weighted, int32_t loops,
+                 int32_t scale, double tol, int64_t max_iter, int32_t threads,
+                 double *hubs, double *authorities, double *value,
+                 int32_t *unique, char *err, size_t err_len);
+
+/* Nominal assortativity of n category codes in 0..k; one double (NaN if
+ * undefined). normalized == 0 gives the numerator (modularity). */
+int32_t net_assortativity_nominal(const GraphHandle *h, const int64_t *types,
+                                  int64_t k, int32_t directed, int32_t loops,
+                                  int32_t normalized, double *out, char *err,
+                                  size_t err_len);
+
+/* Assortativity of numeric values at arc sources (values) and targets
+ * (values_in, or values if NULL); normalized == 0 gives the covariance. */
+int32_t net_assortativity_values(const GraphHandle *h, const double *values,
+                                 const double *values_in, int32_t directed,
+                                 int32_t loops, int32_t normalized,
+                                 double *out, char *err, size_t err_len);
+
+/* Degree assortativity (strengths if weighted != 0); one double. */
+int32_t net_assortativity_degree(const GraphHandle *h, int32_t weighted,
+                                 int32_t directed, int32_t loops,
+                                 int32_t normalized, double *out, char *err,
+                                 size_t err_len);
+
+/* Mixing matrix of dim1 (codes 0..k1) by dim2 (0..k2); same != 0 when they
+ * are one attribute. Writes k1 * k2 counts row-major; *transposed = 1 when
+ * the matrix is k2 by k1 (rows dim2, directed networks, direction 2). */
+int32_t net_mixing_matrix(const GraphHandle *h, const int64_t *dim1,
+                          int64_t k1, const int64_t *dim2, int64_t k2,
+                          int32_t same, int32_t direction, double *out,
+                          int32_t *transposed, char *err, size_t err_len);
+
+/* E-I index for the network (1 value), groups (k), or nodes (n); external
+ * and internal receive the tie counts unless NULL. NaN without ties. */
+int32_t net_ei_index(const GraphHandle *h, const int64_t *groups, int64_t k,
+                     int32_t scope, int32_t direction, int32_t counting,
+                     double *out, double *external, double *internal,
+                     char *err, size_t err_len);
+
+/* Within-group tie shares: k rows of 5 doubles (row-major): size, internal
+ * ties, external ties, observed internal share, expected share
+ * (size - 1) / (n - 1). */
+int32_t net_group_shares(const GraphHandle *h, const int64_t *groups,
+                         int64_t k, int32_t direction, double *out,
+                         char *err, size_t err_len);
+
+/*
+ * Network layouts. To be merged into netcapi.h.
+ *
+ * Every function writes node coordinates into x and y (n doubles each).
+ * Direction and self-loops are ignored and parallel edges count once.
+ * weights_as: 0 = distance, 1 = strength (lengths 1/w); only used when
+ * weighted != 0, and weights must then be strictly positive. Zero selects
+ * the default for pivots, max_iter, iterations, and sweeps, as does a
+ * value <= 0 for tol and theta. threads == 0 uses all available cores;
+ * results do not depend on the thread count.
+ */
+
+/* algorithm: 0 = all pairs up to 2000 nodes per component and sparse
+ * stress beyond, 1 = all pairs (stress majorization), 2 = sparse stress
+ * with pivots. Defaults: 50 pivots for the starting layout of all-pairs
+ * stress and 100 for sparse stress; 500 (all pairs) or 100 (sparse)
+ * iterations; tol 1e-4. seed drives the perturbation of the starting
+ * layout and the sample of sparse-stress pivots. */
+int32_t net_layout_stress(const GraphHandle *h, int32_t algorithm,
+                          int32_t weighted, int32_t weights_as, int64_t pivots,
+                          int64_t max_iter, double tol, uint64_t seed,
+                          int32_t threads, double *x, double *y, char *err,
+                          size_t err_len);
+
+/* Fruchterman-Reingold. approximation: 0 = exact up to 1000 nodes per
+ * component and Barnes-Hut beyond, 1 = exact, 2 = Barnes-Hut with opening
+ * angle theta (default 1). Default 500 iterations. seed drives the
+ * starting positions. */
+int32_t net_layout_fr(const GraphHandle *h, int32_t weighted,
+                      int32_t weights_as, int64_t iterations,
+                      int32_t approximation, double theta, uint64_t seed,
+                      int32_t threads, double *x, double *y, char *err,
+                      size_t err_len);
+
+/* kind: 0 = circle, 1 = star, 2 = grid. param: the star's center (a node
+ * index, or -1 for the node with the most distinct neighbors) or the
+ * grid's width (0 for the smallest square); ignored for the circle. */
+int32_t net_layout_simple(const GraphHandle *h, int32_t kind, int64_t param,
+                          double *x, double *y, char *err, size_t err_len);
+
+/* Layered tree of each component. roots (may be NULL if n_roots is 0)
+ * gives at most one root per component. */
+int32_t net_layout_tree(const GraphHandle *h, const int64_t *roots,
+                        int64_t n_roots, double *x, double *y, char *err,
+                        size_t err_len);
+
+/* Two rows for a two-mode network: types[v] == 0 on top. sweeps: number
+ * of barycenter sweeps (0 for 24). */
+int32_t net_layout_twomode(const GraphHandle *h, const int32_t *types,
+                           int64_t sweeps, double *x, double *y, char *err,
+                           size_t err_len);
+
+/* Writes the stress of the layout (x, y) to out: the sum over pairs in
+ * the same component of (||x_i - x_j|| - d_ij)^2 / d_ij^2. */
+int32_t net_layout_stress_value(const GraphHandle *h, const double *x,
+                                const double *y, int32_t weighted,
+                                int32_t weights_as, int32_t threads,
+                                double *out, char *err, size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

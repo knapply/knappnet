@@ -5,7 +5,7 @@ Fast, validated network analysis for R, with Python to follow.
 knappnet is a network analysis engine built around three commitments:
 
 1. **Rigorously accurate.** Every measure is checked against established
-   reference implementations (igraph, sna, NetworkX) and against a direct
+   reference implementations ([igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), [NetworkX](https://networkx.org/)) and against a direct
    evaluation of its mathematical definition. Where those tools follow
    different conventions, the differences are documented and selectable,
    never silent.
@@ -29,7 +29,7 @@ and stochastic actor-oriented models.
 > k-cores, cliques, modularity and Louvain
 > communities, Burt's structural holes, Gould-Fernandez brokerage,
 > structural equivalence, CONCOR, QAP correlation and MRQAP regression,
-> conversions to and from igraph, network, tidygraph, and matrices, and nine
+> conversions to and from igraph, network, [tidygraph](https://tidygraph.data-imaginist.com/), and matrices, and nine
 > file formats. Interfaces may change before the first release.
 
 **Contents:** [A first network](#a-first-network) ·
@@ -142,8 +142,8 @@ triad census) ignore weights and say so in their help pages.
 
 ## Bring your existing work
 
-Switching should cost nothing. Networks convert both ways with igraph,
-tidygraph, statnet's network, adjacency matrices (dense or sparse), and
+Switching should cost nothing. Networks convert both ways with [igraph](https://r.igraph.org/),
+[tidygraph](https://tidygraph.data-imaginist.com/), [statnet](https://statnet.org/)'s network, adjacency matrices (dense or sparse), and
 plain edge lists, keeping node, edge, and network attributes:
 
 ```r
@@ -160,7 +160,7 @@ igraph::ecount(ig)
 
 ## One switch for every tool's conventions
 
-igraph, NetworkX, sna, and UCINET often give different answers to the same
+[igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) often give different answers to the same
 question, because they make different choices that their documentation
 rarely puts side by side. Closeness on a disconnected network is the
 classic case: each tool treats unreachable nodes differently. Here `a`,
@@ -376,7 +376,7 @@ read_network(path, weight = "minutes")$edges
 #> 3    a  c      20
 ```
 
-ORA's DyNetML format holds multimode meta-networks: several classes of
+[ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s DyNetML format holds multimode meta-networks: several classes of
 nodes (agents, organizations, tasks, resources) and several networks among
 them. Node classes come from the `class` and `type` columns, and networks
 from an edge column called `network`:
@@ -404,15 +404,15 @@ back$nodes
 
 | Format | Read | Write | Common source |
 |---|---|---|---|
-| GraphML | yes | yes | igraph, NetworkX, Gephi, yEd, Cytoscape |
+| GraphML | yes | yes | [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [Gephi](https://gephi.org/), [yEd](https://www.yworks.com/products/yed), [Cytoscape](https://cytoscape.org/) |
 | GEXF | yes | yes | Gephi |
 | GML | yes | yes | igraph, NetworkX, Cytoscape |
-| Pajek `.net` | yes | yes | Pajek, igraph, NetworkX |
-| UCINET DL | yes | yes | UCINET, igraph |
+| [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) `.net` | yes | yes | Pajek, igraph, NetworkX |
+| [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL | yes | yes | UCINET, igraph |
 | JSON node-link | yes | yes | NetworkX, D3 |
 | DyNetML (`.xml`) | yes | yes | ORA (multimode meta-networks) |
 | CSV/TSV edge lists | yes | yes | spreadsheets, any tool |
-| DOT | no | yes | Graphviz |
+| DOT | no | yes | [Graphviz](https://graphviz.org/) |
 
 Every format is checked in both directions against NetworkX's and igraph's
 own readers and writers, except DyNetML, which neither reads; it is tested
@@ -421,8 +421,8 @@ against its specification and ORA's file layout.
 ## Benchmarks
 
 Measured on GitHub's standard machines, Linux (AMD EPYC 7763, 2 cores)
-and macOS (Apple M1, 3 cores), with R 4.6.1, igraph 2.3.4, sna 2.8,
-Python 3.12, NetworkX 3.7, python-igraph 1.0.0, and NetworKit 11.2.2.
+and macOS (Apple M1, 3 cores), with R 4.6.1, [igraph](https://r.igraph.org/) 2.3.4, [sna](https://cran.r-project.org/package=sna) 2.8,
+Python 3.12, [NetworkX](https://networkx.org/) 3.7, [python-igraph](https://python.igraph.org/) 1.0.0, and [NetworKit](https://networkit.github.io/) 11.2.2.
 Times are medians of repeated runs, with networks built beforehand
 (building is timed separately). igraph, sna, and NetworkX use one core,
 so the one-core column is the like-for-like comparison. Every pair of
@@ -552,7 +552,11 @@ handles 64 nodes per machine word.
 Most measures repeat independent work for every node (one shortest-path
 search per source, one neighborhood per node), which the engine spreads
 over all cores; `threads` limits it. Partial results are combined in a
-fixed order, so the output is identical with 1 thread or 64. Randomized
+fixed order, so a given thread count reproduces its output bit for bit.
+Counts (triads, paths, components) are identical with any number of
+threads; sums of floating-point numbers can differ in the last few bits
+between thread counts, because addition in a different order rounds
+differently, always far inside the validation tolerances. Randomized
 methods (Louvain, QAP permutations) use a counter-based random number
 generator (Philox; Salmon et al. 2011): every task gets its own stream,
 computed from the seed and the task's number, so results do not depend on
@@ -567,7 +571,7 @@ degree, how isolates enter normalization, whether parallel edges count
 separately. Each help page states the choices a measure makes and which
 tools it matches, `convention` reproduces each tool's choices exactly, and
 the validation manifest records every known disagreement with the reason
-for it. UCINET's conventions are taken from its documentation and checked
+for it. [UCINET](https://sites.google.com/site/ucinetsoftware/home)'s conventions are taken from its documentation and checked
 against its published output.
 
 ### Validated, not trusted
@@ -577,7 +581,7 @@ random graphs across densities and weightings, and edge cases such as empty
 graphs, self-loops, and parallel edges) and golden results from three kinds
 of oracle:
 
-- **Reference tools:** igraph and sna in R, and NetworkX in Python.
+- **Reference tools:** [igraph](https://r.igraph.org/) and [sna](https://cran.r-project.org/package=sna) in R, and [NetworkX](https://networkx.org/) in Python.
 - **Definitions:** slow, deliberately simple implementations written from
   the textbook formula and sharing no code with the engine, using exact
   arithmetic where possible.

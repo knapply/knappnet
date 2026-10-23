@@ -27,6 +27,38 @@ extern SEXP C_fragmentation(SEXP, SEXP);
 extern SEXP C_centralization(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_closeness(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_eigenvector(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_reciprocity(SEXP, SEXP);
+extern SEXP C_transitivity(SEXP, SEXP, SEXP);
+extern SEXP C_clustering(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_distances(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_path_summary(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_eccentricity(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_reachability(SEXP, SEXP, SEXP);
+extern SEXP C_cut_structure(SEXP);
+extern SEXP C_edge_counts(SEXP);
+extern SEXP C_ego_sizes(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ego_members(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ego_summary(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_twomode_density(SEXP, SEXP);
+extern SEXP C_twomode_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_twomode_eigenvector(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_project(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_pagerank(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_katz(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_power_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_hits(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_nominal(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_values(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_degree(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_mixing_matrix(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ei_index(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_group_shares(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_stress(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_fr(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_simple(SEXP, SEXP, SEXP);
+extern SEXP C_layout_tree(SEXP, SEXP);
+extern SEXP C_layout_twomode(SEXP, SEXP, SEXP);
+extern SEXP C_layout_stress_value(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -54,6 +86,38 @@ static const R_CallMethodDef call_methods[] = {
     {"C_centralization", (DL_FUNC)&C_centralization, 7},
     {"C_closeness", (DL_FUNC)&C_closeness, 8},
     {"C_eigenvector", (DL_FUNC)&C_eigenvector, 8},
+    {"C_reciprocity", (DL_FUNC)&C_reciprocity, 2},
+    {"C_transitivity", (DL_FUNC)&C_transitivity, 3},
+    {"C_clustering", (DL_FUNC)&C_clustering, 5},
+    {"C_distances", (DL_FUNC)&C_distances, 6},
+    {"C_path_summary", (DL_FUNC)&C_path_summary, 7},
+    {"C_eccentricity", (DL_FUNC)&C_eccentricity, 5},
+    {"C_reachability", (DL_FUNC)&C_reachability, 3},
+    {"C_cut_structure", (DL_FUNC)&C_cut_structure, 1},
+    {"C_edge_counts", (DL_FUNC)&C_edge_counts, 1},
+    {"C_ego_sizes", (DL_FUNC)&C_ego_sizes, 6},
+    {"C_ego_members", (DL_FUNC)&C_ego_members, 6},
+    {"C_ego_summary", (DL_FUNC)&C_ego_summary, 5},
+    {"C_twomode_density", (DL_FUNC)&C_twomode_density, 2},
+    {"C_twomode_centrality", (DL_FUNC)&C_twomode_centrality, 6},
+    {"C_twomode_eigenvector", (DL_FUNC)&C_twomode_eigenvector, 5},
+    {"C_project", (DL_FUNC)&C_project, 6},
+    {"C_pagerank", (DL_FUNC)&C_pagerank, 10},
+    {"C_katz", (DL_FUNC)&C_katz, 10},
+    {"C_power_centrality", (DL_FUNC)&C_power_centrality, 9},
+    {"C_hits", (DL_FUNC)&C_hits, 7},
+    {"C_assortativity_nominal", (DL_FUNC)&C_assortativity_nominal, 6},
+    {"C_assortativity_values", (DL_FUNC)&C_assortativity_values, 6},
+    {"C_assortativity_degree", (DL_FUNC)&C_assortativity_degree, 5},
+    {"C_mixing_matrix", (DL_FUNC)&C_mixing_matrix, 7},
+    {"C_ei_index", (DL_FUNC)&C_ei_index, 6},
+    {"C_group_shares", (DL_FUNC)&C_group_shares, 4},
+    {"C_layout_stress", (DL_FUNC)&C_layout_stress, 9},
+    {"C_layout_fr", (DL_FUNC)&C_layout_fr, 8},
+    {"C_layout_simple", (DL_FUNC)&C_layout_simple, 3},
+    {"C_layout_tree", (DL_FUNC)&C_layout_tree, 2},
+    {"C_layout_twomode", (DL_FUNC)&C_layout_twomode, 3},
+    {"C_layout_stress_value", (DL_FUNC)&C_layout_stress_value, 5},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

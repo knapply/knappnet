@@ -22,6 +22,12 @@
 #' hold: Pajek and UCINET DL store only structure, node labels, and a
 #' single edge value, and DOT is for drawing.
 #'
+#' Files are read and written as UTF-8, and file paths may contain any
+#' character, so identifiers and attributes in any script round-trip on
+#' every platform. The exception is writing edge lists, which uses
+#' [utils::write.table()]: in R before 4.2 on Windows, and in other locales
+#' that are not UTF-8, it can only write characters of the native encoding.
+#'
 #' GraphML and DyNetML files both use `.xml`. When reading a `.xml` file
 #' without `format`, the root element decides (`<graphml>` or a DyNetML
 #' `<DynamicNetwork>`, `<DynamicMetaNetwork>`, `<MetaNetwork>`, or
@@ -99,12 +105,13 @@
 read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
                          weight = NULL, weight_type = c("distance", "strength")) {
   weight_type <- match.arg(weight_type)
-  if (!is.character(file) || length(file) != 1L) {
-    stop("`file` must be a single path.", call. = FALSE)
-  }
+  check_path(file, "file")
   if (!file.exists(file)) {
     stop(sprintf("File `%s` does not exist.", file), call. = FALSE)
   }
+  check_flag_or_null(directed, "directed")
+  check_string_or_null(weight, "weight")
+  check_string_or_null(format, "format")
   fmt <- resolve_format(format, file, write = FALSE)
 
   if (fmt %in% c("csv", "tsv")) {
@@ -112,6 +119,10 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
     edges <- utils::read.csv(file, sep = sep, stringsAsFactors = FALSE,
                              check.names = FALSE, encoding = "UTF-8")
     if (is.character(nodes)) {
+      check_path(nodes, "nodes")
+      if (!file.exists(nodes)) {
+        stop(sprintf("Nodes file `%s` does not exist.", nodes), call. = FALSE)
+      }
       nodes <- utils::read.csv(nodes, stringsAsFactors = FALSE, check.names = FALSE,
                                encoding = "UTF-8")
     }
@@ -122,8 +133,9 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
   # A .xml file may be GraphML or DyNetML; the engine reads its root
   # element to decide.
   if (is.null(format) && identical(tolower(tools::file_ext(file)), "xml")) fmt <- NULL
-  res <- .Call(C_read_network, path.expand(file), fmt,
-               if (is.null(directed)) NULL else isTRUE(directed))
+  path <- path.expand(file)
+  dir <- if (is.null(directed)) NULL else directed
+  res <- engine_call("read_network", .Call(C_read_network, path, fmt, dir))
   node_df <- as_frame(res$nodes)
   edge_df <- as_frame(res$edges)
   ids <- integer_ids(node_df$id, edge_df$from, edge_df$to)
@@ -133,6 +145,18 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
   netframe(edge_df, node_df, directed = res$directed, from = "from", to = "to",
            id = "id", weight = pick_weight(edge_df, weight), weight_type = weight_type,
            graph = res$graph)
+}
+
+check_path <- function(value, name) {
+  if (!is.character(value) || length(value) != 1L || is.na(value) || !nzchar(value)) {
+    stop(sprintf("`%s` must be a single file path.", name), call. = FALSE)
+  }
+}
+
+check_string_or_null <- function(value, name) {
+  if (!is.null(value) && (!is.character(value) || length(value) != 1L || is.na(value))) {
+    stop(sprintf("`%s` must be a single string or NULL.", name), call. = FALSE)
+  }
 }
 
 pick_weight <- function(edges, weight) {
@@ -149,9 +173,10 @@ pick_weight <- function(edges, weight) {
 #' @export
 write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
   check_netframe(x)
-  if (!is.character(file) || length(file) != 1L) {
-    stop("`file` must be a single path.", call. = FALSE)
-  }
+  check_path(file, "file")
+  check_string_or_null(format, "format")
+  check_string_or_null(weight, "weight")
+  if (!is.null(nodes_file)) check_path(nodes_file, "nodes_file")
   fmt <- resolve_format(format, file, write = TRUE)
   weight <- if (is.null(weight)) x$roles$weight else weight
   if (!is.null(weight) && !weight %in% names(x$edges)) {
@@ -173,8 +198,11 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
   }
 
   weight_col <- if (is.null(weight)) NULL else if (fmt == "gexf") "weight" else weight
-  .Call(C_write_network, x$directed, tables$graph, as.list(tables$nodes),
-        as.list(tables$edges), path.expand(file), fmt, weight_col)
+  node_cols <- as.list(tables$nodes)
+  edge_cols <- as.list(tables$edges)
+  path <- path.expand(file)
+  engine_call("write_network", .Call(C_write_network, x$directed, tables$graph, node_cols,
+                                     edge_cols, path, fmt, weight_col))
   invisible(file)
 }
 

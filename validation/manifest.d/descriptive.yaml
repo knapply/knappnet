@@ -1,0 +1,456 @@
+# Reciprocity, transitivity and clustering, distances, mean distance,
+# diameter, eccentricity, radius, reachability, cut points, and bridges.
+# Format as in ../manifest.yaml.
+#
+# Non-finite results are written as markers by the engine runner
+# (validation/bindings/descriptive.py) and by every oracle: -999 for NaN
+# (undefined) and -1000 for infinity. No measure here can take either value.
+#
+# Engine options not in ../manifest.yaml:
+#   mode        reciprocity: default | ratio | dyadic | correlation;
+#               paths: out | in | all.
+#   undefined   clustering coefficients that are 0 / 0: nan (igraph; left
+#               out of averages) or zero (NetworkX; counted as 0).
+#   weighting   none | barrat | onnela.
+#   unconnected mean distance and diameter: true averages (or maximizes)
+#               over pairs joined by a path; false gives infinity when some
+#               node does not reach every other.
+#
+# Several R oracles run on igraph::simplify(g) or on the adjacency matrix
+# without its diagonal, because these measures are defined on the
+# adjacency matrix (parallel edges once, loops ignored); the calls say so.
+
+reciprocity:
+  engine: {fn: reciprocity, mode: default}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "reciprocated distinct arcs / distinct arcs between distinct nodes (descriptive_definition_oracle.py)"
+    networkx:
+      call: "nx.overall_reciprocity(DiGraph without self-loops)"
+      undefined_on: [empty]
+      undefined_reason: NetworkX raises for a graph without edges, where the ratio is 0 / 0.
+    igraph:
+      call: "igraph::reciprocity(igraph::simplify(g), mode = 'default')"
+      undefined_on: [empty]
+      undefined_reason: The ratio is 0 / 0 without arcs; not compared.
+    sna:
+      call: "sna::grecip(m with its diagonal set to 0, measure = 'edgewise')"
+      undefined_on: [empty]
+      undefined_reason: The ratio is 0 / 0 without arcs; not compared.
+
+reciprocity_ratio:
+  engine: {fn: reciprocity, mode: ratio}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "mutual dyads / non-null dyads"
+    igraph:
+      call: "igraph::reciprocity(igraph::simplify(g), mode = 'ratio')"
+      undefined_on: [empty]
+      undefined_reason: The ratio is 0 / 0 without arcs; not compared.
+    sna:
+      call: "sna::grecip(m with its diagonal set to 0, measure = 'dyadic.nonnull')"
+      undefined_on: [empty]
+      undefined_reason: The ratio is 0 / 0 without arcs; not compared.
+
+reciprocity_dyadic:
+  engine: {fn: reciprocity, mode: dyadic}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "(mutual + null dyads) / all dyads"
+    sna:
+      call: "sna::grecip(m with its diagonal set to 0, measure = 'dyadic')"
+
+reciprocity_correlation:
+  engine: {fn: reciprocity, mode: correlation}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Pearson correlation of x_ij and x_ji over ordered pairs i != j, by numpy (Garlaschelli and Loffredo 2004 show it equals (r - p) / (1 - p))"
+    sna:
+      call: "sna::grecip(m with its diagonal set to 0, measure = 'correlation')"
+      undefined_on: [empty, complete5_dir]
+      undefined_reason: >-
+        Every tie between distinct nodes is absent (or present), so the
+        correlation is 0 / 0. This engine reports NaN; sna defines it as 1.
+        Not compared.
+      differs_when: [edge_case]
+      reason: >-
+        On a two-node network with one arc the two ordered pairs give the
+        perfectly anticorrelated values (1, 0) and (0, 1), so the correlation
+        is -1, as the definition oracle confirms; sna reports 0.
+
+transitivity:
+  engine: {fn: transitivity, undefined: nan}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "closed / connected ordered paths i - j - k over the simple undirected reading, by enumeration"
+    igraph:
+      call: "igraph::transitivity(simplify(as_undirected(g)), type = 'global')"
+      undefined_on: [empty, pair, single_node]
+      undefined_reason: Without connected triples the ratio is 0 / 0; not compared.
+
+transitivity_networkx:
+  engine: {fn: transitivity, undefined: zero}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "as transitivity, 0 without connected triples"
+    networkx:
+      call: "nx.transitivity(nx.Graph of the network, self-loops removed)"
+
+clustering:
+  engine: {fn: clustering, weighting: none, undefined: nan}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "adjacent pairs of distinct neighbors / pairs of distinct neighbors, NaN below two neighbors"
+    igraph:
+      call: "igraph::transitivity(simplify(as_undirected(g)), type = 'local', isolates = 'NaN')"
+
+clustering_zero:
+  engine: {fn: clustering, weighting: none, undefined: zero}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "as clustering, 0 below two neighbors"
+    networkx:
+      call: "nx.clustering(nx.Graph of the network, self-loops removed)"
+    igraph:
+      call: "igraph::transitivity(simplify(as_undirected(g)), type = 'local', isolates = 'zero')"
+
+average_clustering:
+  engine: {fn: average_clustering, weighting: none, undefined: nan}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "mean local coefficient over nodes with at least two neighbors (NaN if none)"
+    igraph:
+      call: "igraph::transitivity(simplify(as_undirected(g)), type = 'average', isolates = 'NaN')"
+
+average_clustering_zero:
+  engine: {fn: average_clustering, weighting: none, undefined: zero}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "mean local coefficient over all nodes, 0 below two neighbors"
+    networkx:
+      call: "nx.average_clustering(nx.Graph of the network, self-loops removed)"
+    igraph:
+      call: "igraph::transitivity(simplify(as_undirected(g)), type = 'average', isolates = 'zero')"
+
+clustering_barrat:
+  engine: {fn: clustering, weighting: barrat, undefined: nan}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Barrat et al. (2004): sum over ordered neighbor pairs (j, h) of (w_ij + w_ih) / 2 a_jh, over s_i (k_i - 1), in exact arithmetic"
+    igraph:
+      call: "igraph::transitivity(g, type = 'barrat', weights = E(g)$weight, isolates = 'NaN')"
+
+clustering_onnela:
+  engine: {fn: clustering, weighting: onnela, undefined: zero}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Onnela et al. (2005): sum over ordered neighbor pairs of the cube root of the product of the three normalized weights, over k_i (k_i - 1); 0 below two neighbors"
+    networkx:
+      call: "nx.clustering(G, weight = 'weight')"
+
+average_clustering_onnela:
+  engine: {fn: average_clustering, weighting: onnela, undefined: zero}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "mean of the Onnela coefficients, 0 below two neighbors"
+    networkx:
+      call: "nx.average_clustering(G, weight = 'weight')"
+
+distances:
+  engine: {fn: distances, mode: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "Floyd-Warshall in exact arithmetic (descriptive_definition_oracle.py)"
+    networkx:
+      call: "nx.all_pairs_shortest_path_length(G)"
+    igraph:
+      call: "igraph::distances(g, mode = 'out', weights = NA)"
+    sna:
+      call: "sna::geodist(m without its diagonal)$gdist"
+
+distances_in:
+  engine: {fn: distances, mode: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "Floyd-Warshall on the reversed arcs"
+    igraph:
+      call: "igraph::distances(g, mode = 'in', weights = NA)"
+
+distances_all:
+  engine: {fn: distances, mode: all}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "Floyd-Warshall with every arc in both directions"
+    networkx:
+      call: "nx.all_pairs_shortest_path_length(G.to_undirected())"
+    igraph:
+      call: "igraph::distances(g, mode = 'all', weights = NA)"
+
+distances_weighted:
+  engine: {fn: distances, mode: out, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Floyd-Warshall on the weights in exact arithmetic"
+    networkx:
+      call: "nx.all_pairs_dijkstra_path_length(G, weight = 'weight')"
+    igraph:
+      call: "igraph::distances(g, mode = 'out', weights = E(g)$weight)"
+
+distances_weighted_strength:
+  engine: {fn: distances, mode: out, weighted: true, weights_as: strength}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Floyd-Warshall on lengths 1/w in exact arithmetic"
+    igraph:
+      call: "igraph::distances(g, mode = 'out', weights = 1 / E(g)$weight)"
+
+mean_distance:
+  engine: {fn: mean_distance, mode: out, unconnected: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "mean of the finite exact distances between distinct nodes"
+    networkx:
+      call: "mean of nx.all_pairs_shortest_path_length over distinct pairs (equal to nx.average_shortest_path_length where NetworkX defines it, which the oracle checks)"
+      undefined_on: [empty, single_node]
+      undefined_reason: >-
+        No pair of distinct nodes is joined by a path, so the mean is 0 / 0
+        (NetworkX's average_shortest_path_length returns 0 for one node and
+        raises for the empty graph); not compared.
+    igraph:
+      call: "igraph::mean_distance(g, directed = TRUE, unconnected = TRUE, weights = NA)"
+
+mean_distance_all:
+  engine: {fn: mean_distance, mode: all, unconnected: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "mean finite distance, direction ignored"
+    igraph:
+      call: "igraph::mean_distance(g, directed = FALSE, unconnected = TRUE, weights = NA)"
+
+mean_distance_connected:
+  engine: {fn: mean_distance, mode: out, unconnected: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "mean distance, infinite if some node does not reach every other"
+    igraph:
+      call: "igraph::mean_distance(g, directed = TRUE, unconnected = FALSE, weights = NA)"
+
+mean_distance_weighted:
+  engine: {fn: mean_distance, mode: out, weighted: true, unconnected: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "mean of the finite exact weighted distances"
+    networkx:
+      call: "mean of nx.all_pairs_dijkstra_path_length over distinct pairs"
+    igraph:
+      call: "igraph::mean_distance(g, directed = TRUE, unconnected = TRUE, weights = E(g)$weight)"
+
+diameter:
+  engine: {fn: diameter, mode: out, unconnected: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite exact distance"
+    networkx:
+      call: "largest value of nx.all_pairs_shortest_path_length (nx.diameter where NetworkX defines it, which the oracle checks)"
+    igraph:
+      call: "igraph::diameter(g, directed = TRUE, unconnected = TRUE, weights = NA)"
+
+diameter_connected:
+  engine: {fn: diameter, mode: out, unconnected: false}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest distance, infinite if some node does not reach every other"
+    igraph:
+      call: "igraph::diameter(g, directed = TRUE, unconnected = FALSE, weights = NA)"
+
+diameter_all:
+  engine: {fn: diameter, mode: all, unconnected: true}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite distance, direction ignored"
+    igraph:
+      call: "igraph::diameter(g, directed = FALSE, unconnected = TRUE, weights = NA)"
+
+diameter_weighted:
+  engine: {fn: diameter, mode: out, weighted: true, unconnected: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite exact weighted distance"
+    networkx:
+      call: "largest value of nx.all_pairs_dijkstra_path_length"
+    igraph:
+      call: "igraph::diameter(g, directed = TRUE, unconnected = TRUE, weights = E(g)$weight)"
+
+eccentricity:
+  engine: {fn: eccentricity, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite exact distance from each node, direction ignored (0 for isolates)"
+    networkx:
+      call: "nx.eccentricity(G.to_undirected()) on connected networks; elsewhere the largest value of nx.single_source_shortest_path_length"
+    igraph:
+      call: "igraph::eccentricity(g without weights, mode = 'all')"
+
+eccentricity_out:
+  engine: {fn: eccentricity, mode: out}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite exact distance from each node along arcs"
+    networkx:
+      call: "nx.eccentricity(G) on strongly connected networks; elsewhere the largest value of nx.single_source_shortest_path_length"
+    igraph:
+      call: "igraph::eccentricity(g without weights, mode = 'out')"
+
+eccentricity_weighted:
+  engine: {fn: eccentricity, mode: out, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "largest finite exact weighted distance from each node"
+    networkx:
+      call: "nx.eccentricity(G, weight = 'weight') on (strongly) connected networks; elsewhere the largest value of nx.single_source_dijkstra_path_length"
+
+radius:
+  engine: {fn: radius, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "smallest eccentricity, direction ignored"
+    igraph:
+      call: "igraph::radius(g without weights, mode = 'all')"
+
+reachability:
+  engine: {fn: reachability, mode: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "row sums of the transitive closure, less the node itself"
+    networkx:
+      call: "len(nx.descendants(G, v)), or len(nx.node_connected_component(G, v)) - 1 if undirected"
+    igraph:
+      call: "igraph::ego_size(g, order = vcount(g), mode = 'out') - 1"
+
+reachability_in:
+  engine: {fn: reachability, mode: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "column sums of the transitive closure, less the node itself"
+    networkx:
+      call: "len(nx.ancestors(G, v))"
+    igraph:
+      call: "igraph::ego_size(g, order = vcount(g), mode = 'in') - 1"
+
+reachability_all:
+  engine: {fn: reachability, mode: all}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "row sums of the closure of the symmetrized arcs, less the node itself"
+    networkx:
+      call: "len(nx.node_connected_component(G.to_undirected(), v)) - 1"
+    igraph:
+      call: "igraph::ego_size(g, order = vcount(g), mode = 'all') - 1"
+
+cut_points:
+  engine: {fn: cut_points}
+  applies_to: any
+  compare: sorted
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes whose removal increases the number of components of the undirected reading, by removal"
+    networkx:
+      call: "nx.articulation_points(nx.MultiGraph of the network)"
+    igraph:
+      call: "igraph::articulation_points(simplify(as_undirected(g))), which does not depend on parallel edges"
+    sna:
+      call: "sna::cutpoints(symmetrized m without its diagonal, mode = 'graph')"
+
+bridges:
+  engine: {fn: bridges}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "edges whose removal increases the number of components of the undirected multigraph reading, by removal; reported by their endpoints"
+    networkx:
+      call: "nx.bridges(nx.MultiGraph of the network)"
+    igraph:
+      call: "igraph::ends(u, igraph::bridges(u)) with u = as_undirected(g, mode = 'each')"
+      undefined_on: [complete5_dir, gnp_dir_dense, gnp_dir_sparse, multi_loops_dir,
+                     multi_loops_und, real_weights_dir, weighted_dir]
+      undefined_reason: >-
+        The undirected reading of these networks has parallel edges (or arcs
+        in both directions), and igraph's documentation does not say how
+        bridges() treats them, so it is compared only where there are none.

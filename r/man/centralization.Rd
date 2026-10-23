@@ -22,7 +22,9 @@ only).}
 \item{convention}{Whose theoretical maxima and closeness definition to use:
 \code{"igraph"}, \code{"sna"}, or \code{"ucinet"}. NetworkX has no
 centralization index, so \code{"networkx"} is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A number.}
 \description{
@@ -67,4 +69,13 @@ clarification. \emph{Social Networks}, 1(3), 215-239.
 star <- netframe(data.frame(from = 1, to = 2:6), directed = FALSE)
 centralization(star)
 centralization(star, "betweenness")
+
+# The theoretical maxima differ between tools. NetworkX has no
+# centralization index, so its convention is an error.
+centralization(star)                          # igraph
+centralization(star, convention = "sna")      # sna
+centralization(star, convention = "ucinet")   # UCINET
+centralization(star, "closeness")                        # igraph
+centralization(star, "closeness", convention = "sna")    # sna
+centralization(star, "closeness", convention = "ucinet") # UCINET
 }

@@ -14,7 +14,9 @@ efficiency(x, weighted = NULL, threads = 0L)
 \item{x}{A \code{\link{netframe}}.}
 \item{weighted}{Whether to use edge weights as tie strengths. \code{NULL}
 (the default) uses them when the network has a weight column.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{

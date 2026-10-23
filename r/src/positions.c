@@ -15,7 +15,7 @@
 
 static GraphHandle *positions_graph(SEXP ptr) {
   if (TYPEOF(ptr) != EXTPTRSXP || R_ExternalPtrAddr(ptr) == NULL) {
-    Rf_error("Invalid network handle.");
+    Rf_error("invalid network handle (internal error)");
   }
   return (GraphHandle *)R_ExternalPtrAddr(ptr);
 }
@@ -36,7 +36,9 @@ SEXP C_structural_holes(SEXP ptr, SEXP measure, SEXP weighted, SEXP threads) {
 
 SEXP C_brokerage(SEXP ptr, SEXP groups, SEXP threads) {
   GraphHandle *h = positions_graph(ptr);
-  if (TYPEOF(groups) != INTSXP) Rf_error("Group codes must be an integer vector.");
+  if (TYPEOF(groups) != INTSXP) {
+    Rf_error("group codes must be an integer vector (internal error)");
+  }
   int64_t n = net_graph_node_count(h);
   R_xlen_t ng = XLENGTH(groups);
   int64_t *g = (int64_t *)R_alloc(ng > 0 ? (size_t)ng : 1, sizeof(int64_t));

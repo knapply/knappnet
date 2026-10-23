@@ -11,7 +11,9 @@ betweenness(x, weighted = NULL, normalized = FALSE, threads = 0L,
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
 \item{normalized}{Whether to normalize by the number of pairs.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{weights_as}{Override the network's \code{weight_type}:
 \code{"distance"} or \code{"strength"}.}
 \item{convention}{How parallel edges and weights are treated; see
@@ -65,4 +67,13 @@ Dijkstra, E. W. (1959). A note on two problems in connexion with graphs.
 \examples{
 g <- netframe(data.frame(from = 1:3, to = 2:4), directed = FALSE)
 betweenness(g)
+
+# Two parallel edges between 1 and 2: igraph counts each as its own
+# shortest path, NetworkX keeps one, and sna and UCINET read the network
+# as an adjacency matrix.
+h <- netframe(data.frame(from = c(1, 1, 2, 1), to = c(2, 2, 3, 4)), directed = FALSE)
+betweenness(h)                          # igraph
+betweenness(h, convention = "networkx") # NetworkX
+betweenness(h, convention = "sna")      # sna
+betweenness(h, convention = "ucinet")   # UCINET
 }

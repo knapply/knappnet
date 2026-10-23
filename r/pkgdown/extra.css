@@ -1,0 +1,52 @@
+/* Quiet, readable defaults on top of the Bootstrap 5 template. */
+
+body {
+  font-size: 1.0625rem;
+  line-height: 1.6;
+}
+
+.navbar {
+  background-color: #f7f8f9 !important;
+  border-bottom: 1px solid #e3e6e9;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Code: a light panel, not a dark block. */
+pre {
+  background-color: #f4f6f8;
+  border: 1px solid #e3e6e9;
+  border-radius: 0.3rem;
+}
+
+code {
+  font-size: 0.9em;
+}
+
+/* Wide function-map tables scroll inside their own box on small screens. */
+.contents table,
+.template-home table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  font-size: 0.95rem;
+}
+
+.contents table th,
+.template-home table th {
+  border-bottom: 2px solid #c9ced3;
+  white-space: nowrap;
+}
+
+.contents table td {
+  vertical-align: top;
+}
+
+blockquote {
+  border-left: 3px solid #24577a;
+  padding-left: 1rem;
+  color: #3d4449;
+}

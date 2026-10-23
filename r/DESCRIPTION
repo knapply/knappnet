@@ -12,21 +12,28 @@ Description: Network analysis on networks represented as a pair of data
     algorithm of Batagelj and Mrvar (2001)
     <doi:10.1016/S0378-8733(01)00035-1>.
 License: MIT + file LICENSE
-URL: https://github.com/knapply/knappnet
+URL: https://github.com/knapply/knappnet, https://knapply.github.io/knappnet/
 BugReports: https://github.com/knapply/knappnet/issues
 Encoding: UTF-8
 Depends: R (>= 4.1)
 Imports:
+    graphics,
+    grDevices,
     methods,
     stats,
     tools,
     utils
 Suggests:
+    ergm,
     igraph,
+    knitr,
     Matrix,
     network,
+    rmarkdown,
     sna,
     testthat (>= 3.0.0),
     tidygraph
+VignetteBuilder: knitr
 Config/testthat/edition: 3
+Config/Needs/website: pkgdown, igraph, sna, network, tidygraph, Matrix
 SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.70), GNU make
