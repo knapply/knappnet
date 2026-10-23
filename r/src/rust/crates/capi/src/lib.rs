@@ -23,6 +23,7 @@ use engine::{Error, Graph, WeightKind};
 mod cyber;
 mod descriptive;
 mod files;
+mod frame;
 mod groups;
 mod layout;
 mod positions;

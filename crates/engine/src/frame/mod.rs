@@ -148,7 +148,7 @@ pub mod roles;
 pub mod summary;
 pub mod validate;
 
-pub use build::{build, Built, NodeMap};
+pub use build::{build, build_validated, Built, NodeMap};
 pub use columns::{Column, Kind, Mask, Strings, Table, Which};
 pub use diagnostics::{Code, Diagnostic, Report, Severity};
 pub use multiplicity::{simplify, Combine, Simplified};
