@@ -16,6 +16,18 @@
 //!   sum_i (max_j c_j - c_i), divided by the largest value that sum can take
 //!   in a network with the same number of nodes. The maxima of each reference
 //!   tool are recorded in [`crate::conventions`].
+//! - Eigenvector centralization follows igraph's `centr_eigen()`
+//!   (`csardi2006igraph`): eigenvector centrality scaled so the largest
+//!   score is 1, with direction ignored, and the theoretical maximum n - 2
+//!   of a network with a single edge and n - 2 isolated nodes (scores 1, 1,
+//!   and 0), which igraph's documentation gives as the most centralized
+//!   network for this measure; a star scores less than 1 (for 10 nodes,
+//!   6/8 = 0.75, the value igraph's documentation reports). Because the
+//!   eigenvector of a network with several components depends on more than
+//!   the network (see [`crate::metrics::eigenvector`]), so does its
+//!   centralization. sna and UCINET compute eigenvector scores with unit
+//!   norm and their own maxima, which are not documented in a form that
+//!   could be verified here, so only the igraph convention is provided.
 //!
 //! Conventions:
 //! - Density counts every edge, including parallel edges and self-loops, and
@@ -39,6 +51,9 @@ use crate::graph::Graph;
 use crate::metrics::betweenness::{betweenness, BetweennessOptions};
 use crate::metrics::closeness::{closeness, ClosenessOptions};
 use crate::metrics::degree::{degree, DegreeMode};
+use crate::metrics::eigenvector::{
+    eigenvector_centrality, EigenScale, EigenvectorOptions, LoopWeight,
+};
 
 /// Share of possible edges present. See the module documentation.
 pub fn density(g: &Graph, loops: bool) -> f64 {
@@ -313,16 +328,20 @@ pub enum CentralizationMeasure {
     Betweenness,
     /// Normalized closeness.
     Closeness,
+    /// Eigenvector centrality with the largest score 1, direction ignored
+    /// (igraph convention only).
+    Eigenvector,
 }
 
 impl CentralizationMeasure {
     /// Decodes the C interface codes: 0 = degree, 1 = betweenness,
-    /// 2 = closeness.
+    /// 2 = closeness, 3 = eigenvector.
     pub fn from_code(code: i32) -> Result<CentralizationMeasure> {
         match code {
             0 => Ok(CentralizationMeasure::Degree),
             1 => Ok(CentralizationMeasure::Betweenness),
             2 => Ok(CentralizationMeasure::Closeness),
+            3 => Ok(CentralizationMeasure::Eigenvector),
             _ => Err(Error::InvalidArgument(format!(
                 "unknown centralization measure code {code}"
             ))),
@@ -379,6 +398,9 @@ pub fn centralization(g: &Graph, opts: CentralizationOptions) -> Result<f64> {
                 .into(),
         ));
     }
+    if opts.measure == M::Eigenvector {
+        return eigenvector_centralization(g, opts);
+    }
     let simple;
     let g = if conv.uses_adjacency_matrix() {
         simple = simplify(g, false, ParallelWeight::Max)?;
@@ -430,11 +452,24 @@ pub fn centralization(g: &Graph, opts: CentralizationOptions) -> Result<f64> {
             }
             c
         }
+        M::Eigenvector => unreachable!("handled above"),
     };
+    freeman_index(g, &scores, opts, mode)
+}
+
+/// Sum of differences from the largest score, divided by the theoretical
+/// maximum when normalized.
+fn freeman_index(
+    g: &Graph,
+    scores: &[f64],
+    opts: CentralizationOptions,
+    mode: DegreeMode,
+) -> Result<f64> {
     let n = g.node_count();
     if n == 0 {
         return Ok(f64::NAN);
     }
+    let directed = g.is_directed();
     let max = scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let total: f64 = scores.iter().sum();
     // NaN scores (closeness of a node that reaches no other) propagate.
@@ -447,8 +482,36 @@ pub fn centralization(g: &Graph, opts: CentralizationOptions) -> Result<f64> {
     if !opts.normalized {
         return Ok(raw);
     }
-    let tmax = centralization_max(n, directed, opts.measure, mode, opts.loops, conv)?;
+    let tmax = centralization_max(n, directed, opts.measure, mode, opts.loops, opts.convention)?;
     Ok(raw / tmax)
+}
+
+/// igraph's eigenvector centralization. See the module documentation.
+fn eigenvector_centralization(g: &Graph, opts: CentralizationOptions) -> Result<f64> {
+    if opts.convention != Convention::Igraph {
+        return Err(Error::InvalidArgument(format!(
+            "eigenvector centralization is provided for the igraph convention only, not {}",
+            opts.convention.name()
+        )));
+    }
+    if g.is_directed() && opts.mode != DegreeMode::All {
+        return Err(Error::InvalidArgument(
+            "eigenvector centralization is provided with direction ignored (mode \"all\") only"
+                .into(),
+        ));
+    }
+    let e = eigenvector_centrality(
+        g,
+        EigenvectorOptions {
+            mode: DegreeMode::All,
+            weighted: false,
+            scale: EigenScale::Max,
+            loops: LoopWeight::Twice,
+            threads: opts.threads,
+            ..Default::default()
+        },
+    )?;
+    freeman_index(g, &e.values, opts, DegreeMode::All)
 }
 
 /// Theoretical maximum of the centralization sum for a network with `n`
@@ -492,6 +555,25 @@ pub fn centralization_max(
             }
         }
         (M::Closeness, Convention::Ucinet) => (n - 1.0) * (n - 2.0) / (2.0 * n - 3.0),
+        (M::Eigenvector, Convention::Igraph) => {
+            if directed && mode != DegreeMode::All {
+                return Err(Error::InvalidArgument(
+                    "the eigenvector centralization maximum is provided with direction ignored only"
+                        .into(),
+                ));
+            }
+            if n < 3.0 {
+                f64::NAN
+            } else {
+                n - 2.0
+            }
+        }
+        (M::Eigenvector, _) => {
+            return Err(Error::InvalidArgument(format!(
+                "eigenvector centralization is provided for the igraph convention only, not {}",
+                convention.name()
+            )))
+        }
         (M::Closeness, _) => {
             if mode == DegreeMode::All {
                 (n - 1.0) * (n - 2.0) / (2.0 * n - 3.0)
@@ -602,5 +684,43 @@ mod tests {
             ..Default::default()
         };
         assert!(centralization(&cycle, nx).is_err());
+    }
+
+    #[test]
+    fn eigenvector_centralization_as_igraph_documents() {
+        let eig = CentralizationOptions {
+            measure: CentralizationMeasure::Eigenvector,
+            ..Default::default()
+        };
+        // igraph's documentation: one edge among 10 nodes scores 1, a star
+        // of 10 nodes 0.75.
+        let one_edge = g(10, &[1], &[0], false);
+        assert!((centralization(&one_edge, eig).unwrap() - 1.0).abs() < 1e-9);
+        let star = g(10, &[0; 9], &[1, 2, 3, 4, 5, 6, 7, 8, 9], false);
+        assert!((centralization(&star, eig).unwrap() - 0.75).abs() < 1e-9);
+        let raw = CentralizationOptions {
+            normalized: false,
+            ..eig
+        };
+        assert!((centralization(&star, raw).unwrap() - 6.0).abs() < 1e-9);
+        let cycle = g(5, &[0, 1, 2, 3, 4], &[1, 2, 3, 4, 0], false);
+        assert!(centralization(&cycle, eig).unwrap().abs() < 1e-9);
+        // Directed networks only with direction ignored; other tools'
+        // conventions are refused.
+        let d = g(3, &[0, 1], &[1, 2], true);
+        assert!(centralization(&d, eig).is_ok());
+        let d_in = CentralizationOptions {
+            mode: DegreeMode::In,
+            ..eig
+        };
+        assert!(centralization(&d, d_in).is_err());
+        let sna = CentralizationOptions {
+            convention: Convention::Sna,
+            ..eig
+        };
+        assert!(centralization(&star, sna).is_err());
+        assert!(centralization(&g(2, &[0], &[1], false), eig)
+            .unwrap()
+            .is_nan());
     }
 }
