@@ -143,3 +143,23 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   Guestrin 2012). Hilbert or degree ordering of the edge stream improves
   the cache behaviour of the random reads (McSherry, Isard and Murray 2015,
   "Scalability! But at what COST?").
+
+## Ego networks (`ego`)
+
+- Per ego: one depth-limited search, an induced local CSR (sorted, distinct;
+  4 B per local arc), union-find, and ego betweenness. Working set per
+  worker O(n) marks + O(local arcs); never a global copy.
+- Ego betweenness, order 1, undirected: Everett and Borgatti (2005) pair
+  formula on bit rows of the ego network (s^2/8 bytes, capped at s = 8192,
+  8 MB) when s^2 < 256 local arcs; otherwise Brandes on the local CSR
+  (O(s m_ego)). Measured dense1k (n = 1000, density 0.3): 38 s -> 1.2 s;
+  dense2k 6.3 s -> 0.58 s; medium3k 0.23 s -> 0.054 s.
+- Streaming: each ego network is built from the CSR rows of its members
+  only, so with the CSR memory-mapped the access pattern is one random
+  row read per member and per member's neighbours (2-hop locality); a
+  node ordering with locality (BFS or RCM order) makes these mostly
+  sequential. Directed ego betweenness and order > 1 still need Brandes
+  per ego (O(s m_ego)): the cost to watch for hubs in large graphs, where
+  s approaches n; sampling sources within the ego network is the scalable
+  substitute.
+
