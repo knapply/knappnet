@@ -3,6 +3,18 @@
 \alias{mds_stress}
 \alias{print.classical_mds}
 \title{Classical multidimensional scaling}
+\description{
+Places points in \code{k} dimensions so that their Euclidean distances
+approximate a matrix of dissimilarities, by classical (metric) scaling
+(Torgerson 1952; Gower 1966): the squared dissimilarities are
+double-centred, and the coordinates are the leading eigenvectors of the
+result scaled by the square roots of their eigenvalues. This is the method
+of \code{stats::cmdscale()}, whose results it reproduces up to the sign of
+each dimension, and of UCINET's metric MDS, used in Everton (2012,
+Appendix 3) to draw networks by their geodesic or structural-equivalence
+distances (see \code{\link{mds_distances}}). \code{mds_stress()} reports
+how well any configuration fits a dissimilarity matrix.
+}
 \usage{
 classical_mds(d, k = 2)
 
@@ -15,25 +27,6 @@ non-negative, zero on the diagonal), or a \code{"dist"} object.}
 of points.}
 \item{points}{A numeric matrix with one row per point and one column per
 dimension.}
-}
-\value{\code{classical_mds()} returns a list of class
-\code{"classical_mds"} with \code{points} (a matrix with one row per point,
-rownames from \code{d}, and up to \code{k} columns \code{Dim1},
-\code{Dim2}, ...), \code{eigenvalues} (all of them, in decreasing order),
-\code{gof} (the two goodness-of-fit ratios), and \code{stress}, with
-\code{print()} and \code{\link[=plot.classical_mds]{plot()}} methods.
-\code{mds_stress()} returns a number.}
-\description{
-Places points in \code{k} dimensions so that their Euclidean distances
-approximate a matrix of dissimilarities, by classical (metric) scaling
-(Torgerson 1952; Gower 1966): the squared dissimilarities are
-double-centred, and the coordinates are the leading eigenvectors of the
-result scaled by the square roots of their eigenvalues. This is the method
-of \code{stats::cmdscale()}, whose results it reproduces up to the sign of
-each dimension, and of UCINET's metric MDS, used in Everton (2012,
-Appendix 3) to draw networks by their geodesic or structural-equivalence
-distances (see \code{\link{mds_distances}}). \code{mds_stress()} reports
-how well any configuration fits a dissimilarity matrix.
 }
 \details{
 Any dissimilarity can be scaled, Euclidean or not; for non-Euclidean input
@@ -64,6 +57,13 @@ to tridiagonal form and the implicit QL algorithm (Golub and Van Loan
 compares coordinates, eigenvalues, and fit with
 \code{cmdscale(d, k, eig = TRUE)}.
 }
+\value{\code{classical_mds()} returns a list of class
+\code{"classical_mds"} with \code{points} (a matrix with one row per point,
+rownames from \code{d}, and up to \code{k} columns \code{Dim1},
+\code{Dim2}, ...), \code{eigenvalues} (all of them, in decreasing order),
+\code{gof} (the two goodness-of-fit ratios), and \code{stress}, with
+\code{print()} and \code{\link[=plot.classical_mds]{plot()}} methods.
+\code{mds_stress()} returns a number.}
 \references{
 Torgerson, W. S. (1952). Multidimensional scaling: I. Theory and method.
 \emph{Psychometrika}, 17(4), 401-419. \doi{10.1007/BF02288916}

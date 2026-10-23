@@ -4,6 +4,12 @@
 \alias{ego_density}
 \alias{ego_betweenness}
 \title{Egocentric measures}
+\description{
+Measures of every node's ego network, computed together in parallel and
+returned aligned with the rows of \code{x$nodes}. \code{ego_summary()} gives
+them all in a data frame; \code{ego_size()}, \code{ego_density()}, and
+\code{ego_betweenness()} return one measure as a vector.
+}
 \usage{
 ego_summary(x, order = 1L, mode = c("all", "out", "in"), betweenness = TRUE,
   threads = 0L)
@@ -25,20 +31,9 @@ gives the first-order neighborhood.}
 measures.}
 \item{include_ego}{Whether ego itself is counted (igraph's
 \code{mindist = 0}) or only its alters (\code{mindist = 1}).}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
-}
-\value{
-\code{ego_summary()} returns a data frame with one row per node, in the
-order of \code{x$nodes}, and columns \code{node} (the identifier),
-\code{size}, \code{ties}, \code{pairs}, \code{density}, \code{components},
-and (if requested) \code{ego_betweenness}. The other functions return a
-numeric vector aligned with the rows of \code{x$nodes}.
-}
-\description{
-Measures of every node's ego network, computed together in parallel and
-returned aligned with the rows of \code{x$nodes}. \code{ego_summary()} gives
-them all in a data frame; \code{ego_size()}, \code{ego_density()}, and
-\code{ego_betweenness()} return one measure as a vector.
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 For a node with \eqn{k} alters (the nodes within \code{order} steps; see
@@ -77,6 +72,13 @@ Results match igraph (\code{ego_size()}, and \code{ecount()},
 \code{edge_density()}, \code{count_components()}, and \code{betweenness()}
 of \code{induced_subgraph(simplify(g), ego(g, ...))}) and NetworkX
 (\code{ego_graph()} on the simple graph).
+}
+\value{
+\code{ego_summary()} returns a data frame with one row per node, in the
+order of \code{x$nodes}, and columns \code{node} (the identifier),
+\code{size}, \code{ties}, \code{pairs}, \code{density}, \code{components},
+and (if requested) \code{ego_betweenness}. The other functions return a
+numeric vector aligned with the rows of \code{x$nodes}.
 }
 \references{
 Everett, M., & Borgatti, S. P. (2005). Ego network betweenness.

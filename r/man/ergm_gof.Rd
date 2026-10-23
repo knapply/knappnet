@@ -3,6 +3,13 @@
 \alias{print.ergm_gof}
 \alias{plot.ergm_gof}
 \title{Goodness of fit of an exponential random graph model}
+\description{
+Simulates networks from a fitted model and compares distributions of
+structural features that need not be in the model with the observed
+network (Hunter, Goodreau, and Handcock 2008): the degree distribution,
+edgewise and dyadwise shared partners, geodesic distances, the triad
+census, and the model's own statistics.
+}
 \usage{
 ergm_gof(object, nsim = 100, seed = NULL,
          stats = c("degree", "esp", "dsp", "distance", "triad", "model"),
@@ -16,8 +23,9 @@ ergm_gof(object, nsim = 100, seed = NULL,
 \arguments{
 \item{object}{A fitted model from \code{\link{ergm_fit}}.}
 \item{nsim}{Number of networks to simulate.}
-\item{seed}{Seed for the simulation, a whole number in [0, 2^53);
-\code{NULL} draws one from R's random number generator.}
+\item{seed}{Seed for the simulation, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{stats}{Which statistics to compare: any of \code{"degree"} (in- and
 out-degree for directed networks), \code{"esp"}, \code{"dsp"},
 \code{"distance"}, \code{"triad"} (directed networks only), and
@@ -31,24 +39,6 @@ out-degree for directed networks), \code{"esp"}, \code{"dsp"},
 plotted on an interactive device.}
 \item{...}{For \code{plot()}, further arguments to
 \code{\link[graphics]{boxplot}}.}
-}
-\value{
-An object of class \code{"ergm_gof"}: a list with one element per
-statistic (\code{degree} or \code{idegree} and \code{odegree}, \code{esp},
-\code{dsp}, \code{distance}, \code{triadcensus}, \code{model}), each a
-list of \code{observed}, \code{simulated} (an nsim-by-k matrix), and
-\code{summary} (a data frame with columns \code{obs}, \code{min},
-\code{mean}, \code{max}, and \code{p}); plus \code{nsim} and \code{seed}.
-\code{plot()} draws one panel per statistic: box plots of the simulated
-values with the observed values as a line, like \code{plot.gof()} in
-\pkg{ergm}.
-}
-\description{
-Simulates networks from a fitted model and compares distributions of
-structural features that need not be in the model with the observed
-network (Hunter, Goodreau, and Handcock 2008): the degree distribution,
-edgewise and dyadwise shared partners, geodesic distances, the triad
-census, and the model's own statistics.
 }
 \details{
 For each statistic the table reports the observed value, the minimum, mean,
@@ -67,6 +57,17 @@ counts are over ordered pairs in directed networks; the number of pairs
 distance \eqn{1, \ldots, n - 1}, with unreachable pairs in the \code{Inf}
 cell; and, for directed networks, the triad census in the order of
 \code{\link{triad_census}}.
+}
+\value{
+An object of class \code{"ergm_gof"}: a list with one element per
+statistic (\code{degree} or \code{idegree} and \code{odegree}, \code{esp},
+\code{dsp}, \code{distance}, \code{triadcensus}, \code{model}), each a
+list of \code{observed}, \code{simulated} (an nsim-by-k matrix), and
+\code{summary} (a data frame with columns \code{obs}, \code{min},
+\code{mean}, \code{max}, and \code{p}); plus \code{nsim} and \code{seed}.
+\code{plot()} draws one panel per statistic: box plots of the simulated
+values with the observed values as a line, like \code{plot.gof()} in
+\pkg{ergm}.
 }
 \references{
 Hunter, D. R., Goodreau, S. M., & Handcock, M. S. (2008). Goodness of fit

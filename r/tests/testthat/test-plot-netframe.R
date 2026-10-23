@@ -1,12 +1,6 @@
-# Plots are checked by behavior on a null device, not by pixels: they must
-# draw without error or warning for every kind of input, return the layout
-# they used, restore graphical parameters, and map columns as documented.
-
-on_null_device <- function(code) {
-  grDevices::pdf(NULL)
-  on.exit(grDevices::dev.off())
-  force(code)
-}
+# plot.netframe() (R/plot-netframe.R): it must draw without error or
+# warning for every kind of input, return the layout it used, restore
+# graphical parameters, and map columns as documented.
 
 office <- function() {
   g <- netframe(
@@ -130,12 +124,12 @@ test_that("weighted, empty, tiny, and larger networks plot", {
 test_that("column mappings follow the documented palettes and order", {
   cols <- map_colors(c("b", "a", NA, "b"))
   expect_identical(cols$labels, c("a", "b", "NA"))
-  pal <- grDevices::hcl.colors(2, "Dark 3")
+  pal <- plot_qualitative(2)
   expect_identical(cols$col, c(pal[2], pal[1], "gray80", pal[2]))
   f <- map_colors(factor(c("lo", "hi"), levels = c("lo", "hi", "unused")))
   expect_identical(f$labels, c("lo", "hi"))
   num <- map_colors(c(0, 5, 10))
-  viridis <- grDevices::hcl.colors(100, "viridis")
+  viridis <- plot_sequential(100)
   expect_identical(num$col, viridis[c(1, 51, 100)])
   sizes <- map_numeric(c(0, 1, 4, NA), 1, 2, area = TRUE)$values
   expect_equal(sizes, c(1, 1.5, 2, 1))
@@ -146,7 +140,7 @@ test_that("two-mode networks are colored by mode by default", {
                          event  = c("gala", "fair", "gala", "fair"))
   g <- twomode(attended)
   fill <- twomode_fill(g)
-  pal <- grDevices::hcl.colors(2, "Dark 3")
+  pal <- plot_qualitative(2)
   expect_identical(fill$col, pal[g$nodes[[g$roles$type]] + 1L])
   expect_identical(fill$legend$labels, c("first", "second"))
   nodes <- data.frame(name = c("ann", "bob", "gala"), kind = c("person", "person", "event"))

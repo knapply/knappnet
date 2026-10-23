@@ -1,6 +1,11 @@
 \name{rolling}
 \alias{rolling}
 \title{Apply a measure over a series of windows}
+\description{
+Computes a node-level (or network-level) measure on every snapshot of a
+temporal network (\code{\link{snapshots}}) and returns the results as one
+tidy data frame, ready for plotting or modelling change over time.
+}
 \usage{
 rolling(x, fun, width = NULL, step = width, ..., breaks = NULL,
   from = NULL, to = NULL, nodes = c("all", "present", "active"))
@@ -21,16 +26,6 @@ date-times, days for dates) or a \code{difftime}.}
 \item{nodes}{Which nodes each snapshot keeps: \code{"all"} (the default),
 \code{"present"}, or \code{"active"}; see \code{\link{network_at}}.}
 }
-\value{
-A data frame with columns \code{start} and \code{end} (of each window),
-\code{node} (the node identifier, or \code{NA} for single values), and
-\code{value}.
-}
-\description{
-Computes a node-level (or network-level) measure on every snapshot of a
-temporal network (\code{\link{snapshots}}) and returns the results as one
-tidy data frame, ready for plotting or modelling change over time.
-}
 \details{
 Snapshots keep every node by default, so node-level results line up
 across windows. \code{fun} receives each snapshot (a temporal network
@@ -41,6 +36,11 @@ works, for example \code{\link{degree}}, \code{\link{betweenness}}, or
 aggregate inside \code{fun} (as in the examples) to count each pair of
 nodes once. Windows are formed as in \code{\link{snapshots}}; the rows
 are ordered by window and then by node.
+}
+\value{
+A data frame with columns \code{start} and \code{end} (of each window),
+\code{node} (the node identifier, or \code{NA} for single values), and
+\code{value}.
 }
 \seealso{
 \code{\link{snapshots}}, \code{\link{aggregate_network}}.

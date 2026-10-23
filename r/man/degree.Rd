@@ -2,6 +2,12 @@
 \alias{degree}
 \alias{strength}
 \title{Degree and strength}
+\description{
+\code{degree()} counts edge endpoints at each node; it is the same for
+weighted and unweighted networks. \code{strength()} sums the weights of those
+edges instead (Barrat et al. 2004). \code{degree(x, weighted = TRUE)} is the
+same as \code{strength(x)}.
+}
 \usage{
 degree(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
        convention = c("igraph", "networkx", "sna", "ucinet"))
@@ -18,13 +24,6 @@ strength(x, mode = c("all", "out", "in"), loops = TRUE)
 every edge; \code{"sna"} and \code{"ucinet"} count distinct ties between
 distinct nodes.}
 }
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-\code{degree()} counts edge endpoints at each node; it is the same for
-weighted and unweighted networks. \code{strength()} sums the weights of those
-edges instead (Barrat et al. 2004). \code{degree(x, weighted = TRUE)} is the
-same as \code{strength(x)}.
-}
 \details{
 Parallel edges each count. In undirected networks a self-loop adds 2 to its
 node; in directed networks it adds 1 to out-degree and 1 to in-degree. These
@@ -36,6 +35,7 @@ adjacency matrix, as those tools do: parallel edges collapse into one tie
 (keeping the largest weight) and self-loops are ignored, whatever
 \code{loops} says. See \code{\link{conventions}}.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Barrat, A., Barthelemy, M., Pastor-Satorras, R., & Vespignani, A. (2004). The
 architecture of complex weighted networks. \emph{Proceedings of the National

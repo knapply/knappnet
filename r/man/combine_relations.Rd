@@ -1,22 +1,6 @@
 \name{combine_relations}
 \alias{combine_relations}
 \title{Combine the relations of a multiplex network}
-\usage{
-combine_relations(x, relation = NULL,
-                  method = c("union", "intersection", "sum", "difference", "select"),
-                  which = NULL)
-}
-\arguments{
-\item{x}{A \code{\link{netframe}}.}
-\item{relation}{The edge column that names each edge's relation, by name or
-position; \code{NULL} looks for a column named \code{relation} or
-\code{network}.}
-\item{method}{How to combine; see Description.}
-\item{which}{Which relations (values of the relation column) to combine;
-\code{NULL} means all of them. \code{"difference"} needs exactly two, in
-order, and \code{"select"} exactly one.}
-}
-\value{A netframe.}
 \description{
 A multiplex network stores several relations in one edge table, told apart
 by a column such as \code{relation} (as \code{example_network("noordin")}
@@ -38,6 +22,21 @@ one-relation network from them:
     (Data > Unpack).}
 }
 }
+\usage{
+combine_relations(x, relation = NULL,
+                  method = c("union", "intersection", "sum", "difference", "select"),
+                  which = NULL)
+}
+\arguments{
+\item{x}{A \code{\link{netframe}}.}
+\item{relation}{The edge column that names each edge's relation, by name or
+position; \code{NULL} looks for a column named \code{relation} or
+\code{network}.}
+\item{method}{How to combine; see Description.}
+\item{which}{Which relations (values of the relation column) to combine;
+\code{NULL} means all of them. \code{"difference"} needs exactly two, in
+order, and \code{"select"} exactly one.}
+}
 \details{
 Within one relation parallel edges count once (a pair is tied or not),
 except that \code{"sum"} adds the weights of parallel edges when the network
@@ -54,6 +53,7 @@ The UCINET menu paths follow Hanneman and Riddle (2005, chapter 16), which
 also describes Transform > Multiplex, the inverse operation that stacks
 relations into one nominal-valued matrix.
 }
+\value{A netframe.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

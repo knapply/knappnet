@@ -2,6 +2,12 @@
 \alias{saom_effects}
 \alias{saom_effect_names}
 \title{Effects of a stochastic actor-oriented model}
+\description{
+Turns a model formula into the table of effects \code{\link{saom_fit}}
+estimates, and lists the effects available. Effects carry the short names
+of RSiena (Ripley et al. 2026, chapter 13), and their definitions match
+RSiena's exactly; see Details.
+}
 \usage{
 saom_effects(formula, data = NULL)
 
@@ -18,18 +24,6 @@ structural effect names, or an effects data frame returned by this
 function, is also accepted.}
 \item{data}{Optional \code{\link{saom_data}} whose covariates the formula
 may use; covariate names are then checked.}
-}
-\value{
-\code{saom_effects()}: a data frame with one row per effect: \code{effect}
-(the short name), \code{covariate}, \code{parameter}, \code{label}, and
-\code{name} (the coefficient name). \code{saom_effect_names()}: the short
-names of all available effects.
-}
-\description{
-Turns a model formula into the table of effects \code{\link{saom_fit}}
-estimates, and lists the effects available. Effects carry the short names
-of RSiena (Ripley et al. 2026, chapter 13), and their definitions match
-RSiena's exactly; see Details.
 }
 \details{
 With \eqn{x_{ij} = 1}{x_ij = 1} for a tie from \eqn{i} to \eqn{j},
@@ -91,6 +85,12 @@ statistics of every effect, and the change statistics
 ministeps use, are checked against a direct evaluation of these formulas
 and against RSiena's own target statistics in the package's validation
 suite.
+}
+\value{
+\code{saom_effects()}: a data frame with one row per effect: \code{effect}
+(the short name), \code{covariate}, \code{parameter}, \code{label}, and
+\code{name} (the coefficient name). \code{saom_effect_names()}: the short
+names of all available effects.
 }
 \references{
 Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026).

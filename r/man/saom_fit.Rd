@@ -6,6 +6,12 @@
 \alias{coef.saom_fit}
 \alias{vcov.saom_fit}
 \title{Fit a stochastic actor-oriented model}
+\description{
+Estimates a stochastic actor-oriented model (SAOM; Snijders 2001; Snijders,
+van de Bunt, and Steglich 2010; Snijders 2017) of the changes between the
+waves of a network panel by the method of moments, using the three-phase
+Robbins-Monro stochastic approximation algorithm of RSiena.
+}
 \usage{
 saom_fit(data, effects, control = saom_control(), initial = NULL)
 }
@@ -21,27 +27,6 @@ definition.}
 initial values, or a numeric vector with one value per effect (rates first,
 one per period, when \code{control$conditional} is \code{FALSE});
 \code{NA} keeps the standard value for that parameter.}
-}
-\value{
-An object of class \code{"saom_fit"}: a list with \code{coefficients},
-\code{se}, \code{vcov}, \code{tconv} (convergence t-ratios),
-\code{tconv_max} (the overall maximum convergence ratio), \code{rates} (a
-data frame with the rate parameter and standard error of each period),
-\code{effects}, \code{targets} (the observed statistics), \code{means}
-(their phase 3 means), \code{derivative}, \code{statistic_vcov},
-\code{deviations} (phase 3 deviations of the simulated statistics from the
-targets, one row per simulation), \code{phase2_deviations},
-\code{trajectory} (phase 2 parameter values by iteration), \code{times}
-(phase 3 simulated period lengths), \code{aux} (auxiliary statistics for
-\code{\link{saom_gof}}), \code{iterations}, \code{seed}, \code{control}, and
-the \code{call}. \code{summary()} adds \code{converged}. \code{coef()} and
-\code{vcov()} return the estimates and their covariance matrix.
-}
-\description{
-Estimates a stochastic actor-oriented model (SAOM; Snijders 2001; Snijders,
-van de Bunt, and Steglich 2010; Snijders 2017) of the changes between the
-waves of a network panel by the method of moments, using the three-phase
-Robbins-Monro stochastic approximation algorithm of RSiena.
 }
 \details{
 The model is a continuous-time Markov chain of \emph{ministeps} (Snijders
@@ -94,6 +79,21 @@ centering, change statistics) are validated against RSiena and against a
 direct evaluation of the definitions; the estimates are compared with
 RSiena's on the same data, within the standard errors both report, in the
 package tests.
+}
+\value{
+An object of class \code{"saom_fit"}: a list with \code{coefficients},
+\code{se}, \code{vcov}, \code{tconv} (convergence t-ratios),
+\code{tconv_max} (the overall maximum convergence ratio), \code{rates} (a
+data frame with the rate parameter and standard error of each period),
+\code{effects}, \code{targets} (the observed statistics), \code{means}
+(their phase 3 means), \code{derivative}, \code{statistic_vcov},
+\code{deviations} (phase 3 deviations of the simulated statistics from the
+targets, one row per simulation), \code{phase2_deviations},
+\code{trajectory} (phase 2 parameter values by iteration), \code{times}
+(phase 3 simulated period lengths), \code{aux} (auxiliary statistics for
+\code{\link{saom_gof}}), \code{iterations}, \code{seed}, \code{control}, and
+the \code{call}. \code{summary()} adds \code{converged}. \code{coef()} and
+\code{vcov()} return the estimates and their covariance matrix.
 }
 \section{Not implemented}{
 Behavior dynamics and co-evolution, several dependent networks,

@@ -2,6 +2,12 @@
 \alias{closeness}
 \alias{harmonic_centrality}
 \title{Closeness and harmonic centrality}
+\description{
+Closeness is the reciprocal of the sum of a node's shortest-path lengths to
+the other nodes (Sabidussi 1966; Freeman 1978). Harmonic centrality sums the
+reciprocals of those lengths instead, so unreachable nodes simply contribute
+0 (Marchiori and Latora 2000; Rochat 2009; Boldi and Vigna 2014).
+}
 \usage{
 closeness(x, mode = NULL, weighted = NULL, normalized = NULL, threads = 0L,
           weights_as = NULL, convention = c("igraph", "networkx", "sna", "ucinet"))
@@ -25,17 +31,10 @@ exists only in normalized form.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{convention}{Whose definition to follow; see Details and
 \code{\link{conventions}}.}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Closeness is the reciprocal of the sum of a node's shortest-path lengths to
-the other nodes (Sabidussi 1966; Freeman 1978). Harmonic centrality sums the
-reciprocals of those lengths instead, so unreachable nodes simply contribute
-0 (Marchiori and Latora 2000; Rochat 2009; Boldi and Vigna 2014).
 }
 \details{
 Let \eqn{n} be the number of nodes, \eqn{r} the number of other nodes a node
@@ -71,6 +70,7 @@ in \code{\link{betweenness}}: distances, or strengths converted to lengths
 are that weight times the number of steps. Searches from each node run in
 parallel.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Sabidussi, G. (1966). The centrality index of a graph. \emph{Psychometrika},
 31(4), 581-603. \doi{10.1007/BF02289527}

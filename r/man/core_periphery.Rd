@@ -3,6 +3,18 @@
 \alias{print.core_periphery}
 \alias{plot.core_periphery}
 \title{Core-periphery structure}
+\description{
+Fits the core-periphery models of Borgatti and Everett (1999), as in
+UCINET's Network > Core/Periphery > Categorical and Continuous routines. In
+the discrete model every node is in the core or the periphery; the ideal
+pattern has every core-core pair tied and every periphery-periphery pair
+untied, and the core is chosen to maximize the Pearson correlation between
+the adjacency matrix and the pattern. In the continuous model every node has
+a coreness \eqn{c_i \ge 0} and the pattern is \eqn{c_i c_j}, so that ties
+are expected between core nodes, less so between core and peripheral nodes,
+and least between peripheral nodes; coreness is fitted by least squares
+(MINRES, UCINET's method) or by maximizing the correlation.
+}
 \usage{
 core_periphery(x, method = c("discrete", "continuous"),
                links = c("missing", "ones", "zeros"),
@@ -24,8 +36,8 @@ pairs: \code{"missing"}, \code{"ones"}, or \code{"zeros"}; see Details.}
 \item{fit}{For the continuous model: \code{"minres"} (least squares,
 UCINET's method) or \code{"correlation"}; see Details.}
 \item{weighted}{Whether to use edge weights (total weight between two nodes)
-as the pair values instead of binary ties; \code{NULL} uses them when the
-network has a weight column.}
+as the pair values instead of binary ties; \code{NULL} (the default) uses them
+when the network has a weight column.}
 \item{starts}{Number of starting points (random cores for the discrete
 model, points for the continuous correlation fit).}
 \item{max_stall}{Steps without improvement after which a discrete start
@@ -54,29 +66,6 @@ the discrete and \code{"network"} for the continuous model.}
 \item{...}{For \code{plot}: further arguments passed to
 \code{\link[graphics]{title}} (and, with \code{what = "network"}, to
 \code{\link{plot.netframe}}), such as \code{main}. Ignored by \code{print}.}
-}
-\value{
-A list of class \code{core_periphery} with \code{method}; for the discrete
-model \code{links} and \code{core}, a logical vector aligned with the rows of
-\code{x$nodes} (\code{TRUE} for core nodes); for the continuous model
-\code{fit}, \code{coreness}, a numeric vector aligned with \code{x$nodes}
-(non-negative, unit Euclidean norm), \code{residual} (the MINRES residual
-sum of squares, \code{NaN} for the correlation fit), and \code{iterations};
-\code{correlation}, the correlation between the data and the fitted
-pattern; and \code{network}, the netframe fitted (used by \code{plot}).
-\code{plot} returns \code{x} invisibly.
-}
-\description{
-Fits the core-periphery models of Borgatti and Everett (1999), as in
-UCINET's Network > Core/Periphery > Categorical and Continuous routines. In
-the discrete model every node is in the core or the periphery; the ideal
-pattern has every core-core pair tied and every periphery-periphery pair
-untied, and the core is chosen to maximize the Pearson correlation between
-the adjacency matrix and the pattern. In the continuous model every node has
-a coreness \eqn{c_i \ge 0} and the pattern is \eqn{c_i c_j}, so that ties
-are expected between core nodes, less so between core and peripheral nodes,
-and least between peripheral nodes; coreness is fitted by least squares
-(MINRES, UCINET's method) or by maximizing the correlation.
 }
 \details{
 Pairs of distinct nodes enter the fit: each unordered pair once in
@@ -138,6 +127,17 @@ checks MINRES against scipy's bounded quasi-Newton minimizer and the
 correlation fit against scipy's BFGS from many starts. Starts run in
 parallel, and the result for a given \code{seed} does not depend on
 \code{threads}.
+}
+\value{
+A list of class \code{core_periphery} with \code{method}; for the discrete
+model \code{links} and \code{core}, a logical vector aligned with the rows of
+\code{x$nodes} (\code{TRUE} for core nodes); for the continuous model
+\code{fit}, \code{coreness}, a numeric vector aligned with \code{x$nodes}
+(non-negative, unit Euclidean norm), \code{residual} (the MINRES residual
+sum of squares, \code{NaN} for the correlation fit), and \code{iterations};
+\code{correlation}, the correlation between the data and the fitted
+pattern; and \code{network}, the netframe fitted (used by \code{plot}).
+\code{plot} returns \code{x} invisibly.
 }
 \references{
 Borgatti, S. P., & Everett, M. G. (1999). Models of core/periphery

@@ -2,6 +2,10 @@
 \alias{summary.netframe}
 \alias{print.summary.netframe}
 \title{Summarize a network}
+\description{
+The standard descriptive table of a network: its size, ties, components,
+cohesion, distances, and degree distribution.
+}
 \usage{
 \method{summary}{netframe}(object, paths = NULL, weighted = NULL, threads = 0L, ...)
 
@@ -13,22 +17,15 @@
 shortest-path search from every node of the largest component. \code{NULL}
 (the default) computes them when that component has at most 5,000 nodes and
 otherwise skips them, saying so.}
-\item{weighted}{Whether the mean distance and diameter use edge weights
-(which must then be positive). \code{NULL} uses them when the network has a
-weight column; see \code{\link{distances}}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{weighted}{Whether the mean distance and diameter use edge weights (which
+must then be positive). \code{NULL} (the default) uses them when the network
+has a weight column; see \code{\link{distances}}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{...}{Not used.}
 \item{x}{A \code{summary.netframe} object.}
 \item{digits}{Significant digits for proportions and means.}
-}
-\value{
-\code{summary()} returns an object of class \code{summary.netframe}: a list
-holding the values described in Details, with a \code{print()} method.
-\code{print()} returns its argument invisibly.
-}
-\description{
-The standard descriptive table of a network: its size, ties, components,
-cohesion, distances, and degree distribution.
 }
 \details{
 The summary reports:
@@ -56,6 +53,11 @@ The summary reports:
 Everything except the mean distance and diameter takes time roughly linear
 in the size of the network, so networks with hundreds of thousands of nodes
 are summarized quickly.
+}
+\value{
+\code{summary()} returns an object of class \code{summary.netframe}: a list
+holding the values described in Details, with a \code{print()} method.
+\code{print()} returns its argument invisibly.
 }
 \examples{
 g <- netframe(data.frame(from = c(1, 1, 2, 3, 5), to = c(2, 3, 3, 4, 6)),

@@ -4,7 +4,13 @@
 \alias{diameter}
 \alias{eccentricity}
 \alias{radius}
-\title{Shortest-path distances, mean distance, diameter, eccentricity, and radius}
+\title{Shortest-path distances and their summaries}
+\description{
+\code{distances()} gives the length of a shortest path between every pair of
+nodes. \code{mean_distance()} averages those lengths and \code{diameter()} is
+the longest of them. A node's eccentricity is its largest distance to the
+nodes it reaches, and the radius is the smallest eccentricity.
+}
 \usage{
 distances(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
           weighted = NULL, weights_as = NULL, threads = 0L)
@@ -34,25 +40,14 @@ undirected networks. The defaults follow igraph: \code{"out"} for
 \code{"all"} for \code{eccentricity()} and \code{radius()}.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{unconnected}{What to do when some node does not reach every other:
 \code{TRUE} averages (or maximizes) over the pairs joined by a path, and
 \code{FALSE} returns \code{Inf}.}
-}
-\value{
-\code{distances()} returns a numeric matrix with one row per node in
-\code{from} and one column per node in \code{to}, with node identifiers as
-dimnames. \code{mean_distance()}, \code{diameter()}, and \code{radius()}
-return a number; \code{eccentricity()} returns a numeric vector aligned with
-the rows of \code{x$nodes}.
-}
-\description{
-\code{distances()} gives the length of a shortest path between every pair of
-nodes. \code{mean_distance()} averages those lengths and \code{diameter()} is
-the longest of them. A node's eccentricity is its largest distance to the
-nodes it reaches, and the radius is the smallest eccentricity.
 }
 \details{
 A node is at distance 0 from itself and at distance \code{Inf} from nodes it
@@ -84,6 +79,13 @@ eccentricity 0, as in igraph's \code{eccentricity()} and \code{radius()}
 
 Every function here matches igraph, and \code{distances()} also NetworkX and
 sna's \code{geodist()}, on every network in the validation suite.
+}
+\value{
+\code{distances()} returns a numeric matrix with one row per node in
+\code{from} and one column per node in \code{to}, with node identifiers as
+dimnames. \code{mean_distance()}, \code{diameter()}, and \code{radius()}
+return a number; \code{eccentricity()} returns a numeric vector aligned with
+the rows of \code{x$nodes}.
 }
 \references{
 Dijkstra, E. W. (1959). A note on two problems in connexion with graphs.

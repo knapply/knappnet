@@ -2,6 +2,11 @@
 \alias{read_network}
 \alias{write_network}
 \title{Read and write network files}
+\description{
+\code{read_network()} reads a file into a \code{\link{netframe}};
+\code{write_network()} writes one out. The format is taken from the file
+extension unless \code{format} is given.
+}
 \usage{
 read_network(file, format = NULL, directed = NULL, nodes = NULL,
              weight = NULL, weight_type = c("distance", "strength"))
@@ -28,15 +33,6 @@ network's weight column.}
 \code{"strength"}); see \code{\link{netframe}}.}
 \item{nodes_file}{For edge lists only: optional path for a CSV file of nodes,
 so isolates and node attributes are kept.}
-}
-\value{
-\code{read_network()} returns a \code{\link{netframe}}.
-\code{write_network()} returns \code{file}, invisibly.
-}
-\description{
-\code{read_network()} reads a file into a \code{\link{netframe}};
-\code{write_network()} writes one out. The format is taken from the file
-extension unless \code{format} is given.
 }
 \details{
 \tabular{lllll}{
@@ -72,6 +68,10 @@ DyNetML \code{<DynamicNetwork>}, \code{<DynamicMetaNetwork>},
 without \code{format} produces GraphML; use \code{format = "dynetml"} (or
 \code{"ora"}) to write DyNetML.
 }
+\value{
+\code{read_network()} returns a \code{\link{netframe}}.
+\code{write_network()} returns \code{file}, invisibly.
+}
 \section{GeoPackage}{
 A GeoPackage (\code{.gpkg}) holds a spatial network (see
 \code{\link{to_sf}}) as two layers, \code{nodes} and \code{edges}, each
@@ -84,7 +84,9 @@ the edge columns are \code{from} and \code{to}, the network is directed
 unless \code{directed} says otherwise, and the weight is found as for other
 formats. Geometries and their CRS round-trip; attribute types follow GDAL's
 GeoPackage driver (logical columns come back as integers). Requires the sf
-package.
+package. \code{write_network()} replaces an existing file; on Windows a
+GeoPackage that GDAL still holds open (for example one read earlier in the
+session) cannot be replaced, so write to a new file name instead.
 }
 \section{DyNetML}{
 DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA for
@@ -120,7 +122,7 @@ Tsvetovat, M., Reminga, J., and Carley, K. M. (2004). DyNetML: Interchange
 format for rich social network data. Technical report CMU-ISRI-04-105,
 Carnegie Mellon University. \doi{10.1184/R1/6622022.v1}
 
-Altman, N., Carley, K. M., and Reminga, J. (2020). ORA User's Guide 2020.
+Altman, N., Carley, K. M., & Reminga, J. (2020). ORA User's Guide 2020.
 Technical report CMU-ISR-20-110, Carnegie Mellon University.
 }
 \examples{

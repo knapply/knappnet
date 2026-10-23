@@ -1,4 +1,10 @@
+# Written by hand (the Rd files are hand-written too, so roxygen2 is not
+# used). Exports are sorted; S3 methods are grouped by the class they
+# apply to, in the order of the files that define them.
+
 useDynLib(knappnet, .registration = TRUE)
+
+# ---- Exported functions ---------------------------------------------------
 
 export(aggregate_network)
 export(as_netframe)
@@ -186,71 +192,98 @@ export(twomode_density)
 export(twomode_eigenvector)
 export(write_network)
 
+# ---- S3 methods for classes defined in this package -----------------------
+
+# The netframe class (R/netframe.R, R/descriptive.R, R/plot-netframe.R)
 S3method(print, netframe)
+S3method(summary, netframe)
+S3method(plot, netframe)
 S3method(as.matrix, netframe)
+S3method(print, summary.netframe)
+
+# QAP tests (R/qap.R)
 S3method(print, qap_cor)
 S3method(summary, qap_cor)
+S3method(plot, qap_cor)
 S3method(print, summary.qap_cor)
 S3method(print, mrqap)
 S3method(summary, mrqap)
-S3method(print, summary.mrqap)
-S3method(as_netframe, default)
-S3method(as_netframe, netframe)
-S3method(as_netframe, data.frame)
-S3method(as_netframe, igraph)
-S3method(as_netframe, network)
-S3method(as_netframe, matrix)
-S3method(as_netframe, Matrix)
-S3method(summary, netframe)
-S3method(print, summary.netframe)
-S3method(plot, netframe)
-S3method(print, blockmodel)
-S3method(as_netframe, sf)
-S3method(as_netframe, sfnetwork)
-S3method(plot, qap_cor)
 S3method(plot, mrqap)
-S3method(plot, blockmodel)
-S3method(plot, classical_mds)
+S3method(print, summary.mrqap)
+
+# Conditional uniform graph tests (R/cug.R)
+S3method(print, cug_test)
+S3method(summary, cug_test)
+S3method(plot, cug_test)
+S3method(print, summary.cug_test)
+
+# Multidimensional scaling (R/scaling.R)
 S3method(print, classical_mds)
+S3method(plot, classical_mds)
+
+# Positions (R/positions.R)
+S3method(print, blockmodel)
+S3method(plot, blockmodel)
+
+# Topography (R/topography.R)
 S3method(print, core_periphery)
 S3method(plot, core_periphery)
 S3method(print, small_world)
 S3method(plot, small_world)
+
+# Subgroups (R/subgroups.R)
 S3method(print, lambda_sets)
 S3method(plot, lambda_sets)
-S3method(print, cug_test)
-S3method(summary, cug_test)
-S3method(print, summary.cug_test)
-S3method(plot, cug_test)
+
+# Exponential random graph models (R/ergm.R, R/ergm-gof.R, R/ergm-temporal.R)
 S3method(print, ergm_fit)
 S3method(summary, ergm_fit)
-S3method(print, summary.ergm_fit)
 S3method(coef, ergm_fit)
 S3method(vcov, ergm_fit)
 S3method(logLik, ergm_fit)
 S3method(simulate, ergm_fit)
 S3method(predict, ergm_fit)
+S3method(print, summary.ergm_fit)
 S3method(print, ergm_gof)
 S3method(plot, ergm_gof)
 S3method(print, ergm_mcmc)
 S3method(plot, ergm_mcmc)
 S3method(print, tergm_fit)
 S3method(summary, tergm_fit)
-S3method(print, summary.tergm_fit)
 S3method(coef, tergm_fit)
 S3method(confint, tergm_fit)
+S3method(print, summary.tergm_fit)
+
+# Stochastic actor-oriented models (R/saom.R)
 S3method(print, saom_data)
 S3method(print, saom_fit)
 S3method(summary, saom_fit)
-S3method(print, summary.saom_fit)
+S3method(plot, saom_fit)
 S3method(coef, saom_fit)
 S3method(vcov, saom_fit)
-S3method(plot, saom_fit)
+S3method(print, summary.saom_fit)
 S3method(print, saom_gof)
 S3method(plot, saom_gof)
 
+# ---- Methods of as_netframe() for other classes ---------------------------
+
+S3method(as_netframe, default)
+S3method(as_netframe, netframe)
+S3method(as_netframe, data.frame)
+S3method(as_netframe, matrix)
+S3method(as_netframe, Matrix)
+S3method(as_netframe, igraph)
+S3method(as_netframe, network)
+S3method(as_netframe, sf)
+S3method(as_netframe, sfnetwork)
+
+# ---- Imports from base packages -------------------------------------------
+
 importFrom(stats, coef, vcov, logLik, simulate, predict, confint)
-# Methods for generics in suggested packages, registered when they load.
+
+# ---- Methods for generics of suggested packages ---------------------------
+# Registered when that package is loaded (delayed S3 registration, R >= 3.6).
+
 S3method(igraph::as.igraph, netframe)
 S3method(network::as.network, netframe)
 S3method(tidygraph::as_tbl_graph, netframe)

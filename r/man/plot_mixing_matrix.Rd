@@ -1,6 +1,11 @@
 \name{plot_mixing_matrix}
 \alias{plot_mixing_matrix}
 \title{Plot a mixing matrix}
+\description{
+Draws the ties between categories of nodes as a heat map with the counts
+written in the cells: the mixing matrix of \code{\link{mixing_matrix}}, or
+any square or rectangular table of counts.
+}
 \usage{
 plot_mixing_matrix(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"),
                    values = TRUE, ...)
@@ -14,12 +19,6 @@ plot_mixing_matrix(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"
 \item{...}{Further arguments passed to \code{\link[graphics]{image}}, such
 as \code{main}.}
 }
-\value{The matrix drawn, invisibly.}
-\description{
-Draws the ties between categories of nodes as a heat map with the counts
-written in the cells: the mixing matrix of \code{\link{mixing_matrix}}, or
-any square or rectangular table of counts.
-}
 \details{
 Darker cells hold more ties. For an undirected network with one attribute
 the matrix is folded into its upper triangle (see
@@ -28,6 +27,7 @@ holds the ties within each category. Compare the diagonal with the rest to
 judge homophily, or use \code{\link{assortativity_nominal}} and
 \code{\link{ei_index}} for one number.
 }
+\value{The matrix drawn, invisibly.}
 \seealso{\code{\link{mixing_matrix}}, \code{\link{plot_matrix}}.}
 \examples{
 g <- example_network("karate")

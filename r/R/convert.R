@@ -1,53 +1,15 @@
-#' Convert networks to and from other packages
-#'
-#' `as_netframe()` turns network objects from other packages, adjacency
-#' matrices, and edge lists into a [netframe()]. `to_igraph()`,
-#' `to_network()`, and `to_tbl_graph()` convert back, and `as.matrix()`
-#' gives an adjacency matrix. Node, edge, and network-level attributes are
-#' carried across in both directions, so existing code and data keep
-#' working.
-#'
-#' The usual generics of other packages also work on a netframe:
-#' `igraph::as.igraph()`, `network::as.network()`, and
-#' `tidygraph::as_tbl_graph()`.
-#'
-#' Notes on each source:
-#' * **igraph** (including **tidygraph** `tbl_graph` objects): vertex names
-#'   become node identifiers (vertex positions are used if the graph has no
-#'   names). An edge attribute called `weight` becomes the weight column.
-#' * **network** (statnet): vertex names become node identifiers. For
-#'   bipartite networks a `mode` node column (1 or 2) records the two sets.
-#' * **matrix** or sparse **Matrix**: row names become identifiers. Values
-#'   other than 0 and 1 become edge weights. Direction is inferred from
-#'   symmetry unless `directed` is given; an undirected matrix contributes
-#'   only its upper triangle. Missing values (`NA`) are read as 0, no tie.
-#' * **data.frame**: treated as an edge list, as in [netframe()].
-#'
-#' @param x An object to convert.
-#' @param ... Passed on to methods. For data frames, arguments of
-#'   [netframe()].
-#' @param directed For matrices, whether edges are directed. `NULL` infers
-#'   it from symmetry.
-#' @param weighted For matrices, whether values are edge weights. `NULL`
-#'   treats any value other than 0 and 1 as a weight.
-#'
-#' @return `as_netframe()` returns a [netframe()]. The `to_*()` functions
-#'   return objects of the corresponding package.
-#'
-#' @examples
-#' m <- matrix(c(0, 2, 0,
-#'               2, 0, 1,
-#'               0, 1, 0), 3, byrow = TRUE, dimnames = list(letters[1:3], letters[1:3]))
-#' g <- as_netframe(m)
-#' g$edges
-#' as.matrix(g, attr = "weight")
-#' @export
+# Conversion to and from other packages' objects (igraph, tidygraph,
+# network, dense and sparse adjacency matrices). Methods for sf and
+# sfnetworks are in sf.R. Methods for other packages' generics are
+# registered in NAMESPACE with S3method(pkg::generic, netframe) and take
+# effect when that package is loaded.
+
+# Convert networks to and from other packages (man/as_netframe.Rd).
 as_netframe <- function(x, ...) {
   UseMethod("as_netframe")
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.default <- function(x, ...) {
   if (isS4(x) && methods::is(x, "Matrix")) {
     return(as_netframe.Matrix(x, ...))
@@ -58,16 +20,13 @@ as_netframe.default <- function(x, ...) {
     class(x)[[1]]), call. = FALSE)
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.netframe <- function(x, ...) x
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.data.frame <- function(x, ...) netframe(x, ...)
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.igraph <- function(x, ...) {
   require_pkg("igraph")
   n <- igraph::vcount(x)
@@ -90,8 +49,7 @@ as_netframe.igraph <- function(x, ...) {
            id = "name", weight = weight, graph = igraph::graph_attr(x))
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.network <- function(x, ...) {
   require_pkg("network")
   n <- network::network.size(x)
@@ -127,8 +85,7 @@ as_netframe.network <- function(x, ...) {
            id = "name", weight = weight, graph = graph)
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   check_flag_or_null(directed, "directed")
   check_flag_or_null(weighted, "weighted")
@@ -144,8 +101,7 @@ as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
                      symmetric = isSymmetric(unname(x)), directed, weighted)
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   require_pkg("Matrix")
   check_flag_or_null(directed, "directed")
@@ -195,8 +151,7 @@ matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted) {
            weight = if (weighted) "weight")
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 to_igraph <- function(x) {
   check_netframe(x)
   require_pkg("igraph")
@@ -220,15 +175,13 @@ to_igraph <- function(x) {
   g
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 to_tbl_graph <- function(x) {
   require_pkg("tidygraph")
   tidygraph::as_tbl_graph(to_igraph(x))
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 to_network <- function(x) {
   check_netframe(x)
   require_pkg("network")
@@ -264,13 +217,7 @@ bipartite_count <- function(mode, src, tgt) {
   if (ok && b > 0) b else NULL
 }
 
-#' @rdname as_netframe
-#' @param attr For `as.matrix()`, an edge column whose values fill the
-#'   matrix; `NULL` counts edges.
-#' @param sparse For `as.matrix()`, whether to return a sparse `Matrix`.
-#' @details `as.matrix()` sums parallel edges. In undirected networks the
-#'   matrix is symmetric and a self-loop contributes once to the diagonal.
-#' @export
+# See man/as_netframe.Rd.
 as.matrix.netframe <- function(x, attr = NULL, sparse = FALSE, ...) {
   check_netframe(x)
   check_flag(sparse, "sparse")
@@ -312,13 +259,6 @@ plain_column <- function(v) {
     if (all(flat)) return(unlist(v, use.names = FALSE))
   }
   v
-}
-
-require_pkg <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    stop(sprintf("The %s package is required; install it with install.packages(\"%s\").",
-                 pkg, pkg), call. = FALSE)
-  }
 }
 
 # Methods for other packages' generics, registered when those packages load.

@@ -2,6 +2,14 @@
 \alias{reach}
 \alias{distance_weighted_reach}
 \title{Reach centrality}
+\description{
+\code{reach()} counts the other nodes within \code{k} steps of each node
+(UCINET's reach centrality, and the reach of Borgatti's (2006) key player
+problem). \code{distance_weighted_reach()} is UCINET's average reciprocal
+distance (ARD): the mean of \eqn{1/d} over the other nodes, with \eqn{1/d}
+taken as 0 for nodes that cannot be reached, which is normalized harmonic
+centrality (see \code{\link{harmonic_centrality}}).
+}
 \usage{
 reach(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
       normalized = FALSE, threads = 0L)
@@ -19,22 +27,13 @@ reaches, \code{"in"} the nodes that reach it, and \code{"all"} ignores
 direction. Ignored for undirected networks.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{normalized}{Whether to divide by \eqn{n - 1}, the largest possible
 count (UCINET reports reach as this proportion).}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-\code{reach()} counts the other nodes within \code{k} steps of each node
-(UCINET's reach centrality, and the reach of Borgatti's (2006) key player
-problem). \code{distance_weighted_reach()} is UCINET's average reciprocal
-distance (ARD): the mean of \eqn{1/d} over the other nodes, with \eqn{1/d}
-taken as 0 for nodes that cannot be reached, which is normalized harmonic
-centrality (see \code{\link{harmonic_centrality}}).
 }
 \details{
 Without weights every edge has length 1, so \code{k} counts steps. With
@@ -54,6 +53,7 @@ counts the node itself as well, and NetworkX has no reach function.
 harmonic centrality of igraph, sna's \code{closeness(cmode = "suminvdir")},
 and UCINET's reciprocal closeness.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Borgatti, S. P. (2006). Identifying sets of key players in a social
 network. \emph{Computational and Mathematical Organization Theory}, 12(1),

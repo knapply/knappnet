@@ -1,23 +1,18 @@
 \name{bicomponents}
 \alias{bicomponents}
 \title{Bicomponents (blocks)}
-\usage{
-bicomponents(x)
-}
-\arguments{
-\item{x}{A \code{\link{netframe}}.}
-}
-\value{
-A list of vectors of node identifiers (values of the identifier column of
-\code{x$nodes}), one per bicomponent, each in node order; the bicomponents
-are in lexicographic order of node positions.
-}
 \description{
 A bicomponent is a maximal set of nodes that stays connected when any one
 of its nodes is removed; two bicomponents share at most one node, a cut
 point (Wasserman and Faust 1994, section 4.2). Found with the depth-first
 search of Hopcroft and Tarjan (1973) in time linear in the size of the
 network.
+}
+\usage{
+bicomponents(x)
+}
+\arguments{
+\item{x}{A \code{\link{netframe}}.}
 }
 \details{
 The undirected simple graph underlying the network is used: an edge in
@@ -29,6 +24,11 @@ isolated nodes belong to none. This matches igraph's
 \code{biconnected_components()}, and UCINET's Network > Regions >
 Bi-Component routine. See \code{\link{cut_points}} for the cut points
 themselves.
+}
+\value{
+A list of vectors of node identifiers (values of the identifier column of
+\code{x$nodes}), one per bicomponent, each in node order; the bicomponents
+are in lexicographic order of node positions.
 }
 \references{
 Hopcroft, J., & Tarjan, R. (1973). Algorithm 447: Efficient algorithms for

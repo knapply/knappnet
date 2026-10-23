@@ -1,6 +1,12 @@
 \name{project}
 \alias{project}
 \title{One-mode projections of a two-mode network}
+\description{
+Joins two nodes of the same mode when they share a partner in the other
+mode: two people who attended the same event, or two events with a common
+participant (Breiger 1974). \code{which = "both"} returns both projections,
+the dual-projection view of Everett and Borgatti (2013).
+}
 \usage{
 project(x, which = c("first", "second", "both"), weighted = TRUE,
   method = c("count", "newman", "product"), loops = FALSE, threads = 0L)
@@ -8,25 +14,14 @@ project(x, which = c("first", "second", "both"), weighted = TRUE,
 \arguments{
 \item{x}{A two-mode \code{\link{netframe}} (see \code{\link{twomode}}).}
 \item{which}{\code{"first"}, \code{"second"}, or \code{"both"} modes.}
-\item{weighted}{Whether the result has a \code{weight} column. Weights are
-tie strengths (\code{weight_type = "strength"}), since sharing more partners
+\item{weighted}{Whether the result has a \code{weight} column. Weights are tie
+strengths (\code{weight_type = "strength"}), since sharing more partners
 brings two nodes closer.}
 \item{method}{How ties are weighted; see Details.}
 \item{loops}{Whether to keep the diagonal as self-loops.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
-}
-\value{
-An undirected \code{\link{netframe}} whose nodes are the rows of
-\code{x$nodes} in the chosen mode (all columns kept) and whose edges join
-each pair of nodes with a shared partner once, ordered by node position.
-For \code{which = "both"}, a list with elements \code{first} and
-\code{second}.
-}
-\description{
-Joins two nodes of the same mode when they share a partner in the other
-mode: two people who attended the same event, or two events with a common
-participant (Breiger 1974). \code{which = "both"} returns both projections,
-the dual-projection view of Everett and Borgatti (2013).
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 Tie weights, chosen by \code{method}, are
@@ -57,6 +52,13 @@ dual projection approach uses. Newman's weights have no diagonal.
 
 The projection is computed with a sparse accumulator for each node, in
 parallel, in time proportional to the number of two-step paths.
+}
+\value{
+An undirected \code{\link{netframe}} whose nodes are the rows of
+\code{x$nodes} in the chosen mode (all columns kept) and whose edges join
+each pair of nodes with a shared partner once, ordered by node position.
+For \code{which = "both"}, a list with elements \code{first} and
+\code{second}.
 }
 \references{
 Breiger, R. L. (1974). The duality of persons and groups. \emph{Social
