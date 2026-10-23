@@ -393,6 +393,13 @@ append_nodes <- function(x, idx) {
     src <- as.character(src)
     tgt <- as.character(tgt)
   }
+  # Plain integer and double identifiers are matched as numbers (the engine
+  # does the same), so the derived identifiers are doubles.
+  if (is.numeric(src) && is.numeric(tgt) && !is.object(src) && !is.object(tgt) &&
+      !identical(typeof(src), typeof(tgt))) {
+    src <- as.double(src)
+    tgt <- as.double(tgt)
+  }
   if (!identical(class(src), class(tgt))) {
     stop(sprintf(paste0(
       "Columns `%s` and `%s` of `edges` hold different types (%s and %s); ",

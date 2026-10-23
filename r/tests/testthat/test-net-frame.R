@@ -191,37 +191,36 @@ test_that("modes, relations, and signs are validated and stored", {
   g <- net_frame(data.frame(source = "a", target = "b"), nodes, mode = "kind", quiet = TRUE)
   expect_identical(g$roles$mode, "kind")
   expect_false(net_is_twomode(g))
-  expect_output(print(g), "multimode")
+  expect_output(print(g), "mode: 2 modes (1 p, 2 e)", fixed = TRUE)
 
   e <- data.frame(source = c("a", "a"), target = c("b", "b"), rel = c("x", "y"))
   m <- net_frame(e, relation = "rel")
   expect_true(net_is_simple(m))
-  expect_output(print(m), "relations: x: 1, y: 1; multiplex")
+  expect_output(print(m), "relations: x (1), y (1) (multiplex)", fixed = TRUE)
   expect_error(net_frame(e, relation = "rel", sign = "rel"), "sign column")
   s <- net_frame(data.frame(source = c("a", "a"), target = c("b", "c"), s = c(1L, -1L)),
                  sign = "s")
-  expect_output(print(s), "sign:     s (1 of 2 negative)", fixed = TRUE)
+  expect_output(print(s), "signs:     s (1 positive, 1 negative)", fixed = TRUE)
   expect_error(net_frame(data.frame(source = "a", target = "b", s = 2L), sign = "s"),
                "must be -1 or 1")
 })
 
 test_that("the print card shows a one-mode network", {
   g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")))
-  out <- capture.output(print(g))
-  expect_identical(out[1:8], c(
+  out <- sub(" +$", "", capture.output(print(g)))
+  expect_identical(out[1:7], c(
     "# net_frame: 3 nodes, 2 edges",
-    "#   directed: yes             mode: one-mode",
-    "#   weights:  none (unweighted)",
-    "#   relations: none",
-    "#   time:     static          space: none",
-    "#   simple:   no loops, no parallel edges",
-    "#   components: 1   isolates: 0   density: 0.333",
+    "#   directed:  yes       mode: one-mode (3 actors)",
+    "#   weights:   unweighted",
+    "#   time:      static    space: none",
+    "#   simple:    no loops, no parallel edges",
+    "#   components: 1    isolates: 0    density: 0.333",
     "#"))
-  expect_identical(out[9:14], c(
+  expect_identical(out[8:13], c(
     "# Nodes (3 x 1)   Edges (2 x 2)",
     "#   id              source target",
     "#   <chr>           <chr>  <chr>",
-    "# 1 a             1 b      c",
+    "# 1 a             1 a      b",
     "# 2 b             2 b      c",
     "# 3 c"))
 })
@@ -231,15 +230,20 @@ test_that("the print card shows weights, loops, parallel edges, and empty networ
                             w = c(1, 2, 4, 1)), weight = "w", weight_type = "strength",
                  quiet = TRUE)
   out <- capture.output(print(g))
-  expect_identical(out[3], "#   weights:  w (strength, 1 to 4)")
-  expect_identical(out[6], "#   simple:   1 self-loop, 1 parallel edge")
+  expect_identical(out[3], "#   weights:   w (strength, 1 to 4)")
+  expect_identical(out[5], "#   simple:    1 loop, 1 parallel edge")
+  d <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c"), w = c(2, 5)),
+                 weight = "w", weight_type = "distance", loops = FALSE, multiple = FALSE)
+  out <- capture.output(print(d))
+  expect_identical(out[3], "#   weights:   w (distance, 2 to 5)")
+  expect_identical(out[5], "#   simple:    no loops (declared), no parallel edges (declared)")
   u <- net_frame(data.frame(source = c("a", "b"), target = c("b", "a")), directed = FALSE,
                  quiet = TRUE)
   expect_output(print(u), "no loops, 1 parallel edge")
   empty <- net_frame(data.frame(source = character(), target = character()))
-  out <- capture.output(print(empty))
+  out <- sub(" +$", "", capture.output(print(empty)))
   expect_identical(out[1], "# net_frame: 0 nodes, 0 edges")
-  expect_identical(out[7], "#   components: 0   isolates: 0   density: NaN")
+  expect_identical(out[6], "#   components: 0    isolates: 0    density: NaN")
   expect_true(any(out == "# Nodes (0 x 1)   Edges (0 x 2)"))
 })
 
@@ -261,7 +265,7 @@ test_that("the print card uses only ASCII", {
   out <- capture.output(print(g))
   expect_true(all(vapply(out, function(l) all(utf8ToInt(l) < 128), TRUE)))
   expect_identical(out[1], "# net_frame: 34 nodes, 78 edges")
-  expect_identical(out[2], "#   directed: no              mode: one-mode")
+  expect_identical(out[2], "#   directed:  no        mode: one-mode (34 actors)")
 })
 
 test_that("engine messages are rewritten for R users", {

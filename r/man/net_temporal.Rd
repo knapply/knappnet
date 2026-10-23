@@ -59,7 +59,7 @@ numbers with \code{wave}). A missing value means present from the beginning
 print methods, ignored.}
 \item{quiet}{As in \code{\link{net_frame}}.}
 \item{x}{Any object (a temporal net_frame for \code{print()}).}
-\item{..., n, width}{As in \code{\link[=net_frame]{print.net_frame}}.}
+\item{n, width}{As in \code{\link[=net_frame]{print.net_frame}}.}
 }
 \details{
 \strong{Times.} Times are stored as given in \code{x$edges} and
