@@ -44,7 +44,7 @@
 #' dates. Results that are lengths of time use the same unit.
 #'
 #' **When a contact is active.** Intervals are half-open, as the spells of
-#' networkDynamic (Butts et al. 2023): a contact from \eqn{s} to \eqn{e > s}
+#' networkDynamic (Butts et al. 2026): a contact from \eqn{s} to \eqn{e > s}
 #' is active at times \eqn{s \le t < e}{s <= t < e}, and an instantaneous
 #' contact (\eqn{e = s}) only at \eqn{t = s}. A contact is active in a
 #' window \eqn{[a, b)} when it is active at some time in it: \eqn{s < b} and
@@ -78,7 +78,7 @@
 #' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
 #'
 #' Butts, C. T., Leslie-Cook, A., Krivitsky, P. N., & Bender-deMoll, S.
-#' (2023). networkDynamic: Dynamic extensions for network objects. R
+#' (2026). networkDynamic: Dynamic extensions for network objects. R
 #' package. \url{https://CRAN.R-project.org/package=networkDynamic}
 #'
 #' @seealso [network_at()], [network_window()], [snapshots()],

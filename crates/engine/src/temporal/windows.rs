@@ -2,7 +2,7 @@
 //! into a weighted static network.
 //!
 //! Activity follows the half-open spells of networkDynamic
-//! (`butts2023networkdynamic`): a contact [s, e) with e > s is active at
+//! (`butts2026networkdynamic`): a contact [s, e) with e > s is active at
 //! time t when s <= t < e, and an instantaneous contact (e = s) only at
 //! t = s. A contact is active in a window [a, b), a < b, when it is active
 //! at some time in the window: s < b and e > a for an interval contact,
