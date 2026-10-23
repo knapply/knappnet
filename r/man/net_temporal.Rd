@@ -17,9 +17,7 @@ functions listed under \sQuote{See also} use the times.
 }
 \usage{
 net_temporal(edges, nodes = NULL, start = "time", end = NULL, duration = NULL,
-             wave = NULL, node_start = NULL, node_end = NULL, directed = TRUE,
-             source = "source", target = "target", id = "id", weight = NULL,
-             weight_type = NULL, quiet = FALSE, graph = list())
+             wave = NULL, node_start = NULL, node_end = NULL, ..., quiet = FALSE)
 
 net_is_temporal(x)
 
@@ -53,10 +51,13 @@ networks.}
 holding when each node is present, of the same type as \code{start} (wave
 numbers with \code{wave}). A missing value means present from the beginning
 (start) or until the end (end).}
-\item{directed}{Whether contacts are directed. Ignored when \code{edges}
-is a net_frame, which keeps its own direction.}
-\item{source, target, id, weight, weight_type, quiet, graph}{As in
-\code{\link{net_frame}}.}
+\item{...}{Other arguments of \code{\link{net_frame}} (\code{directed},
+\code{source}, \code{target}, \code{id}, \code{weight},
+\code{weight_type}, \code{relation}, \code{node_spells}, ...), when
+\code{edges} is a data frame. \code{net_temporal(edges, start = "t")} is
+\code{net_frame(edges, start = "t")} plus \code{duration}; for the
+print methods, ignored.}
+\item{quiet}{As in \code{\link{net_frame}}.}
 \item{x}{Any object (a temporal net_frame for \code{print()}).}
 \item{..., n, width}{As in \code{\link[=net_frame]{print.net_frame}}.}
 }
@@ -83,7 +84,10 @@ active in a window \eqn{[a, b)} when it is active at some time in it:
 for an instantaneous contact. So back-to-back contacts \eqn{[1, 2)} and
 \eqn{[2, 3)} never overlap, consecutive windows of a tumbling series never
 share an instantaneous contact, and an interval belongs to every window it
-overlaps. Node presence intervals follow the same rule.
+overlaps. Node presence intervals follow the same rule. Several presence
+spells per node, and node attributes that change over time, go in the
+long tables \code{node_spells} and \code{node_changes} of
+\code{\link{net_frame}} (see \code{\link{net_node_spells}}).
 
 \strong{Contacts and edges.} Self-loops and repeated contacts between the
 same nodes are allowed and kept; each contact is one edge of the net_frame.
@@ -155,10 +159,19 @@ calls <- data.frame(
   ended = as.POSIXct(c("2024-05-01 10:05", "2024-05-01 10:30", "2024-05-01 11:30"),
                      tz = "UTC"))
 people <- data.frame(id = c("a", "b", "c"),
-                     joined = as.POSIXct(c("2024-05-01 09:00", "2024-05-01 10:10", NA),
+                     joined = as.POSIXct(c("2024-05-01 09:00", "2024-05-01 09:30", NA),
                                          tz = "UTC"))
 h <- net_temporal(calls, people, start = "began", end = "ended", node_start = "joined",
                   directed = FALSE, source = "caller", target = "callee")
 h
 class(h)
+# A call before a node joins is an error that names the row.
+late <- people
+late$joined[2] <- as.POSIXct("2024-05-01 10:10", tz = "UTC")
+try(net_temporal(calls, late, start = "began", end = "ended", node_start = "joined",
+                 directed = FALSE, source = "caller", target = "callee"))
+
+# Sampson's liking ties at three times, one panel per wave.
+liking <- net_example("sampson", relation = "liking")
+net_plot_snapshots(liking, seed = 1)
 }
