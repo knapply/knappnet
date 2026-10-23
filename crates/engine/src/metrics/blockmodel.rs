@@ -174,7 +174,15 @@ pub fn block_model(g: &Graph, membership: &[i64], opts: BlockModelOptions) -> Re
     for r in 0..k {
         for s in 0..k {
             let p = pairs.get(r, s);
-            density.set(r, s, if p > 0.0 { sums.get(r, s) / p } else { f64::NAN });
+            density.set(
+                r,
+                s,
+                if p > 0.0 {
+                    sums.get(r, s) / p
+                } else {
+                    f64::NAN
+                },
+            );
         }
     }
     let total_pairs: f64 = pairs.as_slice().iter().sum();
@@ -265,9 +273,9 @@ mod tests {
         // R^2 by direct computation over the 30 ordered pairs.
         let blocks = [0, 0, 0, 1, 1, 1];
         let adj = |i: usize, j: usize| {
-            e.iter()
-                .any(|&(a, b)| (a as usize, b as usize) == (i, j) || (b as usize, a as usize) == (i, j))
-                as u8 as f64
+            e.iter().any(|&(a, b)| {
+                (a as usize, b as usize) == (i, j) || (b as usize, a as usize) == (i, j)
+            }) as u8 as f64
         };
         let (mut xs, mut ys) = (Vec::new(), Vec::new());
         for i in 0..6 {
@@ -284,7 +292,11 @@ mod tests {
         let vx: f64 = xs.iter().map(|x| (x - mx) * (x - mx)).sum();
         let vy: f64 = ys.iter().map(|y| (y - my) * (y - my)).sum();
         let r2 = cov * cov / (vx * vy);
-        assert!((bm.r_squared - r2).abs() < 1e-12, "{} vs {r2}", bm.r_squared);
+        assert!(
+            (bm.r_squared - r2).abs() < 1e-12,
+            "{} vs {r2}",
+            bm.r_squared
+        );
     }
 
     #[test]

@@ -109,7 +109,7 @@ pub fn classical_mds(d: &Dense, k: usize) -> Result<Mds> {
         let flip = col
             .iter()
             .find(|x| x.abs() > 1e-8 * big)
-            .map_or(false, |&x| x < 0.0);
+            .is_some_and(|&x| x < 0.0);
         for (i, &x) in col.iter().enumerate() {
             points.set(i, c, if flip { -x } else { x });
         }

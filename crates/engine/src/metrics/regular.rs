@@ -107,7 +107,7 @@ pub fn regular_equivalence(
     let mut count = distinct(&class);
     let mut rounds = 0;
     loop {
-        let mut sig: HashMap<(u32, Vec<(u32, u32, u32)>), u32> = HashMap::new();
+        let mut sig: HashMap<Signature, u32> = HashMap::new();
         let mut next = Vec::with_capacity(n);
         for (i, row) in ties.iter().enumerate() {
             let mut set: Vec<(u32, u32, u32)> = row
@@ -132,6 +132,9 @@ pub fn regular_equivalence(
         rounds,
     })
 }
+
+/// A node's class and the set of (tie out, tie in, alter's class) it has.
+type Signature = (u32, Vec<(u32, u32, u32)>);
 
 /// For every node i, its alters k (k != i, tied in either direction) with
 /// the category codes of a_ik and a_ki (0 = no tie).
@@ -480,14 +483,7 @@ mod tests {
         let r = regular_equivalence(&g, None, Default::default()).unwrap();
         assert_eq!(r.membership, vec![0, 0, 1, 2]);
         // Values as categories.
-        let w = Graph::from_edges(
-            4,
-            &[0, 2],
-            &[1, 3],
-            Some(&[1.0, 2.0]),
-            false,
-        )
-        .unwrap();
+        let w = Graph::from_edges(4, &[0, 2], &[1, 3], Some(&[1.0, 2.0]), false).unwrap();
         let r = regular_equivalence(&w, None, RegularOptions { weighted: true }).unwrap();
         assert_eq!(r.membership, vec![0, 0, 1, 1]);
         let r = regular_equivalence(&w, None, RegularOptions::default()).unwrap();

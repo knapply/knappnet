@@ -405,7 +405,9 @@ impl EdgeWorkspace {
             for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
                 let w = w as usize;
                 let on_path = match lengths {
-                    Lengths::Uniform => self.hops[w] != u32::MAX && self.hops[w] == self.hops[v] + 1,
+                    Lengths::Uniform => {
+                        self.hops[w] != u32::MAX && self.hops[w] == self.hops[v] + 1
+                    }
                     Lengths::Integer(lens, _) => {
                         self.rank[w] != u32::MAX
                             && self.rank[w] > rank_v
@@ -492,7 +494,11 @@ pub fn information_centrality(g: &Graph, weighted: bool) -> Result<Vec<f64>> {
         if s == t {
             continue;
         }
-        let key = if g.is_directed() || s < t { (s, t) } else { (t, s) };
+        let key = if g.is_directed() || s < t {
+            (s, t)
+        } else {
+            (t, s)
+        };
         let x = w.map_or(1.0, |w| w[e]);
         let entry = directed_total.entry(key).or_insert(0.0);
         *entry = if weighted { *entry + x } else { 1.0 };
@@ -772,7 +778,16 @@ mod tests {
         // On a connected unweighted graph the edge betweenness values sum
         // to the sum of all distances (each shortest path of length d
         // crosses d edges).
-        let e = [(0, 1), (0, 2), (1, 2), (2, 3), (3, 4), (4, 5), (3, 5), (1, 5)];
+        let e = [
+            (0, 1),
+            (0, 2),
+            (1, 2),
+            (2, 3),
+            (3, 4),
+            (4, 5),
+            (3, 5),
+            (1, 5),
+        ];
         let g = graph(6, &e, None, false);
         let eb = edge_betweenness(&g, Default::default()).unwrap();
         let mut total = 0.0;

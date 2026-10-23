@@ -524,10 +524,7 @@ mod tests {
             / (3.0 * 3f64.ln());
         assert!((h[0] - expect).abs() < 1e-14, "{} vs {expect}", h[0]);
         // Constraint is unchanged by the refactoring into scatter_constraint.
-        close(
-            &constraint(&g, o).unwrap()[..1],
-            &[total],
-        );
+        close(&constraint(&g, o).unwrap()[..1], &[total]);
     }
 
     #[test]
