@@ -122,8 +122,9 @@ impl<'a> Lexer<'a> {
 }
 
 /// HTML names of the ISO 8859-1 characters U+00A0 to U+00FF, the entities
-/// the GML specification uses for non-ASCII text (`himsolt1997gml`), and the
-/// only ones igraph's reader decodes.
+/// the GML specification uses for non-ASCII text (`himsolt1997gml`).
+/// NetworkX decodes them; igraph's reader keeps them verbatim, with a
+/// warning, as it does numeric entities.
 const LATIN1_NAMES: [&str; 96] = [
     "nbsp", "iexcl", "cent", "pound", "curren", "yen", "brvbar", "sect", "uml", "copy", "ordf",
     "laquo", "not", "shy", "reg", "macr", "deg", "plusmn", "sup2", "sup3", "acute", "micro",

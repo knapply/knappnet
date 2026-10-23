@@ -85,7 +85,10 @@ test_that("files written here are read correctly by igraph", {
   for (fmt in c("graphml", "gml", "pajek")) {
     path <- tempfile()
     write_network(g, path, format = fmt)
-    ig <- igraph::read_graph(path, format = fmt)
+    # igraph keeps GML's character entities (here for an accented label)
+    # verbatim and warns; the counts and weights checked below are unaffected.
+    ig <- if (fmt == "gml") suppressWarnings(igraph::read_graph(path, format = fmt)) else
+      igraph::read_graph(path, format = fmt)
     expect_equal(igraph::vcount(ig), nrow(g$nodes), info = fmt)
     expect_equal(igraph::ecount(ig), nrow(g$edges), info = fmt)
     expect_equal(sort(igraph::E(ig)$weight), sort(g$edges$weight), info = fmt)

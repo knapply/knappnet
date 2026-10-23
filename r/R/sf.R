@@ -1055,12 +1055,12 @@ write_gpkg <- function(x, file, weight) {
   check_gpkg_columns(edges, "edges")
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, x$graph)
   meta <- data.frame(
-    key = c("directed", "id", "from", "to", "weight", "weight_type", paste0("graph.", names(graph))),
+    key = c("directed", "id", "from", "to", "weight", "weight_type", if (length(graph)) paste0("graph.", names(graph))),
     value = c(if (x$directed) "true" else "false", role_text(x$roles$id),
               role_text(x$roles$from), role_text(x$roles$to),
               if (is.null(weight)) "" else weight,
               if (is.null(weight)) "" else if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type,
-              vapply(graph, function(v) as.character(v), "")),
+              vapply(graph, function(v) as.character(v), "", USE.NAMES = FALSE)),
     stringsAsFactors = FALSE
   )
   path <- path.expand(file)

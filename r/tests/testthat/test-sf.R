@@ -352,7 +352,8 @@ test_that("contiguity agrees with spdep::poly2nb", {
   tiles <- sf::st_sf(id = seq_along(geom), geometry = geom)
   for (contiguity in c("queen", "rook")) {
     g <- from_polygons(tiles, contiguity = contiguity, id = "id")
-    nb <- spdep::poly2nb(tiles, queen = contiguity == "queen")
+    # spdep warns that the map has more than one connected piece, as intended.
+    nb <- suppressWarnings(spdep::poly2nb(tiles, queen = contiguity == "queen"))
     ours <- lapply(seq_len(nrow(tiles)), function(i) {
       sort(c(g$edges$to[g$edges$from == i], g$edges$from[g$edges$to == i]))
     })
