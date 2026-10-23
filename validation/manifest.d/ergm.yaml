@@ -1,0 +1,308 @@
+# Exponential random graph models: statistics, pseudolikelihood, exact
+# enumeration, and Monte Carlo maximum likelihood. Format as in
+# ../manifest.yaml.
+#
+# Node attributes are derived from the 0-based node index i, identically
+# in the engine runner (validation/bindings/ergm.py), the definition oracle,
+# and the R oracle (validation/oracles/r_ergm.R):
+#   x[i] = i mod 5 + 1 (numeric), a[i] = i mod 3 (categorical, levels 0-2),
+#   w[i, j] = ((7 i + 3 j) mod 5) / 2 (dyadic; (min, max) ordering when
+#   undirected, so w is symmetric).
+# Networks are read as sociomatrices: self-loops dropped (ERGMs are defined
+# on loopless networks) and parallel edges collapsed, which is how the R
+# oracle builds its `network` objects.
+#
+# Engine options:
+#   terms      a term set named in validation/bindings/ergm.py, written
+#              with statnet's names and parameterizations
+#   output     se (standard errors) for ergm_mple; loglik or mean for the
+#              exact and Monte Carlo variants
+#   theta      coefficients at which exact quantities are evaluated
+#   fixtures   the fixtures on which an expensive Monte Carlo variant runs
+#
+# "Statistics must match summary(formula)": the three ergm_stats variants
+# cover every implemented term and run on every fixture with tolerance
+# 1e-9 against both the definition oracle and ergm.
+#
+# Fixtures on which an estimate is undefined: a model whose pseudolikelihood
+# has no finite maximizer (complete separation: a statistic that is at its
+# minimum or maximum, as in the empty and complete networks, or a change
+# statistic that never varies, as gwesp on a network without shared
+# partners) gives arbitrarily large coefficients in every tool, so no
+# comparison is possible. Exact enumeration needs at most 22 free dyads.
+
+ergm_stats_dyadic:
+  engine: {fn: ergm_stats, terms: dyadic}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
+    ergm:
+      call: "summary(net ~ edges + nodecov('x') + nodefactor('a') + nodematch('a') + nodematch('a', diff = TRUE) + absdiff('x') + absdiff('x', pow = 2) + edgecov(w))"
+      undefined_on: [single_node, pair]
+      undefined_reason: >-
+        ergm creates nodefactor and nodematch statistics only for levels
+        present in the network, so with one or two nodes it reports fewer
+        statistics than the three-level attribute scheme; the engine (and
+        the definition oracle) report every requested level.
+
+ergm_stats_undirected:
+  engine: {fn: ergm_stats, terms: undirected}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
+    ergm:
+      call: "summary(net ~ kstar(2) + kstar(3) + triangle + gwesp(0.5, fixed = TRUE) + gwdsp(0.3, fixed = TRUE) + gwnsp(0.3, fixed = TRUE) + gwdegree(0.5, fixed = TRUE) + degree(1) + degree(2) + isolates)"
+      undefined_on: [single_node]
+      undefined_reason: a one-node network has no dyads.
+
+ergm_stats_directed:
+  engine: {fn: ergm_stats, terms: directed}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "matrix formulas on the sociomatrix (ergm_definition_oracle.py)"
+    ergm:
+      call: "summary(net ~ mutual + istar(2) + ostar(2) + ttriple + ctriple + triangle + gwesp(0.5, fixed = TRUE) + gwdsp(0.3, fixed = TRUE) + gwnsp(0.3, fixed = TRUE) + gwidegree(0.5, fixed = TRUE) + gwodegree(0.5, fixed = TRUE) + idegree(1) + odegree(2) + isolates + nodeicov('x') + nodeocov('x') + nodeifactor('a') + nodeofactor('a'))"
+      undefined_on: [pair]
+      undefined_reason: nodeifactor and nodeofactor get statistics only for levels present (see ergm_stats_dyadic).
+
+ergm_mple_dyadic:
+  engine: {fn: ergm_mple, terms: mple_dyadic}
+  applies_to: any
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic log-likelihood on change statistics by full recomputation (the exact MLE: every term is dyad independent)"
+      undefined_on: [empty, single_node, pair, complete6, complete5_dir, path10, star8, two_triangles_isolate]
+      undefined_reason: >-
+        No finite maximizer: the empty and complete networks have the tie
+        count at its bound, a single node has no dyads, the two dyads of
+        `pair` have identical covariates, and in the path, star, and
+        two-triangle networks a covariate separates ties from non-ties
+        (for example no tie of the path joins nodes with the same level of
+        a, while some non-ties do).
+    ergm:
+      call: "coef(ergm(net ~ edges + nodecov('x') + nodematch('a') + absdiff('x'), estimate = 'MPLE'))"
+      undefined_on: [empty, single_node, pair, complete6, complete5_dir, path10, star8, two_triangles_isolate]
+      undefined_reason: as for the definition oracle.
+
+ergm_mple_dyadic_se:
+  engine: {fn: ergm_mple, terms: mple_dyadic, output: se}
+  applies_to: any
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "square roots of the diagonal of the inverse observed information at the BFGS maximum"
+      undefined_on: [empty, single_node, pair, complete6, complete5_dir, path10, star8, two_triangles_isolate]
+      undefined_reason: no finite maximizer (see ergm_mple_dyadic).
+    ergm:
+      call: "sqrt(diag(vcov(ergm(..., estimate = 'MPLE')))) for the dyad-independent model, where the logistic standard errors are valid"
+      undefined_on: [empty, single_node, pair, complete6, complete5_dir, path10, star8, two_triangles_isolate]
+      undefined_reason: no finite maximizer (see ergm_mple_dyadic).
+
+ergm_mple_gwesp:
+  engine: {fn: ergm_mple, terms: mple_gwesp}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics by full recomputation"
+      undefined_on: [single_node, complete6, path10, star8, two_triangles_isolate, gnp_und_dense, davis_twomode, southern_women, twomode_random, twomode_weighted]
+      undefined_reason: >-
+        No finite maximizer: the complete network has every statistic at its
+        bound; in trees, bipartite networks, and two disjoint triangles the
+        gwesp change statistic separates ties from non-ties; and in the
+        dense random network almost every dyad has so many shared partners
+        that gwesp(0.5) saturates at exp(0.5) and is collinear with edges.
+    ergm:
+      call: "coef(ergm(net ~ edges + gwesp(0.5, fixed = TRUE), estimate = 'MPLE'))"
+      undefined_on: [single_node, complete6, path10, star8, two_triangles_isolate, gnp_und_dense, davis_twomode, southern_women, twomode_random, twomode_weighted]
+      undefined_reason: as for the definition oracle.
+
+ergm_mple_directed:
+  engine: {fn: ergm_mple, terms: mple_directed}
+  applies_to: directed
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics by full recomputation"
+      undefined_on: [empty, pair, complete5_dir, cycle7_dir, gnp_dir_dense]
+      undefined_reason: >-
+        No finite maximizer: the empty and complete networks have the tie
+        count at its bound, `pair` has two dyads, a directed cycle has no
+        mutual ties and no two-paths closed by a tie, and in the dense
+        random network gwesp(0.5) saturates and is collinear with edges.
+    ergm:
+      call: "coef(ergm(net ~ edges + mutual + gwesp(0.5, fixed = TRUE), estimate = 'MPLE'))"
+      undefined_on: [empty, pair, complete5_dir, cycle7_dir, gnp_dir_dense]
+      undefined_reason: as for the definition oracle.
+
+# ---- Exact enumeration (at most 22 free dyads) -----------------------------
+
+ergm_exact_loglik_triangle:
+  engine: {fn: ergm_exact_loglik, terms: edges_triangle, theta: [-1.0, 0.5]}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "theta' g(y) - log sum over all 2^D networks of exp(theta' g), the networks enumerated as bit patterns"
+      undefined_on: [single_node, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: enumeration needs at most 22 free dyads (and at least one).
+
+ergm_exact_expect_triangle:
+  engine: {fn: ergm_exact_loglik, terms: edges_triangle, theta: [-1.0, 0.5], output: mean}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "expectation of the statistics over the enumerated networks"
+      undefined_on: [single_node, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: enumeration needs at most 22 free dyads (and at least one).
+
+ergm_exact_loglik_directed:
+  engine: {fn: ergm_exact_loglik, terms: edges_triangle, theta: [-0.5, 0.3]}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "theta' g(y) - log sum over all 2^D networks of exp(theta' g)"
+      undefined_on: [cycle7_dir, gnp_dir_dense, gnp_dir_sparse, multi_loops_dir, real_weights_dir, weighted_dir]
+      undefined_reason: enumeration needs at most 22 free dyads.
+
+ergm_exact_mle_triangle:
+  engine: {fn: ergm_exact_mle, terms: edges_triangle}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the enumerated log-likelihood"
+      undefined_on: [single_node, complete6, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: >-
+        Enumeration needs at most 22 free dyads, and the complete network
+        has its statistics on the boundary, where no MLE exists.
+
+ergm_exact_mle_gwesp:
+  engine: {fn: ergm_exact_mle, terms: edges_gwesp}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the enumerated log-likelihood"
+      undefined_on: [single_node, complete6, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: as for ergm_exact_mle_triangle.
+
+ergm_exact_mle_kstar:
+  engine: {fn: ergm_exact_mle, terms: edges_kstar2}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the enumerated log-likelihood"
+      undefined_on: [single_node, complete6, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: as for ergm_exact_mle_triangle.
+
+ergm_exact_mle_edges:
+  engine: {fn: ergm_exact_mle, terms: edges}
+  applies_to: any
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the enumerated log-likelihood (logit of the density)"
+      undefined_on: [single_node, empty, complete6, complete5_dir, cycle7_dir, davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_dir, multi_loops_und, path10, real_weights_dir, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        Enumeration needs at most 22 free dyads, and the empty and complete
+        networks have the tie count on its boundary.
+
+# ---- Monte Carlo maximum likelihood ----------------------------------------
+# Monte Carlo estimates agree with ergm's within Monte Carlo error, not
+# exactly: both tools draw different samples. The engine runs 2 chains of
+# 10,000 draws (interval 200) per iteration, so its own Monte Carlo
+# standard error is a few hundredths; ergm's default settings give a
+# similar or larger one. The absolute tolerances below are several times
+# the combined Monte Carlo standard error on each fixture.
+
+ergm_mcmle_exact_check:
+  engine: {fn: ergm_mcmle, terms: edges_triangle, fixtures: [two_triangles_isolate]}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.1}
+  oracles:
+    definition:
+      call: "the exact MLE by enumeration (ergm_exact_mle_triangle): the Monte Carlo MLE must recover it within Monte Carlo error"
+      undefined_on: [single_node, complete6, davis_twomode, florentine, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run only where the exact MLE is available.
+
+ergm_mcmle_triangle:
+  engine: {fn: ergm_mcmle, terms: edges_triangle, fixtures: [florentine]}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.2}
+  oracles:
+    ergm:
+      call: "coef(ergm(net ~ edges + triangle, control = control.ergm(seed = 1, MCMC.samplesize = 10000)))"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: >-
+        Monte Carlo estimation is run on the Florentine marriage network
+        only (the classic example of Hunter et al. 2008); other fixtures are
+        degenerate for this model, too large for a quick check, or have no
+        finite MLE.
+
+ergm_mcmle_gwesp:
+  engine: {fn: ergm_mcmle, terms: edges_gwesp, fixtures: [florentine, kite]}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.2}
+  oracles:
+    ergm:
+      call: "coef(ergm(net ~ edges + gwesp(0.5, fixed = TRUE), control = control.ergm(seed = 1, MCMC.samplesize = 10000)))"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on the Florentine and kite networks only (see ergm_mcmle_triangle).
+
+ergm_loglik_gwesp:
+  engine: {fn: ergm_mcmle, terms: edges_gwesp, fixtures: [florentine], output: loglik}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.5}
+  oracles:
+    ergm:
+      call: "logLik(ergm(net ~ edges + gwesp(0.5, fixed = TRUE), ...)), bridge sampled; the engine uses path sampling with 16 steps"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, gnp_und_sparse, karate, kite, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on the Florentine network only (see ergm_mcmle_triangle).
+
+# ---- Temporal ERGMs ---------------------------------------------------------
+# One transition: from the fixture to a second wave in which dyad (i, j)
+# (canonical order, 0-based) is toggled when (7 i + 3 j) mod 11 == 0, so
+# ties persist, dissolve, form, and stay absent. The pooled pseudolikelihood
+# of edges + nodecov('x') + memory(type = 'stability') (+ mutual + delrecip
+# when directed) is a logistic regression whose point estimates btergm
+# reproduces exactly; its bootstrap intervals are Monte Carlo and are not
+# compared.
+
+tergm_mple_undirected:
+  engine: {fn: tergm_mple, terms: tergm_undirected, fixtures: [florentine, kite, karate, gnp_und_sparse]}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics of the second wave, memory as edgecov(2 y_prev - 1)"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on four representative networks.
+    btergm:
+      call: "btergm(list(net, net2) ~ edges + nodecov('x') + memory(type = 'stability'), R = 10)@coef"
+      undefined_on: [single_node, complete6, davis_twomode, two_triangles_isolate, gnp_und_dense, les_miserables, multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: run on four representative networks.
+
+tergm_mple_directed:
+  engine: {fn: tergm_mple, terms: tergm_directed, fixtures: [gnp_dir_sparse, gnp_dir_dense, weighted_dir]}
+  applies_to: directed
+  tolerance: {rel: 1.0e-6, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "BFGS maximum of the logistic pseudolikelihood on change statistics of the second wave, memory as edgecov(2 y_prev - 1) and delrecip as edgecov(t(y_prev))"
+      undefined_on: [complete5_dir, cycle7_dir, empty, multi_loops_dir, pair, real_weights_dir]
+      undefined_reason: run on three representative networks.
+    btergm:
+      call: "btergm(list(net, net2) ~ edges + mutual + nodecov('x') + memory(type = 'stability') + delrecip, R = 10)@coef"
+      undefined_on: [complete5_dir, cycle7_dir, empty, multi_loops_dir, pair, real_weights_dir]
+      undefined_reason: run on three representative networks.
