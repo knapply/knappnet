@@ -608,7 +608,7 @@ pub fn distance_rows(
                     for (i, &s) in group.iter().enumerate() {
                         out[i][s as usize] = 0.0;
                     }
-                    ms.run(h.out(), group, u32::MAX, |step| {
+                    ms.run(h, group, u32::MAX, |step| {
                         if let Step::Reached {
                             level,
                             node,
@@ -709,7 +709,7 @@ fn profiles(
                 let group = &sources[lo..hi];
                 let mut count = [0u32; BATCH];
                 let mut profiles = [PathProfile::default(); BATCH];
-                ms.run(h.out(), group, u32::MAX, |step| match step {
+                ms.run(h, group, u32::MAX, |step| match step {
                     Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
                     Step::LevelDone(level) => {
                         for (q, c) in profiles.iter_mut().zip(count.iter_mut()) {
@@ -895,13 +895,13 @@ pub fn reachability(g: &Graph, mode: DegreeMode, threads: usize) -> Result<Vec<f
     }
     let h = oriented(g, mode)?;
     let h = h.as_ref();
-    let counts = within_hops(h.out(), None, u32::MAX, threads);
+    let counts = within_hops(h, None, u32::MAX, threads);
     Ok(counts.into_iter().map(|c| c as f64).collect())
 }
 
 /// Number of other nodes within `max_level` steps of each source (every
 /// node when `None`), by breadth-first search from 64 sources at a time.
-fn within_hops(adj: &Csr, sources: Option<&[u32]>, max_level: u32, threads: usize) -> Vec<usize> {
+fn within_hops(adj: &Graph, sources: Option<&[u32]>, max_level: u32, threads: usize) -> Vec<usize> {
     let n = adj.node_count();
     let all: Vec<u32>;
     let sources = match sources {
@@ -950,7 +950,7 @@ pub fn within_distance(g: &Graph, limit: f64, opts: PathOptions) -> Result<Vec<u
         while max_level < u32::MAX && (max_level + 1) as f64 * p.unit <= limit {
             max_level += 1;
         }
-        return Ok(within_hops(h.out(), None, max_level, opts.threads));
+        return Ok(within_hops(h, None, max_level, opts.threads));
     }
     let n = h.node_count();
     let parts = parallel::for_each_item(

@@ -258,7 +258,7 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
                 let mut count = [0u32; BATCH];
                 let mut total = [0u64; BATCH];
                 let mut profiles = [Profile::default(); BATCH];
-                ms.run(h.out(), &sources, u32::MAX, |step| match step {
+                ms.run(h, &sources, u32::MAX, |step| match step {
                     Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
                     Step::LevelDone(level) => {
                         for i in 0..sources.len() {

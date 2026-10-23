@@ -19,7 +19,7 @@
 //! once per search, and the per-arc work is a word-wide OR. The result of
 //! every search is the same as a plain breadth-first search.
 
-use crate::graph::Csr;
+use crate::graph::Graph;
 
 /// A square bit matrix with rows padded to whole 64-bit words.
 #[derive(Debug, Clone)]
@@ -73,6 +73,10 @@ impl BitMatrix {
 /// Largest number of sources one [`MultiBfs::run`] advances together.
 pub const BATCH: usize = 64;
 
+/// A level is expanded bottom-up when its frontier has more than
+/// 1/`PULL_SHARE` of all arcs.
+const PULL_SHARE: usize = 8;
+
 /// What [`MultiBfs::run`] reports.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Step {
@@ -122,14 +126,29 @@ impl MultiBfs {
         }
     }
 
-    /// Searches `adj` from `sources` (at most [`BATCH`] of them; source i
-    /// is bit i), stopping after `max_level` levels, and reports every
-    /// [`Step`] to `on`. A source is at level 0 of its own search and is
-    /// not reported for it. Within a level, nodes are reported in
-    /// increasing index order.
-    pub fn run(&mut self, adj: &Csr, sources: &[u32], max_level: u32, mut on: impl FnMut(Step)) {
+    /// Searches `g` along its out-arcs from `sources` (at most [`BATCH`]
+    /// of them; source i is bit i), stopping after `max_level` levels, and
+    /// reports every [`Step`] to `on`. A source is at level 0 of its own
+    /// search and is not reported for it. Within a level, nodes are
+    /// reported in increasing index order.
+    ///
+    /// Each level is expanded top-down (every frontier node ORs its set
+    /// into its out-neighbours) or, when the frontier's arcs are a large
+    /// share of all arcs, bottom-up (every node not yet reached by all
+    /// sources ORs the sets of its in-neighbours, stopping once all
+    /// sources have reached it), the direction-optimizing scheme of
+    /// Beamer, Asanovic, and Patterson (2012, `beamer2012direction`)
+    /// applied to source sets. Both give the same sets.
+    pub fn run(&mut self, g: &Graph, sources: &[u32], max_level: u32, mut on: impl FnMut(Step)) {
         assert!(sources.len() <= BATCH, "at most {BATCH} sources per batch");
-        let n = adj.node_count();
+        let (out, inc) = (g.out(), g.inc());
+        let n = out.node_count();
+        let arcs = out.arc_count();
+        let all = if sources.len() == BATCH {
+            u64::MAX
+        } else {
+            (1u64 << sources.len()) - 1
+        };
         self.active.clear();
         self.reached.clear();
         for (i, &s) in sources.iter().enumerate() {
@@ -144,23 +163,51 @@ impl MultiBfs {
         let mut level = 0;
         while !self.active.is_empty() && level < max_level {
             level += 1;
-            // Push every frontier set along its arcs, noting the nodes
-            // pushed to. `next` is clean at this point.
+            let frontier_arcs: usize = self
+                .active
+                .iter()
+                .map(|&v| out.degree(v as usize))
+                .sum();
+            let bottom_up = frontier_arcs > arcs / PULL_SHARE;
             self.touched.clear();
-            for &v in &self.active {
-                let f = self.frontier[v as usize];
-                for &w in adj.neighbors(v as usize) {
-                    let x = &mut self.next[w as usize];
-                    if *x == 0 {
-                        self.touched.push(w);
+            if bottom_up {
+                for w in 0..n {
+                    let seen = self.seen[w];
+                    if seen == all {
+                        continue;
                     }
-                    *x |= f;
+                    let mut acc = 0;
+                    for &v in inc.neighbors(w) {
+                        acc |= self.frontier[v as usize];
+                        if acc | seen == all {
+                            break;
+                        }
+                    }
+                    self.next[w] = acc;
+                }
+            } else {
+                // `next` is clean at this point.
+                for &v in &self.active {
+                    let f = self.frontier[v as usize];
+                    for &w in out.neighbors(v as usize) {
+                        let x = &mut self.next[w as usize];
+                        if *x == 0 {
+                            self.touched.push(w);
+                        }
+                        *x |= f;
+                    }
                 }
             }
+            // The frontier sets of this level have been read; clear them
+            // so that only the next level's sets remain.
+            for &v in &self.active {
+                self.frontier[v as usize] = 0;
+            }
             self.active.clear();
-            // Visit the pushed nodes in increasing index order: sort the
-            // list when it is short, scan every node when it is long.
-            if self.touched.len() < n / 32 {
+            // Visit the nodes with a non-empty `next` in increasing index
+            // order: sort the list when it is short, scan every node when
+            // it is long (or unknown, after a bottom-up step).
+            if !bottom_up && self.touched.len() < n / 32 {
                 self.touched.sort_unstable();
                 for i in 0..self.touched.len() {
                     let w = self.touched[i] as usize;
@@ -177,8 +224,8 @@ impl MultiBfs {
                 on(Step::LevelDone(level));
             }
         }
-        // `next` is cleared by the scan after every push, so only the
-        // per-node source sets need resetting.
+        // `next` is cleared by every settle, and frontiers after every
+        // level but the last, so only these need resetting.
         for &v in &self.reached {
             self.seen[v as usize] = 0;
             self.frontier[v as usize] = 0;
@@ -226,7 +273,7 @@ pub fn for_each_bit(mut bits: u64, mut f: impl FnMut(usize)) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::Graph;
+    use crate::graph::Csr;
 
     #[test]
     fn set_and_get() {
@@ -276,7 +323,7 @@ mod tests {
         for sources in [vec![0u32, 4, 8, 2], (0..9).collect::<Vec<u32>>()] {
             let mut levels = vec![vec![u32::MAX; 9]; sources.len()];
             let mut done = Vec::new();
-            ms.run(adj, &sources, u32::MAX, |step| match step {
+            ms.run(&g, &sources, u32::MAX, |step| match step {
                 Step::Reached {
                     level,
                     node,
@@ -305,7 +352,7 @@ mod tests {
         let g = Graph::from_edges(4, &[0, 1, 2], &[1, 2, 3], None, false).unwrap();
         let mut ms = MultiBfs::new(4);
         let mut seen = Vec::new();
-        ms.run(g.out(), &[0, 0, 3], 2, |step| {
+        ms.run(&g, &[0, 0, 3], 2, |step| {
             if let Step::Reached {
                 level,
                 node,

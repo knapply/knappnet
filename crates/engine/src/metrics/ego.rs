@@ -268,7 +268,7 @@ pub fn neighborhood_sizes(
     // batch is one work item, so the result does not depend on the thread
     // count.
     let h = oriented(g, opts.mode)?;
-    let adj = h.out();
+    let adj = h.as_ref();
     let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
     let partials = parallel::for_each_item(
         (count + BATCH - 1) / BATCH,
