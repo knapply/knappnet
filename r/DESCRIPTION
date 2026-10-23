@@ -32,11 +32,14 @@ Suggests:
     network,
     networkDynamic,
     rmarkdown,
+    sf,
+    sfnetworks,
     sna,
+    spdep,
     testthat (>= 3.0.0),
     tidygraph,
     tsna
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/Needs/website: pkgdown, igraph, sna, network, tidygraph, Matrix
+Config/Needs/website: pkgdown, igraph, sna, network, tidygraph, Matrix, sf, sfnetworks
 SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.70), GNU make
