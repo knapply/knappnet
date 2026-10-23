@@ -202,6 +202,7 @@ cited by author and year in an R help page or a vignette instead.
 | `newman2006finding` | Newman (2006). Modularity and Community Structure in Networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/partition/leading_eigen.rs` |
 | `newman2006modularity` | Newman (2006). Modularity and Community Structure in Networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/community.rs` |
 | `nocedal2006numerical` | Nocedal and Wright (2006). Numerical Optimization. *Springer*. | `crates/engine/src/metrics/coreperiphery/continuous.rs` |
+| `okabe2008color` | Okabe and Ito (2008). Color Universal Design (CUD): How to Make Figures and Presentations That Are Friendly to Colorblind People. *https://jfly.uni-koeln.de/color/*. | `r/R/utils-plot.R` |
 | `onnela2005intensity` | Onnela et al. (2005). Intensity and Coherence of Motifs in Weighted Complex Networks. *Physical Review E*. | `crates/engine/src/metrics/descriptive.rs` |
 | `ooms_hellorust` | Ooms (n.d.). hellorust: Minimal Example of Calling Rust from R. *https://github.com/r-rust/hellorust*. |  |
 | `opsahl2010node` | Opsahl, Agneessens, and Skvoretz (2010). Node Centrality in Weighted Networks: Generalizing Degree and Shortest Paths. *Social Networks*. | `crates/engine/src/weights.rs`, `docs/ARCHITECTURE.md` |
@@ -254,6 +255,7 @@ cited by author and year in an R help page or a vignette instead.
 | `ucinet_help_multiple` | Analytic Technologies (n.d.). UCINET 6 for Windows Help: Networks -> Centrality -> Multiple Measures. *http://www.analytictech.com/ucinet/help/hs4214.htm*. |  |
 | `uzzi2005collaboration` | Uzzi and Spiro (2005). Collaboration and Creativity: The Small World Problem. *American Journal of Sociology*. | `crates/engine/src/metrics/coreperiphery/small_world.rs` |
 | `vandermeer2026sfnetworks` | van der Meer et al. (2026). sfnetworks: Tidy Geospatial Networks. | `r/R/sf.R` |
+| `vanderwalt2015viridis` | van der Walt and Smith (2015). mpl Colormaps. *https://bids.github.io/colormap/*. | `r/R/utils-plot.R` |
 | `vanduijn2009framework` | van Duijn, Gile, and Handcock (2009). A Framework for the Comparison of Maximum Pseudo-Likelihood and Maximum Likelihood Estimation of Exponential Family Random Graph Models. *Social Networks*. | `crates/engine/src/ergm/mple.rs` |
 | `ward1963hierarchical` | Ward (1963). Hierarchical Grouping to Optimize an Objective Function. *Journal of the American Statistical Association*. |  |
 | `wasserman1994social` | Wasserman and Faust (1994). Social Network Analysis: Methods and Applications. *Cambridge University Press*. | `crates/engine/src/metrics/bipartite.rs`, `crates/engine/src/metrics/blockmodel.rs`, `crates/engine/src/metrics/closeness.rs`, `crates/engine/src/metrics/descriptive.rs`, and 4 more |
@@ -264,3 +266,4 @@ cited by author and year in an R help page or a vignette instead.
 | `wu2000thick` | Wu and Simon (2000). Thick-Restart Lanczos Method for Large Symmetric Eigenvalue Problems. *SIAM Journal on Matrix Analysis and Applications*. | `crates/engine/src/metrics/eigenvector.rs` |
 | `wu2014path` | Wu et al. (2014). Path Problems in Temporal Graphs. *Proceedings of the VLDB Endowment*. | `crates/engine/src/temporal/mod.rs`, `crates/engine/src/temporal/paths.rs` |
 | `zachary1977information` | Zachary (1977). An Information Flow Model for Conflict and Fission in Small Groups. *Journal of Anthropological Research*. | `validation/fixtures.py` |
+| `zeileis2020colorspace` | Zeileis et al. (2020). colorspace: A Toolbox for Manipulating and Assessing Colors and Palettes. *Journal of Statistical Software*. | `r/R/utils-plot.R` |

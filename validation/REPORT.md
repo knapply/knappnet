@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 9427 match, 42 documented differences, 0 FAIL, 4117 not run, 289 awaiting a manual run (UCINET), 1569 undefined for the oracle.
+Totals: 9426 match, 42 documented differences, 0 FAIL, 4117 not run, 289 awaiting a manual run (UCINET), 1570 undefined for the oracle.
 
 Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact arithmetic); ergm (no goldens yet); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; rsiena (no goldens yet); sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -118,7 +118,7 @@ Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact a
 | `core_periphery_zeros` | 12 / 0 / 0 / 0 |  |  |
 | `core_periphery_weighted` | 1 / 0 / 0 / 0 |  |  |
 | `core_periphery_minres` | 27 / 0 / 0 / 0 |  |  |
-| `core_periphery_minres_coreness` | 26 / 0 / 0 / 0 |  |  |
+| `core_periphery_minres_coreness` | 25 / 0 / 0 / 0 |  |  |
 | `core_periphery_correlation` | 28 / 0 / 0 / 0 |  |  |
 | `compactness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |
 | `compactness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |

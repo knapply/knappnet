@@ -55,7 +55,7 @@ checks to run. `--dry-run` only prints. The steps, in order:
    carries a one-line comment naming its Rd file, and
    `tools/check_r_docs.py` checks that every `\usage` matches the
    function's formals, every export is defined and documented, every
-   topic is in the pkgdown index, and Rd sections come in the package's
+   topic is in the [pkgdown](https://pkgdown.r-lib.org/) index, and Rd sections come in the package's
    order. Shared helpers live in `r/R/utils-*.R`: `check_netframe()`,
    `engine_graph()`, `engine_call()`, `resolve_threads()`,
    `resolve_weighting()`, and `resolve_additive_weights()` in
@@ -67,8 +67,8 @@ checks to run. `--dry-run` only prints. The steps, in order:
 6. **Validation**: a manifest entry in `validation/manifest.d/<area>.yaml`,
    a runner in `validation/bindings/<area>.py`, a definition oracle in
    `validation/oracles/<area>_definition_oracle.py`, and an oracle for every
-   reference tool that implements the measure (NetworkX in Python; igraph,
-   sna, and others in `validation/oracles/r_<area>.R`). Regenerate the
+   reference tool that implements the measure ([NetworkX](https://networkx.org/) in Python; [igraph](https://r.igraph.org/),
+   [sna](https://cran.r-project.org/package=sna), and others in `validation/oracles/r_<area>.R`). Regenerate the
    Python golden files and commit them.
 7. **Bibliography**: the BibTeX entries in `docs/references.bib`, verified
    against Crossref (`https://api.crossref.org/works/<DOI>`) or the
@@ -99,7 +99,7 @@ no code with the engine) is expected wherever one is practical.
   binary ties ignore weights and say so. Additive measures use weights as
   given. In R, `weighted = NULL` follows the network's weight role.
 - **`convention` argument** where the reference tools disagree (`"igraph"`,
-  `"networkx"`, `"sna"`, `"ucinet"`): the default follows igraph, the
+  `"networkx"`, `"sna"`, `"ucinet"`): the default follows [igraph](https://r.igraph.org/), the
   differences are tabulated in `crates/engine/src/conventions.rs` and in
   `?conventions`, and the help page's examples show one call per
   convention on a small network where the results visibly differ, with a
@@ -132,10 +132,10 @@ no code with the engine) is expected wherever one is practical.
 
 The project is MIT. Implement every method from its published source
 (papers, books, official documentation). Reference tools under the GPL or
-another copyleft license (igraph, sna, network, statnet, ergm, RSiena,
+another copyleft license ([igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), network, [statnet](https://statnet.org/), [ergm](https://cran.r-project.org/package=ergm), [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/),
 tsna, xucinet, and others) are used only as black-box oracles: run them,
 never read, copy, or translate their source. Permissively licensed
-projects (NetworkX, BSD; NetworKit, MIT) may be read but not copied; cite
+projects ([NetworkX](https://networkx.org/), BSD; [NetworKit](https://networkit.github.io/), MIT) may be read but not copied; cite
 them when they informed a design.
 
 ## Checks
@@ -174,7 +174,7 @@ R CMD build r && R CMD check --as-cran knappnet_*.tar.gz
 | `tools/check_bib.py` | Check `docs/references.bib` (unique sorted keys, fields, DOIs, cited keys exist) and that `docs/references.md` is current; `--update` sorts and regenerates. |
 | `tools/check_c_abi.sh` | Compile and run a C program against `netcapi.h`. |
 | `tools/check_r_functions.py` | Fail if two files in `r/R` define the same function. |
-| `tools/check_r_docs.py` | Static checks of the R package without R: balanced brackets, `\usage` against function formals, NAMESPACE against definitions and Rd aliases, pkgdown index completeness, Rd section order. |
+| `tools/check_r_docs.py` | Static checks of the R package without R: balanced brackets, `\usage` against function formals, NAMESPACE against definitions and Rd aliases, [pkgdown](https://pkgdown.r-lib.org/) index completeness, Rd section order. |
 | `tools/check_readme.R` | Run the README's R chunks and compare their printed output; `--update` rewrites it. |
 | `tools/sync_r_sources.py` | Copy the engine into `r/src/rust/`; `--check` for CI. |
 | `tools/link_tools.py <files>` | Link the first mention of each reference tool in a Markdown file to its website. |

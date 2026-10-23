@@ -44,8 +44,8 @@ python3 validation/compare.py                  # must print FAIL 0
 ```
 
 `run_oracles.py` without `--python-only` also runs the R scripts, which
-need R with igraph, sna, and yaml (and, for some areas, network, ergm,
-btergm, RSiena, tsna, keyplayer, and homophily; a script whose package is
+need R with [igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), and yaml (and, for some areas, network, [ergm](https://cran.r-project.org/package=ergm),
+btergm, [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), tsna, [keyplayer](https://cran.r-project.org/package=keyplayer), and homophily; a script whose package is
 missing says so and is skipped). `ENGINE_LIB=path/to/libcapi.so` points
 `compare.py` at a library built elsewhere. `compare.py --strict` (CI) also
 fails when an oracle never ran.
@@ -67,7 +67,7 @@ run".
 | FAIL | any other disagreement (CI fails) |
 | not run | no golden file: the oracle was not available |
 | undefined | the manifest declares that the oracle has no answer on that fixture, with the reason |
-| manual | no golden file yet for an oracle run by hand (UCINET) |
+| manual | no golden file yet for an oracle run by hand ([UCINET](https://sites.google.com/site/ucinetsoftware/home)) |
 
 A measure is *validated* when it has a manifest entry, at least one
 passing oracle, and no FAIL, and every documented difference and undefined
@@ -147,8 +147,8 @@ R oracle scripts (`oracles/r_<area>.R`) read the same manifest and write
 the same files. They run from the repository root, parse `meta.json`
 without a JSON package, and each carries its own small helpers because R
 is not available where the Python side is developed; keep them
-self-contained. Licensing: reference tools under the GPL (igraph, sna,
-statnet, RSiena, ...) are run as black boxes; their source is never read
+self-contained. Licensing: reference tools under the GPL ([igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna),
+[statnet](https://statnet.org/), [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), ...) are run as black boxes; their source is never read
 or translated.
 
 ## Checks outside the manifest
@@ -157,7 +157,7 @@ Some things are not node-level values on a fixture and have their own
 scripts, each a definition check independent of the engine:
 
 - `io_check.py`: every file format, written by the engine and read by
-  NetworkX and the reverse, on every fixture and an attribute-rich network.
+  [NetworkX](https://networkx.org/) and the reverse, on every fixture and an attribute-rich network.
 - `qap_check.py`: QAP and MRQAP against numpy least squares and an exact
   enumeration of all permutations for small n.
 - `cug_check.py`: random graph generators and the null models of
@@ -166,7 +166,7 @@ scripts, each a definition check independent of the engine:
   across seeds and threads, components separated, stress no worse than
   NetworkX's Kamada-Kawai).
 - `scale/`: the manifest comparison repeated on generated networks of up
-  to 50,000 nodes against NetworkX, igraph, and sna (weekly, `bench.yml`).
+  to 50,000 nodes against NetworkX, [igraph](https://r.igraph.org/), and [sna](https://cran.r-project.org/package=sna) (weekly, `bench.yml`).
 
 ## Adding a measure
 
