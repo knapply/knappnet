@@ -26,6 +26,7 @@ Imports:
 Suggests:
     ergm,
     igraph,
+    keyplayer,
     knitr,
     Matrix,
     network,
