@@ -115,11 +115,11 @@ igraph_values <- function(variant, spec, g, e, meta) {
       g, types = v0 %% 3 + 1, directed = FALSE),
     assortativity_modularity = igraph::assortativity_nominal(
       g, types = v0 %% 3 + 1, directed = TRUE, normalized = FALSE),
-    assortativity_values = igraph::assortativity(g, values = 7 * v0 %% 11, directed = TRUE),
-    assortativity_values_in = igraph::assortativity(g, values = 7 * v0 %% 11,
-                                                    values.in = 3 * v0 %% 5,
+    assortativity_values = igraph::assortativity(g, values = (7 * v0) %% 11, directed = TRUE),
+    assortativity_values_in = igraph::assortativity(g, values = (7 * v0) %% 11,
+                                                    values.in = (3 * v0) %% 5,
                                                     directed = TRUE),
-    assortativity_covariance = igraph::assortativity(g, values = 7 * v0 %% 11,
+    assortativity_covariance = igraph::assortativity(g, values = (7 * v0) %% 11,
                                                      directed = TRUE, normalized = FALSE),
     NULL
   )
@@ -142,8 +142,8 @@ homophily_values <- function(variant, g, meta) {
   switch(variant,
     assortativity_degree = homophily::assort_degree(g),
     assortativity_nominal_undirected = homophily::assort_discrete(g, "group"),
-    assortativity_values = homophily::assort_scalar(g, 7 * v0 %% 11),
-    assortativity_values_in = homophily::assort_scalar(g, 7 * v0 %% 11, 3 * v0 %% 5),
+    assortativity_values = homophily::assort_scalar(g, (7 * v0) %% 11),
+    assortativity_values_in = homophily::assort_scalar(g, (7 * v0) %% 11, (3 * v0) %% 5),
     mixing_matrix = mat(homophily::as_mixing_matrix(g, dim1 = "group")),
     mixing_matrix_in = mat(homophily::as_mixing_matrix(g, dim1 = "group", direction = "in")),
     mixing_matrix_nodes = mat(homophily::as_mixing_matrix(g, dim1 = "name", dim2 = "group")),

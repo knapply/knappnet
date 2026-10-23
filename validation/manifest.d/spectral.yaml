@@ -222,7 +222,7 @@ hits_authorities:
   oracles:
     definition:
       call: "leading eigenvector of A^T A by dense eigendecomposition, largest 1; no answer when the leading eigenvalue is repeated"
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -235,7 +235,7 @@ hits_authorities:
       reason: >-
         Without ties (the empty and one-node networks) the scores are
         undefined; knappnet returns NaN where igraph fills in values.
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -250,7 +250,7 @@ hits_hubs:
   oracles:
     definition:
       call: "A times the leading eigenvector of A^T A, largest 1; no answer when the leading eigenvalue is repeated"
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -263,7 +263,7 @@ hits_hubs:
       reason: >-
         Without ties (the empty and one-node networks) the scores are
         undefined; knappnet returns NaN where igraph fills in values.
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -278,7 +278,7 @@ hits_authorities_networkx:
   oracles:
     definition:
       call: "leading eigenvector of A^T A with undirected loops counted once, sum 1; no answer when the leading eigenvalue is repeated"
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -299,7 +299,7 @@ hits_hubs_networkx:
   oracles:
     definition:
       call: "A a, sum 1; no answer when the leading eigenvalue is repeated"
-      undefined_on: [cycle7_dir, path10, southern_women, star8, two_triangles_isolate]
+      undefined_on: [cycle7_dir, davis_twomode, path10, southern_women, star8, two_triangles_isolate, twomode_random, twomode_weighted]
       undefined_reason: >-
         Several blocks of the hub-authority graph share the largest
         singular value (bipartite or disconnected networks, and the directed
@@ -410,9 +410,9 @@ assortativity_values:
     definition:
       call: "Pearson correlation of 7v mod 11 at both ends of every arc, exact arithmetic"
     igraph:
-      call: "igraph::assortativity(g, values = 7 * (0:(n - 1)) %% 11, directed = TRUE)"
+      call: "igraph::assortativity(g, values = (7 * (0:(n - 1))) %% 11, directed = TRUE)"
     homophily:
-      call: "homophily::assort_scalar(g, 7 * (0:(n - 1)) %% 11)"
+      call: "homophily::assort_scalar(g, (7 * (0:(n - 1))) %% 11)"
 
 assortativity_values_in:
   engine: {fn: assortativity_values, values: num7, values_in: num3, directed: true, loops: twice}

@@ -176,6 +176,7 @@ print.netframe <- function(x, ...) {
     cat(sprintf("including %s; each measure's help page says how they count\n",
                 paste(notes, collapse = " and ")))
   }
+  if (!is.null(x$roles$start)) cat(temporal_summary(x))
   if (s$bad_weights) {
     cat(sprintf(paste0("%s in weight column `%s` %s missing or not finite; ",
                        "measures will refuse the network until %s fixed\n"),

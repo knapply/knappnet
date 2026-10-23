@@ -1,0 +1,370 @@
+# Temporal networks: time-respecting paths, reachability, temporal
+# closeness, slicing into windows, aggregation, and inter-event statistics.
+# Format as in ../manifest.yaml.
+#
+# Every fixture is read as a contact sequence: edge e becomes a contact
+# with the start and end times given by validation/temporal_fixtures.py
+# (small integers, many simultaneous contacts, about 40% instantaneous).
+# Weights are ignored. The engine runners are in
+# validation/bindings/temporal.py; the oracle is
+# validation/oracles/temporal_definition_oracle.py, a brute-force search
+# over walks in the graph whose nodes are the temporal arcs, which shares
+# no code or algorithm with the engine's one-pass edge-stream sweeps. The
+# two `instantaneous` variants below are also checked against tsna's
+# tPath() (validation/oracles/r_temporal.R); tsna models interval contacts
+# differently (a path may join one part-way through), so only instantaneous
+# contacts are compared with it.
+#
+# Non-finite results are written as markers by the runner and the oracle:
+# -1000 for an infinity (no walk) and -999 for NaN (undefined). Times,
+# durations, counts, and the burstiness and memory coefficients (in
+# [-1, 1]) never take those values.
+#
+# Engine options:
+#   fn          temporal_paths | temporal_reach | temporal_reachability_ratio |
+#               temporal_closeness | temporal_average_distance |
+#               temporal_active | temporal_windows | temporal_aggregate |
+#               temporal_burstiness | temporal_inter_event
+#   criterion   earliest_arrival | latest_departure | fastest | shortest.
+#               temporal_paths returns the all-pairs matrix, row = origin.
+#   direction   out | in: whether the engine computes rows by sweeps from
+#               the origins or into the destinations (the matrix is the
+#               same; both code paths are checked).
+#   start, end  window bounds (default: first start, last arrival).
+#   min_wait, max_wait, strict
+#               waiting rule at intermediate nodes: wait >= min_wait (or >
+#               with strict) and wait <= max_wait.
+#   traversal   zero (default), duration, or a number: time to traverse a
+#               contact.
+#   instantaneous
+#               ignore end times (every contact is instantaneous).
+#   width, step windows [a, a + width) for a = first start, first start +
+#               step, ... up to the last end (temporal_windows).
+#   window      [a, b) for temporal_aggregate (durations clipped).
+#   scope, mode node (mode out | in | all) or pair.
+
+temporal_earliest_arrival:
+  engine: {fn: temporal_paths, criterion: earliest_arrival}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over all walks in the arc graph (temporal_definition_oracle.py)"
+
+temporal_earliest_arrival_in:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, direction: in}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over all walks in the arc graph"
+
+temporal_earliest_arrival_strict:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, strict: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over walks with strictly increasing times"
+
+temporal_earliest_arrival_duration:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, traversal: duration}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival, each contact taking its duration to traverse"
+
+temporal_earliest_arrival_delay:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, traversal: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival, each contact taking one time unit to traverse"
+
+temporal_earliest_arrival_max_wait:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, max_wait: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over walks waiting at most 2 at each node"
+
+temporal_earliest_arrival_window:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, start: 1, end: 6, min_wait: 1, max_wait: 3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival in [1, 6] over walks waiting between 1 and 3"
+
+temporal_earliest_arrival_instantaneous:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, instantaneous: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over all walks, all contacts instantaneous"
+    tsna:
+      call: "start + tPath(nd, v, 'fwd', 'earliest.arrive', start, end, graph.step.time = 0)$tdist for every v"
+
+temporal_latest_departure:
+  engine: {fn: temporal_paths, criterion: latest_departure}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "latest departure over all walks in the arc graph"
+
+temporal_latest_departure_out:
+  engine: {fn: temporal_paths, criterion: latest_departure, direction: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "latest departure over all walks in the arc graph"
+
+temporal_latest_departure_duration_strict:
+  engine: {fn: temporal_paths, criterion: latest_departure, traversal: duration, strict: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "latest departure, each contact starting after the previous one ends (Pan and Saramaki 2011)"
+
+temporal_latest_departure_max_wait:
+  engine: {fn: temporal_paths, criterion: latest_departure, max_wait: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "latest departure over walks waiting at most 1 at each node"
+
+temporal_fastest:
+  engine: {fn: temporal_paths, criterion: fastest}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "smallest arrival minus departure over all walks (one search per first contact)"
+
+temporal_fastest_in:
+  engine: {fn: temporal_paths, criterion: fastest, direction: in}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "smallest arrival minus departure over all walks"
+
+temporal_fastest_duration_strict:
+  engine: {fn: temporal_paths, criterion: fastest, traversal: duration, strict: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fastest walks, each contact starting after the previous one ends"
+
+temporal_fastest_max_wait:
+  engine: {fn: temporal_paths, criterion: fastest, min_wait: 1, max_wait: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fastest walks waiting between 1 and 2 at each node"
+
+temporal_shortest:
+  engine: {fn: temporal_paths, criterion: shortest}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest contacts over all walks (breadth-first search over arcs)"
+
+temporal_shortest_in:
+  engine: {fn: temporal_paths, criterion: shortest, direction: in}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest contacts over all walks"
+
+temporal_shortest_strict:
+  engine: {fn: temporal_paths, criterion: shortest, strict: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest contacts over walks with strictly increasing times"
+
+temporal_shortest_max_wait:
+  engine: {fn: temporal_paths, criterion: shortest, max_wait: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest contacts over walks waiting at most 1 at each node"
+
+temporal_shortest_window:
+  engine: {fn: temporal_paths, criterion: shortest, instantaneous: true, start: 2, end: 8}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest contacts in [2, 8], all contacts instantaneous"
+
+temporal_reach_out:
+  engine: {fn: temporal_reach, direction: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "number of other nodes reached by some walk (set of influence; Holme 2005)"
+
+temporal_reach_out_instantaneous:
+  engine: {fn: temporal_reach, direction: out, instantaneous: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "set of influence, all contacts instantaneous"
+    tsna:
+      call: "sum(is.finite(tPath(nd, v, 'fwd', 'earliest.arrive', ...)$tdist)) - 1"
+
+temporal_reach_in:
+  engine: {fn: temporal_reach, direction: in}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "number of other nodes that reach the node (source set)"
+
+temporal_reach_out_max_wait:
+  engine: {fn: temporal_reach, direction: out, max_wait: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "set of influence over walks waiting at most 1"
+
+temporal_reach_in_duration_strict:
+  engine: {fn: temporal_reach, direction: in, traversal: duration, strict: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "source set over walks in which each contact starts after the previous one ends"
+
+temporal_reachability_ratio:
+  engine: {fn: temporal_reachability_ratio}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "share of ordered pairs of distinct nodes joined by a walk (Holme 2005)"
+
+temporal_closeness:
+  engine: {fn: temporal_closeness}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pan and Saramaki's Eq. 2 with the latency integrated exactly piece by piece over starting times"
+
+temporal_closeness_pan_saramaki:
+  engine: {fn: temporal_closeness, traversal: duration, strict: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "temporal closeness with Pan and Saramaki's path rule (each contact starts after the previous one ends)"
+
+temporal_closeness_max_wait:
+  engine: {fn: temporal_closeness, max_wait: 2, start: 0, end: 12}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "temporal closeness in [0, 12] over walks waiting at most 2"
+
+temporal_average_distance:
+  engine: {fn: temporal_average_distance}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pan and Saramaki's average temporal distance (Eq. 1), all pairs, integrated exactly"
+
+temporal_active:
+  engine: {fn: temporal_active}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "contacts active at each time on a grid of half units (s <= t < e, or t = s if instantaneous)"
+
+temporal_windows_sliding:
+  engine: {fn: temporal_windows, width: 3, step: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "contacts active in each window [a, a + 3), a = first start, first start + 1, ..."
+
+temporal_windows_tumbling:
+  engine: {fn: temporal_windows, width: 2, step: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "contacts active in each window [a, a + 2), a = first start, first start + 2, ..."
+
+temporal_aggregate:
+  engine: {fn: temporal_aggregate}
+  applies_to: any
+  compare: sorted
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "(from, to, count, total duration, first start, last end) per node pair, counted directly"
+
+temporal_aggregate_window:
+  engine: {fn: temporal_aggregate, window: [1, 4]}
+  applies_to: any
+  compare: sorted
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "as temporal_aggregate, for contacts active in [1, 4) with durations clipped to it"
+
+temporal_burstiness_nodes:
+  engine: {fn: temporal_burstiness, scope: node, mode: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(events, B, M) per node from Goh and Barabasi's (2008) Eqs. 1 and 4, in exact arithmetic"
+
+temporal_burstiness_nodes_out:
+  engine: {fn: temporal_burstiness, scope: node, mode: out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(events, B, M) per node, events the contacts it sends"
+
+temporal_burstiness_pairs:
+  engine: {fn: temporal_burstiness, scope: pair}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(from, to, events, B, M) per node pair, in order of first contact"
+
+temporal_inter_event_nodes:
+  engine: {fn: temporal_inter_event, scope: node, mode: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "(node, inter-event time) for consecutive events of each node, by node and then time"
