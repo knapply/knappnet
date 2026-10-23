@@ -110,15 +110,15 @@ test_that("clustering matches igraph", {
   g <- kite()
   ig <- igraph::graph_from_data_frame(g$edges, directed = FALSE, vertices = g$nodes)
   expect_equal(transitivity(g), igraph::transitivity(ig, type = "global"))
-  expect_equal(clustering(g), igraph::transitivity(ig, type = "local", isolates = "NaN"))
+  expect_equal(clustering(g), unname(igraph::transitivity(ig, type = "local", isolates = "NaN")))
   expect_equal(average_clustering(g), igraph::transitivity(ig, type = "average"))
   e <- random_edges(30, 90, 5)
   e$w <- round(stats::runif(nrow(e), 0.5, 4), 2)
   wg <- netframe(e, nodes = data.frame(id = 1:30), directed = FALSE, weight = "w")
   wig <- igraph::graph_from_data_frame(e, directed = FALSE, vertices = data.frame(id = 1:30))
   expect_equal(clustering(wg, weighted = TRUE),
-               igraph::transitivity(wig, type = "barrat", weights = igraph::E(wig)$w,
-                                    isolates = "NaN"))
+               unname(igraph::transitivity(wig, type = "barrat", weights = igraph::E(wig)$w,
+                                           isolates = "NaN")))
 })
 
 test_that("distances and their summaries by hand", {

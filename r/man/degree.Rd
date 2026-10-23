@@ -44,4 +44,12 @@ Academy of Sciences}, 101(11), 3747-3752. \doi{10.1073/pnas.0400087101}
 \examples{
 g <- netframe(data.frame(from = c(1, 1, 2), to = c(2, 3, 3)))
 degree(g, mode = "out")
+
+# A self-loop on node 1 and a repeated edge 1 -> 2: the conventions differ
+# in whether loops and parallel edges count.
+h <- netframe(data.frame(from = c(1, 1, 1, 2), to = c(1, 2, 2, 3)))
+degree(h)                          # igraph: loops count twice, parallel edges each count
+degree(h, convention = "networkx") # NetworkX
+degree(h, convention = "sna")      # sna: adjacency matrix, loops ignored
+degree(h, convention = "ucinet")   # UCINET: adjacency matrix, diagonal ignored
 }

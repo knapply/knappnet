@@ -69,4 +69,13 @@ clarification. \emph{Social Networks}, 1(3), 215-239.
 star <- netframe(data.frame(from = 1, to = 2:6), directed = FALSE)
 centralization(star)
 centralization(star, "betweenness")
+
+# The theoretical maxima differ between tools. NetworkX has no
+# centralization index, so its convention is an error.
+centralization(star)                          # igraph
+centralization(star, convention = "sna")      # sna
+centralization(star, convention = "ucinet")   # UCINET
+centralization(star, "closeness")                        # igraph
+centralization(star, "closeness", convention = "sna")    # sna
+centralization(star, "closeness", convention = "ucinet") # UCINET
 }

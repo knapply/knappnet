@@ -193,20 +193,6 @@ ego_measures <- function(x, order, mode, betweenness, threads) {
         resolve_threads(threads))
 }
 
-# Positions (1-based) of node identifiers in x$nodes.
-node_positions <- function(x, nodes) {
-  ids <- x$nodes[[x$roles$id]]
-  if (is.factor(ids)) ids <- as.character(ids)
-  if (is.factor(nodes)) nodes <- as.character(nodes)
-  pos <- match(nodes, ids)
-  if (anyNA(pos)) {
-    shown <- utils::head(unique(nodes[is.na(pos)]), 5L)
-    stop(sprintf("%d node(s) not found in `x$nodes`, for example: %s.",
-                 length(unique(nodes[is.na(pos)])), paste(format(shown), collapse = ", ")),
-         call. = FALSE)
-  }
-  pos
-}
 
 # The subgraph induced by the nodes at 1-based positions `keep` (in
 # ascending order): those nodes and every edge between two of them, with
