@@ -51,7 +51,7 @@ net_betweenness(g)
 ```
 
 Results are vectors in the order of `g$nodes`, not dictionaries keyed by
-node. `setNames(net_betweenness(g), g$nodes$name)` gives the keyed form, and
+node. `setNames(net_betweenness(g), g$nodes$id)` gives the keyed form, and
 `g$nodes$betweenness <- net_betweenness(g)` stores the result as a column.
 
 Two more differences matter:
@@ -110,7 +110,7 @@ a node in a small component is not mistaken for a central one:
 ```{r}
 split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
-data.frame(node     = split$nodes$name,
+data.frame(node     = split$nodes$id,
            networkx = round(net_closeness(split, convention = "networkx"), 3),
            igraph   = round(net_closeness(split, normalized = TRUE), 3))
 ```
@@ -123,7 +123,7 @@ twice:
 ```{r}
 multi <- net_frame(data.frame(source = c("a", "a", "b", "a", "d"),
                              target   = c("b", "b", "c", "d", "c")), directed = FALSE)
-data.frame(node     = multi$nodes$name,
+data.frame(node     = multi$nodes$id,
            igraph   = round(net_betweenness(multi), 3),
            networkx = round(net_betweenness(multi, convention = "networkx"), 3))
 ```
@@ -138,7 +138,7 @@ that the largest is 1. The ranking is the same:
 ```{r}
 kite <- net_frame(data.frame(source = c(1, 1, 1, 2, 2, 3, 4),
                             target   = c(2, 3, 4, 3, 4, 4, 5)), directed = FALSE)
-data.frame(node     = kite$nodes$name,
+data.frame(node     = kite$nodes$id,
            igraph   = round(net_eigen(kite), 3),
            networkx = round(net_eigen(kite, convention = "networkx"), 3))
 ```

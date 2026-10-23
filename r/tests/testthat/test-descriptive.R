@@ -87,8 +87,9 @@ test_that("weighted clustering by hand", {
   # Binary by default, whatever the weights.
   expect_equal(net_clustering(g), c(1 / 3, 1, 1, NaN))
   expect_error(net_clustering(pieces(), weighted = TRUE), "no weights")
-  bad <- net_frame(data.frame(source = 1, target = 2, w = 0), weight = "w", weight_type = "distance", directed = FALSE)
-  expect_error(net_clustering(bad, weighted = TRUE), "positive")
+  # Zero distances are refused when the network is built.
+  expect_error(net_frame(data.frame(source = 1, target = 2, w = 0), weight = "w",
+                         weight_type = "distance", directed = FALSE), "positive")
 })
 
 test_that("clustering matches igraph", {
@@ -253,7 +254,7 @@ test_that("summary reports the descriptive table", {
   expect_equal(s$mean_distance, net_mean_distance(d))
   out <- capture.output(print(s))
   expect_true(any(grepl("^Reciprocity", out)))
-  expect_true(any(grepl("yes, by `w` \\(distances\\)", out)))
+  expect_true(any(grepl("yes, `w` as distances (1 to 5)", out, fixed = TRUE)))
   expect_true(any(grepl("weights as distances", out)))
   expect_equal(summary(d, weighted = FALSE)$mean_distance, net_mean_distance(d, weighted = FALSE))
 })

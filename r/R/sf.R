@@ -637,14 +637,18 @@ as_net_frame.sfnetwork <- function(x, weight_type = "distance", quiet = FALSE, .
   require_pkg("sf", "as_net_frame() for sfnetwork objects")
   nodes <- sf::st_as_sf(x, active = "nodes")
   n <- nrow(nodes)
-  if ("name" %in% names(nodes) && !anyDuplicated(nodes$name)) {
-    ids <- nodes$name
+  # sfnetworks' `name` (when it identifies the nodes) becomes the identifier
+  # column `id`, as in net_frame().
+  attrs <- sf::st_drop_geometry(nodes)
+  if ("name" %in% names(attrs) && !anyDuplicated(attrs$name) && !anyNA(attrs$name)) {
+    ids <- attrs$name
+    attrs$name <- NULL
   } else {
     ids <- seq_len(n)
-    attrs <- sf::st_drop_geometry(nodes)
-    names(attrs) <- rename_reserved(names(attrs), "name")
-    nodes <- sf::st_sf(cbind(data.frame(name = ids), attrs), geometry = sf::st_geometry(nodes))
   }
+  names(attrs) <- rename_reserved(names(attrs), "id")
+  nodes <- sf::st_sf(cbind(data.frame(id = ids, stringsAsFactors = FALSE), attrs),
+                     geometry = sf::st_geometry(nodes))
   nodes <- strip_unit_columns(nodes)
   edges <- tryCatch(suppressMessages(sf::st_as_sf(x, active = "edges")),
                     error = function(e) NULL)
@@ -668,7 +672,7 @@ as_net_frame.sfnetwork <- function(x, weight_type = "distance", quiet = FALSE, .
   }
   if (!is.null(recorded) && recorded %in% c("distance", "strength")) weight_type <- recorded
   if (!is.null(weight)) check_weight_type(weight, weight_type)
-  net_frame(edges, nodes, directed = igraph::is_directed(x), id = "name", weight = weight,
+  net_frame(edges, nodes, directed = igraph::is_directed(x), weight = weight,
             weight_type = weight_type, quiet = quiet, graph = graph)
 }
 

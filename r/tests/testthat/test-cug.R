@@ -4,7 +4,7 @@
 
 test_that("cug_test returns the observed statistic and a null distribution", {
   g <- net_example("karate")
-  ct <- net_cug_test(g, transitivity, conditioning = "edges", reps = 50, seed = 1, threads = 2)
+  ct <- net_cug_test(g, net_transitivity, conditioning = "edges", reps = 50, seed = 1, threads = 2)
   expect_s3_class(ct, "cug_test")
   expect_equal(ct$observed, net_transitivity(g))
   expect_length(ct$null, 50)
@@ -17,7 +17,7 @@ test_that("cug_test returns the observed statistic and a null distribution", {
   expect_equal(ct$p_greater, 0)
   expect_equal(ct$p_less, 1)
   # Reproducible by seed, whatever the thread count.
-  again <- net_cug_test(g, transitivity, conditioning = "edges", reps = 50, seed = 1, threads = 1)
+  again <- net_cug_test(g, net_transitivity, conditioning = "edges", reps = 50, seed = 1, threads = 1)
   expect_equal(again$null, ct$null)
   expect_output(print(ct), "Pr\\(X >= Obs\\)")
   s <- summary(ct)
@@ -37,7 +37,7 @@ test_that("null models keep what they condition on", {
   size <- net_cug_test(g, function(x) nrow(x$nodes), "size", reps = 20, seed = 1, threads = 2)
   expect_true(all(size$null == 34))
   # Density 1/2 under the size null.
-  dens <- net_cug_test(g, graph_density, "size", reps = 200, seed = 1, threads = 2)
+  dens <- net_cug_test(g, net_density, "size", reps = 200, seed = 1, threads = 2)
   expect_equal(mean(dens$null), 0.5, tolerance = 0.03)
   # Undirected dyad census is the edge count.
   dc <- net_cug_test(g, function(x) nrow(x$edges), "dyad.census", reps = 20, seed = 1, threads = 2)
@@ -58,7 +58,7 @@ test_that("null models keep what they condition on", {
 
 test_that("statistics with extra arguments, undefined values, and bad input", {
   g <- net_example("karate")
-  ct <- net_cug_test(g, centralization, "edges", measure = "degree", reps = 20, seed = 1,
+  ct <- net_cug_test(g, net_centralization, "edges", measure = "degree", reps = 20, seed = 1,
                  threads = 2)
   expect_equal(ct$observed, net_centralization(g, "degree"))
   # A statistic that is undefined on some random networks is dropped there.
@@ -69,9 +69,9 @@ test_that("statistics with extra arguments, undefined values, and bad input", {
   expect_true(is.nan(dropped$p_greater))
   expect_error(net_cug_test(g, function(x) net_degree(x), reps = 2, seed = 1), "single number")
   expect_error(net_cug_test(g, "transitivity", reps = 2, seed = 1), "function")
-  expect_error(net_cug_test(g, transitivity, reps = 0, seed = 1), "at least 1")
+  expect_error(net_cug_test(g, net_transitivity, reps = 0, seed = 1), "at least 1")
   loops <- net_frame(data.frame(source = c(1, 1, 2), target = c(1, 2, 3)), directed = FALSE)
-  expect_warning(net_cug_test(loops, transitivity, reps = 2, seed = 1), "self-loops")
+  expect_warning(net_cug_test(loops, net_transitivity, reps = 2, seed = 1), "self-loops")
 })
 
 test_that("p-values agree with sna::cug.test", {
@@ -81,7 +81,7 @@ test_that("p-values agree with sna::cug.test", {
   set.seed(1)
   # Transitivity conditioned on the number of edges: Monte Carlo estimates
   # from both packages of the same probability.
-  ours <- net_cug_test(g, transitivity, "edges", reps = 1000, seed = 1, threads = 2)
+  ours <- net_cug_test(g, net_transitivity, "edges", reps = 1000, seed = 1, threads = 2)
   theirs <- sna::cug.test(a, sna::gtrans, mode = "graph", cmode = "edges", reps = 1000,
                           FUN.args = list(mode = "graph"))
   expect_equal(ours$observed, theirs$obs.stat, tolerance = 1e-10)

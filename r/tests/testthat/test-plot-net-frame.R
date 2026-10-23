@@ -138,15 +138,18 @@ test_that("column mappings follow the documented palettes and order", {
 test_that("two-mode networks are colored by mode by default", {
   attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
                          event  = c("gala", "fair", "gala", "fair"))
-  g <- net_twomode(attended)
+  g <- net_twomode(attended, source = "person", target = "event")
   fill <- twomode_fill(g)
   pal <- plot_qualitative(2)
-  expect_identical(fill$col, pal[g$nodes[[g$roles$type]] + 1L])
-  expect_identical(fill$legend$labels, c("first", "second"))
+  expect_identical(fill$col, pal[twomode_types(g) + 1L])
+  expect_identical(fill$legend$labels, c("person", "event"))
   nodes <- data.frame(id = c("ann", "bob", "gala"), kind = c("person", "person", "event"))
   labelled <- net_twomode(data.frame(source = c("ann", "bob"), target = c("gala", "gala")), nodes,
-                      type = "kind", first = "person")
-  expect_identical(twomode_fill(labelled)$legend$labels, c("person", "event"))
+                          mode = "kind", first = "event")
+  expect_identical(twomode_fill(labelled)$legend$labels, c("event", "person"))
+  logical <- net_twomode(data.frame(source = c("ann", "bob"), target = c("gala", "gala")),
+                         data.frame(id = c("ann", "bob", "gala"), type = c(FALSE, FALSE, TRUE)))
+  expect_identical(twomode_fill(logical)$legend$labels, c("first", "second"))
   on_null_device({
     expect_silent(plot(g, seed = 1))
     expect_silent(plot(g, layout = "twomode"))

@@ -53,7 +53,7 @@ table(ji$nodes$role)
 ji2 <- net_recode(ji, "role", c(`command team` = "command"), default = "operative")
 table(ji2$nodes$role)
 
-# Join an attribute table by name.
-extra <- data.frame(name = ji$nodes$name[1:3], arrested = c(TRUE, FALSE, TRUE))
+# Join an attribute table by identifier.
+extra <- data.frame(id = ji$nodes$id[1:3], arrested = c(TRUE, FALSE, TRUE))
 head(net_join(ji, extra)$nodes)
 }

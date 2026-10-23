@@ -51,7 +51,7 @@ Tidy geospatial networks. R package.
 \seealso{\code{\link{net_to_sf}}, \code{\link{as_net_frame}}.}
 \examples{
 if (requireNamespace("sfnetworks", quietly = TRUE)) {
-  pts <- sf::st_as_sf(data.frame(name = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
+  pts <- sf::st_as_sf(data.frame(id = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
                       coords = c("x", "y"), crs = 32633)
   g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")), pts, directed = FALSE)
   net <- net_to_sfnetwork(g, edges_as_lines = TRUE)

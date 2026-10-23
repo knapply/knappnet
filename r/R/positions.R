@@ -201,7 +201,7 @@ plot.blockmodel <- function(x, network = NULL, which = c("both", "density", "mat
   if (which != "density") {
     args <- c(list(x = network, order = x$membership, key = FALSE), dots)
     if (is.null(args$main)) args$main <- "Permuted adjacency matrix"
-    do.call(plot_matrix, args)
+    do.call(net_plot_matrix, args)
   }
   if (which != "matrix") {
     d <- x$density

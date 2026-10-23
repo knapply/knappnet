@@ -7,7 +7,8 @@ multiplex <- function() {
                   target = c("b", "c", "c", "b", "d", "b"),
                   relation = c("friend", "friend", "friend", "work", "work", "friend"),
                   stringsAsFactors = FALSE)
-  net_frame(e, nodes = data.frame(id = c("a", "b", "c", "d")), directed = FALSE)
+  net_frame(e, nodes = data.frame(id = c("a", "b", "c", "d")), directed = FALSE,
+            relation = "relation")
 }
 
 test_that("combine_relations by union, intersection, sum, difference, and select", {

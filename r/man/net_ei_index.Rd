@@ -62,7 +62,7 @@ Knapp, B. G. (2019). homophily: Measuring network homophily. R package,
 \code{\link{net_mixing}}, \code{\link{net_homophily}}
 }
 \examples{
-staff <- data.frame(name = c("ann", "bob", "cat", "dan", "eve"),
+staff <- data.frame(id = c("ann", "bob", "cat", "dan", "eve"),
                     dept = c("sales", "sales", "eng", "eng", "hr"))
 g <- net_frame(data.frame(source = c("ann", "ann", "bob", "cat", "dan"),
                          target = c("bob", "cat", "dan", "dan", "eve")),

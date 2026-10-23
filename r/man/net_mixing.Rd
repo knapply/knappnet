@@ -60,11 +60,11 @@ Knapp, B. G. (2019). homophily: Measuring network homophily. R package,
 \code{\link{net_ei_index}}, \code{\link{net_assort_nominal}}
 }
 \examples{
-staff <- data.frame(name = c("ann", "bob", "cat", "dan"),
+staff <- data.frame(id = c("ann", "bob", "cat", "dan"),
                     dept = c("sales", "sales", "eng", "eng"))
 g <- net_frame(data.frame(source = c("ann", "ann", "bob", "cat"),
                          target = c("bob", "cat", "dan", "dan")),
               nodes = staff, directed = FALSE)
 net_mixing(g, "dept")
-net_mixing(g, "name", "dept")
+net_mixing(g, "id", "dept")
 }

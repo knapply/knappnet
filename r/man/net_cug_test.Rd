@@ -103,7 +103,7 @@ tests of association between networks}
 g <- net_example("karate")
 # Is the karate club more clustered than random networks of its size and
 # density?
-ct <- net_cug_test(g, transitivity, conditioning = "edges", reps = 200, seed = 1, threads = 2)
+ct <- net_cug_test(g, net_transitivity, conditioning = "edges", reps = 200, seed = 1, threads = 2)
 ct
 summary(ct)
 plot(ct)
@@ -111,16 +111,16 @@ plot(ct)
 # The three null models: conditioning only on size (density 1/2) makes
 # almost any sparse network look unusual, conditioning on edges or on the
 # dyad census (the same thing for undirected networks) is the usual choice.
-net_cug_test(g, transitivity, "size", reps = 200, seed = 1, threads = 2)$p_greater
-net_cug_test(g, transitivity, "edges", reps = 200, seed = 1, threads = 2)$p_greater
-net_cug_test(g, transitivity, "dyad.census", reps = 200, seed = 1, threads = 2)$p_greater
+net_cug_test(g, net_transitivity, "size", reps = 200, seed = 1, threads = 2)$p_greater
+net_cug_test(g, net_transitivity, "edges", reps = 200, seed = 1, threads = 2)$p_greater
+net_cug_test(g, net_transitivity, "dyad.census", reps = 200, seed = 1, threads = 2)$p_greater
 
 # A directed network: the dyad census fixes reciprocity, so a statistic
 # driven by mutual ties is no longer unusual under it.
 d <- net_random_uman(15, mutual = 20, asym = 10, seed = 2, threads = 2)
-net_cug_test(d, reciprocity, "edges", reps = 200, seed = 1, threads = 2)$p_greater
-net_cug_test(d, reciprocity, "dyad.census", reps = 200, seed = 1, threads = 2)$p_greater
+net_cug_test(d, net_reciprocity, "edges", reps = 200, seed = 1, threads = 2)$p_greater
+net_cug_test(d, net_reciprocity, "dyad.census", reps = 200, seed = 1, threads = 2)$p_greater
 
 # Extra arguments go to the statistic.
-net_cug_test(g, centralization, "edges", measure = "degree", reps = 100, seed = 1, threads = 2)
+net_cug_test(g, net_centralization, "edges", measure = "degree", reps = 100, seed = 1, threads = 2)
 }

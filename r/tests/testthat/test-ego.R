@@ -1,8 +1,8 @@
 # Ego networks and egocentric measures. Hand-checked values first, then
 # spot checks against igraph. The full comparison lives in validation/.
 
-# Edges a-b, a-c, a-d, b-c, d-e. Nodes come in order of first appearance:
-# a, b, d, c, e.
+# Edges a-b, a-c, a-d, b-c, d-e. Nodes come in order of first appearance,
+# row by row: a, b, c, d, e.
 small <- function() {
   net_frame(data.frame(source = c("a", "a", "a", "b", "d"),
                       target   = c("b", "c", "d", "c", "e"),
@@ -12,18 +12,18 @@ small <- function() {
 
 test_that("ego_summary gives hand-checked values", {
   g <- small()
-  expect_equal(g$nodes$id, c("a", "b", "d", "c", "e"))
+  expect_equal(g$nodes$id, c("a", "b", "c", "d", "e"))
   s <- net_ego_summary(g)
   expect_equal(names(s), c("node", "size", "ties", "pairs", "density", "components",
                            "ego_betweenness"))
   expect_equal(s$node, g$nodes$id)
   expect_equal(s$size, c(3, 2, 2, 2, 1))
-  expect_equal(s$ties, c(1, 1, 0, 1, 0))
+  expect_equal(s$ties, c(1, 1, 1, 0, 0))
   expect_equal(s$pairs, c(3, 1, 1, 1, 0))
-  expect_equal(s$density, c(1 / 3, 1, 0, 1, NaN))
-  expect_equal(s$components, c(2, 1, 2, 1, 1))
+  expect_equal(s$density, c(1 / 3, 1, 1, 0, NaN))
+  expect_equal(s$components, c(2, 1, 1, 2, 1))
   # a brokers b-d and c-d; d brokers a-e.
-  expect_equal(s$ego_betweenness, c(2, 0, 1, 0, 0))
+  expect_equal(s$ego_betweenness, c(2, 0, 0, 1, 0))
   expect_equal(net_ego_density(g), s$density)
   expect_equal(net_ego_betweenness(g), s$ego_betweenness)
   expect_false("ego_betweenness" %in% names(net_ego_summary(g, betweenness = FALSE)))
@@ -34,7 +34,7 @@ test_that("ego_size counts ego unless asked not to", {
   g <- small()
   expect_equal(net_ego_size(g), c(4, 3, 3, 3, 2))
   expect_equal(net_ego_size(g, include_ego = FALSE), c(3, 2, 2, 2, 1))
-  expect_equal(net_ego_size(g, order = 2), c(5, 4, 5, 4, 3))
+  expect_equal(net_ego_size(g, order = 2), c(5, 4, 4, 5, 3))
   expect_equal(net_ego_size(g, order = 0), rep(1, 5))
   expect_error(net_ego_size(g, order = -1), "order")
   expect_error(net_ego_summary(g, order = 0), "at least 1")
@@ -67,14 +67,14 @@ test_that("ego_network returns the induced subgraph with its attributes", {
   g$nodes$age <- c(30, 40, 50, 60, 70)
   e <- net_ego(g, "a")
   expect_s3_class(e, "net_frame")
-  expect_equal(e$nodes$id, c("a", "b", "d", "c"))
+  expect_equal(e$nodes$id, c("a", "b", "c", "d"))
   expect_equal(e$nodes$age, c(30, 40, 50, 60))
   expect_equal(e$edges$w, c(1, 2, 3, 4))
   expect_equal(e$roles$weight, "w")
   expect_equal(e$roles$weight_type, "strength")
   expect_false(e$directed)
   alters <- net_ego(g, "a", include_ego = FALSE)
-  expect_equal(alters$nodes$id, c("b", "d", "c"))
+  expect_equal(alters$nodes$id, c("b", "c", "d"))
   expect_equal(nrow(alters$edges), 1L)
   expect_equal(nrow(net_ego(g, "e", order = 2)$nodes), 3L)
   all <- net_egos(g)
@@ -87,10 +87,12 @@ test_that("ego_network returns the induced subgraph with its attributes", {
 })
 
 test_that("ego networks of a two-mode network stay two-mode", {
-  g <- net_twomode(data.frame(p = c("ann", "ann", "bob"), e = c("x", "y", "y")))
+  g <- net_twomode(data.frame(p = c("ann", "ann", "bob"), e = c("x", "y", "y")),
+                   source = "p", target = "e")
   e <- net_ego(g, "y", order = 2)
   expect_true(net_is_twomode(e))
-  expect_equal(e$nodes$type, c(FALSE, FALSE, TRUE, TRUE))
+  expect_equal(e$nodes$id, c("ann", "bob", "x", "y"))
+  expect_equal(knappnet:::twomode_types(e), c(0L, 0L, 1L, 1L))
 })
 
 test_that("results match igraph", {

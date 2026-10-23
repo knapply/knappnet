@@ -47,7 +47,7 @@ zone 33N (coordinates in metres) are joined by three links:
 
 ```{r}
 stations <- sf::st_as_sf(
-  data.frame(name = c("north", "east", "south", "west"),
+  data.frame(id = c("north", "east", "south", "west"),
              x = c(500000, 503000, 500000, 497000),
              y = c(6003000, 6000000, 5997000, 6000000),
              elevation = c(120, 85, 90, 140)),
@@ -226,7 +226,7 @@ attaches attributes of the features each node falls in; and
 ```{r}
 inner <- sf::st_bbox(c(xmin = 498000, ymin = 5998000, xmax = 504000, ymax = 6004000),
                      crs = sf::st_crs(32633))
-net_spatial_filter(h, inner)$nodes$name
+net_spatial_filter(h, inner)$nodes$id
 
 zones <- sf::st_sf(zone = c("uptown", "downtown"),
                    geometry = sf::st_sfc(
@@ -237,7 +237,7 @@ zones <- sf::st_sf(zone = c("uptown", "downtown"),
                                                c(505000, 6001500), c(495000, 6001500),
                                                c(495000, 5995000))))),
                    crs = 32633)
-net_spatial_join(h, zones)$nodes[, c("name", "zone")]
+net_spatial_join(h, zones)$nodes[, c("id", "zone")]
 
 ll <- net_transform(h, 4326)
 ll$roles$crs$Name

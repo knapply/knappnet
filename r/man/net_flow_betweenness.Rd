@@ -105,7 +105,7 @@ ji <- net_example("jemaah_islamiyah")
 # Freeman, Borgatti, and White's totals (UCINET; sna cmode = "rawflow").
 # Samudra, the field commander, carries most of the flow.
 fb <- net_flow_betweenness(ji, threads = 2)
-head(sort(setNames(fb, ji$nodes$name), decreasing = TRUE))
+head(sort(setNames(fb, ji$nodes$id), decreasing = TRUE))
 # Divided by the flow between other pairs (UCINET's normalized scores, as
 # proportions; sna cmode = "normflow").
 net_flow_betweenness(ji, scale = "normalized", threads = 2)

@@ -179,5 +179,5 @@ net_layout(g, "tree", root = c(3, 5))
 # Two rows for a two-mode network.
 attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
                        event  = c("gala", "fair", "gala", "fair"))
-net_layout(net_twomode(attended), "twomode")
+net_layout(net_twomode(attended, source = "person", target = "event"), "twomode")
 }

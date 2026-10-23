@@ -49,9 +49,9 @@ A data frame with columns \code{start} and \code{end} (of each window),
 logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3"),
                      host = c("h1", "h1", "h2", "h2", "h3", "h1"),
                      time = c(0, 1, 5, 6, 12, 13))
-g <- net_temporal(logins)
-net_rolling(g, degree, width = 5)
+g <- net_temporal(logins, source = "user", target = "host")
+net_rolling(g, net_degree, width = 5)
 net_rolling(g, function(s) net_density(net_aggregate(s)), width = 10, step = 5)
 # Arguments pass through to the measure.
-net_rolling(g, degree, width = 10, step = 5, mode = "in")
+net_rolling(g, net_degree, width = 10, step = 5, mode = "in")
 }

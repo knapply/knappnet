@@ -166,7 +166,7 @@ g <- net_frame(data.frame(source = c(1, 1, 2, 2, 2, 2, 3, 4, 5),
                          target = c(2, 7, 4, 5, 6, 7, 5, 5, 7)), directed = FALSE)
 cp <- net_core_periphery(g, seed = 1, threads = 2)
 cp
-g$nodes$name[cp$core]
+g$nodes$id[cp$core]
 plot(cp)
 
 # The three treatments of core-periphery pairs give different cores.

@@ -49,7 +49,7 @@ times.
 logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2"),
                      host = c("h1", "h1", "h2", "h2", "h3"),
                      time = c(0, 1, 5, 6, 12))
-g <- net_temporal(logins)
+g <- net_temporal(logins, source = "user", target = "host")
 s <- net_snapshots(g, width = 5)
 attr(s, "windows")
 vapply(s, function(w) nrow(w$edges), numeric(1))

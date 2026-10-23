@@ -111,7 +111,7 @@ attended <- data.frame(
   person = c("ann", "ann", "bob", "bob", "cat", "dan"),
   event  = c("gala", "fair", "gala", "show", "show", "fair")
 )
-g <- net_twomode(attended)
+g <- net_twomode(attended, source = "person", target = "event")
 data.frame(g$nodes,
            degree = net_twomode_degree(g),
            closeness = net_twomode_closeness(g),

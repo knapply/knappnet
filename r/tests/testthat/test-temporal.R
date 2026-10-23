@@ -19,8 +19,8 @@ test_that("temporal networks are net_frames with time roles", {
   expect_equal(g$roles$start, "time")
   expect_equal(g$roles$time_class, "numeric")
   expect_equal(g$nodes$id, c("a", "b", "c"))
-  expect_output(print(g), "temporal: contacts from 1 to 6")
-  expect_output(print(g), "all instantaneous")
+  expect_output(print(g), "time:      contacts (4 events, 1 to 6)", fixed = TRUE)
+  expect_output(print(g), "clock:     numbers", fixed = TRUE)
   # Static measures see every contact as an edge.
   expect_equal(net_degree(g), c(2, 3, 3))
 })
@@ -28,16 +28,16 @@ test_that("temporal networks are net_frames with time roles", {
 test_that("start, end, and duration columns are found and checked", {
   d <- data.frame(source = c("a", "b"), target = c("b", "c"), start = c(0, 5), stop = c(3, 5),
                   len = c(3, 0))
-  g <- net_temporal(d, end = "stop")
+  g <- net_temporal(d, start = "start", end = "stop")
   expect_equal(g$roles$start, "start")
-  expect_output(print(g), "1 instantaneous")
+  expect_output(print(g), "edge spells, 0 to 5")
   expect_equal(nrow(net_at(g, 2)$edges), 1L)
-  h <- net_temporal(d, duration = "len")
+  h <- net_temporal(d, start = "start", duration = "len")
   expect_equal(nrow(net_at(h, 2)$edges), 1L)
   expect_equal(net_aggregate(h)$edges$duration, c(3, 0))
-  expect_error(net_temporal(d, end = "stop", duration = "len"), "not both")
+  expect_error(net_temporal(d, start = "start", end = "stop", duration = "len"), "not both")
   bad <- data.frame(source = c("a", "b"), target = c("b", "c"), time = c(2, 1), end = c(1, 1))
-  expect_error(net_temporal(bad, end = "end"), "end before they start; see row 1")
+  expect_error(net_temporal(bad, end = "end"), "must not end before they start.*row 1")
   expect_error(net_temporal(data.frame(source = "a", target = "b", time = NA_real_)),
                "must not be missing")
   expect_error(net_temporal(data.frame(source = "a", target = "b", when = 1)), "`start`")
@@ -51,8 +51,9 @@ test_that("start, end, and duration columns are found and checked", {
 
 test_that("a net_frame whose edges carry a time column can be made temporal", {
   x <- net_frame(data.frame(src = c("a", "b"), dst = c("b", "c"), start = c(1, 2),
-                           bytes = c(10, 20)), weight = "bytes", weight_type = "distance")
-  g <- net_temporal(x)
+                            bytes = c(10, 20)), source = "src", target = "dst", weight = "bytes",
+                 weight_type = "distance")
+  g <- net_temporal(x, start = "start")
   expect_true(net_is_temporal(g))
   expect_equal(g$roles$weight, "bytes")
   expect_equal(net_temporal_reach(g), c(2, 1, 0))
@@ -79,20 +80,23 @@ test_that("slicing follows half-open intervals", {
 
 test_that("node presence intervals select nodes", {
   nodes <- data.frame(id = c("a", "b", "c"), joined = c(0, 5, NA))
-  g <- net_temporal(data.frame(source = c("a", "b", "b", "a"), target = c("b", "c", "c", "c"),
-                                   time = c(1, 1, 3, 6)),
-                        nodes = nodes, node_start = "joined")
+  g <- net_temporal(data.frame(source = c("a", "b", "b", "a"), target = c("c", "c", "c", "b"),
+                               time = c(1, 6, 7, 8)),
+                    nodes = nodes, node_start = "joined")
   expect_equal(net_at(g, 2, nodes = "present")$nodes$id, c("a", "c"))
   expect_equal(nrow(net_at(g, 2, nodes = "active")$nodes), 0L)
   expect_equal(net_at(g, 2)$nodes$id, c("a", "b", "c"))
-  # An endpoint of an active contact is always kept.
-  expect_equal(net_at(g, 1, nodes = "present")$nodes$id, c("a", "b", "c"))
+  expect_equal(net_at(g, 6, nodes = "present")$nodes$id, c("a", "b", "c"))
+  expect_equal(net_at(g, 6, nodes = "active")$nodes$id, c("b", "c"))
+  # A contact before a node joins is an error that names the row.
+  early <- data.frame(source = c("a", "b"), target = c("c", "c"), time = c(1, 1))
+  expect_error(net_temporal(early, nodes, node_start = "joined"), "row 2")
 })
 
 test_that("snapshots and rolling measures", {
   logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2"),
                        host = c("h1", "h1", "h2", "h2", "h3"), time = c(0, 1, 5, 6, 12))
-  g <- net_temporal(logins)
+  g <- net_temporal(logins, source = "user", target = "host")
   s <- net_snapshots(g, width = 5)
   expect_equal(attr(s, "windows")$start, c(0, 5, 10))
   expect_equal(attr(s, "windows")$end, c(5, 10, 15))
@@ -104,7 +108,7 @@ test_that("snapshots and rolling measures", {
   expect_error(net_snapshots(g), "width")
   expect_error(net_snapshots(g, width = 5, breaks = c(0, 1)), "not both")
   expect_error(net_snapshots(g, breaks = c(3, 1)), "increasing")
-  r <- net_rolling(g, degree, width = 5)
+  r <- net_rolling(g, net_degree, width = 5)
   expect_equal(names(r), c("start", "end", "node", "value"))
   expect_equal(nrow(r), 18L)
   expect_equal(r$value[r$start == 0], c(1, 1, 0, 2, 0, 0))
@@ -218,7 +222,7 @@ test_that("dates and date-times", {
 
   p <- data.frame(src = c("a", "b"), dst = c("b", "c"),
                   t = as.POSIXct(c("2024-05-01 10:00:00", "2024-05-01 11:00:00"), tz = "UTC"))
-  h <- net_temporal(p, start = "t")
+  h <- net_temporal(p, start = "t", source = "src", target = "dst")
   expect_equal(h$roles$time_class, "POSIXct")
   expect_equal(net_temporal_distances(h, "fastest")["a", "c"], 3600)
   expect_equal(net_temporal_distances(h, "fastest",

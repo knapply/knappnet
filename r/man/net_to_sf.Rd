@@ -145,7 +145,7 @@ spatial networks from sf data, \code{\link{net_to_sfnetwork}} for sfnetworks,
 point-based functions.}
 \examples{
 if (requireNamespace("sf", quietly = TRUE)) {
-  pts <- sf::st_as_sf(data.frame(name = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
+  pts <- sf::st_as_sf(data.frame(id = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
                       coords = c("x", "y"), crs = 32633)  # UTM zone 33N, metres
   g <- net_frame(data.frame(source = c("a", "b", "c"), target = c("b", "c", "a")), pts,
                 directed = FALSE)

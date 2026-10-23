@@ -33,8 +33,8 @@ test_that("temporal plots draw timelines and measures over time", {
   logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3", "u1"),
                        host = c("h1", "h1", "h2", "h2", "h3", "h1", "h1"),
                        time = c(0, 1, 5, 6, 12, 13, 14))
-  h <- net_temporal(logins)
-  r <- net_rolling(h, degree, width = 5, step = 2)
+  h <- net_temporal(logins, source = "user", target = "host")
+  r <- net_rolling(h, net_degree, width = 5, step = 2)
   on_null_device({
     expect_silent(out <- net_plot_rolling(r))
     expect_identical(out, r)
@@ -47,6 +47,6 @@ test_that("temporal plots draw timelines and measures over time", {
     expect_error(net_plot_rolling(r[0, ]), "no windows")
     dated <- net_temporal(data.frame(source = c("a", "b", "a"), target = c("b", "c", "c"),
                                          time = as.Date(c("2024-01-01", "2024-01-05", "2024-01-09"))))
-    expect_silent(net_plot_rolling(net_rolling(dated, degree, width = 4)))
+    expect_silent(net_plot_rolling(net_rolling(dated, net_degree, width = 4)))
   })
 })

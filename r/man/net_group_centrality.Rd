@@ -97,7 +97,7 @@ University Press. \doi{10.1017/CBO9781139136877}
 # The Jemaah Islamiyah cell behind the 2002 Bali bombings (Koschade 2006):
 # how central is each role group as a whole?
 ji <- net_example("jemaah_islamiyah")
-roles <- split(ji$nodes$name, ji$nodes$role)
+roles <- split(ji$nodes$id, ji$nodes$role)
 for (measure in c("degree", "closeness", "betweenness")) {
   print(sapply(roles, function(members) net_group_centrality(ji, members, measure, threads = 2)))
 }

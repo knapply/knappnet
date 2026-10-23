@@ -74,7 +74,7 @@ cell they ignore. [igraph](https://r.igraph.org/) and [NetworkX](https://network
 multi <- net_frame(data.frame(source = c("a", "a", "b", "c"),
                              target   = c("b", "b", "c", "c")), directed = FALSE)
 multi$edges
-data.frame(node   = multi$nodes$name,
+data.frame(node   = multi$nodes$id,
            igraph = net_degree(multi),
            sna    = net_degree(multi, convention = "sna"))
 ```
@@ -91,7 +91,7 @@ and `c`, through `b` or through `d`:
 ```{r}
 paths <- net_frame(data.frame(source = c("a", "a", "b", "a", "d"),
                              target   = c("b", "b", "c", "d", "c")), directed = FALSE)
-data.frame(node     = paths$nodes$name,
+data.frame(node     = paths$nodes$id,
            igraph   = round(net_betweenness(paths), 3),
            networkx = round(net_betweenness(paths, convention = "networkx"), 3),
            sna      = round(net_betweenness(paths, convention = "sna"), 3))
@@ -115,7 +115,7 @@ instead).
 ```{r}
 g <- net_frame(data.frame(source = c("a", "a", "a", "b"), target = c("b", "c", "d", "c")),
               directed = FALSE)
-data.frame(node             = g$nodes$name,
+data.frame(node             = g$nodes$id,
            betweenness      = net_betweenness(g),
            normalized       = round(net_betweenness(g, normalized = TRUE), 3),
            ucinet_percent   = round(100 * net_betweenness(g, normalized = TRUE,
@@ -132,7 +132,7 @@ form a path, and `d` and `e` are a separate pair:
 split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
 data.frame(
-  node     = split$nodes$name,
+  node     = split$nodes$id,
   igraph   = round(net_closeness(split), 3),
   networkx = round(net_closeness(split, convention = "networkx"), 3),
   sna      = net_closeness(split, convention = "sna"),
@@ -155,7 +155,7 @@ unreachable node simply adds 0, and the tools agree on it up to
 normalization and direction:
 
 ```{r}
-data.frame(node       = split$nodes$name,
+data.frame(node       = split$nodes$id,
            igraph     = net_harmonic(split),
            networkx   = net_harmonic(split, convention = "networkx"),
            sna_ucinet = net_harmonic(split, convention = "sna"))
@@ -174,7 +174,7 @@ and UCINET symmetrizes the network first:
 ```{r}
 d <- net_frame(data.frame(source = c("a", "b", "c", "b", "c"),
                          target   = c("b", "c", "a", "a", "b")))
-data.frame(node     = d$nodes$name,
+data.frame(node     = d$nodes$id,
            igraph   = round(net_eigen(d), 3),
            networkx = round(net_eigen(d, convention = "networkx"), 3),
            sna      = round(net_eigen(d, convention = "sna"), 3),

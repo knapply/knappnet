@@ -66,5 +66,5 @@ g <- net_frame(data.frame(source = c("a", "a", "b", "c"), target = c("b", "c", "
               directed = FALSE)
 net_ego(g, "c")
 net_ego(g, "c", include_ego = FALSE)$nodes
-lengths(lapply(net_egos(g), function(e) e$nodes$name))
+lengths(lapply(net_egos(g), function(e) e$nodes$id))
 }

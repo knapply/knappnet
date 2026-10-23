@@ -39,7 +39,7 @@ Homophily in social networks. \emph{Annual Review of Sociology}, 27, 415-444.
 \code{\link{net_ei_index}}, \code{\link{net_assort_nominal}}
 }
 \examples{
-staff <- data.frame(name = c("ann", "bob", "cat", "dan"),
+staff <- data.frame(id = c("ann", "bob", "cat", "dan"),
                     dept = c("sales", "sales", "eng", "eng"))
 g <- net_frame(data.frame(source = c("ann", "ann", "bob", "cat"),
                          target = c("bob", "cat", "dan", "dan")),

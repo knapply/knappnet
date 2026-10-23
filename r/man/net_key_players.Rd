@@ -148,6 +148,6 @@ net_key_players(ji, k = 1, measure = "distance_reach", method = "exact", threads
 net_key_players(ji, k = 2, measure = "m_reach", m = 1, method = "exact", threads = 2)
 
 # Scoring a set chosen by hand: the command team.
-command <- ji$nodes$name[ji$nodes$role == "command team"]
+command <- ji$nodes$id[ji$nodes$role == "command team"]
 net_key_player_score(ji, command, measure = "fragmentation")
 }

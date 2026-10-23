@@ -68,8 +68,8 @@ test_that("weights are lengths: distances as given, strengths as 1/weight", {
                tolerance = 1e-6)
   expect_equal(dist_xy(net_layout(far, seed = 1, weights_as = "strength"), 1, 2), 0.5,
                tolerance = 1e-6)
-  zero <- net_frame(data.frame(source = 1, target = 2, w = 0), weight = "w", weight_type = "distance")
-  expect_error(net_layout(zero), "positive")
+  expect_error(net_frame(data.frame(source = 1, target = 2, w = 0), weight = "w",
+                         weight_type = "distance"), "positive")
   expect_error(net_layout(three_pieces(), weighted = TRUE), "no weights")
 })
 
@@ -168,13 +168,13 @@ test_that("stress is no worse than igraph's Kamada-Kawai layout on a classic net
 test_that("two-mode layouts use the node type of net_twomode() networks", {
   attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
                          event  = c("gala", "fair", "gala", "fair"))
-  g <- net_twomode(attended)
+  g <- net_twomode(attended, source = "person", target = "event")
   xy <- net_layout(g, "twomode")
-  second <- g$nodes[[g$roles$type]]
+  second <- knappnet:::twomode_types(g) == 1L
+  expect_identical(second, g$nodes$mode == "event")
   expect_true(min(xy[!second, "y"]) > max(xy[second, "y"]))
-  # The type role is used even when the column is not called `type`.
-  expect_identical(g$roles$type, "type")
-  names(g$nodes)[names(g$nodes) == "type"] <- "is_event"
-  g$roles$type <- "is_event"
-  expect_identical(net_layout(g, "twomode"), xy)
+  # The declared modes are used, whatever the mode column is called.
+  names(g$nodes)[names(g$nodes) == "mode"] <- "kind"
+  h <- net_twomode(g$edges, g$nodes, mode = "kind", source = "person", target = "event")
+  expect_identical(net_layout(h, "twomode"), xy)
 })

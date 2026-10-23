@@ -139,5 +139,5 @@ g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c"), w = c(1, 2
               weight = "w", weight_type = "distance", directed = FALSE)
 path <- tempfile(fileext = ".graphml")
 net_write(g, path)
-net_read(path)
+net_read(path, weight_type = "distance")
 }

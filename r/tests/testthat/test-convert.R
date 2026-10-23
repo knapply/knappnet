@@ -78,7 +78,7 @@ test_that("bipartite network objects keep their modes", {
   m <- matrix(c(1, 0, 1, 1, 0, 1), 2, 3)
   net <- network::network(m, bipartite = 2, directed = FALSE)
   g <- as_net_frame(net)
-  expect_equal(g$nodes$mode, c(1L, 1L, 2L, 2L, 2L))
+  expect_equal(g$nodes$mode, c("first", "first", "second", "second", "second"))
   back <- net_to_network(g)
   expect_equal(network::get.network.attribute(back, "bipartite"), 2)
 })

@@ -30,8 +30,8 @@ uses the type of the window times (numbers, dates, or date-times).
 logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3", "u1"),
                      host = c("h1", "h1", "h2", "h2", "h3", "h1", "h1"),
                      time = c(0, 1, 5, 6, 12, 13, 14))
-g <- net_temporal(logins)
-net_plot_rolling(net_rolling(g, degree, width = 5, step = 2), main = "Degree over time")
+g <- net_temporal(logins, source = "user", target = "host")
+net_plot_rolling(net_rolling(g, net_degree, width = 5, step = 2), main = "Degree over time")
 net_plot_rolling(net_rolling(g, function(w) nrow(w$edges), width = 5, step = 2),
              ylab = "contacts in window")
 }

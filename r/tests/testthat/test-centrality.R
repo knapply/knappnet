@@ -62,7 +62,7 @@ test_that("binary networks are reported and analysed as unweighted", {
 
 test_that("weighted networks use their weights by default", {
   g <- triangle()
-  expect_output(print(g), "weighted by `w` \\(distances\\)")
+  expect_output(print(g), "weights: +w \\(distance, 1 to 4\\)")
   expect_equal(net_betweenness(g), c(0, 1, 0))
   expect_equal(net_betweenness(g, weighted = FALSE), c(0, 0, 0))
 })
@@ -84,7 +84,7 @@ test_that("every weighting matches igraph", {
   e$real_w <- round(runif(nrow(e), 0.1, 3), 3)
   nodes <- data.frame(id = 1:40)
   for (col in c("int_w", "real_w")) {
-    g <- net_frame(e, nodes, weight = col)
+    g <- net_frame(e, nodes, weight = col, weight_type = "distance")
     ig <- igraph::graph_from_data_frame(e, vertices = nodes)
     w <- e[[col]]
     expect_equal(net_betweenness(g), unname(igraph::betweenness(ig, weights = w)))

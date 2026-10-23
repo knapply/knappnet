@@ -34,8 +34,11 @@ as_net_frame.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...)
   named <- "name" %in% names(vattrs)
   ids <- if (named) vattrs$name else seq_len(n)
   vattrs$name <- NULL
-  nodes <- data.frame(name = ids, stringsAsFactors = FALSE)
-  for (a in names(vattrs)) nodes[[a]] <- plain_column(vattrs[[a]])
+  # igraph's `name` becomes the identifier column `id`, as in net_frame().
+  nodes <- data.frame(id = ids, stringsAsFactors = FALSE)
+  for (a in names(vattrs)) {
+    nodes[[if (a == "id") "id_attr" else a]] <- plain_column(vattrs[[a]])
+  }
 
   ends <- igraph::ends(x, igraph::E(x), names = FALSE)
   edges <- data.frame(source = ids[ends[, 1]], target = ids[ends[, 2]],
@@ -52,10 +55,10 @@ as_net_frame.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...)
   # network.
   if (is.logical(nodes$type) && !anyNA(nodes$type) && nrow(nodes)) {
     return(net_twomode(edges, nodes, mode = "type", directed = igraph::is_directed(x),
-                       id = "name", weight = weight, weight_type = weight_type, quiet = quiet,
+                       weight = weight, weight_type = weight_type, quiet = quiet,
                        graph = graph))
   }
-  net_frame(edges, nodes, directed = igraph::is_directed(x), id = "name", weight = weight,
+  net_frame(edges, nodes, directed = igraph::is_directed(x), weight = weight,
             weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
@@ -65,9 +68,11 @@ as_net_frame.network <- function(x, weight_type = "strength", quiet = FALSE, ...
   n <- network::network.size(x)
   vnames <- network::network.vertex.names(x)
   ids <- if (length(vnames) == n && !anyDuplicated(vnames)) vnames else seq_len(n)
-  nodes <- data.frame(name = ids, stringsAsFactors = FALSE)
+  # network's `vertex.names` become the identifier column `id`.
+  nodes <- data.frame(id = ids, stringsAsFactors = FALSE)
   for (a in setdiff(network::list.vertex.attributes(x), c("vertex.names", "na"))) {
-    nodes[[a]] <- plain_column(network::get.vertex.attribute(x, a, unlist = FALSE))
+    col <- if (a == "id") "id_attr" else a
+    nodes[[col]] <- plain_column(network::get.vertex.attribute(x, a, unlist = FALSE))
   }
   b <- network::get.network.attribute(x, "bipartite")
   bipartite <- is.numeric(b) && length(b) == 1L && b > 0
@@ -93,10 +98,10 @@ as_net_frame.network <- function(x, weight_type = "strength", quiet = FALSE, ...
   if (!is.null(weight)) check_weight_type(weight, weight_type)
   if (bipartite) {
     return(net_twomode(edges, nodes, mode = "mode", directed = network::is.directed(x),
-                       id = "name", weight = weight, weight_type = weight_type, quiet = quiet,
+                       weight = weight, weight_type = weight_type, quiet = quiet,
                        graph = graph))
   }
-  net_frame(edges, nodes, directed = network::is.directed(x), id = "name", weight = weight,
+  net_frame(edges, nodes, directed = network::is.directed(x), weight = weight,
             weight_type = weight_type, quiet = quiet, graph = graph)
 }
 

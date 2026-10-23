@@ -38,10 +38,10 @@ directions too:
 
 ```{r}
 # Padgett's Florentine marriage ties, with the Pucci family added as an
-# isolate (it married outside this group); see ?example_network.
+# isolate (it married outside this group); see ?net_example.
 ties <- net_example("florentine")$edges
 families <- data.frame(name = sort(unique(c(ties$source, ties$target, "Pucci"))))
-flo <- net_frame(ties, nodes = families, directed = FALSE)
+flo <- net_frame(ties, nodes = families, directed = FALSE, id = "name")
 
 net <- net_to_network(flo)
 network::network.size(net)
@@ -106,7 +106,7 @@ every edge:
 ```{r}
 multi <- net_frame(data.frame(source = c("a", "a", "b", "c"),
                              target   = c("b", "b", "c", "c")), directed = FALSE)
-data.frame(node = multi$nodes$name,
+data.frame(node = multi$nodes$id,
            default = net_degree(multi),
            sna = net_degree(multi, convention = "sna"))
 ```
@@ -184,7 +184,7 @@ whether advice ties follow friendship or department lines:
 
 ```{r}
 staff <- data.frame(
-  name = c("ann", "bob", "cat", "dan", "eve", "fay"),
+  id = c("ann", "bob", "cat", "dan", "eve", "fay"),
   dept = c("sales", "sales", "eng", "eng", "eng", "legal")
 )
 advice <- net_frame(

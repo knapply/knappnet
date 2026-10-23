@@ -1,8 +1,9 @@
 test_that("node set is derived from edges in order of appearance", {
+  # Row by row, the source before the target within a row.
   g <- net_frame(data.frame(source = c("b", "a"), target = c("c", "b")))
-  expect_equal(g$nodes$id, c("b", "a", "c"))
-  expect_equal(g$index$src, c(0L, 1L))
-  expect_equal(g$index$tgt, c(2L, 0L))
+  expect_equal(g$nodes$id, c("b", "c", "a"))
+  expect_equal(g$index$src, c(0L, 2L))
+  expect_equal(g$index$tgt, c(1L, 0L))
   expect_s3_class(g, "net_frame")
   expect_identical(class(g), "net_frame")
 })
@@ -19,14 +20,14 @@ test_that("explicit nodes keep their order and attributes", {
 
 test_that("endpoint columns are named explicitly, never guessed", {
   e <- data.frame(f = "a", t = "b")
-  expect_error(net_frame(e), "Column for `source` not found in `edges`")
-  expect_error(net_frame(e, source = "f"), "Column for `target` not found in `edges`")
-  expect_error(net_frame(e, source = 1L), "Column for `source` not found")
+  expect_error(net_frame(e), "`source` names column `source`, which is not in `edges`")
+  expect_error(net_frame(e, source = "f"), "`target` names column `target`, which is not in `edges`")
+  expect_error(net_frame(e, source = 1L), "`source` must be the name of a column of `edges`")
   g <- net_frame(e, source = "f", target = "t")
   expect_equal(g$nodes$id, c("a", "b"))
   nodes <- data.frame(who = c("a", "b"))
   expect_error(net_frame(e, nodes, source = "f", target = "t"),
-               "Column for `id` not found in `nodes`")
+               "`id` names column `id`, which is not in `nodes`")
   expect_equal(nrow(net_frame(e, nodes, source = "f", target = "t", id = "who")$nodes), 2L)
 })
 
@@ -39,7 +40,7 @@ test_that("every error is reported at once, with the rows", {
                "must be unique")
   expect_error(net_frame(data.frame(source = NA, target = "b")), "must not be missing")
   expect_error(net_frame(data.frame(source = "a", target = "b"), weight = "w"),
-               "Column for `weight` not found")
+               "`weight` names column `w`, which is not in `edges`")
   err <- tryCatch(net_frame(data.frame(source = c("a", NA), target = c("q", "b")),
                             data.frame(id = c("a", "b", "b"))),
                   error = function(e) conditionMessage(e))
@@ -180,7 +181,7 @@ test_that("other arguments of net_frame() are checked", {
   expect_error(net_frame(e, data.frame(id = c("a", "b", "a"))), "repeated: a")
   expect_error(net_frame(e, loops = "no"), "`loops` must be TRUE, FALSE, or NULL")
   expect_error(net_frame(e, mode = "m"), "`mode` names a column of `nodes`")
-  expect_error(net_frame(e, relation = "r"), "Column for `relation` not found")
+  expect_error(net_frame(e, relation = "r"), "`relation` names column `r`, which is not in `edges`")
 })
 
 test_that("modes, relations, and signs are validated and stored", {

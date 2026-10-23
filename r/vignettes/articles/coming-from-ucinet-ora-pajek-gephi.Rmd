@@ -83,7 +83,7 @@ org <- net_frame(
   data.frame(source    = c("ann", "bob", "ann", "bob", "cat"),
              target      = c("bob", "cat", "sales", "sales", "eng"),
              network = c("advice", "advice", "member", "member", "member")),
-  nodes = data.frame(name  = c("ann", "bob", "cat", "sales", "eng"),
+  nodes = data.frame(id    = c("ann", "bob", "cat", "sales", "eng"),
                      class = c("people", "people", "people", "units", "units"),
                      type  = c("Agent", "Agent", "Agent", "Organization", "Organization"))
 )
@@ -105,8 +105,16 @@ advice
 net_betweenness(advice)
 ```
 
-Two-mode networks, such as the people-by-units `member` network, are
-coming soon.
+Two-mode networks, such as the people-by-units `member` network, take
+the node class as their modes:
+
+```{r}
+member <- net_frame(meta$edges[meta$edges$network == "member", ], nodes = meta$nodes,
+                    directed = meta$directed)
+member <- net_as_twomode(member, mode = "class")
+member
+net_incidence(member)
+```
 
 ### Pajek
 
@@ -184,7 +192,7 @@ three of the four other nodes:
 ```{r}
 split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
-data.frame(node   = split$nodes$name,
+data.frame(node   = split$nodes$id,
            ucinet = round(net_closeness(split, convention = "ucinet"), 3),
            igraph = round(net_closeness(split, normalized = TRUE), 3))
 ```
@@ -201,7 +209,7 @@ returns proportions; multiply by 100 to compare with a percentage:
 karate <- as_net_frame(igraph::make_graph("Zachary"))
 n <- nrow(karate$nodes)
 ucinet_style <- data.frame(
-  node          = karate$nodes$name,
+  node          = karate$nodes$id,
   degree        = net_degree(karate, convention = "ucinet"),
   nDegree       = 100 * net_degree(karate, convention = "ucinet") / (n - 1),
   nBetweenness  = 100 * net_betweenness(karate, normalized = TRUE, convention = "ucinet"),
