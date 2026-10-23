@@ -28,25 +28,9 @@ use crate::graph::Graph;
 /// Rows of the undirected simple graph underlying `g`: for every node, its
 /// distinct neighbors other than itself, in increasing order.
 pub(crate) fn simple_rows(g: &Graph) -> Vec<Vec<u32>> {
-    let n = g.node_count();
-    (0..n)
-        .map(|v| {
-            let mut row: Vec<u32> = g
-                .out()
-                .neighbors(v)
-                .iter()
-                .chain(if g.is_directed() {
-                    g.inc().neighbors(v)
-                } else {
-                    &[]
-                })
-                .copied()
-                .filter(|&u| u as usize != v)
-                .collect();
-            row.sort_unstable();
-            row.dedup();
-            row
-        })
+    let s = g.simple_undirected(false);
+    (0..g.node_count())
+        .map(|v| s.neighbors(v).to_vec())
         .collect()
 }
 

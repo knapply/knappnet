@@ -61,7 +61,6 @@
 
 pub mod exact;
 pub mod gof;
-pub mod linalg;
 pub mod logit;
 pub mod mcmle;
 pub mod model;
@@ -75,3 +74,19 @@ pub use model::Model;
 pub use sampler::{simulate, Proposal, Sample, SampleOptions};
 pub use state::{Constraints, NetState};
 pub use terms::{Covariates, DegreeKind, Endpoint, Partners, Term, Terms};
+
+use crate::error::{Error, Result};
+use crate::matrix::Dense;
+
+/// Inverts a symmetric information or covariance matrix of the model
+/// ([`crate::linalg::invert_symmetric`]), naming the usual cause when it
+/// is singular.
+pub(crate) fn invert_symmetric(a: &Dense) -> Result<Dense> {
+    crate::linalg::invert_symmetric(a, 1e-12).ok_or_else(|| {
+        Error::InvalidArgument(
+            "the information matrix is singular; the model may have collinear \
+             statistics or a statistic that is constant over the sample"
+                .into(),
+        )
+    })
+}

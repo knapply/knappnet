@@ -29,14 +29,10 @@ use engine::spatial::{
 };
 use engine::{Error, WeightKind};
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{count, guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// Opaque list of edges with distances.
 pub struct EdgeListHandle(ProximityEdges);
-
-fn count(n: i64, what: &str) -> Result<usize, Error> {
-    usize::try_from(n).map_err(|_| Error::InvalidArgument(format!("negative {what}")))
-}
 
 /// Number (or with `normalized != 0`, proportion of the other nodes) of
 /// nodes within distance `k` of every node: steps, or a length when
@@ -65,7 +61,7 @@ pub unsafe extern "C" fn net_reach(
             weighted: weighted != 0,
             weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let values = reach(g, opts)?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);
@@ -94,7 +90,7 @@ pub unsafe extern "C" fn net_edge_betweenness(
             weighted: weighted != 0,
             weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             ..Default::default()
         };
         let values = edge_betweenness(g, opts)?;
@@ -388,7 +384,7 @@ pub unsafe extern "C" fn net_proximity(
         }
         let n = count(n, "point count")?;
         let pts = Points::new(slice(x, n), slice(y, n), Crs::from_code(crs, radius)?)?;
-        let threads = threads.max(0) as usize;
+        let threads = thread_count(threads);
         let edges = if k > 0 {
             nearest_neighbors(&pts, k as usize, threads)?
         } else {

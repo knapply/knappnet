@@ -15,9 +15,9 @@
 //! method, `stewart2002krylov`), full reorthogonalization by classical
 //! Gram-Schmidt with the DGKS correction (Daniel, Gragg, Kaufman, and
 //! Stewart 1976, `daniel1976reorthogonalization`), and the small projected
-//! eigenproblems solved by the cyclic Jacobi method (Jacobi 1846,
-//! `jacobi1846leichtes`; Golub and Van Loan 2013, `golub2013matrix`,
-//! section 8.5). Each connected component is solved separately, starting
+//! eigenproblems solved by [`crate::linalg::symmetric_eigen`] (Householder
+//! reduction and implicit QL). Each connected component is solved
+//! separately, starting
 //! from the all-ones vector. A Krylov method started from a vector b finds
 //! the component of b in the leading eigenspace, so when that eigenvalue is
 //! repeated the answer is the same as the limit of power iteration from b.
@@ -102,10 +102,13 @@
 
 use crate::error::{Error, Result};
 use crate::graph::{Csr, Graph};
+use crate::linalg;
+use crate::matrix::Dense;
 use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::topography::{components, ComponentKind};
 use crate::parallel;
+use crate::weights::additive_weights;
 
 /// How eigenvector scores are scaled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -321,14 +324,7 @@ pub fn eigenvector_centrality(g: &Graph, opts: EigenvectorOptions) -> Result<Eig
 
 /// Refuses negative edge weights.
 pub(crate) fn check_nonnegative(g: &Graph, what: &str) -> Result<()> {
-    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-        return Err(Error::InvalidArgument(format!(
-            "edge {edge} has weight {}; {what} requires nonnegative weights",
-            w[edge]
-        )));
-    }
-    Ok(())
+    additive_weights(g, true, what).map(|_| ())
 }
 
 /// Power iteration on A' + I for directed matrices, iterated as one block.
@@ -807,17 +803,17 @@ pub(crate) fn symmetric_leading(
             let breakdown = beta <= 1e-12 * before || beta.is_nan();
             let end = breakdown || size == m;
             if end || (size - j0) % CHECK_EVERY == 0 {
-                let (theta, s) = symmetric_eigen(&hm, m, size);
+                let (theta, s) = projected_eigen(&hm, m, size)?;
                 let top = argmax(&theta);
                 let estimate = if breakdown {
                     0.0
                 } else {
-                    beta * s[(size - 1) * size + top].abs()
+                    beta * s.get(size - 1, top).abs()
                 };
                 let limit = stop.tol * (theta[top].max(0.0) + stop.shift);
                 if estimate <= limit.min(threshold) {
                     // Candidate: check the true residual.
-                    let coeffs: Vec<f64> = (0..size).map(|l| s[l * size + top]).collect();
+                    let coeffs: Vec<f64> = (0..size).map(|l| s.get(l, top)).collect();
                     let x = basis.combine(size, &coeffs, &blocks);
                     if matvecs >= stop.max_matvecs {
                         return None;
@@ -865,14 +861,14 @@ pub(crate) fn symmetric_leading(
                     let mut svec = vec![0.0; size * p];
                     for q in 0..p {
                         for l in 0..size {
-                            svec[l * p + q] = s[l * size + idx[q]];
+                            svec[l * p + q] = s.get(l, idx[q]);
                         }
                     }
                     basis.rotate(size, &svec, p, &blocks);
                     hm.iter_mut().for_each(|e| *e = 0.0);
                     for q in 0..p {
                         hm[q * m + q] = theta[idx[q]];
-                        let c = beta * s[(size - 1) * size + idx[q]];
+                        let c = beta * s.get(size - 1, idx[q]);
                         hm[q * m + p] = c;
                         hm[p * m + q] = c;
                     }
@@ -1136,82 +1132,20 @@ impl Basis {
 }
 
 /// Eigenvalues and eigenvectors of the leading `size` by `size` block of the
-/// symmetric matrix `a` (row stride `stride`), by the cyclic Jacobi method.
-/// Eigenvector q is column q of the returned row-major `size` by `size`
-/// matrix.
-pub(crate) fn symmetric_eigen(a: &[f64], stride: usize, size: usize) -> (Vec<f64>, Vec<f64>) {
-    let n = size;
-    let mut b = vec![0.0; n * n];
-    for i in 0..n {
-        for j in 0..n {
+/// symmetric matrix `a` (row stride `stride`), by
+/// [`crate::linalg::symmetric_eigen`]. Eigenvector q is column q of the
+/// returned matrix. `None` if the iteration does not converge.
+fn projected_eigen(a: &[f64], stride: usize, size: usize) -> Option<(Vec<f64>, Dense)> {
+    let mut b = Dense::zeros(size, size);
+    for i in 0..size {
+        for j in 0..size {
             // Symmetrize against rounding in the projected matrix.
-            b[i * n + j] = 0.5 * (a[i * stride + j] + a[j * stride + i]);
+            b.set(i, j, 0.5 * (a[i * stride + j] + a[j * stride + i]));
         }
     }
-    let mut v = vec![0.0; n * n];
-    for i in 0..n {
-        v[i * n + i] = 1.0;
-    }
-    for _sweep in 0..100 {
-        let mut off = 0.0f64;
-        let mut diag = 0.0f64;
-        for p in 0..n {
-            diag += b[p * n + p] * b[p * n + p];
-            for q in (p + 1)..n {
-                off += b[p * n + q] * b[p * n + q];
-            }
-        }
-        // Stop when the off-diagonal part is below rounding level relative
-        // to the whole matrix (Golub and Van Loan 2013, section 8.5.3).
-        if off == 0.0 || off <= 1e-32 * (diag + 2.0 * off) {
-            break;
-        }
-        for p in 0..n {
-            for q in (p + 1)..n {
-                let apq = b[p * n + q];
-                if apq == 0.0 {
-                    continue;
-                }
-                let app = b[p * n + p];
-                let aqq = b[q * n + q];
-                let theta = (aqq - app) / (2.0 * apq);
-                let t = if theta.abs() > 1e150 {
-                    0.5 / theta
-                } else {
-                    let sign = if theta < 0.0 { -1.0 } else { 1.0 };
-                    sign / (theta.abs() + (theta * theta + 1.0).sqrt())
-                };
-                let c = 1.0 / (t * t + 1.0).sqrt();
-                let s = t * c;
-                for k in 0..n {
-                    if k == p || k == q {
-                        continue;
-                    }
-                    let akp = b[k * n + p];
-                    let akq = b[k * n + q];
-                    let np = c * akp - s * akq;
-                    let nq = s * akp + c * akq;
-                    b[k * n + p] = np;
-                    b[p * n + k] = np;
-                    b[k * n + q] = nq;
-                    b[q * n + k] = nq;
-                }
-                b[p * n + p] = app - t * apq;
-                b[q * n + q] = aqq + t * apq;
-                b[p * n + q] = 0.0;
-                b[q * n + p] = 0.0;
-                for k in 0..n {
-                    let vkp = v[k * n + p];
-                    let vkq = v[k * n + q];
-                    v[k * n + p] = c * vkp - s * vkq;
-                    v[k * n + q] = s * vkp + c * vkq;
-                }
-            }
-        }
-    }
-    let values = (0..n).map(|i| b[i * n + i]).collect();
-    (values, v)
+    linalg::symmetric_eigen(&b).ok()
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

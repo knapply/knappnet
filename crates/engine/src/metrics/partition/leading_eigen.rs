@@ -27,15 +27,17 @@
 //! - The final partition does not depend on the order in which groups are
 //!   divided. Its modularity is computed on the input network.
 //! - Eigenvectors come from a dense symmetric eigendecomposition
-//!   (Householder tridiagonalization and implicit QL; see
-//!   `crate::metrics::partition::eigen`), which costs O(n^3) time and
+//!   (Householder tridiagonalization and implicit QL,
+//!   [`crate::linalg::symmetric_eigen`]), which costs O(n^3) time and
 //!   O(n^2) memory for the first division. igraph uses the sparse ARPACK
 //!   solver instead; results agree up to the conventions above.
 //! - A network without edges has modularity NaN and one group per node.
 
-use super::{additive_weights, as_labels, relabel, require_undirected, symmetric_eigen};
+use super::{additive_weights, as_labels, relabel, require_undirected};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::linalg::symmetric_eigen;
+use crate::matrix::Dense;
 use crate::metrics::community::modularity;
 
 /// Largest network for the dense eigendecomposition.
@@ -90,23 +92,23 @@ pub fn leading_eigen(g: &Graph, weighted: bool) -> Result<LeadingEigen> {
             if ng < 2 {
                 continue;
             }
-            let mut b = vec![0.0f64; ng * ng];
+            let mut b = Dense::zeros(ng, ng);
             for (r, &i) in group.iter().enumerate() {
                 for (c, &j) in group.iter().enumerate() {
-                    b[r * ng + c] = a[i * n + j] - k[i] * k[j] / two_m;
+                    b.set(r, c, a[i * n + j] - k[i] * k[j] / two_m);
                 }
             }
             for r in 0..ng {
-                let row_sum: f64 = b[r * ng..(r + 1) * ng].iter().sum();
-                b[r * ng + r] -= row_sum;
+                let row_sum: f64 = b.row(r).iter().sum();
+                b.set(r, r, b.get(r, r) - row_sum);
             }
-            let scale = b.iter().map(|x| x.abs()).sum::<f64>() / ng as f64;
-            let (values, vectors) = symmetric_eigen(&b, ng);
+            let scale = b.as_slice().iter().map(|x| x.abs()).sum::<f64>() / ng as f64;
+            let (values, vectors) = symmetric_eigen(&b)?;
             let lambda = values[ng - 1];
             if lambda.is_nan() || lambda <= 1e-10 * scale {
                 continue;
             }
-            let u: Vec<f64> = (0..ng).map(|r| vectors[r * ng + ng - 1]).collect();
+            let u: Vec<f64> = (0..ng).map(|r| vectors.get(r, ng - 1)).collect();
             let big = (0..ng)
                 .max_by(|&x, &y| u[x].abs().total_cmp(&u[y].abs()).then(y.cmp(&x)))
                 .expect("non-empty");
@@ -117,7 +119,7 @@ pub fn leading_eigen(g: &Graph, weighted: bool) -> Result<LeadingEigen> {
                 .map(|&x| if sign * x > tiny { 1.0 } else { -1.0 })
                 .collect();
             let gain: f64 = (0..ng)
-                .map(|r| s[r] * (0..ng).map(|c| b[r * ng + c] * s[c]).sum::<f64>())
+                .map(|r| s[r] * (0..ng).map(|c| b.get(r, c) * s[c]).sum::<f64>())
                 .sum();
             if gain.is_nan() || gain <= 1e-10 * scale * ng as f64 {
                 continue;

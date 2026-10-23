@@ -11,14 +11,7 @@
  * with NA (NaN) start or end for the default window and Inf max_wait for
  * no limit; traversal is 0 (constant traversal_time) or 1 (durations).
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
+#include "glue.h"
 #define OPTS_LEN 8
 
 static void temporal_finalizer(SEXP ptr) {
@@ -49,15 +42,6 @@ static const double *path_options(SEXP opts) {
     Rf_error("path options must be a double vector of length 8 (internal error)");
   }
   return REAL(opts);
-}
-
-static int64_t *int64_indices(SEXP x) {
-  if (TYPEOF(x) != INTSXP) Rf_error("indices must be an integer vector (internal error)");
-  R_xlen_t n = XLENGTH(x);
-  int64_t *out = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
-  const int *src = INTEGER(x);
-  for (R_xlen_t i = 0; i < n; i++) out[i] = (int64_t)src[i];
-  return out;
 }
 
 /* Copies every column of the result held by `holder` into an R list of
@@ -102,8 +86,8 @@ SEXP C_temporal_new(SEXP n, SEXP src, SEXP tgt, SEXP start, SEXP end, SEXP direc
   if (!Rf_isNull(end) && (TYPEOF(end) != REALSXP || XLENGTH(end) != m)) {
     Rf_error("end times must be a double vector with one value per edge (internal error)");
   }
-  const int64_t *s = int64_indices(src);
-  const int64_t *t = int64_indices(tgt);
+  const int64_t *s = as_int64(src);
+  const int64_t *t = as_int64(tgt);
   SEXP ptr = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(ptr, temporal_finalizer, TRUE);
   TemporalHandle *h = NULL;
@@ -111,10 +95,7 @@ SEXP C_temporal_new(SEXP n, SEXP src, SEXP tgt, SEXP start, SEXP end, SEXP direc
   int status = net_temporal_new((int64_t)Rf_asInteger(n), s, t, REAL(start),
                                 Rf_isNull(end) ? NULL : REAL(end), (int64_t)m,
                                 Rf_asLogical(directed), &h, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(ptr, h);
   UNPROTECT(1);
   return ptr;
@@ -124,21 +105,15 @@ SEXP C_temporal_new(SEXP n, SEXP src, SEXP tgt, SEXP start, SEXP end, SEXP direc
 SEXP C_temporal_paths(SEXP ptr, SEXP criterion, SEXP direction, SEXP roots, SEXP opts) {
   TemporalHandle *h = temporal_from_ptr(ptr);
   const double *o = path_options(opts);
-  const int64_t *r = int64_indices(roots);
+  const int64_t *r = as_int64(roots);
   R_xlen_t k = XLENGTH(roots);
   int64_t n = net_temporal_node_count(h);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, k * (R_xlen_t)n));
   char err[ERR_LEN] = {0};
   int status = net_temporal_paths(h, Rf_asInteger(criterion), Rf_asInteger(direction), r,
-                                  (int64_t)k, o[0], o[1], o[2], o[3], (int32_t)o[4],
-                                  (int32_t)o[5], o[6], (int32_t)o[7], REAL(out), err,
-                                  ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+                                  (int64_t)k, o[0], o[1], o[2], o[3], (int32_t)o[4], (int32_t)o[5],
+                                  o[6], (int32_t)o[7], REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 SEXP C_temporal_reach(SEXP ptr, SEXP direction, SEXP opts) {
@@ -146,15 +121,9 @@ SEXP C_temporal_reach(SEXP ptr, SEXP direction, SEXP opts) {
   const double *o = path_options(opts);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)net_temporal_node_count(h)));
   char err[ERR_LEN] = {0};
-  int status = net_temporal_reach(h, Rf_asInteger(direction), o[0], o[1], o[2], o[3],
-                                  (int32_t)o[4], (int32_t)o[5], o[6], (int32_t)o[7],
-                                  REAL(out), err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_temporal_reach(h, Rf_asInteger(direction), o[0], o[1], o[2], o[3], (int32_t)o[4],
+                                  (int32_t)o[5], o[6], (int32_t)o[7], REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns list(closeness, distances), distances NULL unless requested
@@ -173,15 +142,9 @@ SEXP C_temporal_closeness(SEXP ptr, SEXP opts, SEXP distances) {
     SET_VECTOR_ELT(out, 1, d);
   }
   char err[ERR_LEN] = {0};
-  int status = net_temporal_closeness(h, o[0], o[1], o[2], o[3], (int32_t)o[4],
-                                      (int32_t)o[5], o[6], (int32_t)o[7], REAL(c),
-                                      want ? REAL(d) : NULL, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status = net_temporal_closeness(h, o[0], o[1], o[2], o[3], (int32_t)o[4], (int32_t)o[5], o[6],
+                                      (int32_t)o[7], REAL(c), want ? REAL(d) : NULL, err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns list(offsets, indices) as doubles; indices are 0-based. */
@@ -193,12 +156,9 @@ SEXP C_temporal_windows(SEXP ptr, SEXP from, SEXP to) {
   SEXP holder = PROTECT(new_holder());
   TemporalResult *r = NULL;
   char err[ERR_LEN] = {0};
-  int status = net_temporal_windows(h, REAL(from), REAL(to), (int64_t)XLENGTH(from), &r, err,
-                                    ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status =
+      net_temporal_windows(h, REAL(from), REAL(to), (int64_t)XLENGTH(from), &r, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, r);
   SEXP out = result_columns(holder);
   UNPROTECT(1);
@@ -212,10 +172,7 @@ SEXP C_temporal_active_at(SEXP ptr, SEXP t) {
   TemporalResult *r = NULL;
   char err[ERR_LEN] = {0};
   int status = net_temporal_active_at(h, Rf_asReal(t), &r, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, r);
   SEXP out = result_columns(holder);
   UNPROTECT(1);
@@ -236,10 +193,7 @@ SEXP C_temporal_aggregate(SEXP ptr, SEXP window) {
   TemporalResult *r = NULL;
   char err[ERR_LEN] = {0};
   int status = net_temporal_aggregate(h, windowed, a, b, &r, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, r);
   SEXP out = result_columns(holder);
   UNPROTECT(1);
@@ -253,12 +207,9 @@ SEXP C_temporal_inter_event(SEXP ptr, SEXP scope, SEXP mode) {
   SEXP holder = PROTECT(new_holder());
   TemporalResult *r = NULL;
   char err[ERR_LEN] = {0};
-  int status = net_temporal_inter_event(h, Rf_asInteger(scope), Rf_asInteger(mode), &r, err,
-                                        ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status =
+      net_temporal_inter_event(h, Rf_asInteger(scope), Rf_asInteger(mode), &r, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, r);
   SEXP out = result_columns(holder);
   UNPROTECT(1);
@@ -271,12 +222,9 @@ SEXP C_temporal_burstiness(SEXP ptr, SEXP scope, SEXP mode) {
   SEXP holder = PROTECT(new_holder());
   TemporalResult *r = NULL;
   char err[ERR_LEN] = {0};
-  int status = net_temporal_burstiness(h, Rf_asInteger(scope), Rf_asInteger(mode), &r, err,
-                                       ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status =
+      net_temporal_burstiness(h, Rf_asInteger(scope), Rf_asInteger(mode), &r, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, r);
   SEXP out = result_columns(holder);
   UNPROTECT(1);

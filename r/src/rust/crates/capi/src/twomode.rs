@@ -26,15 +26,10 @@ use engine::metrics::ego::{
 };
 use engine::Error;
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{count, guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// Opaque one-mode projection.
 pub struct ProjectionHandle(Projection);
-
-fn count(value: i64, what: &str) -> Result<usize, Error> {
-    usize::try_from(value)
-        .map_err(|_| Error::InvalidArgument(format!("{what} must not be negative")))
-}
 
 fn egos_from(ptr: *const i64, k: i64) -> Result<Option<Vec<usize>>, Error> {
     if ptr.is_null() {
@@ -80,7 +75,7 @@ fn neighborhood_options(
         order: count(order, "the order")?,
         mode: DegreeMode::from_code(mode)?,
         mindist: count(mindist, "the minimum distance")?,
-        threads: threads.max(0) as usize,
+        threads: thread_count(threads),
     })
 }
 
@@ -197,7 +192,7 @@ pub unsafe extern "C" fn net_ego_summary(
             order: count(order, "the order")?,
             mode: DegreeMode::from_code(mode)?,
             betweenness: !ego_betweenness.is_null(),
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let s = ego_summary(g, opts)?;
         slice_mut(size, n).copy_from_slice(&s.size);
@@ -253,7 +248,7 @@ pub unsafe extern "C" fn net_twomode_centrality(
     guard(err, err_len, || {
         let g = handle(h)?;
         let t = types_from(types, g.node_count())?;
-        let threads = threads.max(0) as usize;
+        let threads = thread_count(threads);
         let values = match measure {
             0 => twomode_degree(g, &t, normalized != 0)?,
             1 => {
@@ -316,7 +311,7 @@ pub unsafe extern "C" fn net_twomode_eigenvector(
         } else {
             10_000
         };
-        let e = twomode_eigenvector(g, &t, tol, max_iter, threads.max(0) as usize)?;
+        let e = twomode_eigenvector(g, &t, tol, max_iter, thread_count(threads))?;
         slice_mut(out, g.node_count()).copy_from_slice(&e.values);
         slice_mut(eigenvalue, 1)[0] = e.eigenvalue;
         slice_mut(connected, 1)[0] = e.connected as i32;
@@ -353,7 +348,7 @@ pub unsafe extern "C" fn net_project(
             second: second != 0,
             weight: ProjectionWeight::from_code(weight)?,
             loops: loops != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let p = project(g, &t, opts)?;
         *out = Box::into_raw(Box::new(ProjectionHandle(p)));

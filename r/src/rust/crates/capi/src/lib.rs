@@ -90,12 +90,30 @@ unsafe fn slice_mut<'a, T>(ptr: *mut T, len: usize) -> &'a mut [T] {
     }
 }
 
+/// A non-negative count argument as `usize`, naming it on failure.
+fn count(value: i64, what: &str) -> Result<usize, Error> {
+    usize::try_from(value)
+        .map_err(|_| Error::InvalidArgument(format!("{what} must be non-negative")))
+}
+
+/// A thread count argument: 0 (or a negative value) means every core.
+fn thread_count(t: i32) -> usize {
+    t.max(0) as usize
+}
+
+/// Dereferences a handle created by this crate, naming it in the error
+/// when it is null.
+///
+/// # Safety
+/// `h` must be null or a live handle created by this crate.
+unsafe fn deref<'a, T>(h: *const T, what: &str) -> Result<&'a T, Error> {
+    h.as_ref()
+        .ok_or_else(|| Error::InvalidArgument(format!("{what} handle is null")))
+}
+
 fn handle<'a>(h: *const GraphHandle) -> Result<&'a Graph, Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument("graph handle is null".into()));
-    }
     // SAFETY: non-null handles are only created by `net_graph_new`.
-    Ok(unsafe { &(*h).0 })
+    unsafe { deref(h, "graph") }.map(|g| &g.0)
 }
 
 /// Builds a graph. `weights` may be null. On success `*out` receives a
@@ -202,7 +220,7 @@ pub unsafe extern "C" fn net_betweenness(
             weighted: weighted != 0,
             weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             ..Default::default()
         };
         let values = betweenness(g, opts)?;
@@ -225,7 +243,7 @@ pub unsafe extern "C" fn net_triad_census(
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        let values = triad_census(g, threads.max(0) as usize);
+        let values = triad_census(g, thread_count(threads));
         slice_mut(out, 16).copy_from_slice(&values);
         Ok(())
     })

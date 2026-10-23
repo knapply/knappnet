@@ -75,7 +75,6 @@ pub mod data;
 pub mod effects;
 pub mod estimate;
 pub mod gof;
-pub mod linalg;
 pub mod network;
 pub mod simulate;
 

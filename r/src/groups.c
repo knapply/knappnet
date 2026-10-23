@@ -6,39 +6,7 @@
  * glue.c, R errors are raised only after the engine call has returned and
  * every engine-owned object has been released.
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <math.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
-
-static GraphHandle *groups_graph(SEXP ptr) {
-  if (TYPEOF(ptr) != EXTPTRSXP || R_ExternalPtrAddr(ptr) == NULL) {
-    Rf_error("invalid network handle (internal error)");
-  }
-  return (GraphHandle *)R_ExternalPtrAddr(ptr);
-}
-
-/* A seed is a whole number in [0, 2^53], passed as a double. */
-static uint64_t groups_seed(SEXP seed) {
-  double s = Rf_asReal(seed);
-  if (!R_FINITE(s) || s < 0 || s > 9007199254740992.0 || floor(s) != s) {
-    Rf_error("seed must be a whole number between 0 and 2^53");
-  }
-  return (uint64_t)s;
-}
-
-static int64_t groups_count(SEXP value, const char *what) {
-  double v = Rf_asReal(value);
-  if (!R_FINITE(v) || v < 0 || floor(v) != v) {
-    Rf_error("%s must be a non-negative whole number (internal error)", what);
-  }
-  return (int64_t)v;
-}
+#include "glue.h"
 
 /* Copies the 0-based labels in memb[0..n) into a 1-based integer vector. */
 static SEXP labels_1based(const int64_t *memb, R_xlen_t n) {
@@ -70,7 +38,7 @@ static SEXP node_sets_to_list(SEXP holder) {
   char err[ERR_LEN] = {0};
   int status = net_node_sets_copy(sets, offsets, members, err, ERR_LEN);
   node_sets_finalizer(holder);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, (R_xlen_t)count));
   for (int64_t i = 0; i < count; i++) {
@@ -86,16 +54,13 @@ static SEXP node_sets_to_list(SEXP holder) {
 }
 
 SEXP C_bicomponents(SEXP ptr) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   SEXP holder = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(holder, node_sets_finalizer, TRUE);
   char err[ERR_LEN] = {0};
   NodeSetsHandle *sets = NULL;
   int status = net_bicomponents(h, &sets, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, sets);
   SEXP out = node_sets_to_list(holder);
   UNPROTECT(1);
@@ -103,17 +68,14 @@ SEXP C_bicomponents(SEXP ptr) {
 }
 
 SEXP C_n_cliques(SEXP ptr, SEXP order, SEXP min_size, SEXP clans, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   SEXP holder = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(holder, node_sets_finalizer, TRUE);
   char err[ERR_LEN] = {0};
   NodeSetsHandle *sets = NULL;
-  int status = net_n_cliques(h, groups_count(order, "n"), groups_count(min_size, "min_size"),
+  int status = net_n_cliques(h, as_count(order, "n"), as_count(min_size, "min_size"),
                              Rf_asLogical(clans), Rf_asInteger(threads), &sets, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, sets);
   SEXP out = node_sets_to_list(holder);
   UNPROTECT(1);
@@ -121,17 +83,14 @@ SEXP C_n_cliques(SEXP ptr, SEXP order, SEXP min_size, SEXP clans, SEXP threads) 
 }
 
 SEXP C_k_plexes(SEXP ptr, SEXP k, SEXP min_size, SEXP max_steps, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   SEXP holder = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
   R_RegisterCFinalizerEx(holder, node_sets_finalizer, TRUE);
   char err[ERR_LEN] = {0};
   NodeSetsHandle *sets = NULL;
-  int status = net_k_plexes(h, groups_count(k, "k"), groups_count(min_size, "min_size"),
+  int status = net_k_plexes(h, as_count(k, "k"), as_count(min_size, "min_size"),
                             Rf_asReal(max_steps), Rf_asInteger(threads), &sets, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, sets);
   SEXP out = node_sets_to_list(holder);
   UNPROTECT(1);
@@ -140,35 +99,29 @@ SEXP C_k_plexes(SEXP ptr, SEXP k, SEXP min_size, SEXP max_steps, SEXP threads) {
 
 /* An n-by-n matrix of pairwise edge connectivities. */
 SEXP C_lambda_connectivity(SEXP ptr) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   SEXP out = PROTECT(Rf_allocMatrix(REALSXP, (int)n, (int)n));
   char err[ERR_LEN] = {0};
   int status = net_lambda_connectivity(h, REAL(out), err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  return vector_result(status, out, err);
 }
 
 /* ---- Factions and partitions ------------------------------------------- */
 
 /* Returns list(membership (1-based), errors, correlation). */
-SEXP C_factions(SEXP ptr, SEXP k, SEXP fit, SEXP starts, SEXP max_stall, SEXP tenure,
-                SEXP seed, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
-  uint64_t s = groups_seed(seed);
+SEXP C_factions(SEXP ptr, SEXP k, SEXP fit, SEXP starts, SEXP max_stall, SEXP tenure, SEXP seed,
+                SEXP threads) {
+  GraphHandle *h = graph_from_ptr(ptr);
+  uint64_t s = as_seed(seed);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int64_t *memb = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
   char err[ERR_LEN] = {0};
   double errors = 0.0, correlation = 0.0;
-  int status = net_factions(h, groups_count(k, "k"), Rf_asInteger(fit),
-                            groups_count(starts, "starts"), groups_count(max_stall, "max_stall"),
-                            groups_count(tenure, "tenure"), s, Rf_asInteger(threads), memb,
-                            &errors, &correlation, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status = net_factions(h, as_count(k, "k"), Rf_asInteger(fit), as_count(starts, "starts"),
+                            as_count(max_stall, "max_stall"), as_count(tenure, "tenure"), s,
+                            Rf_asInteger(threads), memb, &errors, &correlation, err, ERR_LEN);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, labels_1based(memb, n));
@@ -181,7 +134,7 @@ SEXP C_factions(SEXP ptr, SEXP k, SEXP fit, SEXP starts, SEXP max_stall, SEXP te
 /* Returns list(membership, modularity, removed_from, removed_to, path),
  * the removed edges as 1-based node positions. */
 SEXP C_girvan_newman(SEXP ptr, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   R_xlen_t m = (R_xlen_t)net_graph_edge_count(h);
   int64_t *memb = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
@@ -191,9 +144,9 @@ SEXP C_girvan_newman(SEXP ptr, SEXP threads) {
   char err[ERR_LEN] = {0};
   double q = 0.0;
   int64_t removed = 0;
-  int status = net_girvan_newman(h, Rf_asInteger(threads), memb, &q, from, to, path, &removed,
-                                 err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status =
+      net_girvan_newman(h, Rf_asInteger(threads), memb, &q, from, to, path, &removed, err, ERR_LEN);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 5));
   SET_VECTOR_ELT(out, 0, labels_1based(memb, n));
@@ -209,14 +162,14 @@ SEXP C_girvan_newman(SEXP ptr, SEXP threads) {
 
 /* Returns list(membership, modularity, splits). */
 SEXP C_leading_eigen(SEXP ptr, SEXP weighted) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int64_t *memb = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
   char err[ERR_LEN] = {0};
   double q = 0.0;
   int64_t splits = 0;
   int status = net_leading_eigen(h, Rf_asLogical(weighted), memb, &q, &splits, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, labels_1based(memb, n));
@@ -228,14 +181,14 @@ SEXP C_leading_eigen(SEXP ptr, SEXP weighted) {
 
 /* Returns list(membership, modularity). */
 SEXP C_fast_greedy(SEXP ptr, SEXP resolution, SEXP weighted) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int64_t *memb = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
   char err[ERR_LEN] = {0};
   double q = 0.0;
-  int status = net_fast_greedy(h, Rf_asReal(resolution), Rf_asLogical(weighted), memb, &q, err,
-                               ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status =
+      net_fast_greedy(h, Rf_asReal(resolution), Rf_asLogical(weighted), memb, &q, err, ERR_LEN);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 2));
   SET_VECTOR_ELT(out, 0, labels_1based(memb, n));
@@ -247,20 +200,19 @@ SEXP C_fast_greedy(SEXP ptr, SEXP resolution, SEXP weighted) {
 /* ---- Topography --------------------------------------------------------- */
 
 /* Returns list(core (logical), correlation). */
-SEXP C_core_periphery(SEXP ptr, SEXP links, SEXP weighted, SEXP starts, SEXP max_stall,
-                      SEXP tenure, SEXP seed, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
-  uint64_t s = groups_seed(seed);
+SEXP C_core_periphery(SEXP ptr, SEXP links, SEXP weighted, SEXP starts, SEXP max_stall, SEXP tenure,
+                      SEXP seed, SEXP threads) {
+  GraphHandle *h = graph_from_ptr(ptr);
+  uint64_t s = as_seed(seed);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int32_t *core = (int32_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int32_t));
   char err[ERR_LEN] = {0};
   double correlation = 0.0;
-  int status = net_core_periphery(h, Rf_asInteger(links), Rf_asLogical(weighted),
-                                  groups_count(starts, "starts"),
-                                  groups_count(max_stall, "max_stall"),
-                                  groups_count(tenure, "tenure"), s, Rf_asInteger(threads), core,
-                                  &correlation, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status =
+      net_core_periphery(h, Rf_asInteger(links), Rf_asLogical(weighted), as_count(starts, "starts"),
+                         as_count(max_stall, "max_stall"), as_count(tenure, "tenure"), s,
+                         Rf_asInteger(threads), core, &correlation, err, ERR_LEN);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 2));
   SEXP c = PROTECT(Rf_allocVector(LGLSXP, n));
@@ -275,22 +227,18 @@ SEXP C_core_periphery(SEXP ptr, SEXP links, SEXP weighted, SEXP starts, SEXP max
  * 1 = correlation. */
 SEXP C_core_periphery_continuous(SEXP ptr, SEXP fit, SEXP weighted, SEXP max_iter, SEXP tol,
                                  SEXP starts, SEXP seed, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
-  uint64_t s = groups_seed(seed);
+  GraphHandle *h = graph_from_ptr(ptr);
+  uint64_t s = as_seed(seed);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   SEXP coreness = PROTECT(Rf_allocVector(REALSXP, n));
   char err[ERR_LEN] = {0};
   double correlation = 0.0, residual = 0.0;
   int64_t iterations = 0;
-  int status = net_core_periphery_continuous(h, Rf_asInteger(fit), Rf_asLogical(weighted),
-                                             groups_count(max_iter, "max_iter"), Rf_asReal(tol),
-                                             groups_count(starts, "starts"), s,
-                                             Rf_asInteger(threads), REAL(coreness), &correlation,
-                                             &residual, &iterations, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status = net_core_periphery_continuous(
+      h, Rf_asInteger(fit), Rf_asLogical(weighted), as_count(max_iter, "max_iter"), Rf_asReal(tol),
+      as_count(starts, "starts"), s, Rf_asInteger(threads), REAL(coreness), &correlation, &residual,
+      &iterations, err, ERR_LEN);
+  check_status(status, err, 1);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 4));
   SET_VECTOR_ELT(out, 0, coreness);
   SET_VECTOR_ELT(out, 1, Rf_ScalarReal(correlation));
@@ -301,31 +249,26 @@ SEXP C_core_periphery_continuous(SEXP ptr, SEXP fit, SEXP weighted, SEXP max_ite
 }
 
 SEXP C_compactness(SEXP ptr, SEXP mode, SEXP weighted, SEXP weights_as, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   char err[ERR_LEN] = {0};
   double value = 0.0;
-  int status = net_compactness(h, Rf_asInteger(mode), Rf_asLogical(weighted),
-                               Rf_asInteger(weights_as), Rf_asInteger(threads), &value, err,
-                               ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status =
+      net_compactness(h, Rf_asInteger(mode), Rf_asLogical(weighted), Rf_asInteger(weights_as),
+                      Rf_asInteger(threads), &value, err, ERR_LEN);
+  check_status(status, err, 0);
   return Rf_ScalarReal(value);
 }
 
 /* Five values: clustering, mean distance, random clustering, random mean
  * distance, quotient. */
 SEXP C_small_world(SEXP ptr, SEXP local, SEXP reps, SEXP seed, SEXP threads) {
-  GraphHandle *h = groups_graph(ptr);
-  uint64_t s = groups_seed(seed);
+  GraphHandle *h = graph_from_ptr(ptr);
+  uint64_t s = as_seed(seed);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, 5));
   char err[ERR_LEN] = {0};
-  int status = net_small_world(h, Rf_asLogical(local), groups_count(reps, "reps"), s,
+  int status = net_small_world(h, Rf_asLogical(local), as_count(reps, "reps"), s,
                                Rf_asInteger(threads), REAL(out), err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  return vector_result(status, out, err);
 }
 
 /* ---- Random graphs ------------------------------------------------------ */
@@ -350,7 +293,7 @@ static SEXP edge_lists_to_list(SEXP holder) {
   char err[ERR_LEN] = {0};
   int status = net_edge_lists_copy(lists, offsets, from, to, err, ERR_LEN);
   edge_lists_finalizer(holder);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, (R_xlen_t)count));
   for (int64_t i = 0; i < count; i++) {
@@ -368,10 +311,7 @@ static SEXP edge_lists_to_list(SEXP holder) {
 /* Shared tail of every generator: the engine call has written `lists`
  * (or failed with `status`). */
 static SEXP finish_edge_lists(SEXP holder, EdgeListsHandle *lists, int status, const char *err) {
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, lists);
   SEXP out = edge_lists_to_list(holder);
   UNPROTECT(1);
@@ -384,36 +324,33 @@ static SEXP new_holder(void) {
   return holder; /* still protected; finish_edge_lists unprotects it */
 }
 
-SEXP C_random_gnp(SEXP n, SEXP p, SEXP directed, SEXP loops, SEXP reps, SEXP seed,
-                  SEXP threads) {
-  uint64_t s = groups_seed(seed);
+SEXP C_random_gnp(SEXP n, SEXP p, SEXP directed, SEXP loops, SEXP reps, SEXP seed, SEXP threads) {
+  uint64_t s = as_seed(seed);
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_gnp(groups_count(n, "n"), Rf_asReal(p), Rf_asLogical(directed),
-                              Rf_asLogical(loops), groups_count(reps, "reps"), s,
-                              Rf_asInteger(threads), &lists, err, ERR_LEN);
+  int status =
+      net_random_gnp(as_count(n, "n"), Rf_asReal(p), Rf_asLogical(directed), Rf_asLogical(loops),
+                     as_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
-SEXP C_random_gnm(SEXP n, SEXP m, SEXP directed, SEXP loops, SEXP reps, SEXP seed,
-                  SEXP threads) {
-  uint64_t s = groups_seed(seed);
+SEXP C_random_gnm(SEXP n, SEXP m, SEXP directed, SEXP loops, SEXP reps, SEXP seed, SEXP threads) {
+  uint64_t s = as_seed(seed);
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_gnm(groups_count(n, "n"), groups_count(m, "m"),
-                              Rf_asLogical(directed), Rf_asLogical(loops),
-                              groups_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err,
-                              ERR_LEN);
+  int status = net_random_gnm(as_count(n, "n"), as_count(m, "m"), Rf_asLogical(directed),
+                              Rf_asLogical(loops), as_count(reps, "reps"), s, Rf_asInteger(threads),
+                              &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
 /* degrees: integer vector of n degrees (or out-degrees); in_degrees: NULL
  * or n in-degrees. */
-SEXP C_random_configuration(SEXP degrees, SEXP in_degrees, SEXP simple, SEXP max_tries,
-                            SEXP reps, SEXP seed, SEXP threads) {
-  uint64_t s = groups_seed(seed);
+SEXP C_random_configuration(SEXP degrees, SEXP in_degrees, SEXP simple, SEXP max_tries, SEXP reps,
+                            SEXP seed, SEXP threads) {
+  uint64_t s = as_seed(seed);
   if (TYPEOF(degrees) != INTSXP) Rf_error("degrees must be integer (internal error)");
   R_xlen_t n = XLENGTH(degrees);
   int64_t *d = (int64_t *)R_alloc(n > 0 ? (size_t)n : 1, sizeof(int64_t));
@@ -440,42 +377,40 @@ SEXP C_random_configuration(SEXP degrees, SEXP in_degrees, SEXP simple, SEXP max
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
   int status = net_random_configuration((int64_t)n, d, din, Rf_asLogical(simple),
-                                        groups_count(max_tries, "max_tries"),
-                                        groups_count(reps, "reps"), s, Rf_asInteger(threads),
-                                        &lists, err, ERR_LEN);
+                                        as_count(max_tries, "max_tries"), as_count(reps, "reps"), s,
+                                        Rf_asInteger(threads), &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
 SEXP C_random_uman(SEXP n, SEXP mutual, SEXP asym, SEXP reps, SEXP seed, SEXP threads) {
-  uint64_t s = groups_seed(seed);
+  uint64_t s = as_seed(seed);
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_uman(groups_count(n, "n"), groups_count(mutual, "mutual"),
-                               groups_count(asym, "asym"), groups_count(reps, "reps"), s,
-                               Rf_asInteger(threads), &lists, err, ERR_LEN);
+  int status =
+      net_random_uman(as_count(n, "n"), as_count(mutual, "mutual"), as_count(asym, "asym"),
+                      as_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
 SEXP C_random_small_world(SEXP n, SEXP k, SEXP p, SEXP reps, SEXP seed, SEXP threads) {
-  uint64_t s = groups_seed(seed);
+  uint64_t s = as_seed(seed);
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_small_world(groups_count(n, "n"), groups_count(k, "k"), Rf_asReal(p),
-                                      groups_count(reps, "reps"), s, Rf_asInteger(threads),
-                                      &lists, err, ERR_LEN);
+  int status = net_random_small_world(as_count(n, "n"), as_count(k, "k"), Rf_asReal(p),
+                                      as_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err,
+                                      ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
 SEXP C_random_preferential(SEXP n, SEXP m, SEXP reps, SEXP seed, SEXP threads) {
-  uint64_t s = groups_seed(seed);
+  uint64_t s = as_seed(seed);
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_preferential(groups_count(n, "n"), groups_count(m, "m"),
-                                       groups_count(reps, "reps"), s, Rf_asInteger(threads),
-                                       &lists, err, ERR_LEN);
+  int status = net_random_preferential(as_count(n, "n"), as_count(m, "m"), as_count(reps, "reps"),
+                                       s, Rf_asInteger(threads), &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }
 
@@ -483,7 +418,7 @@ SEXP C_random_preferential(SEXP n, SEXP m, SEXP reps, SEXP seed, SEXP threads) {
  * (column-major, as R stores it; probs[r, s] is read as row r, column s). */
 SEXP C_random_sbm(SEXP sizes, SEXP probs, SEXP directed, SEXP loops, SEXP reps, SEXP seed,
                   SEXP threads) {
-  uint64_t s = groups_seed(seed);
+  uint64_t s = as_seed(seed);
   if (TYPEOF(sizes) != INTSXP) Rf_error("sizes must be integer (internal error)");
   if (TYPEOF(probs) != REALSXP) Rf_error("probs must be double (internal error)");
   R_xlen_t k = XLENGTH(sizes);
@@ -503,8 +438,8 @@ SEXP C_random_sbm(SEXP sizes, SEXP probs, SEXP directed, SEXP loops, SEXP reps, 
   SEXP holder = new_holder();
   char err[ERR_LEN] = {0};
   EdgeListsHandle *lists = NULL;
-  int status = net_random_sbm((int64_t)k, sz, pr, Rf_asLogical(directed), Rf_asLogical(loops),
-                              groups_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err,
-                              ERR_LEN);
+  int status =
+      net_random_sbm((int64_t)k, sz, pr, Rf_asLogical(directed), Rf_asLogical(loops),
+                     as_count(reps, "reps"), s, Rf_asInteger(threads), &lists, err, ERR_LEN);
   return finish_edge_lists(holder, lists, status, err);
 }

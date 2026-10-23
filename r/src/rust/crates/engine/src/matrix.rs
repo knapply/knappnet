@@ -21,6 +21,15 @@ impl Dense {
         }
     }
 
+    /// The n-by-n identity matrix.
+    pub fn identity(n: usize) -> Dense {
+        let mut m = Dense::zeros(n, n);
+        for i in 0..n {
+            m.data[i * n + i] = 1.0;
+        }
+        m
+    }
+
     /// Wraps row-major data, checking its length.
     pub fn from_row_major(rows: usize, cols: usize, data: Vec<f64>) -> Result<Dense> {
         if data.len() != rows * cols {
@@ -110,5 +119,6 @@ mod tests {
         assert_eq!(m.get(1, 2), 6.0);
         assert_eq!(m.to_col_major(), vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0]);
         assert!(Dense::from_row_major(2, 2, vec![1.0]).is_err());
+        assert_eq!(Dense::identity(2).as_slice(), &[1.0, 0.0, 0.0, 1.0]);
     }
 }

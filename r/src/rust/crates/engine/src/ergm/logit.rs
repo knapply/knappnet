@@ -24,7 +24,8 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::matrix::Dense;
 
-use super::linalg::{cholesky_inverse, invert_symmetric, solve_spd};
+use super::invert_symmetric;
+use crate::linalg::{cholesky_inverse, matvec, solve_spd};
 
 /// Settings for the logistic fit.
 #[derive(Debug, Clone, Copy)]
@@ -195,7 +196,7 @@ pub fn logit(x: &Dense, y: &[f64], w: Option<&[f64]>, opts: LogitOptions) -> Res
                             .into(),
                     )
                 })?;
-                super::linalg::matvec(&inv, &rhs)
+                matvec(&inv, &rhs)
             }
         };
         let new_eta: Vec<f64> = (0..m)
