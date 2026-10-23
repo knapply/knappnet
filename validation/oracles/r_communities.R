@@ -222,8 +222,8 @@ writeLines(sprintf("igraph %s", utils::packageVersion("igraph")),
 cat(sprintf("Wrote %d igraph golden files for communities.\n", count))
 
 # DIAGNOSTIC (temporary)
-for spec in list(c("weighted_und", "4"), c("twomode_weighted", "2"), c("twomode_weighted", "4"),
-                 c("gnp_und_dense", "4")) {
+for (spec in list(c("weighted_und", "4"), c("twomode_weighted", "2"), c("twomode_weighted", "4"),
+                  c("gnp_und_dense", "4"))) {
   d <- file.path(fixtures_dir, spec[1])
   meta <- read_meta(file.path(d, "meta.json"))
   e <- utils::read.csv(file.path(d, "edges.csv"))
