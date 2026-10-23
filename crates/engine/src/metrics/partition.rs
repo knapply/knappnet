@@ -14,6 +14,7 @@
 pub mod compare;
 pub mod dendrogram;
 pub mod fast_greedy;
+pub mod fluid;
 pub mod girvan_newman;
 pub mod infomap;
 pub mod label_propagation;
@@ -27,6 +28,7 @@ pub use dendrogram::{
     merges_from_edge_removals, merges_from_node_pairs,
 };
 pub use fast_greedy::{fast_greedy, FastGreedy};
+pub use fluid::fluid_communities;
 pub use girvan_newman::{girvan_newman, GirvanNewman};
 pub use infomap::{infomap, map_equation, Infomap};
 pub use label_propagation::{label_propagation, LabelPropagationOptions, LpaMode, LpaVariant};
