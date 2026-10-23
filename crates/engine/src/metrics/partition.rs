@@ -1,13 +1,17 @@
 //! Community partitions: Girvan-Newman divisive clustering, Newman's
-//! leading eigenvector method, and Clauset-Newman-Moore greedy
-//! agglomeration ("fast greedy").
+//! leading eigenvector method, Clauset-Newman-Moore greedy agglomeration
+//! ("fast greedy"), Walktrap, label propagation, Infomap, Leiden,
+//! spinglass, exact maximum modularity, fluid communities, and Voronoi
+//! communities; dendrograms of hierarchical methods and their cuts; and
+//! measures comparing two partitions.
 //!
 //! Each method lives in its own submodule, which cites its sources and
 //! states its conventions. Shared conventions:
-//! - Undirected networks only, as igraph's `cluster_edge_betweenness()`
-//!   (for modularity), `cluster_leading_eigen()`, and
-//!   `cluster_fast_greedy()` require; directed networks are rejected rather
-//!   than silently symmetrized.
+//! - Girvan-Newman (for modularity), the leading eigenvector method, fast
+//!   greedy, Walktrap, Leiden, and fluid communities take undirected
+//!   networks only, as the corresponding igraph functions require;
+//!   directed networks are rejected rather than silently symmetrized. The
+//!   other methods state how they treat direction.
 //! - Modularity is that of [`crate::metrics::community::modularity`].
 //! - Groups are labelled 0, 1, ... in order of their first node.
 
@@ -22,6 +26,7 @@ pub mod leading_eigen;
 pub mod leiden;
 pub mod optimal;
 pub mod spinglass;
+pub mod voronoi;
 pub mod walktrap;
 
 pub use compare::{compare_partitions, split_join_distance, CompareMethod};
@@ -38,6 +43,7 @@ pub use leading_eigen::{leading_eigen, LeadingEigen};
 pub use leiden::{leiden, Leiden, LeidenObjective, LeidenOptions};
 pub use optimal::{optimal_modularity, OptimalModularity};
 pub use spinglass::{spinglass, Spinglass, SpinglassNull, SpinglassOptions};
+pub use voronoi::{voronoi, Voronoi, VoronoiMode};
 pub use walktrap::{walktrap, Walktrap};
 
 use crate::error::{Error, Result};
