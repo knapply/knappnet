@@ -1,0 +1,494 @@
+# Reach, proximity prestige, edge betweenness, information centrality,
+# bridging, Burt's hierarchy, eigenvector centralization, regular and
+# automorphic equivalence, blockmodels, classical scaling, and geospatial
+# networks. Format as in ../manifest.yaml.
+#
+# Undefined values (NaN) are written as empty lines by the engine runner
+# (validation/bindings/roles.py) and by every oracle, except inside a block
+# density row, where an undefined density is -1 (densities are never
+# negative). Proximity prestige runs through the `closeness` runner of
+# bindings/topography.py, which writes NaN as -1; the measure is never NaN.
+#
+# The fixtures carry no partitions or coordinates, so the oracles and the
+# runner derive them from the fixture by shared rules (see the docstring of
+# bindings/roles.py):
+#   partition: mod3 | mod2   node v is in block v %% 3 (or v %% 2)
+#   crs: lonlat | planar     hashed longitude/latitude, or planar x, y
+#   classical scaling        hop distances on the undirected simple reading,
+#                            unreachable pairs = longest finite distance + 1
+#
+# Oracle names: `definition` is roles_definition_oracle.py, `networkx`
+# roles_networkx_oracle.py, `igraph` and `sna` r_roles.R, and `stats` base
+# R's stats::cmdscale(), also run by r_roles.R.
+
+# ---- Reach -------------------------------------------------------------
+
+reach_2:
+  engine: {fn: reach, k: 2, mode: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes at exact distance <= 2, Floyd-Warshall (roles_definition_oracle.py)"
+    networkx:
+      call: "len(nx.single_source_shortest_path_length(G, v, cutoff = 2)) - 1"
+    igraph:
+      call: "igraph::ego_size(g, order = 2, mode = 'out') - 1"
+
+reach_2_in:
+  engine: {fn: reach, k: 2, mode: in}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes at exact distance <= 2 from the node, over reversed arcs"
+    networkx:
+      call: "single_source_shortest_path_length on G.reverse(), cutoff = 2"
+    igraph:
+      call: "igraph::ego_size(g, order = 2, mode = 'in') - 1"
+
+reach_2_all:
+  engine: {fn: reach, k: 2, mode: all}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes within 2 steps with direction ignored"
+    networkx:
+      call: "single_source_shortest_path_length on G.to_undirected(), cutoff = 2"
+    igraph:
+      call: "igraph::ego_size(g, order = 2, mode = 'all') - 1"
+
+reach_inf:
+  engine: {fn: reach, k: inf, mode: out}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "number of other nodes reachable (equals reachability)"
+    networkx:
+      call: "len(nx.single_source_shortest_path_length(G, v)) - 1"
+    igraph:
+      call: "igraph::ego_size(g, order = vcount(g), mode = 'out') - 1"
+
+reach_2_normalized:
+  engine: {fn: reach, k: 2, mode: out, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "reach / (n - 1); undefined for one node"
+
+reach_weighted:
+  engine: {fn: reach, k: 3, mode: out, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes whose exact (rational) weighted distance is <= 3"
+    networkx:
+      call: "nx.single_source_dijkstra_path_length(G, v, weight = 'weight'), lengths <= 3"
+
+reach_weighted_strength:
+  engine: {fn: reach, k: 1.5, mode: out, weighted: true, weights_as: strength}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "as reach_weighted with lengths 1/weight and k = 1.5"
+    networkx:
+      call: "Dijkstra lengths with edge length 1/weight, <= 1.5"
+
+# ---- Proximity prestige ---------------------------------------------------
+
+proximity_prestige:
+  engine: {fn: closeness, mode: in, normalized: true, unreachable: wasserman_faust}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "(|I_i| / (n - 1)) / (mean exact distance from the influence domain I_i), Lin (1976); 0 for an empty domain"
+    networkx:
+      call: "nx.closeness_centrality(G) (paths to the node, wf_improved = True)"
+
+proximity_prestige_weighted:
+  engine: {fn: closeness, mode: in, weighted: true, normalized: true, unreachable: wasserman_faust}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "proximity prestige on exact weighted distances"
+    networkx:
+      call: "nx.closeness_centrality(G, distance = 'weight')"
+
+# ---- Edge betweenness -----------------------------------------------------
+
+edge_betweenness:
+  engine: {fn: edge_betweenness, weighted: false, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "sum over pairs of sigma_su sigma_vt / sigma_st for arcs (u, v) on shortest paths, exact arithmetic"
+    networkx:
+      call: "nx.edge_betweenness_centrality(MultiGraph/MultiDiGraph, normalized = False)"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX counts shortest paths per neighbour, not per parallel edge,
+        and then credits every parallel edge with the whole amount, so the
+        values of parallel edges add up to more than the paths they carry.
+        This engine (like the exact-arithmetic definition oracle) treats
+        parallel edges as distinct shortest paths that share the credit.
+    igraph:
+      call: "igraph::edge_betweenness(g, directed, weights = NA)"
+
+edge_betweenness_normalized:
+  engine: {fn: edge_betweenness, weighted: false, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "edge betweenness / (n (n - 1)), or / (n (n - 1) / 2) if undirected; undefined for n < 2"
+    networkx:
+      call: "nx.edge_betweenness_centrality(G, normalized = True)"
+      differs_when: [multi_edges]
+      reason: "As for edge_betweenness: NetworkX over-credits parallel edges."
+      undefined_on: [single_node]
+      undefined_reason: "NetworkX leaves a one-node graph's values unscaled (0) where the engine reports NaN."
+
+edge_betweenness_weighted:
+  engine: {fn: edge_betweenness, weighted: true, normalized: false}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "as edge_betweenness with exact rational weighted path lengths"
+    networkx:
+      call: "nx.edge_betweenness_centrality(G, weight = 'weight', normalized = False)"
+    igraph:
+      call: "igraph::edge_betweenness(g, directed, weights = E(g)$weight)"
+
+edge_betweenness_weighted_strength:
+  engine: {fn: edge_betweenness, weighted: true, weights_as: strength, normalized: false}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "as edge_betweenness with lengths 1/weight"
+    networkx:
+      call: "nx.edge_betweenness_centrality(G, weight = 'weight') with weight = 1/strength"
+      differs_when: [integer_weights]
+      reason: >-
+        Reciprocals of whole-number weights often give path lengths that tie
+        exactly (1/3 + 1/6 = 1/2) but differ in the last bit of floating
+        point. NetworkX compares lengths exactly and drops one of the tied
+        paths; this engine (like igraph) compares with a relative tolerance
+        and agrees with the exact-arithmetic definition oracle.
+    igraph:
+      call: "igraph::edge_betweenness(g, directed, weights = 1 / E(g)$weight)"
+
+# ---- Information centrality -------------------------------------------------
+
+information_centrality:
+  engine: {fn: information_centrality, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "1 / (c_ii + (T - 2R)/n) with C = (L + J)^-1 by numpy on the symmetrized simple graph without isolates; isolates 0; NaN if disconnected"
+    networkx:
+      call: "n * nx.information_centrality(Graph) (NetworkX returns I_i / n)"
+      undefined_when: [disconnected]
+      undefined_on: [single_node]
+      undefined_reason: "NetworkX refuses graphs that are not connected (an isolate disconnects them) and a one-node graph."
+    sna:
+      call: "sna::infocent(m, gmode, cmode = 'weak')"
+      undefined_on: [single_node, empty]
+      undefined_reason: "sna::infocent() fails on networks with no ties."
+
+information_centrality_weighted:
+  engine: {fn: information_centrality, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as information_centrality with a_ij the total weight between i and j (larger direction if directed)"
+    networkx:
+      call: "n * nx.information_centrality(Graph, weight = 'weight') with summed weights"
+      undefined_when: [disconnected]
+      undefined_reason: "NetworkX refuses graphs that are not connected."
+    sna:
+      call: "sna::infocent(valued matrix, gmode, cmode = 'weak')"
+
+# ---- Bridging and hierarchy ------------------------------------------------
+
+bridging_coefficient:
+  engine: {fn: bridging_coefficient}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "(1/d(v)) / sum_{u in N(v)} 1/d(u) over distinct neighbours, exact arithmetic (Hwang et al. 2008); NaN for isolates"
+
+bridging_centrality:
+  engine: {fn: bridging_centrality}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "exact unnormalized betweenness times the bridging coefficient"
+
+hierarchy:
+  engine: {fn: hierarchy, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Coleman-Theil index of Burt's c_ij = (p_ij + sum_q p_iq p_qj)^2 over contacts, exact before the logarithms; NaN for < 2 contacts"
+
+hierarchy_weighted:
+  engine: {fn: hierarchy, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as hierarchy with z_ij = a_ij + a_ji from total edge weights"
+
+# ---- Eigenvector centralization ----------------------------------------------
+
+centralization_eigenvector:
+  engine: {fn: centralization_eigenvector, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-7, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "sum(max - c_i) / (n - 2) with c the leading eigenvector of A + A^T (loops twice) scaled to max 1, by numpy's eigh"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: "The leading eigenvalue is not simple (two identical components), so the eigenvector, and the centralization, is not determined by the network."
+    igraph:
+      call: "igraph::centr_eigen(g, directed = FALSE, scale = TRUE)$centralization"
+      undefined_on: [two_triangles_isolate]
+      undefined_reason: "The leading eigenvalue is not simple; igraph's result depends on its eigensolver's choice of eigenvector."
+
+# ---- Regular and automorphic equivalence --------------------------------------
+
+regular_equivalence:
+  engine: {fn: regular_equivalence, weighted: false}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "greatest relation satisfying White-Reitz regularity on (a_ik, a_ki) tie types, by deleting violating pairs"
+    sna:
+      call: "classes at distance 0 in sna::redist(m, method = 'catrege')"
+
+regular_equivalence_seed:
+  engine: {fn: regular_equivalence, weighted: false, seed: mod3}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "as regular_equivalence, restricted to pairs with equal seed labels (node %% 3)"
+    sna:
+      call: "sna::redist(m, method = 'catrege', seed.partition = v %% 3), distance 0"
+
+regular_equivalence_weighted:
+  engine: {fn: regular_equivalence, weighted: true}
+  applies_to: any
+  requires_weights: true
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "as regular_equivalence with tie types from total edge weights"
+    sna:
+      call: "sna::redist(valued matrix, method = 'catrege'), distance 0"
+
+automorphic_equivalence:
+  engine: {fn: automorphic_equivalence}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "orbits found by trying every permutation of the nodes (networks of at most 8 nodes)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                     gnp_und_sparse, karate, kite, les_miserables, multi_loops_dir,
+                     multi_loops_und, path10, real_weights_dir, real_weights_und,
+                     southern_women, twomode_random, twomode_weighted, uniform_weights,
+                     weighted_dir, weighted_und]
+      undefined_reason: "Enumerating every permutation is feasible only for networks of at most 8 nodes; larger fixtures are covered by the property tests (orbits refine regular equivalence and are refined by structural equivalence)."
+
+# ---- Blockmodels -----------------------------------------------------------------
+
+block_density:
+  engine: {fn: block_density, partition: mod3, weighted: false, loops: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "ties / pairs per ordered pair of blocks, diagonal excluded, exact arithmetic; one row per block, -1 where no pairs"
+    sna:
+      call: "sna::blockmodel(m, v %% 3, block.content = 'density')$block.model"
+      undefined_on: [single_node, pair]
+      undefined_reason: "sna::blockmodel() needs at least three nodes to form the mod-3 blocks it is given here (the partition has fewer than three blocks and sna indexes them by number)."
+
+block_density_loops:
+  engine: {fn: block_density, partition: mod3, weighted: false, loops: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "as block_density with the diagonal (self-loops) included and n_r^2 diagonal pairs"
+
+block_density_weighted:
+  engine: {fn: block_density, partition: mod3, weighted: true, loops: false}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "as block_density with a_ij the total weight from i to j (mean tie value)"
+    sna:
+      call: "sna::blockmodel(valued matrix, v %% 3, block.content = 'density')$block.model"
+
+block_density_mod2:
+  engine: {fn: block_density, partition: mod2, weighted: false, loops: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "as block_density with two blocks (node %% 2)"
+    sna:
+      call: "sna::blockmodel(m, v %% 2, block.content = 'density')$block.model"
+      undefined_on: [single_node]
+      undefined_reason: "A single node forms one block, and sna::blockmodel() cannot index two."
+
+block_fit:
+  engine: {fn: block_fit, partition: mod3, weighted: false, loops: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-10, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "overall density and the squared Pearson correlation of ties with their block's density over off-diagonal pairs, exact arithmetic"
+
+# ---- Classical scaling -------------------------------------------------------------
+
+classical_mds_points:
+  engine: {fn: classical_mds, k: 2, output: points}
+  applies_to: any
+  tolerance: {rel: 1.0e-7, abs: 1.0e-7}
+  oracles:
+    definition:
+      call: "eigenvectors of -1/2 J D^2 J by numpy's eigh, scaled by sqrt(eigenvalue), signs fixed so the first non-negligible coordinate is positive"
+      undefined_on: [complete5_dir, complete6, cycle7_dir, empty, star8]
+      undefined_reason: "The leading eigenvalues are not distinct (symmetric distance matrices), so the configuration is unique only up to a rotation; eigenvalues and fit are still compared."
+    stats:
+      call: "stats::cmdscale(d, k = 2, eig = TRUE)$points with the same sign rule"
+      undefined_on: [complete5_dir, complete6, cycle7_dir, empty, star8]
+      undefined_reason: "The configuration is unique only up to a rotation when eigenvalues are equal."
+
+classical_mds_eigenvalues:
+  engine: {fn: classical_mds, k: 2, output: eigenvalues}
+  applies_to: any
+  tolerance: {rel: 1.0e-8, abs: 1.0e-8}
+  oracles:
+    definition:
+      call: "all eigenvalues of -1/2 J D^2 J in decreasing order (numpy eigh)"
+    stats:
+      call: "stats::cmdscale(d, k = 2, eig = TRUE)$eig"
+
+classical_mds_gof:
+  engine: {fn: classical_mds, k: 2, output: gof}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "sum of the first two eigenvalues over sum |lambda| and over sum max(lambda, 0)"
+    stats:
+      call: "stats::cmdscale(d, k = 2, eig = TRUE)$GOF"
+
+classical_mds_stress:
+  engine: {fn: classical_mds, k: 2, output: stress}
+  applies_to: any
+  tolerance: {rel: 1.0e-7, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "Kruskal stress-1 of the two-dimensional configuration against D"
+      undefined_on: [complete5_dir, complete6, cycle7_dir, empty, star8]
+      undefined_reason: "Stress is compared only where the configuration is unique; with equal eigenvalues the rotation does not change it, but the oracle does not fix one."
+
+# ---- Geospatial ----------------------------------------------------------------------
+
+edge_lengths_lonlat:
+  engine: {fn: edge_lengths, crs: lonlat}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "great-circle distance by Vincenty's atan2 formula on a sphere of radius 6371008.7714 m (the engine uses the haversine formula)"
+
+edge_lengths_planar:
+  engine: {fn: edge_lengths, crs: planar}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "Euclidean distance between the endpoints"
+
+proximity_within_lonlat:
+  engine: {fn: proximity, crs: lonlat, r: 3.0e6}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "every pair (i < j) within 3000 km by comparing all pairs; one line per edge: from, to, distance"
+
+proximity_within_planar:
+  engine: {fn: proximity, crs: planar, r: 20}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "every pair (i < j) within 20 units by comparing all pairs"
+
+proximity_knn_lonlat:
+  engine: {fn: proximity, crs: lonlat, k: 3}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "the 3 nearest other points of each point by sorting all distances, ties by index"
+
+proximity_knn_planar:
+  engine: {fn: proximity, crs: planar, k: 3}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "the 3 nearest other points of each point by sorting all distances"
+
+group_geometry_lonlat:
+  engine: {fn: group_geometry, crs: lonlat, partition: mod3}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-6}
+  oracles:
+    definition:
+      call: "size, geographic midpoint (normalized mean unit vector), mean and root-mean-square distance from it, per group (node %% 3)"
+
+group_geometry_planar:
+  engine: {fn: group_geometry, crs: planar, partition: mod3}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "size, coordinate mean, mean and root-mean-square distance from it, per group"
