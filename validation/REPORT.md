@@ -52,6 +52,37 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `reachability_all` | 9 / 0 / 0 / 0 |  | 0 / 0 / 0 / 9 |  | 9 / 0 / 0 / 0 |  |  |  |  |
 | `cut_points` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
 | `bridges` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 21 |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `bicomponents` |  |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `n_cliques_2` | 22 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `n_cliques_3_min4` | 13 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `n_clans_2` | 22 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `k_plexes_2` | 27 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `k_plexes_3_min5` | 26 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `lambda_connectivity` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `lambda_sets` | 28 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `factions_errors_k2` | 11 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `factions_errors_k3` | 8 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `factions_correlation_k2` | 11 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `girvan_newman` | 15 / 0 / 0 / 0 |  | 0 / 0 / 0 / 19 |  | 19 / 0 / 0 / 0 |  |  |  |  |
+| `girvan_newman_membership` | 15 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `leading_eigen` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 15 |  |  |  |  |  |  |
+| `leading_eigen_membership` | 17 / 0 / 0 / 0 |  | 0 / 0 / 0 / 15 |  |  |  |  |  |  |
+| `leading_eigen_weighted` | 0 / 0 / 0 / 0 |  | 0 / 0 / 0 / 5 |  |  |  |  |  |  |
+| `fast_greedy` | 19 / 0 / 0 / 0 |  | 0 / 0 / 0 / 14 |  | 15 / 0 / 0 / 0 |  |  |  |  |
+| `fast_greedy_membership` | 19 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `fast_greedy_weighted` | 5 / 0 / 0 / 0 |  | 0 / 0 / 0 / 5 |  | 5 / 0 / 0 / 0 |  |  |  |  |
+| `fast_greedy_resolution` | 19 / 0 / 0 / 0 |  |  |  | 17 / 0 / 0 / 0 |  |  |  |  |
+| `core_periphery` | 12 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_ones` | 12 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_zeros` | 12 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_weighted` | 1 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_minres` | 27 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_minres_coreness` | 26 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `core_periphery_correlation` | 28 / 0 / 0 / 0 |  |  |  |  |  |  |  |  |
+| `compactness` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `compactness_weighted` | 7 / 0 / 0 / 0 |  | 0 / 0 / 0 / 7 |  | 7 / 0 / 0 / 0 |  |  |  |  |
+| `small_world_observed` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 |  |  |  |  |
+| `small_world_observed_local` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 28 / 0 / 0 / 0 |  |  |  |  |
 | `constraint` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  | 26 / 2 / 0 / 0 |  |  |  |  |
 | `constraint_weighted` | 7 / 0 / 0 / 0 |  | 0 / 0 / 0 / 7 |  | 7 / 0 / 0 / 0 |  |  |  |  |
 | `effective_size` | 28 / 0 / 0 / 0 |  |  |  | 26 / 2 / 0 / 0 |  |  |  |  |

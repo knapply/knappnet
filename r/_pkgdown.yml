@@ -81,9 +81,6 @@ articles:
   - articles/plotting
 
 # Every help topic must appear below; pkgdown stops if one is missing.
-# Sections marked INTEGRATION are for topics being added in parallel:
-# uncomment the section (or extend an existing one) and list the new
-# topics when those changes are merged.
 reference:
 - title: Networks
   desc: >-
@@ -103,6 +100,17 @@ reference:
   - distances
   - reachability
   - cut_points
+
+- title: Working with network data
+  desc: >-
+    Combining relations, dichotomizing and symmetrizing ties, subsets of
+    nodes, and node attributes, as in UCINET's Transform and Data menus.
+  contents:
+  - combine_relations
+  - dichotomize
+  - symmetrize
+  - subnetwork
+  - recode_attribute
 
 - title: Example data
   desc: >-
@@ -146,6 +154,12 @@ reference:
   - max_cliques
   - modularity
   - cluster_louvain
+  - bicomponents
+  - n_cliques
+  - lambda_sets
+  - factions
+  - cluster_girvan_newman
+  - cluster_hierarchical
 
 - title: Mixing and homophily
   desc: >-
@@ -218,6 +232,10 @@ reference:
   - graph_density
   - centralization
   - triad_census
+  - core_periphery
+  - small_world
+  - compactness
+  - average_degree
 
 - title: Statistical tests
   desc: >-
@@ -226,6 +244,8 @@ reference:
   contents:
   - qap_cor
   - mrqap
+  - cug_test
+  - random_gnp
 
 - title: Layouts and plotting
   desc: >-

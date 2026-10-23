@@ -1,0 +1,467 @@
+# Cohesive subsets (bicomponents, n-cliques, n-clans, k-plexes, lambda
+# sets, factions), community partitions (Girvan-Newman, leading
+# eigenvector, greedy modularity), and topography (core-periphery,
+# compactness, small-world inputs). Format as in ../manifest.yaml.
+#
+# Undefined results (NaN, or an engine error for an input the method does
+# not accept, such as a core-periphery fit of a network whose ties are all
+# equal) are written as -1 by the engine runner and every oracle; none of
+# these measures can be -1 otherwise (modularity lies in [-1/2, 1]).
+#
+# Random graph generators and the null models of cug_test() are checked
+# separately by validation/cug_check.py.
+
+bicomponents:
+  engine: {fn: bicomponents}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.biconnected_components(simple undirected graph)"
+    igraph:
+      call: "igraph::biconnected_components(simplify(as_undirected(g)))$components"
+
+n_cliques_2:
+  engine: {fn: n_cliques, n: 2, min_size: 0}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every set with pairwise distances <= 2, grown in increasing node order, kept when maximal"
+      undefined_on: [gnp_dir_dense, gnp_und_dense, karate, les_miserables, real_weights_dir, weighted_dir]
+      undefined_reason: >-
+        growing every candidate set exceeds the 300,000-set budget on these
+        dense or large networks
+
+    networkx:
+      call: "nx.find_cliques on the graph joining nodes at distance <= 2 (single_source_shortest_path_length, cutoff 2)"
+
+n_cliques_3_min4:
+  engine: {fn: n_cliques, n: 3, min_size: 4}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "maximal sets with pairwise distances <= 3 and at least 4 members"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, southern_women, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        growing every candidate set exceeds the 300,000-set budget (distance
+        3 joins most pairs in these networks)
+
+    networkx:
+      call: "nx.find_cliques on the distance-3 power graph, keeping cliques of at least 4"
+
+n_clans_2:
+  engine: {fn: n_clans, n: 2, min_size: 0}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "2-cliques whose members are within distance 2 of each other inside the set"
+      undefined_on: [gnp_dir_dense, gnp_und_dense, karate, les_miserables, real_weights_dir, weighted_dir]
+      undefined_reason: >-
+        growing every candidate set exceeds the 300,000-set budget on these
+        dense or large networks
+
+    networkx:
+      call: "2-cliques whose induced subgraph is connected with nx.diameter <= 2"
+
+k_plexes_2:
+  engine: {fn: k_plexes, k: 2, min_size: 3}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every 2-plex grown in increasing node order, kept when maximal with at least 3 members"
+      undefined_on: [gnp_dir_dense]
+      undefined_reason: >-
+        growing every 2-plex exceeds the 300,000-set budget on this dense
+        network
+
+
+k_plexes_3_min5:
+  engine: {fn: k_plexes, k: 3, min_size: 5}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every 3-plex grown in increasing node order, kept when maximal with at least 5 members"
+      undefined_on: [gnp_dir_dense, gnp_und_dense]
+      undefined_reason: >-
+        growing every 3-plex exceeds the 300,000-set budget on these dense
+        networks
+
+
+lambda_connectivity:
+  engine: {fn: lambda_connectivity}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "edge-disjoint paths counted by augmenting paths, separately for every pair (upper triangle)"
+    networkx:
+      call: "nx.edge_connectivity(G, u, v) for every pair of the simple undirected graph"
+    igraph:
+      call: "igraph::edge_connectivity(g, source = u, target = v) on simplify(as_undirected(g))"
+
+lambda_sets:
+  engine: {fn: lambda_sets}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "classes of connectivity >= k, each checked against the definition of a lambda set"
+    networkx:
+      call: "classes of nx.edge_connectivity >= k with at least two members, for every k >= 1"
+
+factions_errors_k2:
+  engine: {fn: factions_errors, k: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest errors over every partition into 2 non-empty groups (exhaustive search)"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, single_node, southern_women, twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search is limited to 200,000 partitions, so networks
+        above 17 nodes are skipped (the engine's tabu search is validated on
+        the smaller fixtures, whose optimum is known exactly); single_node
+        has no partition into 2 groups (the engine reports an error, written
+        as -1 by the runner, but the oracle writes nothing)
+
+
+factions_errors_k3:
+  engine: {fn: factions_errors, k: 3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest errors over every partition into 3 non-empty groups (exhaustive search)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, pair, real_weights_dir, real_weights_und, single_node, southern_women, twomode_random, twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search is limited to 200,000 partitions, so networks
+        above 17 nodes are skipped (the engine's tabu search is validated on
+        the smaller fixtures, whose optimum is known exactly); pair and
+        single_node have no partition into 3 groups
+
+
+factions_correlation_k2:
+  engine: {fn: factions_correlation, k: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest correlation with the ideal pattern over every partition into 2 non-empty groups"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, single_node, southern_women, twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search is limited to 200,000 partitions, so networks
+        above 17 nodes are skipped (the engine's tabu search is validated on
+        the smaller fixtures, whose optimum is known exactly); single_node
+        has no partition into 2 groups
+
+
+girvan_newman:
+  engine: {fn: girvan_newman}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "edge betweenness from distance tables, the engine's tie rule, exact modularity of each component partition"
+      undefined_on: [gnp_und_dense, gnp_und_sparse, les_miserables, weighted_und]
+      undefined_reason: >-
+        edge betweenness from the definition costs about m^2 n^2 steps per
+        network, over the oracle's budget of 3e7 on these networks
+
+    networkx:
+      call: "max of nx.community.modularity over nx.community.girvan_newman(simple graph)"
+    igraph:
+      call: "max(modularity(cluster_edge_betweenness(simplify(g), weights = NULL)))"
+
+girvan_newman_membership:
+  engine: {fn: girvan_newman, output: membership}
+  applies_to: undirected
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the component partition of highest modularity, with the engine's tie rule"
+      undefined_on: [gnp_und_dense, gnp_und_sparse, les_miserables, weighted_und]
+      undefined_reason: >-
+        edge betweenness from the definition costs about m^2 n^2 steps per
+        network, over the oracle's budget of 3e7 on these networks
+
+
+leading_eigen:
+  engine: {fn: leading_eigen, weighted: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Newman (2006) with numpy.linalg.eigh on each generalized modularity matrix"
+      undefined_on: [kite, two_triangles_isolate]
+      undefined_reason: >-
+        the leading eigenvalue of a generalized modularity matrix met on the
+        way is degenerate (the network has a symmetry), so the eigenvector,
+        and the division, are not unique
+
+    igraph:
+      call: "modularity of igraph::cluster_leading_eigen(g, weights = NA)"
+      undefined_on: [kite, two_triangles_isolate]
+      undefined_when: [loops, multi_edges, edge_case]
+      undefined_reason: >-
+        kite and two_triangles_isolate have a degenerate leading eigenvalue
+        (see the definition oracle), so the division is not unique; igraph's
+        ARPACK-based routine is not run on multigraphs, networks with
+        self-loops, or trivial networks, where its conventions for loops and
+        its convergence are not those documented here
+
+leading_eigen_membership:
+  engine: {fn: leading_eigen, weighted: false, output: membership}
+  applies_to: undirected
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "Newman (2006) with numpy.linalg.eigh and the engine's documented rules"
+      undefined_on: [kite, two_triangles_isolate]
+      undefined_reason: >-
+        the leading eigenvalue of a generalized modularity matrix met on the
+        way is degenerate (the network has a symmetry), so the eigenvector,
+        and the division, are not unique
+
+    igraph:
+      call: "igraph::membership(cluster_leading_eigen(g, weights = NA))"
+      undefined_on: [kite, two_triangles_isolate]
+      undefined_when: [loops, multi_edges, edge_case]
+      undefined_reason: as for leading_eigen
+
+leading_eigen_weighted:
+  engine: {fn: leading_eigen, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "Newman (2006) with weights, numpy.linalg.eigh"
+      undefined_on: [les_miserables, real_weights_und, twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: >-
+        a generalized modularity matrix met on the way has a degenerate
+        leading eigenvalue or an eigenvector component too close to zero for
+        its sign to be meaningful, so the division is not unique
+
+    igraph:
+      call: "modularity of igraph::cluster_leading_eigen(g, weights = E(g)$weight)"
+
+fast_greedy:
+  engine: {fn: fast_greedy, resolution: 1.0, weighted: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "every connected pair of groups scored in exact arithmetic, the engine's tie rule"
+    networkx:
+      call: "modularity of nx.community.greedy_modularity_communities(multigraph)"
+      undefined_on: [gnp_und_sparse, real_weights_und, twomode_weighted, weighted_und]
+      undefined_reason: >-
+        NetworkX breaks ties between equally good mergers by the order of its
+        floating-point heap, the engine by node order; on these fixtures the
+        oracle verified in exact arithmetic that every merger NetworkX made
+        was a best merger, so the two partitions differ only by tie-breaking
+
+    igraph:
+      call: "modularity of igraph::cluster_fast_greedy(simplify(g, edge.attr.comb = 'sum'), weights = multiplicity)"
+      undefined_when: [loops]
+      undefined_on: [gnp_und_sparse, real_weights_und, twomode_weighted, weighted_und]
+      undefined_reason: >-
+        cluster_fast_greedy() needs a graph without multiple edges, so
+        parallel edges are collapsed into weights, and the self-loops dropped
+        with them count toward degree and modularity in the engine (as in
+        NetworkX) but not in the simplified igraph graph; the listed fixtures
+        have tied mergers on the greedy path (verified in exact arithmetic
+        by the NetworkX oracle), which igraph breaks by its own order
+
+fast_greedy_membership:
+  engine: {fn: fast_greedy, resolution: 1.0, weighted: false, output: membership}
+  applies_to: undirected
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the partition of highest modularity along the merges, with the engine's tie rule"
+
+fast_greedy_weighted:
+  engine: {fn: fast_greedy, resolution: 1.0, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "greedy merges in exact arithmetic with weights"
+    networkx:
+      call: "modularity of nx.community.greedy_modularity_communities(G, weight = 'weight')"
+    igraph:
+      call: "modularity of igraph::cluster_fast_greedy(g, weights = E(g)$weight)"
+
+fast_greedy_resolution:
+  engine: {fn: fast_greedy, resolution: 0.5, weighted: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "greedy merges in exact arithmetic with resolution 1/2"
+    networkx:
+      call: "modularity of nx.community.greedy_modularity_communities(G, resolution = 0.5)"
+      undefined_on: [gnp_und_sparse, real_weights_und]
+      undefined_reason: >-
+        tie-breaking between equally good mergers, verified in exact
+        arithmetic as for fast_greedy
+
+
+core_periphery:
+  engine: {fn: core_periphery, links: missing}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest correlation over every core (exhaustive), core-periphery pairs left out"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, southern_women, twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search over cores is limited to 2^17 cores, so
+        networks above 17 nodes are skipped (the engine's tabu search is
+        validated on the smaller fixtures, whose optimum is known exactly)
+
+
+core_periphery_ones:
+  engine: {fn: core_periphery, links: ones}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest correlation over every core (exhaustive), core-periphery pairs expected tied"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, southern_women, twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search over cores is limited to 2^17 cores, so
+        networks above 17 nodes are skipped (the engine's tabu search is
+        validated on the smaller fixtures, whose optimum is known exactly)
+
+
+core_periphery_zeros:
+  engine: {fn: core_periphery, links: zeros}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest correlation over every core (exhaustive), core-periphery pairs expected untied"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und, real_weights_dir, real_weights_und, southern_women, twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search over cores is limited to 2^17 cores, so
+        networks above 17 nodes are skipped (the engine's tabu search is
+        validated on the smaller fixtures, whose optimum is known exactly)
+
+
+core_periphery_weighted:
+  engine: {fn: core_periphery, links: missing, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest correlation with weighted values over every core (exhaustive)"
+      undefined_on: [les_miserables, real_weights_dir, real_weights_und, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the exhaustive search over cores is limited to 2^17 cores, so
+        networks above 17 nodes are skipped (the engine's tabu search is
+        validated on the smaller fixtures, whose optimum is known exactly)
+
+
+core_periphery_minres:
+  engine: {fn: core_periphery_continuous, fit: minres, output: residual}
+  applies_to: any
+  tolerance: {rel: 1.0e-6, abs: 1.0e-8}
+  oracles:
+    definition:
+      call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; the residual"
+      undefined_on: [star8]
+      undefined_reason: >-
+        a star's leaves share no ties, so the residual sum has no minimizer
+        (it falls as the hub's coreness grows without bound); both the engine
+        and the oracle stop at their iteration limits with different
+        residuals
+
+core_periphery_minres_coreness:
+  engine: {fn: core_periphery_continuous, fit: minres, output: coreness}
+  applies_to: any
+  tolerance: {rel: 0, abs: 1.0e-5}
+  oracles:
+    definition:
+      call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; unit-norm coreness"
+      undefined_on: [star8, pair]
+      undefined_reason: >-
+        star8 has no minimizer (see core_periphery_minres), so the leaves'
+        coreness depends on where the iterations stop; pair has one arc, so
+        only the product c_1 c_2 = 1/2 is determined and the coreness
+        direction is not unique
+
+core_periphery_correlation:
+  engine: {fn: core_periphery_continuous, fit: correlation, output: fit}
+  applies_to: any
+  tolerance: {rel: 0, abs: 1.0e-7}
+  oracles:
+    definition:
+      call: "scipy BFGS from 31 starts maximizing corr(a_ij, c_i c_j) over c = t^2"
+
+compactness:
+  engine: {fn: compactness, mode: out, weighted: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-13, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "mean of 1/d over ordered pairs, distances by Floyd-Warshall in exact arithmetic"
+    networkx:
+      call: "nx.global_efficiency (undirected), or mean of 1/d from nx.shortest_path_length (directed)"
+    igraph:
+      call: "mean of 1 / igraph::distances(g, mode = 'out', weights = NA) off the diagonal"
+
+compactness_weighted:
+  engine: {fn: compactness, mode: out, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "mean of 1/d with weights as distances, Floyd-Warshall in exact arithmetic"
+    networkx:
+      call: "mean of 1/d from nx.shortest_path_length(G, weight = 'weight')"
+    igraph:
+      call: "mean of 1 / igraph::distances(g, mode = 'out', weights = E(g)$weight) off the diagonal"
+
+small_world_observed:
+  engine: {fn: small_world_observed, local: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-13, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "transitivity from triangle and triple counts; mean distance over connected pairs"
+    networkx:
+      call: "nx.transitivity and the mean of nx.shortest_path_length over connected pairs (simple undirected graph)"
+    igraph:
+      call: "igraph::transitivity(type = 'global') and mean_distance(unconnected = TRUE) on simplify(as_undirected(g))"
+
+small_world_observed_local:
+  engine: {fn: small_world_observed, local: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-13, abs: 1.0e-15}
+  oracles:
+    definition:
+      call: "mean local clustering (0 below two neighbors) from triangle counts; mean distance"
+    networkx:
+      call: "nx.average_clustering and the mean of nx.shortest_path_length over connected pairs"
+    igraph:
+      call: "igraph::transitivity(type = 'average', isolates = 'zero') and mean_distance(unconnected = TRUE)"

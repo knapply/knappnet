@@ -118,6 +118,11 @@ jobs:
           set -o pipefail
           mkdir -p ci-logs
           python validation/qap_check.py 2>&1 | tee ci-logs/qap.log
+      - name: Random networks and CUG tests
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python validation/cug_check.py 2>&1 | tee ci-logs/cug.log
       - name: Layout properties
         run: |
           set -o pipefail

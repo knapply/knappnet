@@ -84,6 +84,25 @@ extern SEXP C_mds_stress(SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_edge_lengths(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_proximity(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_group_geometry(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_bicomponents(SEXP);
+extern SEXP C_n_cliques(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_k_plexes(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_lambda_connectivity(SEXP);
+extern SEXP C_factions(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_girvan_newman(SEXP, SEXP);
+extern SEXP C_leading_eigen(SEXP, SEXP);
+extern SEXP C_fast_greedy(SEXP, SEXP, SEXP);
+extern SEXP C_core_periphery(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_core_periphery_continuous(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_compactness(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_small_world(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_gnp(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_gnm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_configuration(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_uman(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_small_world(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_preferential(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_random_sbm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -168,6 +187,25 @@ static const R_CallMethodDef call_methods[] = {
     {"C_edge_lengths", (DL_FUNC)&C_edge_lengths, 5},
     {"C_proximity", (DL_FUNC)&C_proximity, 7},
     {"C_group_geometry", (DL_FUNC)&C_group_geometry, 6},
+    {"C_bicomponents", (DL_FUNC)&C_bicomponents, 1},
+    {"C_n_cliques", (DL_FUNC)&C_n_cliques, 5},
+    {"C_k_plexes", (DL_FUNC)&C_k_plexes, 5},
+    {"C_lambda_connectivity", (DL_FUNC)&C_lambda_connectivity, 1},
+    {"C_factions", (DL_FUNC)&C_factions, 8},
+    {"C_girvan_newman", (DL_FUNC)&C_girvan_newman, 2},
+    {"C_leading_eigen", (DL_FUNC)&C_leading_eigen, 2},
+    {"C_fast_greedy", (DL_FUNC)&C_fast_greedy, 3},
+    {"C_core_periphery", (DL_FUNC)&C_core_periphery, 8},
+    {"C_core_periphery_continuous", (DL_FUNC)&C_core_periphery_continuous, 8},
+    {"C_compactness", (DL_FUNC)&C_compactness, 5},
+    {"C_small_world", (DL_FUNC)&C_small_world, 5},
+    {"C_random_gnp", (DL_FUNC)&C_random_gnp, 7},
+    {"C_random_gnm", (DL_FUNC)&C_random_gnm, 7},
+    {"C_random_configuration", (DL_FUNC)&C_random_configuration, 7},
+    {"C_random_uman", (DL_FUNC)&C_random_uman, 6},
+    {"C_random_small_world", (DL_FUNC)&C_random_small_world, 6},
+    {"C_random_preferential", (DL_FUNC)&C_random_preferential, 5},
+    {"C_random_sbm", (DL_FUNC)&C_random_sbm, 7},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */
