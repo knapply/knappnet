@@ -45,6 +45,12 @@
 //! Conventions:
 //! - Directed networks use edge directions (igraph's `cluster_infomap()`
 //!   does too); undirected networks have none.
+//! - igraph's `cluster_infomap()` gives undirected networks the directed
+//!   flow, as if each edge ran in both directions, so it teleports and
+//!   reports a different (larger) codelength than the undirected one
+//!   here. Its results are reproduced by passing the network as directed
+//!   with each edge listed both ways (a self-loop twice); the validation
+//!   suite compares the two tools that way.
 //! - Weights (if used) are added as given and must be non-negative;
 //!   parallel edges add up. Node weights must be finite, non-negative, and
 //!   not all zero.

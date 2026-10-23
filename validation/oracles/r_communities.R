@@ -220,3 +220,19 @@ dir.create(file.path(golden_dir, "igraph"), recursive = TRUE, showWarnings = FAL
 writeLines(sprintf("igraph %s", utils::packageVersion("igraph")),
            file.path(golden_dir, "igraph", "VERSION"))
 cat(sprintf("Wrote %d igraph golden files for communities.\n", count))
+
+# DIAGNOSTIC (temporary)
+for spec in list(c("weighted_und", "4"), c("twomode_weighted", "2"), c("twomode_weighted", "4"),
+                 c("gnp_und_dense", "4")) {
+  d <- file.path(fixtures_dir, spec[1])
+  meta <- read_meta(file.path(d, "meta.json"))
+  e <- utils::read.csv(file.path(d, "edges.csv"))
+  h <- igraph::make_empty_graph(n = meta$n, directed = FALSE)
+  h <- igraph::add_edges(h, as.vector(t(as.matrix(e[, c("from", "to")]))) + 1L)
+  cl <- igraph::cluster_walktrap(h, weights = NULL, steps = as.integer(spec[2]))
+  mg <- cl$merges - 1
+  cat(sprintf("DIAG %s steps %s merges: %s\n", spec[1], spec[2],
+              paste(sprintf("%d-%d", mg[, 1], mg[, 2]), collapse = " ")))
+  cat(sprintf("DIAG %s steps %s modularity: %s\n", spec[1], spec[2],
+              paste(formatC(cl$modularity, digits = 6, format = "f"), collapse = " ")))
+}

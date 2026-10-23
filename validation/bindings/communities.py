@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import ctypes
 
-from engine import ERR_LEN, EngineError, load, register
+from engine import ERR_LEN, EngineError, Graph, load, register
 
 _declared = False
 
@@ -305,12 +305,29 @@ def _map_equation(g, spec, fx):
     return [_q(map_equation(g, blocks(g.n), spec.get("weighted", False)))]
 
 
+def both_ways(fx):
+    """The undirected fixture `fx` as a directed network with each edge in
+    both directions (a self-loop gives two loops, so every node keeps its
+    degree)."""
+    src, tgt, w = [], [], []
+    for i, (s, t) in enumerate(zip(fx.src, fx.tgt)):
+        src += [s, t]
+        tgt += [t, s]
+        if fx.weights is not None:
+            w += [fx.weights[i]] * 2
+    return Graph(fx.n, src, tgt, w if fx.weights is not None else None, True)
+
+
 @register("infomap")
 def _infomap(g, spec, fx):
     """Codelength of the best of `trials` trials ("codelength"), or mean
-    over seeds 1..`seeds` of that codelength ("quality")."""
+    over seeds 1..`seeds` of that codelength ("quality"). With `as_directed`
+    an undirected network is read as directed with each edge both ways
+    (the flow igraph's cluster_infomap() uses for undirected networks)."""
     weighted = spec.get("weighted", False)
     trials = spec.get("trials", 10)
+    if spec.get("as_directed") and not fx.directed:
+        g = both_ways(fx)
     if spec.get("output") == "quality":
         cls = [infomap(g, weighted, trials, s)[1] for s in range(1, spec["seeds"] + 1)]
         return [_q(sum(cls) / len(cls))]

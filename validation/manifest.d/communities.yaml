@@ -198,6 +198,13 @@ label_prop_quality:
   oracles:
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA))"
+      differs_when: [loops]
+      reason: &lpa_igraph_loops >-
+        the engine ignores self-loops (a node never reads its own label);
+        igraph documents no rule for loops, but its mean on multi_loops_und
+        (0.258) is what a node that reads its own label once per loop
+        gives (0.265 over 300 simulated runs, against 0.206 with loops
+        ignored), as NetworkX does
 
 label_prop_quality_retention:
   engine: {fn: label_propagation, variant: retention, output: quality, seeds: 100}
@@ -213,6 +220,8 @@ label_prop_quality_retention:
         is undefined (the engine reports -1, NetworkX 0)
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'retention'))"
+      differs_when: [loops]
+      reason: *lpa_igraph_loops
 
 label_prop_quality_fast:
   engine: {fn: label_propagation, variant: fast, output: quality, seeds: 100}
@@ -225,6 +234,8 @@ label_prop_quality_fast:
       reason: *lpa_simple
     igraph:
       call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'fast'))"
+      differs_when: [loops]
+      reason: *lpa_igraph_loops
 
 # ---- Infomap ----------------------------------------------------------------
 
@@ -253,8 +264,24 @@ infomap_codelength:
     definition:
       call: "map equation of the engine's Infomap partition (10 trials, seed 1); -1 for an undirected network without edges, which has no random walk"
 
+# igraph's cluster_infomap() does not use the undirected flow of Rosvall
+# and Bergstrom (2008) (visit rates s_a / 2m, no teleportation) that the
+# engine uses for undirected networks: it reads an undirected network as
+# directed, with each edge in both directions, and applies the directed
+# flow with teleportation (tau = 0.15, recorded in the code). Its
+# documentation does not say so; the evidence is its output. The optimal
+# undirected codelengths of path10 and star8 (exhaustive search over every
+# partition) are 2.8617 and 2.4037 bits, which the engine reaches, while
+# igraph reports 3.1151 and 2.4864; those are exactly the optimal
+# codelengths of the both-ways directed networks under the engine's
+# directed map equation, and on the other undirected fixtures the engine's
+# directed search on the both-ways network reproduces igraph's mean
+# codelength within 0.008 bits. The comparison is therefore made on that
+# network (`as_directed`), so that both tools minimize the same quantity;
+# the engine's undirected codelength is checked against the definition in
+# infomap_codelength above.
 infomap_quality:
-  engine: {fn: infomap, trials: 10, output: quality, seeds: 5}
+  engine: {fn: infomap, trials: 10, output: quality, seeds: 5, as_directed: true}
   applies_to: undirected
   tolerance: {rel: 0, abs: 0.05}
   oracles:
@@ -540,6 +567,12 @@ compare_adjusted_rand:
       call: "compare(a, b, method = 'adjusted.rand')"
       undefined_on: [single_node]
       undefined_reason: igraph raises an error for fewer than two nodes; the engine reports NaN.
+      differs_on: [pair]
+      reason: >-
+        on two nodes both fixed partitions are all singletons, so the two
+        are identical and Hubert and Arabie's formula is 0/0; the engine
+        reports 1, the value for every other pair of identical partitions
+        (as scikit-learn's adjusted_rand_score() does), and igraph NaN
 
 compare_ami:
   engine: {fn: compare_partitions, method: ami}
