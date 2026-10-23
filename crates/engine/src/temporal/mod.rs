@@ -104,7 +104,7 @@ use crate::error::{Error, Result};
 
 pub use paths::{
     temporal_closeness, temporal_paths, temporal_reach_counts, Criterion, Direction, PathOptions,
-    Traversal,
+    TemporalCloseness, Traversal,
 };
 
 /// A temporal network: contacts with start and end times.
@@ -428,9 +428,15 @@ mod tests {
 
     #[test]
     fn streams_are_sorted_and_reversed() {
-        let net =
-            TemporalNetwork::new(3, &[0, 1, 2, 1], &[1, 2, 2, 0], &[3.0, 1.0, 0.0, 1.0], None, true)
-                .unwrap();
+        let net = TemporalNetwork::new(
+            3,
+            &[0, 1, 2, 1],
+            &[1, 2, 2, 0],
+            &[3.0, 1.0, 0.0, 1.0],
+            None,
+            true,
+        )
+        .unwrap();
         let s = net.stream(Direction::Out, Traversal::Constant(0.0));
         // The loop 2 -> 2 is dropped.
         assert_eq!(s.dep, vec![1.0, 1.0, 3.0]);
