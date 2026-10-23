@@ -17,7 +17,9 @@
 #'   whose value during a period is its value at the start of that period),
 #'   or a named list of numeric vectors (one value per actor, in the order
 #'   of the first network's nodes) and matrices with one row per actor and
-#'   one column per wave. Values must not be missing.
+#'   one column per period (one fewer than the waves; a column for the last
+#'   wave may be given and is ignored, as in RSiena). Changing covariates
+#'   need at least three waves. Values must not be missing.
 #' @param dyadic Dyadic covariates: `NULL` or a named list of square
 #'   numeric matrices (rows and columns in the order of the first
 #'   network's nodes; the diagonal is ignored) or netframes on the same
@@ -27,9 +29,12 @@
 #' @details
 #' Covariates are centered as RSiena centers them (Ripley et al. 2026,
 #' section 5.3.2): actor covariates by their mean over all actors and all
-#' waves supplied, dyadic covariates by the mean of their off-diagonal
-#' cells, and the similarity scores of `simX` by their mean over all
-#' ordered pairs of distinct actors and waves. `sameX` is not centered.
+#' periods, dyadic covariates by the mean of their off-diagonal cells, and
+#' the similarity scores of `simX` by their mean over all ordered pairs of
+#' distinct actors and periods. `sameX` is not centered. For changing
+#' covariates RSiena computes the similarity mean differently (its
+#' definition is not documented), so `simX` of a changing covariate can
+#' differ slightly from RSiena's.
 #'
 #' Missing tie or covariate values, structural zeros and ones, and changes
 #' of composition (actors joining or leaving) are not supported; see
@@ -119,8 +124,12 @@ saom_actor_covariates <- function(covariates, networks, ids) {
         as.double(v)
       })
       m <- do.call(cbind, cols)
-      changing <- any(apply(m, 1L, function(r) length(unique(r)) > 1L))
-      out[[name]] <- if (changing) m else m[, 1L]
+      # The last wave's values are never used (they would apply to a period
+      # after the last observation), so only the others decide whether the
+      # covariate changes.
+      used <- m[, -ncol(m), drop = FALSE]
+      changing <- any(apply(used, 1L, function(r) length(unique(r)) > 1L))
+      out[[name]] <- if (changing) used else m[, 1L]
     }
   } else if (is.list(covariates)) {
     if (is.null(names(covariates)) || !all(nzchar(names(covariates)))) {
@@ -132,10 +141,10 @@ saom_actor_covariates <- function(covariates, networks, ids) {
       if (is.matrix(v)) {
         if (nrow(v) != n || !ncol(v) %in% c(waves, waves - 1L)) {
           stop(sprintf(paste0("Changing covariate `%s` must have one row per actor (%d) and one ",
-                              "column per wave (%d)."), name, n, waves), call. = FALSE)
+                              "column per period (%d)."), name, n, waves - 1L), call. = FALSE)
         }
-        if (ncol(v) == waves - 1L) v <- cbind(v, v[, ncol(v)])
-        out[[name]] <- matrix(as.double(v), n, waves)
+        # One column per period; a column for the last wave is ignored.
+        out[[name]] <- matrix(as.double(v[, seq_len(waves - 1L)]), n, waves - 1L)
       } else {
         if (!is.atomic(v) || length(v) != n) {
           stop(sprintf("Covariate `%s` must have one value per actor (%d).", name, n),
