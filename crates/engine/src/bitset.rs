@@ -18,8 +18,13 @@
 //! per level in which its tail is on some search's frontier, instead of
 //! once per search, and the per-arc work is a word-wide OR. The result of
 //! every search is the same as a plain breadth-first search.
+//!
+//! Searches follow a [`View`] of a graph: its out-arcs, its in-arcs, or
+//! both (direction ignored), read from the graph's own adjacency lists, so
+//! no reversed or symmetrized copy of the graph is built.
 
-use crate::graph::Graph;
+use crate::graph::{Csr, Graph};
+use crate::metrics::degree::DegreeMode;
 
 /// A square bit matrix with rows padded to whole 64-bit words.
 #[derive(Debug, Clone)]
@@ -67,6 +72,80 @@ impl BitMatrix {
     #[inline]
     pub fn row(&self, row: usize) -> &[u64] {
         &self.bits[row * self.words_per_row..(row + 1) * self.words_per_row]
+    }
+}
+
+/// The arcs a search follows: one or two adjacency lists per node, read in
+/// place from a [`Graph`]. `push` lists the arcs leaving a node in the
+/// chosen direction, `pull` the arcs entering it (the same lists when
+/// direction is ignored).
+#[derive(Debug, Clone, Copy)]
+pub struct View<'a> {
+    push: (&'a Csr, Option<&'a Csr>),
+    pull: (&'a Csr, Option<&'a Csr>),
+}
+
+impl<'a> View<'a> {
+    /// The arcs of `g` that paths in `mode` follow: out-arcs (`Out`),
+    /// in-arcs (`In`), or both (`All`). Undirected graphs ignore `mode`.
+    pub fn new(g: &'a Graph, mode: DegreeMode) -> View<'a> {
+        let (out, inc) = (g.out(), g.inc());
+        if !g.is_directed() {
+            return View {
+                push: (out, None),
+                pull: (out, None),
+            };
+        }
+        match mode {
+            DegreeMode::Out => View {
+                push: (out, None),
+                pull: (inc, None),
+            },
+            DegreeMode::In => View {
+                push: (inc, None),
+                pull: (out, None),
+            },
+            DegreeMode::All => View {
+                push: (out, Some(inc)),
+                pull: (out, Some(inc)),
+            },
+        }
+    }
+
+    /// Number of nodes.
+    #[inline]
+    pub fn node_count(&self) -> usize {
+        self.push.0.node_count()
+    }
+
+    /// Number of arcs followed, counting an arc once per list it is in.
+    #[inline]
+    pub fn arc_count(&self) -> usize {
+        self.push.0.arc_count() + self.push.1.map_or(0, |c| c.arc_count())
+    }
+
+    /// Number of arcs leaving `v`.
+    #[inline]
+    pub fn degree(&self, v: usize) -> usize {
+        self.push.0.degree(v) + self.push.1.map_or(0, |c| c.degree(v))
+    }
+
+    /// Heads of the arcs leaving `v`: one or two slices.
+    #[inline]
+    pub fn heads(&self, v: usize) -> (&'a [u32], &'a [u32]) {
+        (
+            self.push.0.neighbors(v),
+            self.push.1.map_or(&[][..], |c| c.neighbors(v)),
+        )
+    }
+
+    /// Tails of the arcs entering `v`: one or two slices.
+    #[inline]
+    pub fn tails(&self, v: usize) -> (&'a [u32], &'a [u32]) {
+        (
+            self.pull.0.neighbors(v),
+            self.pull.1.map_or(&[][..], |c| c.neighbors(v)),
+        )
     }
 }
 
@@ -126,24 +205,23 @@ impl MultiBfs {
         }
     }
 
-    /// Searches `g` along its out-arcs from `sources` (at most [`BATCH`]
+    /// Searches along the arcs of `view` from `sources` (at most [`BATCH`]
     /// of them; source i is bit i), stopping after `max_level` levels, and
     /// reports every [`Step`] to `on`. A source is at level 0 of its own
     /// search and is not reported for it. Within a level, nodes are
     /// reported in increasing index order.
     ///
     /// Each level is expanded top-down (every frontier node ORs its set
-    /// into its out-neighbours) or, when the frontier's arcs are a large
+    /// into the heads of its arcs) or, when the frontier's arcs are a large
     /// share of all arcs, bottom-up (every node not yet reached by all
-    /// sources ORs the sets of its in-neighbours, stopping once all
+    /// sources ORs the sets of the tails of its arcs, stopping once all
     /// sources have reached it), the direction-optimizing scheme of
     /// Beamer, Asanovic, and Patterson (2012, `beamer2012direction`)
     /// applied to source sets. Both give the same sets.
-    pub fn run(&mut self, g: &Graph, sources: &[u32], max_level: u32, mut on: impl FnMut(Step)) {
+    pub fn run(&mut self, view: View, sources: &[u32], max_level: u32, mut on: impl FnMut(Step)) {
         assert!(sources.len() <= BATCH, "at most {BATCH} sources per batch");
-        let (out, inc) = (g.out(), g.inc());
-        let n = out.node_count();
-        let arcs = out.arc_count();
+        let n = view.node_count();
+        let arcs = view.arc_count();
         let all = if sources.len() == BATCH {
             u64::MAX
         } else {
@@ -163,7 +241,7 @@ impl MultiBfs {
         let mut level = 0;
         while !self.active.is_empty() && level < max_level {
             level += 1;
-            let frontier_arcs: usize = self.active.iter().map(|&v| out.degree(v as usize)).sum();
+            let frontier_arcs: usize = self.active.iter().map(|&v| view.degree(v as usize)).sum();
             let bottom_up = frontier_arcs > arcs / PULL_SHARE;
             self.touched.clear();
             if bottom_up {
@@ -172,11 +250,14 @@ impl MultiBfs {
                     if seen == all {
                         continue;
                     }
+                    let (a, b) = view.tails(w);
                     let mut acc = 0;
-                    for &v in inc.neighbors(w) {
-                        acc |= self.frontier[v as usize];
-                        if acc | seen == all {
-                            break;
+                    'pull: for list in [a, b] {
+                        for &v in list {
+                            acc |= self.frontier[v as usize];
+                            if acc | seen == all {
+                                break 'pull;
+                            }
                         }
                     }
                     self.next[w] = acc;
@@ -185,12 +266,15 @@ impl MultiBfs {
                 // `next` is clean at this point.
                 for &v in &self.active {
                     let f = self.frontier[v as usize];
-                    for &w in out.neighbors(v as usize) {
-                        let x = &mut self.next[w as usize];
-                        if *x == 0 {
-                            self.touched.push(w);
+                    let (a, b) = view.heads(v as usize);
+                    for list in [a, b] {
+                        for &w in list {
+                            let x = &mut self.next[w as usize];
+                            if *x == 0 {
+                                self.touched.push(w);
+                            }
+                            *x |= f;
                         }
-                        *x |= f;
                     }
                 }
             }
@@ -269,7 +353,6 @@ pub fn for_each_bit(mut bits: u64, mut f: impl FnMut(usize)) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::graph::Csr;
 
     #[test]
     fn set_and_get() {
@@ -319,17 +402,22 @@ mod tests {
         for sources in [vec![0u32, 4, 8, 2], (0..9).collect::<Vec<u32>>()] {
             let mut levels = vec![vec![u32::MAX; 9]; sources.len()];
             let mut done = Vec::new();
-            ms.run(&g, &sources, u32::MAX, |step| match step {
-                Step::Reached {
-                    level,
-                    node,
-                    sources,
-                } => for_each_bit(sources, |i| {
-                    assert_eq!(levels[i][node as usize], u32::MAX);
-                    levels[i][node as usize] = level;
-                }),
-                Step::LevelDone(level) => done.push(level),
-            });
+            ms.run(
+                View::new(&g, DegreeMode::Out),
+                &sources,
+                u32::MAX,
+                |step| match step {
+                    Step::Reached {
+                        level,
+                        node,
+                        sources,
+                    } => for_each_bit(sources, |i| {
+                        assert_eq!(levels[i][node as usize], u32::MAX);
+                        levels[i][node as usize] = level;
+                    }),
+                    Step::LevelDone(level) => done.push(level),
+                },
+            );
             assert_eq!(done, vec![1, 2, 3]);
             for (i, &s) in sources.iter().enumerate() {
                 let mut expected = plain_bfs(adj, s as usize);
@@ -348,7 +436,7 @@ mod tests {
         let g = Graph::from_edges(4, &[0, 1, 2], &[1, 2, 3], None, false).unwrap();
         let mut ms = MultiBfs::new(4);
         let mut seen = Vec::new();
-        ms.run(&g, &[0, 0, 3], 2, |step| {
+        ms.run(View::new(&g, DegreeMode::Out), &[0, 0, 3], 2, |step| {
             if let Step::Reached {
                 level,
                 node,

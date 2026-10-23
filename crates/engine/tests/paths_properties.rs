@@ -7,7 +7,7 @@
 
 extern crate knappnet as engine;
 
-use engine::bitset::{for_each_bit, MultiBfs, Step};
+use engine::bitset::{for_each_bit, MultiBfs, Step, View};
 use engine::metrics::betweenness::{betweenness, BetweennessOptions};
 use engine::metrics::closeness::{closeness, harmonic_centrality, ClosenessOptions};
 use engine::metrics::degree::DegreeMode;
@@ -72,17 +72,33 @@ fn unit_weighted(g: &Graph) -> Graph {
     Graph::from_edges(g.node_count(), &from, &to, Some(&w), g.is_directed()).unwrap()
 }
 
+/// `g` with every arc reversed (`In`) or with direction dropped (`All`).
+fn reoriented(g: &Graph, mode: DegreeMode) -> Graph {
+    let from: Vec<i64> = g.edge_sources().iter().map(|&v| v as i64).collect();
+    let to: Vec<i64> = g.edge_targets().iter().map(|&v| v as i64).collect();
+    match mode {
+        DegreeMode::Out => Graph::from_edges(g.node_count(), &from, &to, None, g.is_directed()),
+        DegreeMode::In => Graph::from_edges(g.node_count(), &to, &from, None, g.is_directed()),
+        DegreeMode::All => Graph::from_edges(g.node_count(), &from, &to, None, false),
+    }
+    .unwrap()
+}
+
 #[test]
 fn multi_source_search_equals_plain_search() {
-    for g in cases() {
+    for (g, mode) in cases()
+        .into_iter()
+        .flat_map(|g| [DegreeMode::Out, DegreeMode::In, DegreeMode::All].map(|m| (g.clone(), m)))
+    {
         let n = g.node_count();
+        let plain = reoriented(&g, mode);
         let mut ms = MultiBfs::new(n);
         // Batches of every size up to 64, including repeated sources.
         let mut sources: Vec<u32> = (0..n as u32).rev().collect();
         sources.extend(0..(n as u32).min(5));
         for chunk in sources.chunks(37).chain(sources.chunks(64)) {
             let mut got = vec![vec![u32::MAX; n]; chunk.len()];
-            ms.run(&g, chunk, u32::MAX, |step| {
+            ms.run(View::new(&g, mode), chunk, u32::MAX, |step| {
                 if let Step::Reached {
                     level,
                     node,
@@ -96,9 +112,9 @@ fn multi_source_search_equals_plain_search() {
                 }
             });
             for (i, &s) in chunk.iter().enumerate() {
-                let mut want = plain_bfs(&g, s as usize);
+                let mut want = plain_bfs(&plain, s as usize);
                 want[s as usize] = u32::MAX;
-                assert_eq!(got[i], want, "n = {n}, source {s}");
+                assert_eq!(got[i], want, "n = {n}, {mode:?}, source {s}");
             }
         }
     }

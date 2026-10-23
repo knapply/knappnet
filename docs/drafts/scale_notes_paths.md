@@ -57,6 +57,20 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   D = 20, about 4 x 10^6 passes, still infeasible; for the source-sampled
   estimators (Eppstein and Wang 2004; Brandes and Pich 2007) with k = 512
   sources it is one batch: D passes over the edges.
+- Direction-optimizing levels (Beamer, Asanovic and Patterson 2012, applied
+  to source sets): a level whose frontier holds more than 1/8 of the arcs
+  is expanded bottom-up, a sequential sweep over all nodes that reads each
+  unfinished node's in-list and stops early once all 64 sources have
+  reached it. Measured (1 thread, CPU s, identical results): closeness
+  dense1k 0.0088 -> 0.0019, dense2k 0.043 -> 0.008, medium3k 0.060 ->
+  0.022, sparse10k 0.37 -> 0.29; eccentricity similar. A bottom-up level
+  is one sequential pass over the in-CSR, the streaming-friendly pattern;
+  top-down levels are random-access. Cost: needs the in-CSR (directed
+  graphs already keep one: +4 B/arc +8 B/node).
+- Direction views: `In` and `All` searches on directed graphs read the out-
+  and in-CSR in place (`bitset::View`) instead of building a reversed or
+  symmetrized copy (about 50 B/edge transient: edge list + two counting
+  sorts). Neighborhood sizes, order 2, densedir1k (300k arcs): see report.
 - Blocking: partitioning nodes into cache-sized ranges and bucketing the
   pushes by target range (X-Stream, Roy, Mihailovic and Zwaenepoel 2013;
   GridGraph, Zhu, Han and Chen 2015) turns the random ORs into sequential

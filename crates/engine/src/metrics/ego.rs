@@ -48,10 +48,9 @@
 //! - `mindist` in [`neighborhood`] drops nodes closer than `mindist` steps,
 //!   as igraph's `mindist`; `mindist = 1` drops ego itself.
 
-use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
+use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
-use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
 use crate::union_find::UnionFind;
@@ -267,8 +266,7 @@ pub fn neighborhood_sizes(
     // (`crate::bitset::MultiBfs`) over the arcs the mode follows; one
     // batch is one work item, so the result does not depend on the thread
     // count.
-    let h = oriented(g, opts.mode)?;
-    let adj = h.as_ref();
+    let view = View::new(g, opts.mode);
     let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
     let partials = parallel::for_each_item(
         (count + BATCH - 1) / BATCH,
@@ -278,7 +276,7 @@ pub fn neighborhood_sizes(
             let lo = b * BATCH;
             let hi = (lo + BATCH).min(count);
             let mut sizes = [usize::from(opts.mindist == 0); BATCH];
-            ms.run(adj, &sources[lo..hi], max_level, |step| {
+            ms.run(view, &sources[lo..hi], max_level, |step| {
                 if let Step::Reached { level, sources, .. } = step {
                     if level as usize >= opts.mindist {
                         for_each_bit(sources, |i| sizes[i] += 1);

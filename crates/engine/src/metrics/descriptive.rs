@@ -103,7 +103,7 @@
 
 use std::borrow::Cow;
 
-use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
+use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::{Csr, Graph};
 use crate::matrix::Dense;
@@ -523,14 +523,33 @@ impl Default for PathOptions {
 }
 
 /// A graph oriented for the requested mode, its arc lengths, and the
-/// common length when every weight is the same.
+/// common length when every weight is the same. Unweighted searches read
+/// the input graph in place through a [`View`] in the requested mode
+/// (`view_mode`); weighted searches need lengths aligned with the arcs of
+/// a graph oriented for the mode (`h`, searched along its out-arcs).
 struct Prepared<'a> {
     h: Cow<'a, Graph>,
+    view_mode: DegreeMode,
     lengths: Lengths,
     unit: f64,
 }
 
+impl Prepared<'_> {
+    /// The arcs an unweighted search follows.
+    fn view(&self) -> View<'_> {
+        View::new(self.h.as_ref(), self.view_mode)
+    }
+}
+
 fn prepare<'a>(g: &'a Graph, opts: &PathOptions) -> Result<Prepared<'a>> {
+    if !opts.weighted {
+        return Ok(Prepared {
+            h: Cow::Borrowed(g),
+            view_mode: opts.mode,
+            lengths: Lengths::Uniform,
+            unit: 1.0,
+        });
+    }
     let h = oriented(g, opts.mode)?;
     let lengths = path_lengths(h.as_ref(), opts.weighted, opts.weights_as, opts.algorithm)?;
     // Uniform weights reduce to breadth-first search, which counts hops;
@@ -547,7 +566,12 @@ fn prepare<'a>(g: &'a Graph, opts: &PathOptions) -> Result<Prepared<'a>> {
         }
         _ => 1.0,
     };
-    Ok(Prepared { h, lengths, unit })
+    Ok(Prepared {
+        h,
+        view_mode: DegreeMode::Out,
+        lengths,
+        unit,
+    })
 }
 
 fn check_sources(n: usize, sources: Option<&[u32]>) -> Result<Vec<u32>> {
@@ -578,6 +602,7 @@ pub fn distance_rows(
     let sources = check_sources(n, sources)?;
     let p = prepare(g, &opts)?;
     let h = p.h.as_ref();
+    let view = p.view();
     let threads = parallel::resolve_threads(opts.threads, sources.len());
     // Keep a block of rows under about 64 MB, but give every thread work.
     let block = ((1usize << 23) / n.max(1)).max(threads).max(1);
@@ -608,7 +633,7 @@ pub fn distance_rows(
                     for (i, &s) in group.iter().enumerate() {
                         out[i][s as usize] = 0.0;
                     }
-                    ms.run(h, group, u32::MAX, |step| {
+                    ms.run(view, group, u32::MAX, |step| {
                         if let Step::Reached {
                             level,
                             node,
@@ -693,6 +718,7 @@ fn profiles(
     let mut clock = parallel::probe::Clock::start();
     let p = prepare(g, opts)?;
     let h = p.h.as_ref();
+    let view = p.view();
     let integral = !matches!(p.lengths, Lengths::Real(_));
     clock.mark("setup");
     let parts: Vec<Vec<(usize, PathProfile)>> = if matches!(p.lengths, Lengths::Uniform) {
@@ -709,7 +735,7 @@ fn profiles(
                 let group = &sources[lo..hi];
                 let mut count = [0u32; BATCH];
                 let mut profiles = [PathProfile::default(); BATCH];
-                ms.run(h, group, u32::MAX, |step| match step {
+                ms.run(view, group, u32::MAX, |step| match step {
                     Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
                     Step::LevelDone(level) => {
                         for (q, c) in profiles.iter_mut().zip(count.iter_mut()) {
@@ -893,16 +919,14 @@ pub fn reachability(g: &Graph, mode: DegreeMode, threads: usize) -> Result<Vec<f
             .map(|&m| (c.sizes[m as usize] - 1) as f64)
             .collect());
     }
-    let h = oriented(g, mode)?;
-    let h = h.as_ref();
-    let counts = within_hops(h, None, u32::MAX, threads);
+    let counts = within_hops(View::new(g, mode), None, u32::MAX, threads);
     Ok(counts.into_iter().map(|c| c as f64).collect())
 }
 
 /// Number of other nodes within `max_level` steps of each source (every
 /// node when `None`), by breadth-first search from 64 sources at a time.
-fn within_hops(adj: &Graph, sources: Option<&[u32]>, max_level: u32, threads: usize) -> Vec<usize> {
-    let n = adj.node_count();
+fn within_hops(view: View, sources: Option<&[u32]>, max_level: u32, threads: usize) -> Vec<usize> {
+    let n = view.node_count();
     let all: Vec<u32>;
     let sources = match sources {
         Some(s) => s,
@@ -919,7 +943,7 @@ fn within_hops(adj: &Graph, sources: Option<&[u32]>, max_level: u32, threads: us
             let lo = b * BATCH;
             let hi = (lo + BATCH).min(sources.len());
             let mut count = [0usize; BATCH];
-            ms.run(adj, &sources[lo..hi], max_level, |step| {
+            ms.run(view, &sources[lo..hi], max_level, |step| {
                 if let Step::Reached { sources, .. } = step {
                     for_each_bit(sources, |i| count[i] += 1);
                 }
@@ -961,7 +985,7 @@ pub fn within_distance(g: &Graph, limit: f64, opts: PathOptions) -> Result<Vec<u
         while max_level < u32::MAX && (max_level + 1) as f64 * p.unit <= limit {
             max_level += 1;
         }
-        return Ok(within_hops(h, None, max_level, opts.threads));
+        return Ok(within_hops(p.view(), None, max_level, opts.threads));
     }
     let n = h.node_count();
     let parts = parallel::for_each_item(

@@ -54,7 +54,7 @@
 
 use std::borrow::Cow;
 
-use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
+use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
@@ -238,8 +238,16 @@ pub(crate) fn oriented(g: &Graph, mode: DegreeMode) -> Result<Cow<'_, Graph>> {
 /// One shortest-path search from every node, in parallel.
 pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Vec<Profile>> {
     let mut clock = parallel::probe::Clock::start();
-    let h = oriented(g, opts.mode)?;
+    // Unweighted searches read `g` in place through a view in the
+    // requested mode; weighted ones need lengths aligned with the arcs of a
+    // graph oriented for the mode, searched along its out-arcs.
+    let (h, view_mode) = if opts.weighted {
+        (oriented(g, opts.mode)?, DegreeMode::Out)
+    } else {
+        (Cow::Borrowed(g), opts.mode)
+    };
     let h = h.as_ref();
+    let view = View::new(h, view_mode);
     let n = h.node_count();
     let lengths = path_lengths(h, opts.weighted, opts.weights_as, opts.algorithm)?;
     clock.mark("setup");
@@ -258,7 +266,7 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
                 let mut count = [0u32; BATCH];
                 let mut total = [0u64; BATCH];
                 let mut profiles = [Profile::default(); BATCH];
-                ms.run(h, &sources, u32::MAX, |step| match step {
+                ms.run(view, &sources, u32::MAX, |step| match step {
                     Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
                     Step::LevelDone(level) => {
                         for i in 0..sources.len() {
