@@ -22,7 +22,7 @@ The definition oracles are not run: they evaluate definitions exactly and
 are far too slow for networks of this size.
 
 Each measure runs only on fixtures within its cost budget (BUDGETS below),
-chosen so the whole check takes a few minutes on a 2-core machine:
+chosen so the whole check takes about seven minutes on a 2-core machine:
 shortest-path measures in NetworkX (pure Python, O(nm)) run on networks
 of up to about 1,500 nodes, linear-time measures on every network.
 
