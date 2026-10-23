@@ -2,9 +2,7 @@
 classical_mds <- function(d, k = 2) {
   d <- as_dissimilarity(d)
   n <- nrow(d)
-  if (!is.numeric(k) || length(k) != 1L || is.na(k) || k < 1 || k != floor(k)) {
-    stop("`k` must be a positive whole number.", call. = FALSE)
-  }
+  k <- check_count(k, "k", min = 1L)
   if (n < 2L) {
     stop("Classical scaling needs at least two points.", call. = FALSE)
   }
@@ -12,7 +10,6 @@ classical_mds <- function(d, k = 2) {
     stop(sprintf("`k` must be at most %d, one less than the number of points.", n - 1L),
          call. = FALSE)
   }
-  k <- as.integer(k)
   r <- engine_call("classical_mds", .Call(C_classical_mds, d, n, k), edge_rows = FALSE)
   dims <- r[[2L]]
   points <- r[[1L]][, seq_len(dims), drop = FALSE]

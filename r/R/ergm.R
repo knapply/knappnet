@@ -50,7 +50,7 @@ ergm_fit <- function(formula, estimate = c("MCMLE", "MPLE", "exact"), constraint
     },
     MCMLE = {
       ptr <- ergm_handle(model)
-      seed <- qap_seed(control$seed)
+      seed <- check_seed(control$seed)
       critical <- stats::qchisq(control$confidence, df = p)
       res <- engine_call("ergm_fit",
         .Call(C_ergm_mcmle, ptr, start, as.double(control$burnin), as.double(control$interval),
@@ -145,7 +145,7 @@ check_ergm_control <- function(ctl) {
       ctl$mple_tol <= 0) {
     stop("`mple_tol` must be a positive number.", call. = FALSE)
   }
-  if (!is.null(ctl$seed)) qap_seed(ctl$seed)
+  if (!is.null(ctl$seed)) check_seed(ctl$seed)
   resolve_threads(ctl$threads)
   invisible(ctl)
 }
@@ -303,7 +303,7 @@ ergm_draw <- function(model, theta, nsim, seed, burnin, interval, proposal, thre
     }
   }
   threads <- resolve_threads(threads)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   ptr <- ergm_handle(model)
   res <- engine_call("simulate",
     .Call(C_ergm_simulate, ptr, as.double(theta), as.double(burnin), as.double(max(interval, 1)),
@@ -629,13 +629,13 @@ ergm_term_table <- function(terms, x, env, lag) {
       kstar = , istar = , ostar = {
         if (what == "kstar") need_undirected(what, "`istar()` or `ostar()`") else need_directed(what)
         ks <- get_arg(args, "k", 1L)
-        check_counts(ks, what, min = 1)
+        check_term_counts(ks, what, min = 1)
         for (k in ks) add(TERM_CODES[[what]], param = k, name = paste0(what, k))
       },
       degree = , idegree = , odegree = {
         if (what == "degree") need_undirected(what, "`idegree()` or `odegree()`") else need_directed(what)
         ds <- get_arg(args, "d", 1L)
-        check_counts(ds, what, min = 0)
+        check_term_counts(ds, what, min = 0)
         for (d in ds) add(TERM_CODES[[what]], param = d, name = paste0(what, d))
       },
       triangle = add(15L, name = "triangle"),
@@ -720,7 +720,8 @@ select_levels <- function(lv, spec, what) {
                       "sorted levels (negative to drop), or level names."), what), call. = FALSE)
 }
 
-check_counts <- function(v, what, min) {
+# Whole numbers of at least `min` in a term's argument (degrees, star sizes).
+check_term_counts <- function(v, what, min) {
   if (!is.numeric(v) || !length(v) || anyNA(v) || any(v < min) || any(v != floor(v))) {
     stop(sprintf("Term `%s` needs whole numbers of at least %d.", what, min), call. = FALSE)
   }

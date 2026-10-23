@@ -15,13 +15,13 @@ layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr"
     auto = , stress = , sparse_stress = list(
       w = resolve_weighting(x, weighted, weights_as),
       pivots = layout_count(pivots, "pivots"), max_iter = layout_count(max_iter, "max_iter"),
-      tol = layout_tol(tol), seed = layout_seed(seed)),
+      tol = layout_tol(tol), seed = check_seed(seed)),
     fr = list(
       w = resolve_weighting(x, weighted, weights_as),
-      max_iter = layout_count(max_iter, "max_iter"), seed = layout_seed(seed)),
+      max_iter = layout_count(max_iter, "max_iter"), seed = check_seed(seed)),
     star = list(center = if (is.null(center)) -1 else
-      node_index(x, center, "center", one = TRUE) - 1),
-    tree = list(roots = if (is.null(root)) double() else node_index(x, root, "root") - 1),
+      node_positions(x, center, "center", one = TRUE) - 1),
+    tree = list(roots = if (is.null(root)) double() else node_positions(x, root, "root") - 1),
     twomode = list(types = layout_types(x, types)),
     list()
   )
@@ -58,47 +58,13 @@ layout_stress <- function(x, layout, weighted = NULL, weights_as = NULL, threads
               .Call(C_layout_stress_value, ptr, as.double(xy), w$weighted, w$code, threads))
 }
 
-layout_seed <- function(seed) {
-  if (is.null(seed)) {
-    # Two draws give 52 random bits, so set.seed() controls the result.
-    return(floor(stats::runif(1L) * 2^26) * 2^26 + floor(stats::runif(1L) * 2^26))
-  }
-  if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 0 ||
-      seed >= 2^53 || seed != floor(seed)) {
-    stop("`seed` must be a whole number in [0, 2^53).", call. = FALSE)
-  }
-  as.double(seed)
-}
-
-layout_count <- function(value, what) {
-  if (is.null(value)) return(0)
-  if (!is.numeric(value) || length(value) != 1L || is.na(value) || value < 1 ||
-      value != floor(value)) {
-    stop(sprintf("`%s` must be a positive whole number.", what), call. = FALSE)
-  }
-  as.double(value)
+# Layout controls whose NULL default (0 for the engine) means "choose".
+layout_count <- function(value, name) {
+  if (is.null(value)) 0 else as.double(check_count(value, name, min = 1L))
 }
 
 layout_tol <- function(tol) {
-  if (is.null(tol)) return(0)
-  if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
-    stop("`tol` must be a positive number.", call. = FALSE)
-  }
-  as.double(tol)
-}
-
-# 1-based row indices of node identifiers.
-node_index <- function(x, ids, what, one = FALSE) {
-  if (one && length(ids) != 1L) {
-    stop(sprintf("`%s` must be a single node identifier.", what), call. = FALSE)
-  }
-  idx <- match(ids, x$nodes[[x$roles$id]])
-  if (anyNA(idx)) {
-    stop(sprintf("`%s` contains identifiers that are not nodes of `x`: %s.", what,
-                 paste(format(utils::head(ids[is.na(idx)], 5L)), collapse = ", ")),
-         call. = FALSE)
-  }
-  idx
+  if (is.null(tol)) 0 else check_number(tol, "tol", lower = 0, open = TRUE)
 }
 
 # Node types for a two-mode layout as 0 (top row) and 1 (bottom row).

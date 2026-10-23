@@ -101,9 +101,7 @@ dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!=
                         column = NULL) {
   check_netframe(x)
   op <- match.arg(op)
-  if (!is.numeric(threshold) || length(threshold) != 1L || is.na(threshold)) {
-    stop("`threshold` must be a single number.", call. = FALSE)
-  }
+  threshold <- check_number(threshold, "threshold", finite = FALSE)
   if (is.null(column)) {
     if (is.null(x$roles$weight)) {
       stop("The network has no weight column; name the column to test with `column =`.",
@@ -353,16 +351,4 @@ join_attributes <- function(x, data, by = NULL) {
     nodes[[col]] <- data[[col]][pos]
   }
   with_tables(x, x$edges, nodes)
-}
-
-# A netframe with the same roles and attributes as `x` but new tables (and
-# possibly no weight role).
-with_tables <- function(x, edges, nodes, directed = x$directed, weight = x$roles$weight) {
-  weight_type <- if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type
-  out <- netframe(edges, nodes, directed = directed, from = x$roles$from, to = x$roles$to,
-                  id = x$roles$id, weight = weight, weight_type = weight_type,
-                  graph = x$graph)
-  extra <- setdiff(names(x$roles), names(out$roles))
-  if (length(extra)) out$roles[extra] <- x$roles[extra]
-  out
 }

@@ -29,7 +29,7 @@ tergm_fit <- function(formula, boot = 200, seed = NULL, level = 0.95, threads = 
   }
   check_ergm_control(control)
   threads <- resolve_threads(threads)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
 
   xs <- list()
   ys <- list()

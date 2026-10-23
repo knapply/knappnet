@@ -1,7 +1,7 @@
 # Regular equivalence (CATREGE) (man/regular_equivalence.Rd).
 regular_equivalence <- function(x, seed = NULL, weighted = NULL) {
   check_netframe(x)
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   codes <- if (is.null(seed)) NULL else node_groups(x, seed, "seed")$codes
   ptr <- engine_graph(x)
   r <- engine_call("regular_equivalence", .Call(C_regular_equivalence, ptr, codes, weighted))
@@ -23,7 +23,7 @@ automorphic_equivalence <- function(x, max_steps = 1e6) {
 # Blockmodel of a partition (man/blockmodel.Rd).
 blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = NULL) {
   check_netframe(x)
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   loops <- check_flag(loops, "loops")
   if (!is.null(cutoff) && (!is.numeric(cutoff) || length(cutoff) != 1L || is.na(cutoff))) {
     stop("`cutoff` must be a single number, or NULL for the overall density.", call. = FALSE)
@@ -89,28 +89,4 @@ print.blockmodel <- function(x, ...) {
   cat("Block densities:\n")
   print(round(x$density, 4), ...)
   invisible(x)
-}
-
-# A grouping of the nodes given as a vector aligned with x$nodes or the
-# name of a column of x$nodes: the values, their distinct labels in order
-# of first appearance, and 0-based codes into those labels.
-node_groups <- function(x, groups, name) {
-  n <- nrow(x$nodes)
-  if (is.character(groups) && length(groups) == 1L && groups %in% names(x$nodes)) {
-    groups <- x$nodes[[groups]]
-  }
-  if (is.factor(groups)) groups <- as.character(groups)
-  if (!is.atomic(groups)) {
-    stop(sprintf("`%s` must be an atomic vector (integer, character, factor, ...).", name),
-         call. = FALSE)
-  }
-  if (length(groups) != n) {
-    stop(sprintf("`%s` must have one value per node (%d), or name a column of `x$nodes`.",
-                 name, n), call. = FALSE)
-  }
-  if (anyNA(groups)) {
-    stop(sprintf("`%s` must not contain missing values.", name), call. = FALSE)
-  }
-  labels <- unique(groups)
-  list(values = groups, labels = labels, codes = match(groups, labels) - 1L)
 }

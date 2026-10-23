@@ -10,8 +10,7 @@ bicomponents <- function(x) {
 # n-cliques, n-clans, and k-plexes (man/n_cliques.Rd).
 n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
   check_netframe(x)
-  n <- check_count(n, "n")
-  if (n < 1L) stop("`n` must be at least 1.", call. = FALSE)
+  n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -23,8 +22,7 @@ n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
 # See man/n_cliques.Rd.
 n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
   check_netframe(x)
-  n <- check_count(n, "n")
-  if (n < 1L) stop("`n` must be at least 1.", call. = FALSE)
+  n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -36,8 +34,7 @@ n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
 # See man/n_cliques.Rd.
 k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 0L) {
   check_netframe(x)
-  k <- check_count(k, "k")
-  if (k < 1L) stop("`k` must be at least 1.", call. = FALSE)
+  k <- check_count(k, "k", min = 1L)
   min_size <- if (is.null(min_size)) 2L * k - 1L else check_count(min_size, "min_size")
   if (!is.numeric(max_steps) || length(max_steps) != 1L || is.na(max_steps) || max_steps < 1) {
     stop("`max_steps` must be a number of at least 1.", call. = FALSE)
@@ -105,26 +102,13 @@ factions <- function(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
   starts <- check_count(starts, "starts")
   max_stall <- check_count(max_stall, "max_stall")
   tenure <- if (is.null(tenure)) 0L else check_count(tenure, "tenure")
-  seed <- groups_seed(seed)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   res <- engine_call("factions",
                      .Call(C_factions, ptr, k, if (fit == "errors") 0L else 1L, starts,
                            max_stall, tenure, seed, threads))
   structure(res[[1L]], errors = res[[2L]], correlation = res[[3L]])
-}
-
-# A seed is a whole number in [0, 2^53]; NULL draws one from R's generator
-# (two draws give 52 random bits, so set.seed() controls the result).
-groups_seed <- function(seed) {
-  if (is.null(seed)) {
-    return(floor(stats::runif(1L) * 2^26) * 2^26 + floor(stats::runif(1L) * 2^26))
-  }
-  if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 0 ||
-      seed > 2^53 || seed != floor(seed)) {
-    stop("`seed` must be a whole number between 0 and 2^53.", call. = FALSE)
-  }
-  as.double(seed)
 }
 
 # Girvan-Newman, leading eigenvector, and greedy modularity communities (man/cluster_girvan_newman.Rd).
@@ -218,13 +202,6 @@ cluster_fast_greedy <- function(x, resolution = 1, weighted = NULL) {
   ptr <- engine_graph(x)
   res <- engine_call("cluster_fast_greedy", .Call(C_fast_greedy, ptr, resolution, weighted))
   structure(res[[1L]], modularity = res[[2L]])
-}
-
-require_undirected <- function(x, what) {
-  if (x$directed) {
-    stop(what, " needs an undirected network; rebuild it with ",
-         "netframe(..., directed = FALSE) or symmetrize() it.", call. = FALSE)
-  }
 }
 
 # Hierarchical clustering of nodes (man/cluster_hierarchical.Rd).

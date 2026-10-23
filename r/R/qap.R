@@ -10,7 +10,7 @@ qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
   n <- m$n
   mats <- m$values
   draws <- qap_draws(n, reps, exact)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   res <- engine_call("qap_cor",
     .Call(C_qap_cor, mats[[1]], mats[[2]], n, qap_mode_code(mode), diag, exact,
           as.double(reps), seed, threads, as.double(draws)))
@@ -72,9 +72,7 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   intercept <- check_flag(intercept, "intercept")
   diag <- check_flag(diag, "diag")
   exact <- check_flag(exact, "exact")
-  if (!is.numeric(tol) || length(tol) != 1L || is.na(tol)) {
-    stop("`tol` must be a single number in [0, 1).", call. = FALSE)
-  }
+  tol <- check_number(tol, "tol", lower = 0, upper = 1)
   threads <- resolve_threads(threads)
   if (is.matrix(x) || inherits(x, "netframe") || is.data.frame(x)) x <- list(x)
   if (!is.list(x)) stop("`x` must be a matrix, a netframe, or a list of them.", call. = FALSE)
@@ -86,7 +84,7 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   n <- m$n
   mats <- m$values
   draws <- qap_draws(n, reps, exact)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   xs <- if (k) unlist(mats[-1], use.names = FALSE) else double(0)
   res <- engine_call("mrqap",
     .Call(C_mrqap, mats[[1]], as.double(xs), n, k, intercept, qap_mode_code(mode), diag,
@@ -199,18 +197,6 @@ qap_draws <- function(n, reps, exact) {
     stop("`reps` must be a whole number between 0 and .Machine$integer.max.", call. = FALSE)
   }
   reps
-}
-
-qap_seed <- function(seed) {
-  if (is.null(seed)) {
-    # Two draws give 52 random bits, so set.seed() controls the result.
-    return(floor(stats::runif(1L) * 2^26) * 2^26 + floor(stats::runif(1L) * 2^26))
-  }
-  if (!is.numeric(seed) || length(seed) != 1L || is.na(seed) || seed < 0 ||
-      seed >= 2^53 || seed != floor(seed)) {
-    stop("`seed` must be a whole number in [0, 2^53).", call. = FALSE)
-  }
-  as.double(seed)
 }
 
 # Converts inputs to square matrices of one size, aligns node order by

@@ -180,9 +180,7 @@ expected_triad_census <- function(x) {
 plot_scores <- function(scores, labels = NULL, top = 25, decreasing = TRUE, ...) {
   if (!is.numeric(scores)) stop("`scores` must be a numeric vector.", call. = FALSE)
   decreasing <- check_flag(decreasing, "decreasing")
-  if (!is.numeric(top) || length(top) != 1L || is.na(top) || top < 1) {
-    stop("`top` must be a positive number.", call. = FALSE)
-  }
+  top <- check_number(top, "top", lower = 1)
   k <- length(scores)
   lab <- if (inherits(labels, "netframe")) {
     check_netframe(labels)

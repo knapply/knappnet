@@ -3,10 +3,7 @@ reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weigh
                   normalized = FALSE, threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
-  if (!is.numeric(k) || length(k) != 1L || is.na(k) || k < 0) {
-    stop("`k` must be a single non-negative number (Inf counts every reachable node).",
-         call. = FALSE)
-  }
+  k <- check_number(k, "k", lower = 0, finite = FALSE)
   normalized <- check_flag(normalized, "normalized")
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
@@ -55,7 +52,7 @@ edge_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0
 information_centrality <- function(x, weighted = NULL, convention = c("sna", "networkx")) {
   check_netframe(x)
   convention <- match.arg(convention)
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
   out <- engine_call("information_centrality", .Call(C_information_centrality, ptr, weighted))
   if (convention == "networkx") {

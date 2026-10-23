@@ -57,22 +57,3 @@ triad_census <- function(x, threads = 0L) {
                   "030T", "030C", "201", "120D", "120U", "120C", "210", "300")
   out
 }
-
-# Decides whether and how a path-based measure uses weights.
-resolve_weighting <- function(x, weighted, weights_as) {
-  check_flag_or_null(weighted, "weighted")
-  if (!is.null(weights_as)) check_choice(weights_as, c("distance", "strength"), "weights_as")
-  has <- !is.null(x$roles$weight)
-  weighted <- if (is.null(weighted)) has else isTRUE(weighted)
-  if (weighted) require_weights(x)
-  kind <- if (is.null(weights_as)) x$roles$weight_type else weights_as
-  if (is.null(kind)) kind <- "distance"
-  list(weighted = weighted, code = if (kind == "strength") 1L else 0L)
-}
-
-require_weights <- function(x) {
-  if (is.null(x$roles$weight)) {
-    stop(paste0("This network has no weights; use `weighted = FALSE`, or supply ",
-                "`weight =` to netframe()."), call. = FALSE)
-  }
-}

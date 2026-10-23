@@ -13,10 +13,8 @@ core_periphery <- function(x, method = c("discrete", "continuous"),
   max_stall <- check_count(max_stall, "max_stall")
   tenure <- if (is.null(tenure)) 0L else check_count(tenure, "tenure")
   max_iter <- check_count(max_iter, "max_iter")
-  if (!is.numeric(tol) || length(tol) != 1L || is.na(tol) || tol < 0 || !is.finite(tol)) {
-    stop("`tol` must be a single non-negative number.", call. = FALSE)
-  }
-  seed <- groups_seed(seed)
+  tol <- check_number(tol, "tol", lower = 0)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   if (method == "discrete") {
@@ -30,7 +28,7 @@ core_periphery <- function(x, method = c("discrete", "continuous"),
     res <- engine_call("core_periphery",
                        .Call(C_core_periphery_continuous, ptr,
                              if (fit == "minres") 0L else 1L, weighted, max_iter,
-                             as.double(tol), starts, seed, threads))
+                             tol, starts, seed, threads))
     out <- list(method = "continuous", fit = fit, coreness = res[[1L]],
                 correlation = res[[2L]], residual = res[[3L]], iterations = res[[4L]],
                 network = x)
@@ -61,9 +59,8 @@ print.core_periphery <- function(x, ...) {
 small_world <- function(x, local = FALSE, reps = 100L, seed = NULL, threads = 0L) {
   check_netframe(x)
   local <- check_flag(local, "local")
-  reps <- check_count(reps, "reps")
-  if (reps < 1L) stop("`reps` must be at least 1.", call. = FALSE)
-  seed <- groups_seed(seed)
+  reps <- check_count(reps, "reps", min = 1L)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   v <- engine_call("small_world", .Call(C_small_world, ptr, local, reps, seed, threads))

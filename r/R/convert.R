@@ -255,13 +255,6 @@ plain_column <- function(v) {
   v
 }
 
-require_pkg <- function(pkg) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
-    stop(sprintf("The %s package is required; install it with install.packages(\"%s\").",
-                 pkg, pkg), call. = FALSE)
-  }
-}
-
 # Methods for other packages' generics, registered when those packages load.
 as.igraph.netframe <- function(x, ...) to_igraph(x)
 as.network.netframe <- function(x, ...) to_network(x)

@@ -2,17 +2,16 @@
 plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
   check_netframe(x)
   color <- check_flag(color, "color")
-  if (is.character(scores) && length(scores) == 1L && scores %in% names(x$nodes)) {
-    if (identical(title, "score")) title <- scores
-    scores <- x$nodes[[scores]]
+  if (is.character(scores) && length(scores) == 1L && scores %in% names(x$nodes) &&
+      identical(title, "score")) {
+    title <- scores
   }
-  if (!is.numeric(scores) || length(scores) != nrow(x$nodes)) {
-    stop("`scores` must be a numeric vector with one value per node, or the name of a numeric column of `x$nodes`.",
-         call. = FALSE)
+  scores <- node_column(x, scores, "scores")
+  if (!is.numeric(scores)) {
+    stop(paste0("`scores` must be a numeric vector with one value per node, or the name ",
+                "of a numeric column of `x$nodes`."), call. = FALSE)
   }
-  if (!is.character(title) || length(title) != 1L || is.na(title)) {
-    stop("`title` must be a single string.", call. = FALSE)
-  }
+  check_string(title, "title")
   w <- with_node_column(x, as.numeric(scores), title)
   invisible(plot(w$x, node_size = w$name, node_color = if (color) w$name else NULL, ...))
 }
@@ -24,9 +23,7 @@ plot_partition <- function(x, membership, title = "group", ...) {
       identical(title, "group")) {
     title <- membership
   }
-  if (!is.character(title) || length(title) != 1L || is.na(title)) {
-    stop("`title` must be a single string.", call. = FALSE)
-  }
+  check_string(title, "title")
   q <- attr(membership, "modularity")
   g <- plot_groups(x, membership, "membership")
   w <- with_node_column(x, g, title)
@@ -115,9 +112,7 @@ plot_robustness <- function(x, nodes = NULL, strategy = c("degree", "betweenness
     }
     strategy <- unique(strategy)
   }
-  if (!is.numeric(steps) || length(steps) != 1L || is.na(steps) || steps < 2) {
-    stop("`steps` must be a number of at least 2.", call. = FALSE)
-  }
+  steps <- check_number(steps, "steps", lower = 2)
   if (!is.character(label) || length(label) != 1L || is.na(label) || label %in% strategy) {
     stop("`label` must be a single string that is not the name of a strategy.", call. = FALSE)
   }
@@ -149,7 +144,7 @@ plot_robustness <- function(x, nodes = NULL, strategy = c("degree", "betweenness
                               value = curve_for(removal, counts), stringsAsFactors = FALSE)
   }
   if (!is.null(nodes)) {
-    pos <- set_positions(x, nodes, "nodes", allow_empty = FALSE)
+    pos <- node_positions(x, nodes, "nodes", empty_ok = FALSE, distinct = TRUE)
     k <- 0:length(pos)
     curves[[label]] <- data.frame(curve = label, removed = k, fraction = k / n,
                                   value = curve_for(pos, k), stringsAsFactors = FALSE)

@@ -92,17 +92,9 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
   mode <- check_choice(mode, c("in", "out", "all"), "mode")
   if (is.null(scale)) scale <- if (convention == "igraph") "max" else "unit"
   scale <- check_choice(scale, c("max", "unit"), "scale")
-  check_flag_or_null(weighted, "weighted")
   threads <- resolve_threads(threads)
-  weighted <- if (is.null(weighted)) !is.null(x$roles$weight) else isTRUE(weighted)
-  if (weighted) require_weights(x)
-  if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
-    stop("`tol` must be a positive number.", call. = FALSE)
-  }
-  if (!is.numeric(max_iter) || length(max_iter) != 1L || !isTRUE(max_iter >= 1) ||
-      max_iter != floor(max_iter)) {
-    stop("`max_iter` must be a positive whole number.", call. = FALSE)
-  }
+  weighted <- resolve_additive_weights(x, weighted)
+  check_iteration(tol, max_iter)
 
   loops <- switch(convention, igraph = 0L, networkx = 1L, sna = 2L, ucinet = 2L)
   ptr <- switch(convention,
@@ -175,24 +167,4 @@ centralization <- function(x, measure = c("degree", "betweenness", "closeness", 
   }
   engine_call("centralization", .Call(C_centralization, ptr, code, mode_code(mode), loops,
                                       normalized, conv, threads))
-}
-
-mode_code <- function(mode) switch(mode, out = 1L, `in` = 2L, all = 3L)
-
-# The network as an adjacency matrix, the way sna and UCINET read it:
-# parallel edges collapse into one tie (keeping the largest weight, or the
-# smallest with keep = "min") and self-loops are dropped. Cached alongside
-# the engine graph.
-engine_graph_simple <- function(x, undirected = FALSE, keep = c("max", "min")) {
-  keep <- match.arg(keep)
-  key <- paste("simple", isTRUE(undirected), keep, sep = "_")
-  # engine_graph() first: it empties the cache when the handle is stale.
-  base <- engine_graph(x)
-  ptr <- x$cache[[key]]
-  if (is.null(ptr) || !.Call(C_graph_alive, ptr)) {
-    ptr <- engine_call("netframe", .Call(C_graph_simplify, base, isTRUE(undirected),
-                                         if (keep == "max") 0L else 1L))
-    assign(key, ptr, envir = x$cache)
-  }
-  ptr
 }

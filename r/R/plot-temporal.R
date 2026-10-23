@@ -2,9 +2,7 @@
 plot_timeline <- function(x, by = c("pair", "node"), max_rows = 50, ...) {
   check_temporal(x)
   by <- match.arg(by)
-  if (!is.numeric(max_rows) || length(max_rows) != 1L || is.na(max_rows) || max_rows < 1) {
-    stop("`max_rows` must be a positive number.", call. = FALSE)
-  }
+  max_rows <- check_number(max_rows, "max_rows", lower = 1)
   tt <- temporal_times(x)
   m <- length(tt$start)
   if (m == 0L) stop("The network has no contacts to draw.", call. = FALSE)
@@ -78,9 +76,7 @@ plot_rolling <- function(x, nodes = NULL, top = 8, ...) {
   if (!is.data.frame(x) || !all(c("start", "end", "node", "value") %in% names(x))) {
     stop("`x` must be the data frame returned by rolling().", call. = FALSE)
   }
-  if (!is.numeric(top) || length(top) != 1L || is.na(top) || top < 1) {
-    stop("`top` must be a positive number.", call. = FALSE)
-  }
+  top <- check_number(top, "top", lower = 1)
   if (nrow(x) == 0L) stop("There are no windows to draw.", call. = FALSE)
   dots <- list(...)
   starts <- sort(unique(x$start))

@@ -6,15 +6,12 @@ pagerank <- function(x, damping = 0.85, personalized = NULL, directed = TRUE, we
   check_netframe(x)
   dangling <- match.arg(dangling)
   convention <- match.arg(convention)
-  if (!is.numeric(damping) || length(damping) != 1L || is.na(damping) ||
-      damping < 0 || damping > 1) {
-    stop("`damping` must be a single number between 0 and 1.", call. = FALSE)
-  }
+  damping <- check_number(damping, "damping", lower = 0, upper = 1)
   if (!is.null(personalized)) {
     personalized <- node_values(x, personalized, "personalized")
   }
   directed <- check_flag(directed, "directed")
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   check_iteration(tol, max_iter)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -33,16 +30,14 @@ katz_centrality <- function(x, alpha = 0.1, beta = 1, mode = c("in", "out", "all
   check_netframe(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
-  if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) || alpha < 0) {
-    stop("`alpha` must be a single nonnegative number.", call. = FALSE)
-  }
+  alpha <- check_number(alpha, "alpha", lower = 0)
   if (is.character(beta) || length(beta) != 1L) beta <- node_values(x, beta, "beta")
   if (!is.numeric(beta) || anyNA(beta)) {
     stop("`beta` must be numeric without missing values.", call. = FALSE)
   }
   check_flag_or_null(normalized, "normalized")
   if (is.null(normalized)) normalized <- convention == "networkx"
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   check_iteration(tol, max_iter)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -60,16 +55,14 @@ power_centrality <- function(x, exponent = 1, mode = c("out", "in", "all"), weig
   check_netframe(x)
   mode <- match.arg(mode)
   convention <- match.arg(convention)
-  if (!is.numeric(exponent) || length(exponent) != 1L || !is.finite(exponent)) {
-    stop("`exponent` must be a single finite number.", call. = FALSE)
-  }
+  exponent <- check_number(exponent, "exponent")
   loops <- check_flag(loops, "loops")
   rescale <- check_flag(rescale, "rescale")
   if (convention == "sna" && loops) {
     stop("The sna convention reads the network without self-loops; use `loops = FALSE`.",
          call. = FALSE)
   }
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   check_iteration(tol, max_iter)
   threads <- resolve_threads(threads)
   ptr <- if (convention == "sna") engine_graph_simple(x) else engine_graph(x)
@@ -98,7 +91,7 @@ hits_common <- function(x, fn, weighted, scale, convention, tol, max_iter, threa
   check_netframe(x)
   if (is.null(scale)) scale <- if (convention == "igraph") "max" else "sum"
   scale <- check_choice(scale, c("max", "sum", "unit"), "scale")
-  weighted <- positions_weighted(x, weighted)
+  weighted <- resolve_additive_weights(x, weighted)
   check_iteration(tol, max_iter)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
@@ -112,31 +105,4 @@ hits_common <- function(x, fn, weighted, scale, convention, tol, max_iter, threa
             "Kleinberg's iteration from equal scores.", call. = FALSE)
   }
   if (fn == "hub_score") res[[1]] else res[[2]]
-}
-
-check_iteration <- function(tol, max_iter) {
-  if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
-    stop("`tol` must be a positive number.", call. = FALSE)
-  }
-  if (!is.numeric(max_iter) || length(max_iter) != 1L || !isTRUE(max_iter >= 1) ||
-      max_iter != floor(max_iter)) {
-    stop("`max_iter` must be a positive whole number.", call. = FALSE)
-  }
-}
-
-# Numeric node values: a vector aligned with x$nodes, or the name of a
-# column of x$nodes.
-node_values <- function(x, values, what) {
-  if (is.character(values) && length(values) == 1L) {
-    if (!values %in% names(x$nodes)) {
-      stop(sprintf("`%s` names no column of `x$nodes`.", what), call. = FALSE)
-    }
-    values <- x$nodes[[values]]
-  }
-  if (!is.numeric(values) || length(values) != nrow(x$nodes) || anyNA(values)) {
-    stop(sprintf(paste0("`%s` must be a numeric vector with one value per node (%d) and ",
-                        "no missing values, or the name of such a column of `x$nodes`."),
-                 what, nrow(x$nodes)), call. = FALSE)
-  }
-  as.double(values)
 }

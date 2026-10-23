@@ -5,10 +5,7 @@ spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "plan
   check_netframe(x)
   crs <- match.arg(crs)
   representative <- match.arg(representative)
-  if (!is.numeric(radius) || length(radius) != 1L || is.na(radius) || !is.finite(radius) ||
-      radius <= 0) {
-    stop("`radius` must be a single positive number.", call. = FALSE)
-  }
+  radius <- check_number(radius, "radius", lower = 0, open = TRUE)
   if (has_node_geometry(x)) {
     if (!missing(coords)) {
       stop(sprintf(paste0("`x$nodes` already carries geometry in column `%s`, from which ",
@@ -65,7 +62,7 @@ check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
 node_coordinates <- function(x) {
   check_netframe(x)
   if (has_node_geometry(x)) {
-    require_sf("A netframe with sf node geometry")
+    require_pkg("sf", "A netframe with sf node geometry")
     return(geometry_coordinates(x))
   }
   if (is.null(x$roles$x) || is.null(x$roles$y) || is.null(x$roles$crs)) {
@@ -97,7 +94,7 @@ spatial_coords <- function(x) {
 edge_lengths <- function(x) {
   check_netframe(x)
   if (has_edge_geometry(x)) {
-    require_sf("A netframe with sf edge geometry")
+    require_pkg("sf", "A netframe with sf edge geometry")
     return(geometry_edge_lengths(x))
   }
   p <- spatial_coords(x)
@@ -110,12 +107,8 @@ distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"
                            exponent = 2) {
   form <- match.arg(form)
   if (!is.numeric(d)) stop("`d` must be numeric.", call. = FALSE)
-  if (!is.numeric(scale) || length(scale) != 1L || is.na(scale) || scale <= 0) {
-    stop("`scale` must be a single positive number.", call. = FALSE)
-  }
-  if (!is.numeric(exponent) || length(exponent) != 1L || is.na(exponent) || exponent <= 0) {
-    stop("`exponent` must be a single positive number.", call. = FALSE)
-  }
+  scale <- check_number(scale, "scale", lower = 0, open = TRUE)
+  exponent <- check_number(exponent, "exponent", lower = 0, open = TRUE)
   if (any(d < 0, na.rm = TRUE)) stop("`d` must not be negative.", call. = FALSE)
   r <- d / scale
   switch(form,
@@ -166,7 +159,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
     if (missing(id)) id <- NULL
   }
   if (!is.null(sf_nodes)) {
-    require_sf("proximity_network() with sf nodes")
+    require_pkg("sf", "proximity_network() with sf nodes")
     return(sf_proximity_network(sf_nodes, within, k, knn, id, exact, threads))
   }
   if (exact) {
@@ -183,10 +176,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
   cx <- resolve_column(nodes, coords[[1L]], "coords[1]", "nodes")
   cy <- resolve_column(nodes, coords[[2L]], "coords[2]", "nodes")
   id <- resolve_column(nodes, id, "id", "nodes")
-  if (!is.numeric(radius) || length(radius) != 1L || is.na(radius) || !is.finite(radius) ||
-      radius <= 0) {
-    stop("`radius` must be a single positive number.", call. = FALSE)
-  }
+  radius <- check_number(radius, "radius", lower = 0, open = TRUE)
   check_coordinates(nodes[[cx]], nodes[[cy]], cx, cy, crs, "nodes")
   r <- proximity_pairs(as.double(nodes[[cx]]), as.double(nodes[[cy]]), crs == "lonlat",
                        radius, within, k, threads)
@@ -204,14 +194,8 @@ check_proximity_args <- function(within, k) {
     stop("Give exactly one of `within` (a distance) or `k` (a number of neighbours).",
          call. = FALSE)
   }
-  if (!is.null(within) && (!is.numeric(within) || length(within) != 1L || is.na(within) ||
-                           within < 0)) {
-    stop("`within` must be a single non-negative distance.", call. = FALSE)
-  }
-  if (!is.null(k) && (!is.numeric(k) || length(k) != 1L || is.na(k) || k < 1 ||
-                      k != floor(k))) {
-    stop("`k` must be a positive whole number.", call. = FALSE)
-  }
+  if (!is.null(within)) check_number(within, "within", lower = 0)
+  if (!is.null(k)) check_count(k, "k", min = 1L)
   invisible(NULL)
 }
 

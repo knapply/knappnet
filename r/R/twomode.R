@@ -90,29 +90,33 @@ project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
       second = project(x, "second", weighted, method, loops, threads)
     ))
   }
+  weighted <- check_flag(weighted, "weighted")
+  loops <- check_flag(loops, "loops")
   if (method == "product") require_weights(x)
-  if (method == "newman" && isTRUE(loops)) {
+  if (method == "newman" && loops) {
     stop("Newman's collaboration weights have no diagonal; use `loops = FALSE`.",
          call. = FALSE)
   }
   second <- which == "second"
   code <- switch(method, count = 0L, newman = 1L, product = 2L)
-  res <- .Call(C_project, engine_graph(x), twomode_types(x), second, code, isTRUE(loops),
-               resolve_threads(threads))
+  threads <- resolve_threads(threads)
+  types <- twomode_types(x)
+  ptr <- engine_graph(x)
+  res <- engine_call("project", .Call(C_project, ptr, types, second, code, loops, threads))
   in_mode <- x$nodes[[x$roles$type]] == second
   nodes <- x$nodes[in_mode, , drop = FALSE]
   rownames(nodes) <- NULL
   ids <- x$nodes[[x$roles$id]]
   edges <- data.frame(from = ids[res[[1]]], to = ids[res[[2]]], stringsAsFactors = FALSE)
-  if (isTRUE(weighted)) edges$weight <- res[[3]]
+  if (weighted) edges$weight <- res[[3]]
   netframe(edges, nodes, directed = FALSE, from = "from", to = "to", id = x$roles$id,
-           weight = if (isTRUE(weighted)) "weight", weight_type = "strength",
+           weight = if (weighted) "weight", weight_type = "strength",
            graph = x$graph)
 }
 
 # Centrality and density of two-mode networks (man/twomode_degree.Rd).
 twomode_degree <- function(x, normalized = TRUE) {
-  twomode_centrality(x, 0L, normalized, 0L, 1L)
+  twomode_centrality(x, 0L, normalized, 0L, 1L, "twomode_degree")
 }
 
 # See man/twomode_degree.Rd.
@@ -123,25 +127,25 @@ twomode_closeness <- function(x, normalized = TRUE,
     stop("The Wasserman-Faust rule applies to normalized closeness; use ",
          "`unreachable = \"ignore\"` with `normalized = FALSE`.", call. = FALSE)
   }
-  twomode_centrality(x, 1L, normalized, if (unreachable == "ignore") 0L else 1L, threads)
+  twomode_centrality(x, 1L, normalized, if (unreachable == "ignore") 0L else 1L, threads,
+                     "twomode_closeness")
 }
 
 # See man/twomode_degree.Rd.
 twomode_betweenness <- function(x, normalized = TRUE, threads = 0L) {
-  twomode_centrality(x, 2L, normalized, 0L, threads)
+  twomode_centrality(x, 2L, normalized, 0L, threads, "twomode_betweenness")
 }
 
 # See man/twomode_degree.Rd.
 twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L) {
   check_twomode(x)
-  if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
-    stop("`tol` must be a positive number.", call. = FALSE)
-  }
-  if (!is.numeric(max_iter) || length(max_iter) != 1L || !isTRUE(max_iter >= 1)) {
-    stop("`max_iter` must be a positive whole number.", call. = FALSE)
-  }
-  res <- .Call(C_twomode_eigenvector, engine_graph(x), twomode_types(x), as.double(tol),
-               as.double(max_iter), resolve_threads(threads))
+  check_iteration(tol, max_iter)
+  threads <- resolve_threads(threads)
+  types <- twomode_types(x)
+  ptr <- engine_graph(x)
+  res <- engine_call("twomode_eigenvector",
+                     .Call(C_twomode_eigenvector, ptr, types, as.double(tol),
+                           as.double(max_iter), threads))
   if (!res[[3]] && nrow(x$edges) > 0L) {
     warning("The network is not connected, so eigenvector scores are zero outside the ",
             "dominant component(s) and may not be unique.", call. = FALSE)
@@ -152,13 +156,19 @@ twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L)
 # See man/twomode_degree.Rd.
 twomode_density <- function(x) {
   check_twomode(x)
-  .Call(C_twomode_density, engine_graph(x), twomode_types(x))
+  types <- twomode_types(x)
+  ptr <- engine_graph(x)
+  engine_call("twomode_density", .Call(C_twomode_density, ptr, types))
 }
 
-twomode_centrality <- function(x, measure, normalized, unreachable, threads) {
+twomode_centrality <- function(x, measure, normalized, unreachable, threads, fn) {
   check_twomode(x)
-  .Call(C_twomode_centrality, engine_graph(x), twomode_types(x), measure,
-        isTRUE(normalized), unreachable, resolve_threads(threads))
+  normalized <- check_flag(normalized, "normalized")
+  threads <- resolve_threads(threads)
+  types <- twomode_types(x)
+  ptr <- engine_graph(x)
+  engine_call(fn, .Call(C_twomode_centrality, ptr, types, measure, normalized, unreachable,
+                        threads))
 }
 
 check_twomode <- function(x) {

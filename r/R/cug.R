@@ -6,9 +6,8 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
     stop("`statistic` must be a function of a netframe returning one number.", call. = FALSE)
   }
   conditioning <- match.arg(conditioning)
-  reps <- check_count(reps, "reps")
-  if (reps < 1L) stop("`reps` must be at least 1.", call. = FALSE)
-  seed <- groups_seed(seed)
+  reps <- check_count(reps, "reps", min = 1L)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   label <- deparse(substitute(statistic))[[1L]]
 

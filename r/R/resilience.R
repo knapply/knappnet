@@ -13,13 +13,10 @@ key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentati
     stop(sprintf("`k` must be a whole number between 1 and the number of nodes (%d).", n),
          call. = FALSE)
   }
-  if (!is.numeric(restarts) || length(restarts) != 1L || is.na(restarts) || restarts < 1 ||
-      restarts != floor(restarts)) {
-    stop("`restarts` must be a positive whole number.", call. = FALSE)
-  }
-  m <- check_reach_limit(m)
+  restarts <- check_count(restarts, "restarts", min = 1L)
+  m <- check_number(m, "m", lower = 0, finite = FALSE)
   w <- resolve_weighting(x, weighted, weights_as)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   res <- engine_call("key_players",
     .Call(C_key_players, engine_graph(x), as.double(k), kpp_code(measure), m, mode_code(mode),
@@ -38,8 +35,8 @@ key_player_score <- function(x, set, measure = c("fragmentation", "distance_frag
   check_netframe(x)
   measure <- match.arg(measure)
   mode <- match.arg(mode)
-  m <- check_reach_limit(m)
-  index <- set_positions(x, set, "set", allow_empty = TRUE)
+  m <- check_number(m, "m", lower = 0, finite = FALSE)
+  index <- node_positions(x, set, "set", distinct = TRUE)
   w <- resolve_weighting(x, weighted, weights_as)
   engine_call("key_player_score",
     .Call(C_kpp_score, engine_graph(x), as.integer(index - 1L), kpp_code(measure), m,
@@ -61,7 +58,7 @@ group_centrality <- function(x, group, measure = c("degree", "closeness", "betwe
     }
     weighted <- FALSE
   }
-  index <- set_positions(x, group, "group", allow_empty = FALSE)
+  index <- node_positions(x, group, "group", empty_ok = FALSE, distinct = TRUE)
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
   code <- switch(measure, degree = 0L, closeness = 1L, betweenness = 2L)
@@ -89,27 +86,4 @@ flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
 kpp_code <- function(measure) {
   switch(measure, fragmentation = 0L, distance_fragmentation = 1L, m_reach = 2L,
          distance_reach = 3L)
-}
-
-check_reach_limit <- function(m) {
-  if (!is.numeric(m) || length(m) != 1L || is.na(m) || m < 0) {
-    stop("`m` must be a single non-negative number.", call. = FALSE)
-  }
-  as.double(m)
-}
-
-# Positions (1-based) of a set of distinct node identifiers in x$nodes:
-# node_positions() with the checks a set needs.
-set_positions <- function(x, nodes, what, allow_empty) {
-  if (!is.atomic(nodes) || is.null(nodes) || (!allow_empty && !length(nodes))) {
-    stop(sprintf("`%s` must be a vector of node identifiers.", what), call. = FALSE)
-  }
-  if (anyNA(nodes)) {
-    stop(sprintf("`%s` must not contain missing values (NA).", what), call. = FALSE)
-  }
-  pos <- node_positions(x, nodes, what)
-  if (anyDuplicated(pos)) {
-    stop(sprintf("`%s` lists a node more than once.", what), call. = FALSE)
-  }
-  pos
 }

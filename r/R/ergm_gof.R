@@ -11,7 +11,7 @@ ergm_gof <- function(object, nsim = 100, seed = NULL,
     stop("`nsim` must be a whole number of at least 1.", call. = FALSE)
   }
   threads <- resolve_threads(threads)
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   ptr <- ergm_handle(model)
   res <- engine_call("ergm_gof",
     .Call(C_ergm_simulate, ptr, as.double(object$coefficients), as.double(burnin),

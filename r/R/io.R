@@ -7,8 +7,8 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
     stop(sprintf("File `%s` does not exist.", file), call. = FALSE)
   }
   check_flag_or_null(directed, "directed")
-  check_string_or_null(weight, "weight")
-  check_string_or_null(format, "format")
+  check_string(weight, "weight", null_ok = TRUE)
+  check_string(format, "format", null_ok = TRUE)
   fmt <- resolve_format(format, file, write = FALSE)
   if (fmt == "gpkg") return(read_gpkg(file, directed, weight, weight_type))
 
@@ -45,18 +45,6 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
            graph = res$graph)
 }
 
-check_path <- function(value, name) {
-  if (!is.character(value) || length(value) != 1L || is.na(value) || !nzchar(value)) {
-    stop(sprintf("`%s` must be a single file path.", name), call. = FALSE)
-  }
-}
-
-check_string_or_null <- function(value, name) {
-  if (!is.null(value) && (!is.character(value) || length(value) != 1L || is.na(value))) {
-    stop(sprintf("`%s` must be a single string or NULL.", name), call. = FALSE)
-  }
-}
-
 pick_weight <- function(edges, weight) {
   if (!is.null(weight)) {
     if (!weight %in% names(edges)) {
@@ -71,8 +59,8 @@ pick_weight <- function(edges, weight) {
 write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
   check_netframe(x)
   check_path(file, "file")
-  check_string_or_null(format, "format")
-  check_string_or_null(weight, "weight")
+  check_string(format, "format", null_ok = TRUE)
+  check_string(weight, "weight", null_ok = TRUE)
   if (!is.null(nodes_file)) check_path(nodes_file, "nodes_file")
   fmt <- resolve_format(format, file, write = TRUE)
   weight <- if (is.null(weight)) x$roles$weight else weight

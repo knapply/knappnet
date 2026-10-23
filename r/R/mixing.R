@@ -112,30 +112,6 @@ homophily <- function(x, groups, direction = c("all", "out", "in")) {
              stringsAsFactors = FALSE)
 }
 
-# Node categories: a column of x$nodes or a vector aligned with the nodes.
-# Returns the values, 0-based integer codes in order of first appearance
-# (NA where missing), and the category labels.
-node_categories <- function(x, values, what, missing_ok) {
-  if (is.character(values) && length(values) == 1L && nrow(x$nodes) != 1L) {
-    if (!values %in% names(x$nodes)) {
-      stop(sprintf("`%s` names no column of `x$nodes`.", what), call. = FALSE)
-    }
-    values <- x$nodes[[values]]
-  } else if (is.character(values) && length(values) == 1L && values %in% names(x$nodes)) {
-    values <- x$nodes[[values]]
-  }
-  if (!is.atomic(values) || length(values) != nrow(x$nodes)) {
-    stop(sprintf("`%s` must have one value per node (%d), or name a column of `x$nodes`.",
-                 what, nrow(x$nodes)), call. = FALSE)
-  }
-  if (!missing_ok && anyNA(values)) {
-    stop(sprintf("`%s` must not contain missing values.", what), call. = FALSE)
-  }
-  plain <- if (is.factor(values)) as.character(values) else values
-  levels <- unique(plain[!is.na(plain)])
-  list(values = values, codes = match(plain, levels) - 1L, levels = as.character(levels))
-}
-
 warn_parallel <- function(x) {
   src <- x$index$src
   tgt <- x$index$tgt

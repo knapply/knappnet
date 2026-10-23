@@ -39,9 +39,7 @@ plot.mrqap <- function(x, which = c("coefficients", "distributions"), level = 0.
                        intercept = FALSE, breaks = "Sturges", ...) {
   which <- match.arg(which)
   intercept <- check_flag(intercept, "intercept")
-  if (!is.numeric(level) || length(level) != 1L || is.na(level) || level <= 0 || level >= 1) {
-    stop("`level` must be a number strictly between 0 and 1.", call. = FALSE)
-  }
+  level <- check_number(level, "level", lower = 0, upper = 1, open = TRUE)
   observed <- if (x$statistic == "t") x$t else x$coefficients
   what <- if (x$statistic == "t") "t statistic" else "coefficient"
   keep <- rep(TRUE, length(observed))

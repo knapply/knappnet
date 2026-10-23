@@ -418,7 +418,7 @@ saom_fit <- function(data, effects, control = saom_control(), initial = NULL) {
     initial <- as.double(initial)
     initial[is.na(initial)] <- NaN
   }
-  seed <- qap_seed(control$seed)
+  seed <- check_seed(control$seed)
   options <- c(control$conditional, control$n1, control$nsub, control$n3, control$firstg,
                control$reduceg, control$diagonalize, control$truncation, control$theta_bound,
                control$keep_simulations)
@@ -592,7 +592,7 @@ saom_simulate <- function(data, effects, theta, rates = NULL, n = 1, seed = NULL
   if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1 || n != floor(n)) {
     stop("`n` must be a positive whole number.", call. = FALSE)
   }
-  seed <- qap_seed(seed)
+  seed <- check_seed(seed)
   ptr <- saom_handle(data)
   nn <- data$n
   ids <- data$ids

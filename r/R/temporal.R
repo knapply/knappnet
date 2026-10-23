@@ -164,8 +164,8 @@ temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure
   type <- match.arg(type)
   opts <- path_options(x, start, end, min_wait, max_wait, strict, traversal, threads)
   n <- nrow(x$nodes)
-  rows <- if (is.null(from)) seq_len(n) else temporal_positions(x, from, "from")
-  cols <- if (is.null(to)) seq_len(n) else temporal_positions(x, to, "to")
+  rows <- if (is.null(from)) seq_len(n) else node_positions(x, from, "from", empty_ok = FALSE)
+  cols <- if (is.null(to)) seq_len(n) else node_positions(x, to, "to", empty_ok = FALSE)
   ptr <- engine_temporal(x)
   scale <- time_scale(x)
   if (type == "average") {
@@ -485,22 +485,6 @@ path_options <- function(x, start, end, min_wait, max_wait, strict, traversal, t
     tval <- duration_arg(traversal, x, "traversal")
   }
   c(s, e, lo, hi, as.double(strict), tcode, tval, as.double(resolve_threads(threads)))
-}
-
-# Positions (1-based) of node identifiers in x$nodes.
-temporal_positions <- function(x, nodes, what) {
-  ids <- x$nodes[[x$roles$id]]
-  if (is.factor(ids)) ids <- as.character(ids)
-  if (is.factor(nodes)) nodes <- as.character(nodes)
-  pos <- match(nodes, ids)
-  if (anyNA(pos) || !length(pos)) {
-    if (!length(pos)) stop(sprintf("`%s` must name at least one node.", what), call. = FALSE)
-    shown <- utils::head(unique(nodes[is.na(pos)]), 5L)
-    stop(sprintf("%d node(s) in `%s` are not in the network, for example: %s.",
-                 length(unique(nodes[is.na(pos)])), what,
-                 paste(format(shown), collapse = ", ")), call. = FALSE)
-  }
-  pos
 }
 
 # Window starts and ends (seconds) for snapshots() and rolling().

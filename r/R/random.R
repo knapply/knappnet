@@ -29,9 +29,9 @@ random_gnm <- function(n, m, directed = FALSE, loops = FALSE, reps = 1L, seed = 
 # See man/random_gnp.Rd.
 random_configuration <- function(degrees, in_degrees = NULL, simple = FALSE, max_tries = 1000L,
                                  reps = 1L, seed = NULL, threads = 0L) {
-  degrees <- check_degrees(degrees, "degrees")
+  degrees <- check_counts(degrees, "degrees")
   if (!is.null(in_degrees)) {
-    in_degrees <- check_degrees(in_degrees, "in_degrees")
+    in_degrees <- check_counts(in_degrees, "in_degrees")
     if (length(in_degrees) != length(degrees)) {
       stop("`degrees` and `in_degrees` must have the same length.", call. = FALSE)
     }
@@ -83,7 +83,7 @@ random_preferential <- function(n, m, reps = 1L, seed = NULL, threads = 0L) {
 # See man/random_gnp.Rd.
 random_sbm <- function(sizes, probs, directed = FALSE, loops = FALSE, reps = 1L, seed = NULL,
                        threads = 0L) {
-  sizes <- check_degrees(sizes, "sizes")
+  sizes <- check_counts(sizes, "sizes")
   if (!is.matrix(probs) || !is.numeric(probs) || nrow(probs) != ncol(probs) ||
       nrow(probs) != length(sizes)) {
     stop("`probs` must be a square numeric matrix with one row per block.", call. = FALSE)
@@ -102,25 +102,8 @@ random_sbm <- function(sizes, probs, directed = FALSE, loops = FALSE, reps = 1L,
 }
 
 random_common <- function(reps, seed, threads) {
-  reps <- check_count(reps, "reps")
-  if (reps < 1L) stop("`reps` must be at least 1.", call. = FALSE)
-  list(reps = reps, seed = groups_seed(seed), threads = resolve_threads(threads))
-}
-
-check_probability <- function(p, what) {
-  if (!is.numeric(p) || length(p) != 1L || is.na(p) || p < 0 || p > 1) {
-    stop(sprintf("`%s` must be a single probability between 0 and 1.", what), call. = FALSE)
-  }
-  as.double(p)
-}
-
-check_degrees <- function(d, what) {
-  if (!is.numeric(d) || anyNA(d) || any(d < 0) || any(d != floor(d)) ||
-      any(d > .Machine$integer.max)) {
-    stop(sprintf("`%s` must be a vector of non-negative whole numbers.", what),
-         call. = FALSE)
-  }
-  as.integer(d)
+  reps <- check_count(reps, "reps", min = 1L)
+  list(reps = reps, seed = check_seed(seed), threads = resolve_threads(threads))
 }
 
 # Turns the engine's list of list(from, to) (1-based node positions) into

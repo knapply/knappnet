@@ -133,9 +133,6 @@ draw_color_key <- function(col, range) {
   graphics::text(x1 + 0.015 * w, at, format(ticks, trim = TRUE), adj = c(0, 0.5), cex = 0.7)
 }
 
-# Node identifiers of a netframe as character.
-node_ids <- function(x) as.character(x$nodes[[x$roles$id]])
-
 # A node grouping (a column name or a vector aligned with x$nodes) as a
 # factor with levels in order of first appearance, for coloring.
 plot_groups <- function(x, groups, name) {

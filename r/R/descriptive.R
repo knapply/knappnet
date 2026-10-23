@@ -3,14 +3,18 @@ reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlation")
   check_netframe(x)
   mode <- match.arg(mode)
   code <- switch(mode, default = 0L, ratio = 1L, dyadic = 2L, correlation = 3L)
-  .Call(C_reciprocity, engine_graph(x), code)
+  ptr <- engine_graph(x)
+  engine_call("reciprocity", .Call(C_reciprocity, ptr, code))
 }
 
 # Transitivity and clustering coefficients (man/transitivity.Rd).
 transitivity <- function(x, convention = c("igraph", "networkx"), threads = 0L) {
   check_netframe(x)
   convention <- match.arg(convention)
-  .Call(C_transitivity, engine_graph(x), undefined_code(convention), resolve_threads(threads))
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call("transitivity",
+              .Call(C_transitivity, ptr, undefined_code(convention), threads))
 }
 
 # See man/transitivity.Rd.
@@ -27,17 +31,22 @@ average_clustering <- function(x, weighted = FALSE, method = NULL,
 
 clustering_common <- function(x, average, weighted, method, convention, threads) {
   check_netframe(x)
+  weighted <- check_flag(weighted, "weighted")
   weighting <- 0L
-  if (isTRUE(weighted)) {
+  if (weighted) {
     require_weights(x)
     if (is.null(method)) method <- if (convention == "networkx") "onnela" else "barrat"
-    method <- match.arg(method, c("barrat", "onnela"))
+    method <- check_choice(method, c("barrat", "onnela"), "method")
     weighting <- if (method == "barrat") 1L else 2L
   }
-  .Call(C_clustering, engine_graph(x), average, weighting, undefined_code(convention),
-        resolve_threads(threads))
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call(if (average) "average_clustering" else "clustering",
+              .Call(C_clustering, ptr, average, weighting, undefined_code(convention),
+                    threads))
 }
 
+# The engine's code for an undefined ratio: NaN (igraph) or 0 (NetworkX).
 undefined_code <- function(convention) if (convention == "networkx") 1L else 0L
 
 # Shortest-path distances, mean distance, diameter, eccentricity, and radius (man/distances.Rd).
@@ -46,12 +55,14 @@ distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
   check_netframe(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
-  ids <- x$nodes[[x$roles$id]]
   rows <- node_positions(x, from, "from")
   cols <- node_positions(x, to, "to")
-  d <- .Call(C_distances, engine_graph(x), if (is.null(rows)) NULL else rows - 1L,
-             mode_code(mode), w$weighted, w$code, resolve_threads(threads))
-  labels <- as.character(ids)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  d <- engine_call("distances",
+                   .Call(C_distances, ptr, if (is.null(rows)) NULL else rows - 1L,
+                         mode_code(mode), w$weighted, w$code, threads))
+  labels <- node_ids(x)
   dimnames(d) <- list(if (is.null(rows)) labels else labels[rows], labels)
   if (!is.null(cols)) d <- d[, cols, drop = FALSE]
   d
@@ -60,13 +71,15 @@ distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
 # See man/distances.Rd.
 mean_distance <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                           weights_as = NULL, unconnected = TRUE, threads = 0L) {
-  path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads)[[6L]]
+  path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads,
+               "mean_distance")[[6L]]
 }
 
 # See man/distances.Rd.
 diameter <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                      weights_as = NULL, unconnected = TRUE, threads = 0L) {
-  path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads)[[7L]]
+  path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads,
+               "diameter")[[7L]]
 }
 
 # See man/distances.Rd.
@@ -75,8 +88,10 @@ eccentricity <- function(x, mode = c("all", "out", "in"), weighted = NULL,
   check_netframe(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
-  .Call(C_eccentricity, engine_graph(x), mode_code(mode), w$weighted, w$code,
-        resolve_threads(threads))
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call("eccentricity",
+              .Call(C_eccentricity, ptr, mode_code(mode), w$weighted, w$code, threads))
 }
 
 # See man/distances.Rd.
@@ -88,73 +103,59 @@ radius <- function(x, mode = c("all", "out", "in"), weighted = NULL,
 
 # Totals over the searches from `sources` (0-based positions, or NULL for
 # every node): sources, pairs, total, longest, incomplete, mean, diameter.
-path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, threads) {
+path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, threads, fn) {
   check_netframe(x)
   w <- resolve_weighting(x, weighted, weights_as)
-  if (!is.logical(unconnected) || length(unconnected) != 1L || is.na(unconnected)) {
-    stop("`unconnected` must be TRUE or FALSE.", call. = FALSE)
-  }
-  .Call(C_path_summary, engine_graph(x), sources, mode_code(mode), w$weighted, w$code,
-        unconnected, resolve_threads(threads))
-}
-
-# Positions (1-based) of node identifiers in x$nodes, or NULL for NULL.
-# Shared by every function that takes node identifiers.
-node_positions <- function(x, nodes, what = "nodes") {
-  if (is.null(nodes)) return(NULL)
-  ids <- x$nodes[[x$roles$id]]
-  if (is.factor(ids)) ids <- as.character(ids)
-  if (is.factor(nodes)) nodes <- as.character(nodes)
-  pos <- match(nodes, ids)
-  if (anyNA(pos)) {
-    shown <- utils::head(unique(nodes[is.na(pos)]), 5L)
-    stop(sprintf("%d node(s) in `%s` are not in the network, for example: %s.",
-                 length(unique(nodes[is.na(pos)])), what,
-                 paste(format(shown), collapse = ", ")), call. = FALSE)
-  }
-  pos
+  unconnected <- check_flag(unconnected, "unconnected")
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call(fn, .Call(C_path_summary, ptr, sources, mode_code(mode), w$weighted, w$code,
+                        unconnected, threads))
 }
 
 # Reachability (man/reachability.Rd).
 reachability <- function(x, mode = c("out", "in", "all"), threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
-  .Call(C_reachability, engine_graph(x), mode_code(mode), resolve_threads(threads))
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call("reachability", .Call(C_reachability, ptr, mode_code(mode), threads))
 }
 
 # Cut points and bridges (man/cut_points.Rd).
 cut_points <- function(x) {
   check_netframe(x)
-  r <- .Call(C_cut_structure, engine_graph(x))
+  ptr <- engine_graph(x)
+  r <- engine_call("cut_points", .Call(C_cut_structure, ptr))
   x$nodes[[x$roles$id]][r[[1L]]]
 }
 
 # See man/cut_points.Rd.
 bridges <- function(x) {
   check_netframe(x)
-  which(.Call(C_cut_structure, engine_graph(x))[[2L]])
+  ptr <- engine_graph(x)
+  which(engine_call("bridges", .Call(C_cut_structure, ptr))[[2L]])
 }
 
 # Summarize a network (man/summary.netframe.Rd).
 summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L, ...) {
   x <- object
   check_netframe(x)
+  check_flag_or_null(paths, "paths")
+  w <- resolve_weighting(x, weighted, NULL)
+  threads <- resolve_threads(threads)
   n <- nrow(x$nodes)
   ptr <- engine_graph(x)
-  counts <- .Call(C_edge_counts, ptr)
+  counts <- engine_call("summary", .Call(C_edge_counts, ptr))
   comp <- components(x, "weak")
   largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
   largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
-  w <- resolve_weighting(x, weighted, NULL)
   if (is.null(paths)) paths <- largest_size <= summary_path_limit
-  if (!is.logical(paths) || length(paths) != 1L || is.na(paths)) {
-    stop("`paths` must be TRUE, FALSE, or NULL.", call. = FALSE)
-  }
   mean_dist <- diam <- NA_real_
   if (paths && largest_size > 0L) {
     src <- which(comp$membership == largest) - 1L
-    s <- .Call(C_path_summary, ptr, src, mode_code("out"), w$weighted, w$code, TRUE,
-               resolve_threads(threads))
+    s <- engine_call("summary", .Call(C_path_summary, ptr, src, mode_code("out"), w$weighted,
+                                      w$code, TRUE, threads))
     mean_dist <- s[[6L]]
     diam <- s[[7L]]
   }
