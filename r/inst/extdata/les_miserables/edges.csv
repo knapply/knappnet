@@ -1,0 +1,255 @@
+from,to,encounters
+Anzelma,Eponine,2
+Anzelma,Thénardier,2
+Anzelma,Madame Thénardier,1
+Bahorel,Bossuet (Lesgle),4
+Bahorel,Combeferre,5
+Bahorel,Courfeyrac,6
+Bahorel,Enjolras,4
+Bahorel,Feuilly,3
+Bahorel,Gavroche,5
+Bahorel,Grantaire,1
+Bahorel,Madame Hucheloup,1
+Bahorel,Joly,5
+Bahorel,Jean Prouvaire,2
+Bahorel,Marius,1
+Bahorel,Monsieur Mabeuf,2
+Babet,Brujon,3
+Babet,Eponine,1
+Babet,Gavroche,1
+Babet,Gueulemer,6
+Babet,Javert,2
+Babet,Jean Valjean,1
+Babet,Montparnasse,2
+Babet,Claquesous,4
+Babet,Thénardier,6
+Babet,Madame Thénardier,1
+Brujon,Eponine,1
+Brujon,Gavroche,1
+Brujon,Gueulemer,3
+Brujon,Montparnasse,1
+Brujon,Claquesous,1
+Brujon,Thénardier,3
+Blacheville,Dahlia,3
+Blacheville,Fameuil,4
+Blacheville,Fantine,3
+Blacheville,Félix Tholomyès,4
+Blacheville,Favourite,4
+Blacheville,Listolier,4
+Blacheville,Zephine,3
+Monsieur Bamatabois,Brevet,1
+Monsieur Bamatabois,Cochepaille,1
+Monsieur Bamatabois,Champmathieu,2
+Monsieur Bamatabois,Chenildieu,1
+Monsieur Bamatabois,Fantine,1
+Monsieur Bamatabois,Javert,1
+Monsieur Bamatabois,Judge of Douai,2
+Monsieur Bamatabois,Jean Valjean,2
+Bossuet (Lesgle),Combeferre,9
+Bossuet (Lesgle),Courfeyrac,12
+Bossuet (Lesgle),Enjolras,10
+Bossuet (Lesgle),Feuilly,6
+Bossuet (Lesgle),Gavroche,5
+Bossuet (Lesgle),Grantaire,3
+Bossuet (Lesgle),Madame Hucheloup,1
+Bossuet (Lesgle),Joly,7
+Bossuet (Lesgle),Jean Prouvaire,2
+Bossuet (Lesgle),Jean Valjean,1
+Bossuet (Lesgle),Marius,5
+Bossuet (Lesgle),Monsieur Mabeuf,1
+Brevet,Cochepaille,2
+Brevet,Champmathieu,2
+Brevet,Chenildieu,2
+Brevet,Judge of Douai,2
+Brevet,Jean Valjean,2
+Baroness of T—,Monsieur Luke Esprit Gillenormand,1
+Baroness of T—,Marius,1
+Madame Burgon,Gavroche,2
+Madame Burgon,Jondrette,1
+Boulatruelle,Thénardier,1
+Cochepaille,Champmathieu,2
+Cochepaille,Chenildieu,2
+Cochepaille,Judge of Douai,2
+Cochepaille,Jean Valjean,2
+Champmathieu,Chenildieu,2
+Champmathieu,Judge of Douai,3
+Champmathieu,Jean Valjean,3
+Countess de Lô,Monsieur Charles François Bienvenu Myriel,1
+Combeferre,Courfeyrac,13
+Combeferre,Enjolras,15
+Combeferre,Feuilly,5
+Combeferre,Gavroche,6
+Combeferre,Grantaire,1
+Combeferre,Joly,5
+Combeferre,Jean Prouvaire,2
+Combeferre,Marius,5
+Combeferre,Monsieur Mabeuf,2
+Chenildieu,Judge of Douai,2
+Chenildieu,Jean Valjean,2
+Cosette,Félix Tholomyès,1
+Cosette,Monsieur Luke Esprit Gillenormand,3
+Cosette,Javert,1
+Cosette,Jean Valjean,31
+Cosette,Old woman 2,1
+Cosette,Marius,21
+Cosette,Madamoiselle Gillenormand,2
+Cosette,Lieutenant Theodule Gillenormand,1
+Cosette,Thénardier,1
+Cosette,Madame Thénardier,4
+Cosette,Toussaint,2
+Courfeyrac,Enjolras,17
+Courfeyrac,Eponine,1
+Courfeyrac,Feuilly,6
+Courfeyrac,Gavroche,7
+Courfeyrac,Grantaire,2
+Courfeyrac,Madame Hucheloup,1
+Courfeyrac,Joly,5
+Courfeyrac,Jean Prouvaire,3
+Courfeyrac,Marius,9
+Courfeyrac,Monsieur Mabeuf,2
+Cravatte,Monsieur Charles François Bienvenu Myriel,1
+Dahlia,Fameuil,3
+Dahlia,Fantine,4
+Dahlia,Félix Tholomyès,3
+Dahlia,Favourite,5
+Dahlia,Listolier,3
+Dahlia,Zephine,4
+Enjolras,Feuilly,6
+Enjolras,Gavroche,7
+Enjolras,Grantaire,3
+Enjolras,Madame Hucheloup,1
+Enjolras,Javert,6
+Enjolras,Joly,5
+Enjolras,Jean Prouvaire,4
+Enjolras,Jean Valjean,4
+Enjolras,Marius,7
+Enjolras,Monsieur Mabeuf,1
+Enjolras,Claquesous,1
+Eponine,Gueulemer,1
+Eponine,Marius,5
+Eponine,Monsieur Mabeuf,1
+Eponine,Montparnasse,1
+Eponine,Claquesous,1
+Eponine,Thénardier,3
+Eponine,Madame Thénardier,2
+Fameuil,Fantine,3
+Fameuil,Félix Tholomyès,4
+Fameuil,Favourite,3
+Fameuil,Listolier,4
+Fameuil,Zephine,3
+Feuilly,Gavroche,2
+Feuilly,Grantaire,1
+Feuilly,Joly,5
+Feuilly,Jean Prouvaire,2
+Feuilly,Marius,1
+Feuilly,Monsieur Mabeuf,1
+Fauchelevent,Gribier,2
+Fauchelevent,Javert,1
+Fauchelevent,Jean Valjean,8
+Fauchelevent,Mother Innocent,3
+Fantine,Félix Tholomyès,3
+Fantine,Favourite,4
+Fantine,Javert,5
+Fantine,Jean Valjean,9
+Fantine,Listolier,3
+Fantine,Marguerite,2
+Fantine,Sister Perpétue,1
+Fantine,Sister Simplice,2
+Fantine,Thénardier,1
+Fantine,Madame Thénardier,2
+Fantine,Zephine,4
+Félix Tholomyès,Favourite,3
+Félix Tholomyès,Listolier,4
+Félix Tholomyès,Marius,1
+Félix Tholomyès,Zephine,3
+Favourite,Listolier,3
+Favourite,Zephine,4
+Gavroche,Grantaire,1
+Gavroche,Gueulemer,1
+Gavroche,Madame Hucheloup,1
+Gavroche,Javert,1
+Gavroche,Joly,3
+Gavroche,Jean Prouvaire,1
+Gavroche,Jean Valjean,1
+Gavroche,Marius,4
+Gavroche,Monsieur Mabeuf,1
+Gavroche,Montparnasse,1
+Gavroche,Thénardier,1
+Gavroche,Child 1,2
+Gavroche,Child 2,2
+Géborand,Monsieur Charles François Bienvenu Myriel,1
+G—,Monsieur Charles François Bienvenu Myriel,1
+Monsieur Luke Esprit Gillenormand,Jean Valjean,2
+Monsieur Luke Esprit Gillenormand,Marius,12
+Monsieur Luke Esprit Gillenormand,Madamoiselle Gillenormand,9
+Monsieur Luke Esprit Gillenormand,Magnon,1
+Monsieur Luke Esprit Gillenormand,Lieutenant Theodule Gillenormand,1
+George Pontmercy,Marius,1
+George Pontmercy,Madame Pontmercy,1
+George Pontmercy,Thénardier,1
+Grantaire,Madame Hucheloup,1
+Grantaire,Joly,2
+Grantaire,Jean Prouvaire,1
+Gueulemer,Javert,1
+Gueulemer,Jean Valjean,1
+Gueulemer,Montparnasse,2
+Gueulemer,Claquesous,4
+Gueulemer,Thénardier,5
+Gueulemer,Madame Thénardier,1
+Madame Hucheloup,Joly,1
+Isabeau,Jean Valjean,1
+Javert,Jean Valjean,17
+Javert,Old woman 2,1
+Javert,Montparnasse,1
+Javert,Old woman 1,1
+Javert,Claquesous,1
+Javert,Sister Simplice,1
+Javert,Thénardier,5
+Javert,Madame Thénardier,1
+Javert,Toussaint,1
+Jacquin Labarre,Jean Valjean,1
+Joly,Jean Prouvaire,2
+Joly,Marius,2
+Joly,Monsieur Mabeuf,1
+Judge of Douai,Jean Valjean,3
+Jean Valjean,Old woman 2,3
+Jean Valjean,Marius,19
+Jean Valjean,Mademoiselle Baptistine,3
+Jean Valjean,Madame Magloire,3
+Jean Valjean,Madamoiselle Gillenormand,2
+Jean Valjean,Mother Innocent,1
+Jean Valjean,Montparnasse,1
+Jean Valjean,Madame de R—,1
+Jean Valjean,Marguerite,1
+Jean Valjean,Monsieur Charles François Bienvenu Myriel,5
+Jean Valjean,Petit Gervais,1
+Jean Valjean,Old woman 1,2
+Jean Valjean,Claquesous,1
+Jean Valjean,Monsieur Scaufflaire,1
+Jean Valjean,Sister Simplice,3
+Jean Valjean,Thénardier,12
+Jean Valjean,Madame Thénardier,7
+Jean Valjean,Toussaint,1
+Listolier,Zephine,3
+Marius,Madamoiselle Gillenormand,6
+Marius,Monsieur Mabeuf,1
+Marius,Lieutenant Theodule Gillenormand,1
+Marius,Thénardier,2
+Mademoiselle Baptistine,Madame Magloire,6
+Mademoiselle Baptistine,Monsieur Charles François Bienvenu Myriel,8
+Marquis de Champtercier,Monsieur Charles François Bienvenu Myriel,1
+Madame Magloire,Monsieur Charles François Bienvenu Myriel,10
+Madamoiselle Gillenormand,Madame Pontmercy,1
+Madamoiselle Gillenormand,Madamoiselle Vaubois,1
+Madamoiselle Gillenormand,Lieutenant Theodule Gillenormand,2
+Monsieur Mabeuf,Mother Plutarch,3
+Magnon,Madame Thénardier,1
+Montparnasse,Claquesous,2
+Montparnasse,Thénardier,1
+Monsieur Charles François Bienvenu Myriel,Napoleon,1
+Monsieur Charles François Bienvenu Myriel,Count ***,2
+Claquesous,Thénardier,4
+Claquesous,Madame Thénardier,1
+Sister Perpétue,Sister Simplice,2
+Thénardier,Madame Thénardier,13
+Child 1,Child 2,3

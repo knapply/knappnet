@@ -1,0 +1,511 @@
+from,to,relation,sign,time,rank
+John Bosco,Basil,liking,1,1,1
+John Bosco,Peter,liking,1,1,2
+John Bosco,Winfrid,liking,1,1,3
+Gregory,Berthold,liking,1,1,3
+Gregory,Winfrid,liking,1,1,1
+Gregory,Albert,liking,1,1,2
+Basil,Bonaventure,liking,1,1,2
+Basil,Victor,liking,1,1,3
+Basil,Romuald,liking,1,1,1
+Peter,Berthold,liking,1,1,3
+Peter,Mark,liking,1,1,1
+Peter,Hugh,liking,1,1,2
+Bonaventure,Victor,liking,1,1,2
+Bonaventure,Romuald,liking,1,1,3
+Bonaventure,Albert,liking,1,1,1
+Berthold,Gregory,liking,1,1,2
+Berthold,Peter,liking,1,1,3
+Berthold,Louis,liking,1,1,1
+Mark,Peter,liking,1,1,2
+Mark,Victor,liking,1,1,1
+Mark,Simplicius,liking,1,1,3
+Victor,Basil,liking,1,1,3
+Victor,Bonaventure,liking,1,1,2
+Victor,Winfrid,liking,1,1,1
+Ambrose,Bonaventure,liking,1,1,3
+Ambrose,Romuald,liking,1,1,2
+Ambrose,Elias,liking,1,1,1
+Romuald,Peter,liking,1,1,3
+Romuald,Ambrose,liking,1,1,2
+Romuald,Albert,liking,1,1,1
+Louis,John Bosco,liking,1,1,2
+Louis,Berthold,liking,1,1,3
+Louis,Romuald,liking,1,1,1
+Winfrid,John Bosco,liking,1,1,1
+Winfrid,Bonaventure,liking,1,1,2
+Winfrid,Romuald,liking,1,1,3
+Amand,Bonaventure,liking,1,1,2
+Amand,Romuald,liking,1,1,3
+Amand,Albert,liking,1,1,1
+Hugh,Peter,liking,1,1,3
+Hugh,Winfrid,liking,1,1,1
+Hugh,Albert,liking,1,1,2
+Boniface,Bonaventure,liking,1,1,2
+Boniface,Romuald,liking,1,1,3
+Boniface,Albert,liking,1,1,1
+Albert,Romuald,liking,1,1,3
+Albert,Amand,liking,1,1,2
+Albert,Hugh,liking,1,1,1
+Albert,Boniface,liking,1,1,2
+Elias,Mark,liking,1,1,2
+Elias,Ambrose,liking,1,1,3
+Elias,Simplicius,liking,1,1,1
+Simplicius,Bonaventure,liking,1,1,3
+Simplicius,Victor,liking,1,1,1
+Simplicius,Romuald,liking,1,1,2
+John Bosco,Peter,liking,1,2,1
+John Bosco,Winfrid,liking,1,2,3
+John Bosco,Boniface,liking,1,2,2
+Gregory,Peter,liking,1,2,1
+Gregory,Berthold,liking,1,2,3
+Gregory,Mark,liking,1,2,2
+Basil,Bonaventure,liking,1,2,2
+Basil,Victor,liking,1,2,3
+Basil,Boniface,liking,1,2,1
+Peter,Berthold,liking,1,2,3
+Peter,Romuald,liking,1,2,2
+Peter,Hugh,liking,1,2,1
+Bonaventure,Victor,liking,1,2,1
+Bonaventure,Romuald,liking,1,2,3
+Bonaventure,Amand,liking,1,2,1
+Bonaventure,Boniface,liking,1,2,2
+Berthold,Peter,liking,1,2,3
+Berthold,Louis,liking,1,2,2
+Berthold,Hugh,liking,1,2,1
+Mark,Peter,liking,1,2,2
+Mark,Victor,liking,1,2,1
+Mark,Simplicius,liking,1,2,3
+Victor,Basil,liking,1,2,3
+Victor,Bonaventure,liking,1,2,2
+Victor,Romuald,liking,1,2,1
+Ambrose,Romuald,liking,1,2,3
+Ambrose,Elias,liking,1,2,1
+Ambrose,Simplicius,liking,1,2,2
+Romuald,Peter,liking,1,2,1
+Romuald,Bonaventure,liking,1,2,2
+Romuald,Winfrid,liking,1,2,3
+Louis,John Bosco,liking,1,2,2
+Louis,Berthold,liking,1,2,3
+Louis,Romuald,liking,1,2,1
+Winfrid,Gregory,liking,1,2,2
+Winfrid,Berthold,liking,1,2,3
+Winfrid,Louis,liking,1,2,1
+Amand,Peter,liking,1,2,1
+Amand,Bonaventure,liking,1,2,3
+Amand,Romuald,liking,1,2,2
+Amand,Albert,liking,1,2,1
+Hugh,Basil,liking,1,2,1
+Hugh,Peter,liking,1,2,3
+Hugh,Berthold,liking,1,2,2
+Boniface,Bonaventure,liking,1,2,1
+Boniface,Romuald,liking,1,2,3
+Boniface,Albert,liking,1,2,2
+Albert,Bonaventure,liking,1,2,1
+Albert,Romuald,liking,1,2,3
+Albert,Amand,liking,1,2,2
+Albert,Boniface,liking,1,2,1
+Elias,Bonaventure,liking,1,2,1
+Elias,Ambrose,liking,1,2,2
+Elias,Simplicius,liking,1,2,3
+Simplicius,Bonaventure,liking,1,2,1
+Simplicius,Mark,liking,1,2,2
+Simplicius,Elias,liking,1,2,3
+John Bosco,Peter,liking,1,3,1
+John Bosco,Winfrid,liking,1,3,3
+John Bosco,Boniface,liking,1,3,2
+Gregory,John Bosco,liking,1,3,1
+Gregory,Peter,liking,1,3,1
+Gregory,Berthold,liking,1,3,3
+Gregory,Mark,liking,1,3,2
+Basil,Bonaventure,liking,1,3,3
+Basil,Victor,liking,1,3,2
+Basil,Amand,liking,1,3,1
+Peter,John Bosco,liking,1,3,1
+Peter,Berthold,liking,1,3,3
+Peter,Hugh,liking,1,3,2
+Bonaventure,Victor,liking,1,3,1
+Bonaventure,Romuald,liking,1,3,3
+Bonaventure,Boniface,liking,1,3,2
+Berthold,Peter,liking,1,3,3
+Berthold,Louis,liking,1,3,1
+Berthold,Hugh,liking,1,3,2
+Mark,Peter,liking,1,3,2
+Mark,Victor,liking,1,3,1
+Mark,Simplicius,liking,1,3,3
+Victor,Basil,liking,1,3,2
+Victor,Bonaventure,liking,1,3,3
+Victor,Boniface,liking,1,3,1
+Ambrose,Mark,liking,1,3,2
+Ambrose,Romuald,liking,1,3,3
+Ambrose,Elias,liking,1,3,1
+Ambrose,Simplicius,liking,1,3,2
+Romuald,Ambrose,liking,1,3,3
+Romuald,Boniface,liking,1,3,1
+Romuald,Albert,liking,1,3,2
+Louis,John Bosco,liking,1,3,2
+Louis,Peter,liking,1,3,1
+Louis,Berthold,liking,1,3,3
+Winfrid,John Bosco,liking,1,3,1
+Winfrid,Berthold,liking,1,3,3
+Winfrid,Louis,liking,1,3,2
+Amand,Bonaventure,liking,1,3,3
+Amand,Victor,liking,1,3,1
+Amand,Boniface,liking,1,3,2
+Hugh,Peter,liking,1,3,2
+Hugh,Winfrid,liking,1,3,3
+Hugh,Albert,liking,1,3,1
+Boniface,Bonaventure,liking,1,3,2
+Boniface,Victor,liking,1,3,1
+Boniface,Romuald,liking,1,3,3
+Albert,Romuald,liking,1,3,3
+Albert,Amand,liking,1,3,2
+Albert,Boniface,liking,1,3,1
+Elias,Bonaventure,liking,1,3,1
+Elias,Ambrose,liking,1,3,2
+Elias,Simplicius,liking,1,3,3
+Simplicius,Bonaventure,liking,1,3,1
+Simplicius,Ambrose,liking,1,3,2
+Simplicius,Elias,liking,1,3,3
+John Bosco,Gregory,disliking,-1,3,2
+John Bosco,Mark,disliking,-1,3,3
+John Bosco,Romuald,disliking,-1,3,1
+Gregory,Peter,disliking,-1,3,3
+Gregory,Victor,disliking,-1,3,2
+Gregory,Amand,disliking,-1,3,1
+Basil,Gregory,disliking,-1,3,2
+Basil,Peter,disliking,-1,3,3
+Basil,Berthold,disliking,-1,3,2
+Basil,Albert,disliking,-1,3,1
+Peter,John Bosco,disliking,-1,3,2
+Peter,Gregory,disliking,-1,3,3
+Peter,Hugh,disliking,-1,3,1
+Berthold,Gregory,disliking,-1,3,1
+Berthold,Basil,disliking,-1,3,3
+Berthold,Mark,disliking,-1,3,2
+Berthold,Elias,disliking,-1,3,2
+Mark,Peter,disliking,-1,3,3
+Mark,Berthold,disliking,-1,3,2
+Mark,Victor,disliking,-1,3,1
+Victor,Gregory,disliking,-1,3,3
+Victor,Basil,disliking,-1,3,2
+Victor,Hugh,disliking,-1,3,1
+Ambrose,Basil,disliking,-1,3,3
+Ambrose,Elias,disliking,-1,3,2
+Ambrose,Simplicius,disliking,-1,3,1
+Louis,John Bosco,disliking,-1,3,1
+Louis,Gregory,disliking,-1,3,3
+Louis,Basil,disliking,-1,3,2
+Amand,Gregory,disliking,-1,3,3
+Amand,Berthold,disliking,-1,3,2
+Amand,Winfrid,disliking,-1,3,1
+Hugh,Peter,disliking,-1,3,3
+Hugh,Victor,disliking,-1,3,2
+Hugh,Elias,disliking,-1,3,1
+Boniface,Basil,disliking,-1,3,2
+Boniface,Peter,disliking,-1,3,1
+Boniface,Amand,disliking,-1,3,3
+Albert,Basil,disliking,-1,3,1
+Albert,Peter,disliking,-1,3,3
+Albert,Elias,disliking,-1,3,2
+Elias,Peter,disliking,-1,3,1
+Elias,Berthold,disliking,-1,3,3
+Elias,Victor,disliking,-1,3,2
+Simplicius,Peter,disliking,-1,3,1
+Simplicius,Victor,disliking,-1,3,3
+Simplicius,Romuald,disliking,-1,3,2
+John Bosco,Bonaventure,esteem,1,3,1
+John Bosco,Victor,esteem,1,3,3
+John Bosco,Winfrid,esteem,1,3,2
+Gregory,John Bosco,esteem,1,3,3
+Gregory,Bonaventure,esteem,1,3,1
+Gregory,Victor,esteem,1,3,2
+Basil,John Bosco,esteem,1,3,3
+Basil,Amand,esteem,1,3,2
+Basil,Elias,esteem,1,3,1
+Basil,Simplicius,esteem,1,3,1
+Peter,Berthold,esteem,1,3,1
+Peter,Romuald,esteem,1,3,2
+Peter,Louis,esteem,1,3,3
+Bonaventure,Peter,esteem,1,3,3
+Bonaventure,Ambrose,esteem,1,3,1
+Bonaventure,Louis,esteem,1,3,2
+Berthold,Peter,esteem,1,3,3
+Berthold,Louis,esteem,1,3,2
+Mark,Gregory,esteem,1,3,3
+Mark,Winfrid,esteem,1,3,1
+Mark,Boniface,esteem,1,3,1
+Mark,Albert,esteem,1,3,2
+Victor,Peter,esteem,1,3,3
+Victor,Bonaventure,esteem,1,3,1
+Victor,Berthold,esteem,1,3,2
+Ambrose,John Bosco,esteem,1,3,1
+Ambrose,Peter,esteem,1,3,3
+Ambrose,Victor,esteem,1,3,2
+Louis,Bonaventure,esteem,1,3,2
+Louis,Ambrose,esteem,1,3,3
+Winfrid,John Bosco,esteem,1,3,3
+Winfrid,Gregory,esteem,1,3,2
+Winfrid,Hugh,esteem,1,3,1
+Amand,Bonaventure,esteem,1,3,3
+Amand,Mark,esteem,1,3,2
+Amand,Louis,esteem,1,3,1
+Hugh,John Bosco,esteem,1,3,3
+Hugh,Gregory,esteem,1,3,2
+Hugh,Winfrid,esteem,1,3,1
+Hugh,Boniface,esteem,1,3,2
+Boniface,John Bosco,esteem,1,3,1
+Boniface,Gregory,esteem,1,3,3
+Boniface,Hugh,esteem,1,3,2
+Albert,Gregory,esteem,1,3,3
+Albert,Mark,esteem,1,3,2
+Albert,Winfrid,esteem,1,3,1
+Albert,Boniface,esteem,1,3,2
+Elias,Gregory,esteem,1,3,1
+Elias,Basil,esteem,1,3,2
+Elias,Amand,esteem,1,3,1
+Elias,Simplicius,esteem,1,3,3
+Simplicius,Gregory,esteem,1,3,2
+Simplicius,Basil,esteem,1,3,3
+Simplicius,Elias,esteem,1,3,1
+John Bosco,Gregory,disesteem,-1,3,2
+John Bosco,Basil,disesteem,-1,3,1
+John Bosco,Mark,disesteem,-1,3,3
+Gregory,Basil,disesteem,-1,3,2
+Gregory,Peter,disesteem,-1,3,3
+Gregory,Amand,disesteem,-1,3,1
+Basil,Gregory,disesteem,-1,3,1
+Basil,Peter,disesteem,-1,3,3
+Basil,Berthold,disesteem,-1,3,2
+Peter,John Bosco,disesteem,-1,3,2
+Peter,Gregory,disesteem,-1,3,3
+Peter,Hugh,disesteem,-1,3,1
+Bonaventure,Basil,disesteem,-1,3,1
+Bonaventure,Elias,disesteem,-1,3,3
+Bonaventure,Simplicius,disesteem,-1,3,2
+Berthold,Basil,disesteem,-1,3,2
+Berthold,Mark,disesteem,-1,3,3
+Berthold,Victor,disesteem,-1,3,1
+Berthold,Elias,disesteem,-1,3,2
+Mark,Basil,disesteem,-1,3,2
+Mark,Peter,disesteem,-1,3,2
+Mark,Berthold,disesteem,-1,3,3
+Mark,Victor,disesteem,-1,3,2
+Mark,Elias,disesteem,-1,3,1
+Victor,Hugh,disesteem,-1,3,1
+Victor,Elias,disesteem,-1,3,2
+Victor,Simplicius,disesteem,-1,3,3
+Ambrose,Amand,disesteem,-1,3,1
+Ambrose,Elias,disesteem,-1,3,3
+Ambrose,Simplicius,disesteem,-1,3,2
+Louis,John Bosco,disesteem,-1,3,1
+Louis,Gregory,disesteem,-1,3,3
+Louis,Basil,disesteem,-1,3,2
+Louis,Albert,disesteem,-1,3,1
+Amand,Gregory,disesteem,-1,3,2
+Amand,Basil,disesteem,-1,3,1
+Amand,Berthold,disesteem,-1,3,3
+Hugh,Peter,disesteem,-1,3,2
+Hugh,Louis,disesteem,-1,3,2
+Hugh,Amand,disesteem,-1,3,3
+Hugh,Elias,disesteem,-1,3,1
+Hugh,Simplicius,disesteem,-1,3,1
+Boniface,Basil,disesteem,-1,3,2
+Boniface,Peter,disesteem,-1,3,3
+Boniface,Louis,disesteem,-1,3,1
+Boniface,Elias,disesteem,-1,3,1
+Boniface,Simplicius,disesteem,-1,3,1
+Albert,Basil,disesteem,-1,3,2
+Albert,Peter,disesteem,-1,3,3
+Albert,Elias,disesteem,-1,3,2
+Albert,Simplicius,disesteem,-1,3,1
+Elias,Peter,disesteem,-1,3,2
+Elias,Berthold,disesteem,-1,3,3
+Elias,Victor,disesteem,-1,3,1
+Simplicius,Peter,disesteem,-1,3,2
+Simplicius,Berthold,disesteem,-1,3,2
+Simplicius,Victor,disesteem,-1,3,3
+Simplicius,Romuald,disesteem,-1,3,1
+John Bosco,Gregory,positive_influence,1,3,3
+John Bosco,Mark,positive_influence,1,3,1
+John Bosco,Winfrid,positive_influence,1,3,2
+Gregory,John Bosco,positive_influence,1,3,3
+Gregory,Mark,positive_influence,1,3,1
+Gregory,Winfrid,positive_influence,1,3,2
+Basil,John Bosco,positive_influence,1,3,3
+Basil,Amand,positive_influence,1,3,2
+Basil,Elias,positive_influence,1,3,1
+Peter,Berthold,positive_influence,1,3,1
+Peter,Romuald,positive_influence,1,3,2
+Peter,Louis,positive_influence,1,3,3
+Bonaventure,Gregory,positive_influence,1,3,1
+Bonaventure,Peter,positive_influence,1,3,3
+Bonaventure,Louis,positive_influence,1,3,2
+Berthold,Gregory,positive_influence,1,3,1
+Berthold,Peter,positive_influence,1,3,3
+Berthold,Ambrose,positive_influence,1,3,2
+Mark,Gregory,positive_influence,1,3,3
+Mark,Winfrid,positive_influence,1,3,1
+Mark,Albert,positive_influence,1,3,2
+Victor,John Bosco,positive_influence,1,3,2
+Victor,Peter,positive_influence,1,3,3
+Victor,Ambrose,positive_influence,1,3,1
+Victor,Louis,positive_influence,1,3,2
+Ambrose,John Bosco,positive_influence,1,3,3
+Ambrose,Gregory,positive_influence,1,3,2
+Ambrose,Peter,positive_influence,1,3,1
+Louis,Peter,positive_influence,1,3,1
+Louis,Bonaventure,positive_influence,1,3,3
+Louis,Ambrose,positive_influence,1,3,2
+Winfrid,John Bosco,positive_influence,1,3,3
+Winfrid,Gregory,positive_influence,1,3,2
+Winfrid,Mark,positive_influence,1,3,1
+Amand,Bonaventure,positive_influence,1,3,3
+Amand,Mark,positive_influence,1,3,2
+Amand,Louis,positive_influence,1,3,1
+Hugh,John Bosco,positive_influence,1,3,3
+Hugh,Gregory,positive_influence,1,3,2
+Hugh,Winfrid,positive_influence,1,3,1
+Hugh,Boniface,positive_influence,1,3,2
+Boniface,Gregory,positive_influence,1,3,3
+Boniface,Mark,positive_influence,1,3,1
+Boniface,Hugh,positive_influence,1,3,2
+Albert,Gregory,positive_influence,1,3,3
+Albert,Mark,positive_influence,1,3,2
+Albert,Boniface,positive_influence,1,3,1
+Elias,Gregory,positive_influence,1,3,1
+Elias,Basil,positive_influence,1,3,2
+Elias,Simplicius,positive_influence,1,3,3
+Simplicius,Gregory,positive_influence,1,3,3
+Simplicius,Basil,positive_influence,1,3,2
+Simplicius,Elias,positive_influence,1,3,1
+John Bosco,Romuald,negative_influence,-1,3,2
+John Bosco,Albert,negative_influence,-1,3,1
+John Bosco,Simplicius,negative_influence,-1,3,3
+Gregory,Peter,negative_influence,-1,3,3
+Gregory,Amand,negative_influence,-1,3,2
+Basil,Gregory,negative_influence,-1,3,1
+Basil,Peter,negative_influence,-1,3,3
+Basil,Berthold,negative_influence,-1,3,2
+Peter,John Bosco,negative_influence,-1,3,2
+Peter,Gregory,negative_influence,-1,3,3
+Peter,Hugh,negative_influence,-1,3,1
+Bonaventure,Basil,negative_influence,-1,3,1
+Bonaventure,Elias,negative_influence,-1,3,3
+Bonaventure,Simplicius,negative_influence,-1,3,2
+Berthold,Mark,negative_influence,-1,3,3
+Berthold,Elias,negative_influence,-1,3,2
+Berthold,Simplicius,negative_influence,-1,3,1
+Mark,Basil,negative_influence,-1,3,2
+Mark,Peter,negative_influence,-1,3,2
+Mark,Berthold,negative_influence,-1,3,3
+Mark,Victor,negative_influence,-1,3,2
+Mark,Elias,negative_influence,-1,3,1
+Victor,Winfrid,negative_influence,-1,3,1
+Victor,Amand,negative_influence,-1,3,2
+Victor,Albert,negative_influence,-1,3,3
+Ambrose,Winfrid,negative_influence,-1,3,1
+Ambrose,Elias,negative_influence,-1,3,3
+Ambrose,Simplicius,negative_influence,-1,3,2
+Louis,Mark,negative_influence,-1,3,3
+Louis,Elias,negative_influence,-1,3,1
+Louis,Simplicius,negative_influence,-1,3,2
+Amand,Gregory,negative_influence,-1,3,3
+Amand,Berthold,negative_influence,-1,3,2
+Amand,Winfrid,negative_influence,-1,3,1
+Hugh,Peter,negative_influence,-1,3,2
+Hugh,Amand,negative_influence,-1,3,3
+Hugh,Elias,negative_influence,-1,3,1
+Hugh,Simplicius,negative_influence,-1,3,1
+Boniface,Basil,negative_influence,-1,3,1
+Boniface,Peter,negative_influence,-1,3,3
+Boniface,Amand,negative_influence,-1,3,2
+Albert,Basil,negative_influence,-1,3,1
+Albert,Peter,negative_influence,-1,3,3
+Albert,Louis,negative_influence,-1,3,2
+Elias,Peter,negative_influence,-1,3,2
+Elias,Berthold,negative_influence,-1,3,3
+Elias,Victor,negative_influence,-1,3,1
+Simplicius,Peter,negative_influence,-1,3,3
+Simplicius,Berthold,negative_influence,-1,3,1
+Simplicius,Louis,negative_influence,-1,3,2
+John Bosco,Winfrid,praise,1,3,2
+John Bosco,Hugh,praise,1,3,3
+John Bosco,Elias,praise,1,3,1
+Gregory,John Bosco,praise,1,3,3
+Gregory,Mark,praise,1,3,1
+Gregory,Winfrid,praise,1,3,2
+Basil,John Bosco,praise,1,3,3
+Basil,Amand,praise,1,3,2
+Basil,Elias,praise,1,3,1
+Peter,Berthold,praise,1,3,1
+Peter,Romuald,praise,1,3,2
+Peter,Louis,praise,1,3,3
+Berthold,Peter,praise,1,3,3
+Berthold,Ambrose,praise,1,3,1
+Berthold,Louis,praise,1,3,2
+Mark,Gregory,praise,1,3,3
+Mark,Boniface,praise,1,3,1
+Mark,Albert,praise,1,3,2
+Victor,Peter,praise,1,3,3
+Victor,Berthold,praise,1,3,2
+Victor,Louis,praise,1,3,1
+Louis,Peter,praise,1,3,3
+Louis,Victor,praise,1,3,2
+Louis,Albert,praise,1,3,1
+Amand,Bonaventure,praise,1,3,3
+Amand,Louis,praise,1,3,2
+Hugh,John Bosco,praise,1,3,3
+Hugh,Gregory,praise,1,3,3
+Hugh,Boniface,praise,1,3,2
+Hugh,Albert,praise,1,3,1
+Boniface,John Bosco,praise,1,3,1
+Boniface,Gregory,praise,1,3,3
+Boniface,Hugh,praise,1,3,2
+Albert,Gregory,praise,1,3,2
+Albert,Mark,praise,1,3,3
+Albert,Boniface,praise,1,3,1
+Simplicius,John Bosco,praise,1,3,1
+Simplicius,Gregory,praise,1,3,1
+Simplicius,Elias,praise,1,3,1
+John Bosco,Basil,blame,-1,3,3
+John Bosco,Louis,blame,-1,3,2
+John Bosco,Simplicius,blame,-1,3,1
+Gregory,Basil,blame,-1,3,3
+Basil,Gregory,blame,-1,3,2
+Basil,Peter,blame,-1,3,3
+Basil,Hugh,blame,-1,3,1
+Peter,Gregory,blame,-1,3,3
+Peter,Mark,blame,-1,3,1
+Peter,Hugh,blame,-1,3,2
+Berthold,Mark,blame,-1,3,3
+Berthold,Amand,blame,-1,3,1
+Berthold,Elias,blame,-1,3,2
+Berthold,Simplicius,blame,-1,3,1
+Mark,Basil,blame,-1,3,3
+Mark,Peter,blame,-1,3,2
+Mark,Berthold,blame,-1,3,1
+Victor,Basil,blame,-1,3,1
+Victor,Elias,blame,-1,3,2
+Victor,Simplicius,blame,-1,3,3
+Louis,Hugh,blame,-1,3,1
+Louis,Elias,blame,-1,3,2
+Louis,Simplicius,blame,-1,3,3
+Winfrid,Hugh,blame,-1,3,2
+Winfrid,Elias,blame,-1,3,1
+Winfrid,Simplicius,blame,-1,3,3
+Amand,Gregory,blame,-1,3,1
+Amand,Elias,blame,-1,3,2
+Amand,Simplicius,blame,-1,3,3
+Hugh,Basil,blame,-1,3,1
+Hugh,Peter,blame,-1,3,3
+Hugh,Louis,blame,-1,3,2
+Boniface,Basil,blame,-1,3,2
+Boniface,Peter,blame,-1,3,1
+Boniface,Amand,blame,-1,3,3
+Boniface,Simplicius,blame,-1,3,1
+Albert,Basil,blame,-1,3,2
+Albert,Peter,blame,-1,3,3
+Albert,Amand,blame,-1,3,1
+Albert,Elias,blame,-1,3,2
+Albert,Simplicius,blame,-1,3,2
