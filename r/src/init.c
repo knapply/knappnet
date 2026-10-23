@@ -63,6 +63,15 @@ extern SEXP C_kpp_score(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_key_players(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_group_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_flow_betweenness(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_temporal_new(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_temporal_paths(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_temporal_reach(SEXP, SEXP, SEXP);
+extern SEXP C_temporal_closeness(SEXP, SEXP, SEXP);
+extern SEXP C_temporal_windows(SEXP, SEXP, SEXP);
+extern SEXP C_temporal_active_at(SEXP, SEXP);
+extern SEXP C_temporal_aggregate(SEXP, SEXP);
+extern SEXP C_temporal_inter_event(SEXP, SEXP, SEXP);
+extern SEXP C_temporal_burstiness(SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -126,6 +135,15 @@ static const R_CallMethodDef call_methods[] = {
     {"C_key_players", (DL_FUNC)&C_key_players, 11},
     {"C_group_centrality", (DL_FUNC)&C_group_centrality, 8},
     {"C_flow_betweenness", (DL_FUNC)&C_flow_betweenness, 4},
+    {"C_temporal_new", (DL_FUNC)&C_temporal_new, 6},
+    {"C_temporal_paths", (DL_FUNC)&C_temporal_paths, 5},
+    {"C_temporal_reach", (DL_FUNC)&C_temporal_reach, 3},
+    {"C_temporal_closeness", (DL_FUNC)&C_temporal_closeness, 3},
+    {"C_temporal_windows", (DL_FUNC)&C_temporal_windows, 3},
+    {"C_temporal_active_at", (DL_FUNC)&C_temporal_active_at, 2},
+    {"C_temporal_aggregate", (DL_FUNC)&C_temporal_aggregate, 2},
+    {"C_temporal_inter_event", (DL_FUNC)&C_temporal_inter_event, 3},
+    {"C_temporal_burstiness", (DL_FUNC)&C_temporal_burstiness, 3},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

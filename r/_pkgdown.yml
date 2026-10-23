@@ -200,6 +200,21 @@ reference:
   - plot.netframe
   - layout_network
 
+- title: Temporal networks
+  desc: >-
+    Time-stamped contacts: snapshots and windows, time-respecting paths and
+    reachability, temporal closeness, measures over time, and burstiness.
+  contents:
+  - temporal_network
+  - network_at
+  - snapshots
+  - aggregate_network
+  - temporal_distances
+  - temporal_reach
+  - temporal_closeness
+  - rolling
+  - burstiness
+
 - title: Conventions
   desc: >-
     How igraph, NetworkX, sna, and UCINET differ, and the `convention`

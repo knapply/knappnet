@@ -30,10 +30,12 @@ Suggests:
     knitr,
     Matrix,
     network,
+    networkDynamic,
     rmarkdown,
     sna,
     testthat (>= 3.0.0),
-    tidygraph
+    tidygraph,
+    tsna
 VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/Needs/website: pkgdown, igraph, sna, network, tidygraph, Matrix
