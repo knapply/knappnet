@@ -5,6 +5,9 @@ url: https://knapply.github.io/knappnet/
 
 template:
   bootstrap: 5
+  # Render the formulas in help pages (\eqn, \deqn) and articles ($...$)
+  # with MathJax; pkgdown's default (MathML) displays LaTeX poorly.
+  math-rendering: mathjax
   bslib:
     primary: "#24577a"
     link-color: "#24577a"

@@ -19,7 +19,7 @@ directory of the repository and can be rerun by anyone.
 An *oracle* is an independent source of the right answer. Each measure is
 checked against every oracle that implements it:
 
-- **Reference tools.** igraph and sna in R, and NetworkX in Python, run as
+- **Reference tools.** [igraph](https://r.igraph.org/) and [sna](https://cran.r-project.org/package=sna) in R, and [NetworkX](https://networkx.org/) in Python, run as
   black boxes on the same networks
   ([`validation/oracles/`](https://github.com/knapply/knappnet/tree/main/validation/oracles)).
 - **Definitions.** Slow, deliberately simple implementations written
@@ -33,7 +33,7 @@ checked against every oracle that implements it:
   within simulation error
   ([`validation/qap_check.py`](https://github.com/knapply/knappnet/blob/main/validation/qap_check.py)).
 
-UCINET runs only as a Windows program and cannot run unattended. Its
+[UCINET](https://sites.google.com/site/ucinetsoftware/home) runs only as a Windows program and cannot run unattended. Its
 conventions are implemented from its documentation and from the port of
 its routines by its authors; comparisons against golden files produced by
 UCINET itself are reported separately and will be added.
@@ -123,12 +123,12 @@ A documented difference is never a silent pass: it applies only on
 networks with the declared property, only for the named oracle, and only
 with a stated reason. Some examples from the manifest:
 
-- **sna, degree, on networks with loops or parallel edges.** sna works on
+- **[sna](https://cran.r-project.org/package=sna), degree, on networks with loops or parallel edges.** sna works on
   adjacency matrices, so parallel edges collapse to one and the diagonal is
   ignored. `degree(g, convention = "sna")` reproduces sna and is validated
   against it.
-- **NetworkX, betweenness, on multigraphs.** NetworkX traverses neighbor
-  sets, so parallel edges count as a single shortest path; igraph and
+- **[NetworkX](https://networkx.org/), betweenness, on multigraphs.** NetworkX traverses neighbor
+  sets, so parallel edges count as a single shortest path; [igraph](https://r.igraph.org/) and
   knappnet count each parallel edge as a distinct path.
   `convention = "networkx"` reproduces NetworkX.
 - **igraph, normalized betweenness, with fewer than three nodes.** The
@@ -156,8 +156,8 @@ differences an analyst is most likely to meet.
   every shortest-path algorithm gives the same answer on the same lengths,
   and the number of threads changes no result beyond floating-point
   rounding.
-- **File formats** are checked in both directions against NetworkX's and
-  igraph's own readers and writers
+- **File formats** are checked in both directions against [NetworkX](https://networkx.org/)'s and
+  [igraph](https://r.igraph.org/)'s own readers and writers
   ([`validation/io_check.py`](https://github.com/knapply/knappnet/blob/main/validation/io_check.py)).
   DyNetML, which neither reads, is tested against its specification.
 - **Benchmarks are correctness checks too.** Every timing in the
@@ -166,12 +166,12 @@ differences an analyst is most likely to meet.
 - **The README's examples** are rerun in R on every change, and the build
   fails if any printed output drifts.
 - **R CMD check** runs the package's tests, which repeat key comparisons
-  against igraph and sna from R, on Linux, macOS, and Windows.
+  against igraph and [sna](https://cran.r-project.org/package=sna) from R, on Linux, macOS, and Windows.
 
 ## Running it yourself
 
 From the repository root, with Rust, Python (with networkx, numpy, scipy,
-and PyYAML), and R (with igraph, sna, and yaml):
+and PyYAML), and R (with [igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), and yaml):
 
 ```sh
 python3 validation/fixtures.py           # regenerate fixtures (deterministic)

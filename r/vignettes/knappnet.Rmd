@@ -100,9 +100,9 @@ programs disagree about what to do with distances that do not exist:
 closeness(flo)[flo$nodes$name == "Pucci"]
 ```
 
-Under igraph's convention, the default, a node that reaches no one gets
-`NaN`. The `convention` argument reproduces the choices of NetworkX, sna,
-or UCINET instead; `?conventions` and the
+Under [igraph](https://r.igraph.org/)'s convention, the default, a node that reaches no one gets
+`NaN`. The `convention` argument reproduces the choices of [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna),
+or [UCINET](https://sites.google.com/site/ucinetsoftware/home) instead; `?conventions` and the
 [conventions guide](https://knapply.github.io/knappnet/articles/conventions.html)
 explain every difference.
 
@@ -185,7 +185,7 @@ small$edges
 as.matrix(small, attr = "weight")
 ```
 
-Networks also convert both ways with igraph, tidygraph, and statnet's
+Networks also convert both ways with [igraph](https://r.igraph.org/), [tidygraph](https://tidygraph.data-imaginist.com/), and [statnet](https://statnet.org/)'s
 network package, keeping node, edge, and network attributes:
 
 ```{r, eval = has_igraph}
@@ -207,8 +207,8 @@ those packages, `igraph::as.igraph()`, `network::as.network()`, and
 
 ## Files
 
-`read_network()` and `write_network()` handle GraphML, GEXF, GML, Pajek,
-UCINET DL, JSON node-link, ORA's DyNetML, CSV and TSV edge lists, and
+`read_network()` and `write_network()` handle GraphML, GEXF, GML, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
+[UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, JSON node-link, [ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s DyNetML, CSV and TSV edge lists, and
 (write only) DOT. The format comes from the file extension:
 
 ```{r}
@@ -234,7 +234,7 @@ read_network(edges_csv, nodes = nodes_csv, directed = FALSE)
 
 - `?netframe`, `?read_network`, and `?as_netframe` for the details of
   building, reading, and converting networks.
-- `?conventions` for how igraph, NetworkX, sna, and UCINET differ, and the
+- `?conventions` for how [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) differ, and the
   `convention` argument that reproduces each.
 - The [reference index](https://knapply.github.io/knappnet/reference/)
   lists every function by topic.

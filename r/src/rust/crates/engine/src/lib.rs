@@ -12,6 +12,7 @@ pub mod bitset;
 pub mod conventions;
 pub mod dynamics;
 pub mod error;
+pub mod generate;
 pub mod graph;
 pub mod io;
 pub mod layout;
@@ -21,6 +22,7 @@ pub mod metrics;
 pub mod parallel;
 pub mod qap;
 pub mod rng;
+pub mod spatial;
 pub mod temporal;
 pub mod weights;
 
