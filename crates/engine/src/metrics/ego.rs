@@ -48,8 +48,10 @@
 //! - `mindist` in [`neighborhood`] drops nodes closer than `mindist` steps,
 //!   as igraph's `mindist`; `mindist = 1` drops ego itself.
 
+use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
 use crate::union_find::UnionFind;
@@ -257,26 +259,40 @@ pub fn neighborhood_sizes(
         }
     }
     let count = egos.map_or(n, |l| l.len());
+    let sources: Vec<u32> = match egos {
+        Some(l) => l.iter().map(|&e| e as u32).collect(),
+        None => (0..n as u32).collect(),
+    };
+    // Breadth-first search from 64 egos at a time
+    // (`crate::bitset::MultiBfs`) over the arcs the mode follows; one
+    // batch is one work item, so the result does not depend on the thread
+    // count.
+    let h = oriented(g, opts.mode)?;
+    let adj = h.out();
+    let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
     let partials = parallel::for_each_item(
-        count,
+        (count + BATCH - 1) / BATCH,
         opts.threads,
-        || (Bfs::new(n), Vec::new()),
-        |(bfs, found): &mut (Bfs, Vec<(usize, usize)>), i| {
-            let ego = egos.map_or(i, |l| l[i]);
-            bfs.run(g, ego, opts.order, opts.mode);
-            let size = bfs
-                .order
-                .iter()
-                .filter(|&&v| bfs.dist[v as usize] as usize >= opts.mindist)
-                .count();
-            bfs.reset();
-            found.push((i, size));
+        || (MultiBfs::new(n), Vec::new()),
+        |(ms, found): &mut (MultiBfs, Vec<(usize, [usize; BATCH])>), b| {
+            let lo = b * BATCH;
+            let hi = (lo + BATCH).min(count);
+            let mut sizes = [usize::from(opts.mindist == 0); BATCH];
+            ms.run(adj, &sources[lo..hi], max_level, |step| {
+                if let Step::Reached { level, sources, .. } = step {
+                    if level as usize >= opts.mindist {
+                        for_each_bit(sources, |i| sizes[i] += 1);
+                    }
+                }
+            });
+            found.push((lo, sizes));
         },
     );
     let mut out = vec![0usize; count];
     for (_, found) in partials {
-        for (i, size) in found {
-            out[i] = size;
+        for (lo, sizes) in found {
+            let hi = (lo + BATCH).min(count);
+            out[lo..hi].copy_from_slice(&sizes[..hi - lo]);
         }
     }
     Ok(out)

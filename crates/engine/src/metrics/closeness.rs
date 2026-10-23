@@ -10,6 +10,10 @@
 //! Vigna 2014, `boldi2014axioms`).
 //!
 //! Every node is a source of one single-source search, run in parallel.
+//! Without weights the searches run 64 at a time with the bit-parallel
+//! breadth-first search of [`crate::bitset::MultiBfs`] (Then et al. 2014,
+//! `then2014more`); the sum of reciprocal lengths is then formed level by
+//! level, as (nodes at that distance) / distance.
 //!
 //! Conventions:
 //! - Mode: `Out` uses lengths of paths leaving the node (igraph's default),
@@ -52,6 +56,7 @@ use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 
+use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
@@ -238,19 +243,65 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
     let h = h.as_ref();
     let n = h.node_count();
     let lengths = path_lengths(h, opts.weighted, opts.weights_as, opts.algorithm)?;
-    let partials = parallel::for_each_item(
-        n,
-        opts.threads,
-        || Search::new(n),
-        |ws, s| {
-            let p = match &lengths {
-                Lengths::Uniform => ws.bfs(h, s),
-                Lengths::Integer(lens, max) => ws.dial(h, lens, *max, s),
-                Lengths::Real(lens) => ws.dijkstra(h, lens, s),
-            };
-            ws.found.push((s as u32, p));
-        },
-    );
+    let partials = match &lengths {
+        // Unweighted: breadth-first search from 64 sources at a time
+        // (`crate::bitset::MultiBfs`); one batch is one work item, so the
+        // result does not depend on the thread count.
+        Lengths::Uniform => parallel::for_each_item(
+            (n + BATCH - 1) / BATCH,
+            opts.threads,
+            || (MultiBfs::new(n), Vec::new()),
+            |(ms, found), b| {
+                let lo = b * BATCH;
+                let hi = (lo + BATCH).min(n);
+                let sources: Vec<u32> = (lo as u32..hi as u32).collect();
+                let mut count = [0u32; BATCH];
+                let mut total = [0u64; BATCH];
+                let mut profiles = [Profile::default(); BATCH];
+                ms.run(h.out(), &sources, u32::MAX, |step| match step {
+                    Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
+                    Step::LevelDone(level) => {
+                        for i in 0..sources.len() {
+                            let c = count[i];
+                            if c == 0 {
+                                continue;
+                            }
+                            count[i] = 0;
+                            let p = &mut profiles[i];
+                            p.reached += c as usize;
+                            total[i] += c as u64 * level as u64;
+                            p.harmonic += c as f64 / level as f64;
+                            p.longest = level as f64;
+                        }
+                    }
+                });
+                for (i, &s) in sources.iter().enumerate() {
+                    let mut p = profiles[i];
+                    p.total = total[i] as f64;
+                    found.push((s, p));
+                }
+            },
+        )
+        .into_iter()
+        .map(|(_, found)| found)
+        .collect::<Vec<_>>(),
+        _ => parallel::for_each_item(
+            n,
+            opts.threads,
+            || Search::new(n),
+            |ws, s| {
+                let p = match &lengths {
+                    Lengths::Integer(lens, max) => ws.dial(h, lens, *max, s),
+                    Lengths::Real(lens) => ws.dijkstra(h, lens, s),
+                    Lengths::Uniform => unreachable!("handled above"),
+                };
+                ws.found.push((s as u32, p));
+            },
+        )
+        .into_iter()
+        .map(|ws| ws.found)
+        .collect(),
+    };
     // Uniform weights reduce to breadth-first search, which counts hops;
     // unlike betweenness, closeness depends on the common length itself.
     let unit = match (&lengths, opts.weighted) {
@@ -266,8 +317,8 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
         _ => 1.0,
     };
     let mut out = vec![Profile::default(); n];
-    for ws in partials {
-        for (s, mut p) in ws.found {
+    for found in partials {
+        for (s, mut p) in found {
             if unit != 1.0 {
                 p.total *= unit;
                 p.harmonic /= unit;
@@ -282,11 +333,9 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
 /// Per-thread scratch space, reused across sources.
 struct Search {
     found: Vec<(u32, Profile)>,
-    hops: Vec<u32>,
     idist: Vec<u64>,
     dist: Vec<f64>,
     done: Vec<bool>,
-    queue: Vec<u32>,
     touched: Vec<u32>,
     buckets: Vec<Vec<u32>>,
     heap: BinaryHeap<HeapItem>,
@@ -296,47 +345,12 @@ impl Search {
     fn new(n: usize) -> Search {
         Search {
             found: Vec::new(),
-            hops: vec![u32::MAX; n],
             idist: vec![u64::MAX; n],
             dist: vec![f64::INFINITY; n],
             done: vec![false; n],
-            queue: Vec::with_capacity(n),
             touched: Vec::new(),
             buckets: Vec::new(),
             heap: BinaryHeap::new(),
-        }
-    }
-
-    fn bfs(&mut self, g: &Graph, s: usize) -> Profile {
-        let adj = g.out();
-        self.queue.clear();
-        self.hops[s] = 0;
-        self.queue.push(s as u32);
-        let mut head = 0;
-        let (mut total, mut harmonic, mut longest) = (0u64, 0.0, 0u32);
-        while head < self.queue.len() {
-            let v = self.queue[head] as usize;
-            head += 1;
-            let next = self.hops[v] + 1;
-            for &w in adj.neighbors(v) {
-                let w = w as usize;
-                if self.hops[w] == u32::MAX {
-                    self.hops[w] = next;
-                    self.queue.push(w as u32);
-                    total += next as u64;
-                    harmonic += 1.0 / next as f64;
-                    longest = longest.max(next);
-                }
-            }
-        }
-        for &v in &self.queue {
-            self.hops[v as usize] = u32::MAX;
-        }
-        Profile {
-            reached: self.queue.len() - 1,
-            total: total as f64,
-            harmonic,
-            longest: longest as f64,
         }
     }
 
