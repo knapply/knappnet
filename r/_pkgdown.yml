@@ -47,10 +47,6 @@ navbar:
         href: articles/conventions.html
       - text: Plotting networks and results
         href: articles/plotting.html
-      - text: Exponential random graph models
-        href: articles/ergm.html
-      - text: Stochastic actor-oriented models
-        href: articles/saom.html
       - text: Spatial networks with sf
         href: articles/spatial-networks.html
       - text: How results are validated
@@ -83,8 +79,6 @@ articles:
   contents:
   - articles/conventions
   - articles/plotting
-  - articles/ergm
-  - articles/saom
   - articles/spatial-networks
   - articles/validation
   - articles/performance
@@ -92,7 +86,7 @@ articles:
 # Every help topic must appear below (tools/check_r_docs.py checks this;
 # pkgdown stops if one is missing). Sections follow the order in which a
 # reader meets the package: build a network, describe it, measure nodes
-# and groups, model it, then the specialised network types and plots.
+# and groups, then the specialised network types and plots.
 reference:
 - title: Networks
   desc: >-
@@ -237,32 +231,6 @@ reference:
   - mrqap
   - cug_test
   - random_gnp
-
-- title: Exponential random graph models
-  desc: >-
-    ERGMs estimated by maximum pseudolikelihood, Monte Carlo maximum
-    likelihood, or exact enumeration for small networks, with simulation,
-    goodness of fit, MCMC diagnostics, and pooled temporal ERGMs.
-  contents:
-  - ergm_fit
-  - simulate.ergm_fit
-  - predict.ergm_fit
-  - ergm_gof
-  - mcmc_diagnostics
-  - tergm_fit
-
-- title: Stochastic actor-oriented models
-  desc: >-
-    Network panel data: effects, method of moments estimation by
-    stochastic approximation, simulation, and goodness of fit.
-  contents:
-  - saom_data
-  - saom_effects
-  - saom_control
-  - saom_fit
-  - plot.saom_fit
-  - saom_simulate
-  - saom_gof
 
 - title: Temporal networks
   desc: >-

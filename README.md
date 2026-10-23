@@ -79,7 +79,7 @@ holes, Gould-Fernandez brokerage, structural, regular, and automorphic
 equivalence, CONCOR, blockmodels), mixing and homophily (assortativity,
 mixing matrices, the E-I index), ego networks, two-mode networks, key
 players and group centrality, QAP and MRQAP, CUG tests and random graphs,
-exponential random graph models, stochastic actor-oriented models,
+GeoPackage files,
 temporal networks, geospatial networks with [sf](https://r-spatial.github.io/sf/), multidimensional
 scaling, layouts and plots, conversions to and from [igraph](https://r.igraph.org/), network, and
 [tidygraph](https://tidygraph.data-imaginist.com/), and nine file formats (GraphML, GEXF, GML, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL,

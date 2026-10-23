@@ -5,9 +5,9 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 9426 match, 42 documented differences, 0 FAIL, 4117 not run, 289 awaiting a manual run (UCINET), 1570 undefined for the oracle.
+Totals: 8766 match, 42 documented differences, 0 FAIL, 3732 not run, 289 awaiting a manual run (UCINET), 1270 undefined for the oracle.
 
-Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact arithmetic); ergm (no goldens yet); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; rsiena (no goldens yet); sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
+Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
 ## core
 
@@ -63,31 +63,6 @@ Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact a
 | `reachability_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |
 | `cut_points` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |
 | `bridges` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 21 | 28 / 0 / 0 / 0 |  |
-
-## ergm
-
-| Measure | btergm | definition | ergm |
-|---|---|---|---|
-| `ergm_stats_dyadic` |  | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 26 |
-| `ergm_stats_undirected` |  | 19 / 0 / 0 / 0 | 0 / 0 / 0 / 18 |
-| `ergm_stats_directed` |  | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |
-| `ergm_mple_dyadic` |  | 20 / 0 / 0 / 0 | 0 / 0 / 0 / 20 |
-| `ergm_mple_dyadic_se` |  | 20 / 0 / 0 / 0 | 0 / 0 / 0 / 20 |
-| `ergm_mple_gwesp` |  | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `ergm_mple_directed` |  | 4 / 0 / 0 / 0 | 0 / 0 / 0 / 4 |
-| `ergm_exact_loglik_triangle` |  | 2 / 0 / 0 / 0 |  |
-| `ergm_exact_expect_triangle` |  | 2 / 0 / 0 / 0 |  |
-| `ergm_exact_loglik_directed` |  | 3 / 0 / 0 / 0 |  |
-| `ergm_exact_mle_triangle` |  | 1 / 0 / 0 / 0 |  |
-| `ergm_exact_mle_gwesp` |  | 1 / 0 / 0 / 0 |  |
-| `ergm_exact_mle_kstar` |  | 1 / 0 / 0 / 0 |  |
-| `ergm_exact_mle_edges` |  | 2 / 0 / 0 / 0 |  |
-| `ergm_mcmle_exact_check` |  | 1 / 0 / 0 / 0 |  |
-| `ergm_mcmle_triangle` |  |  | 0 / 0 / 0 / 1 |
-| `ergm_mcmle_gwesp` |  |  | 0 / 0 / 0 / 2 |
-| `ergm_loglik_gwesp` |  |  | 0 / 0 / 0 / 1 |
-| `tergm_mple_undirected` | 0 / 0 / 0 / 4 | 4 / 0 / 0 / 0 |  |
-| `tergm_mple_directed` | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |
 
 ## groups
 
@@ -217,70 +192,6 @@ Oracle versions: btergm (no goldens yet); definition (direct evaluation, exact a
 | `proximity_knn_planar` | 28 / 0 / 0 / 0 |  |  |  |  |
 | `group_geometry_lonlat` | 28 / 0 / 0 / 0 |  |  |  |  |
 | `group_geometry_planar` | 28 / 0 / 0 / 0 |  |  |  |  |
-
-## saom
-
-| Measure | definition | rsiena |
-|---|---|---|
-| `saom_distances` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_targets_density` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |
-| `saom_contributions_density` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_recip` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_recip` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_transTrip` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_transTrip` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_transTies` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_transTies` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_transRecTrip` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_transRecTrip` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_cycle3` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_cycle3` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_inPop` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_inPop` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_inPopSqrt` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_inPopSqrt` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_outPop` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_outPop` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_outPopSqrt` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_outPopSqrt` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_inAct` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_inAct` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_inActSqrt` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_inActSqrt` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_outAct` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_outAct` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_outActSqrt` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_outActSqrt` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_gwespFF_69` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_gwespFF_69` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_gwespFF_120` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_gwespFF_120` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_gwespFB_69` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_gwespFB_69` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_gwespBF_69` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_gwespBF_69` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_gwespBB_69` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_gwespBB_69` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_egoX_constant` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_egoX_constant` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_egoX_changing` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_egoX_changing` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_altX_constant` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_altX_constant` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_altX_changing` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_altX_changing` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_simX_constant` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_simX_constant` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_simX_changing` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_simX_changing` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_sameX_binary` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_sameX_binary` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_sameX_constant` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_sameX_constant` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_egoXaltX_constant` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_egoXaltX_constant` | 9 / 0 / 0 / 0 |  |
-| `saom_targets_X_dyadic` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
-| `saom_contributions_X_dyadic` | 9 / 0 / 0 / 0 |  |
 
 ## spectral
 

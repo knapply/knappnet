@@ -14,7 +14,7 @@
 //! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
 //! | Network files | [`io`] |
 //! | Measures (centrality, cohesion, positions, structure) | [`metrics`] |
-//! | Statistical models | [`qap`], [`ergm`], [`saom`] |
+//! | Statistical models | [`qap`] |
 //! | Dynamics | [`temporal`] |
 //! | Space | [`spatial`] |
 //! | Drawing | [`layout`] |
@@ -39,9 +39,7 @@ pub mod io;
 pub mod metrics;
 
 // Statistical models.
-pub mod ergm;
 pub mod qap;
-pub mod saom;
 
 // Dynamics, space, drawing, and random networks.
 pub mod generate;

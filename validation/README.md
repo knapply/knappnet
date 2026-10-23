@@ -18,7 +18,7 @@ oracles/<area>_definition_oracle.py   definition oracles (Python, exact)
 oracles/<area>_networkx_oracle.py     NetworkX oracles
 oracles/r_<area>.R                    igraph, sna, and other R oracles
 derived/                 data derived from the fixtures that several
-                         oracles share (contact times, SAOM panels)
+                         oracles share (contact times)
 golden/<oracle>/<fixture>/<variant>.csv   oracle answers; VERSION per oracle
 engine.py                loads the C ABI and dispatches `fn` to a runner
 common.py                fixtures, manifests, golden files: shared helpers
@@ -44,8 +44,7 @@ python3 validation/compare.py                  # must print FAIL 0
 ```
 
 `run_oracles.py` without `--python-only` also runs the R scripts, which
-need R with [igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), and yaml (and, for some areas, network, [ergm](https://cran.r-project.org/package=ergm),
-btergm, [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), tsna, [keyplayer](https://cran.r-project.org/package=keyplayer), and homophily; a script whose package is
+need R with [igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), and yaml (and, for some areas, network, tsna, [keyplayer](https://cran.r-project.org/package=keyplayer), and homophily; a script whose package is
 missing says so and is skipped). `ENGINE_LIB=path/to/libcapi.so` points
 `compare.py` at a library built elsewhere. `compare.py --strict` (CI) also
 fails when an oracle never ran.

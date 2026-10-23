@@ -26,7 +26,7 @@ Inside the engine, shared machinery lives in its own modules: `graph`
 `matrix` (`Dense`), `linalg` (all dense linear algebra, one implementation
 per operation), `union_find`, `rng`, `parallel`, `weights` (path lengths
 and weight checks), and `conventions`. Measures live in `metrics`,
-statistical models in `qap`, `ergm`, and `saom`, and dynamics, space,
+statistical tests in `qap`, and dynamics, space,
 drawing, and generation in `temporal`, `spatial`, `layout`, and
 `generate`. The crate documentation (`lib.rs`) and `metrics/mod.rs` carry
 the full map. The C ABI header `netcapi.h` is divided into commented

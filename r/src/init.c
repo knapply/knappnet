@@ -117,34 +117,6 @@ extern SEXP C_mrqap(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, 
                     SEXP, SEXP);
 extern SEXP C_qap_cor(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
-/* ergm.c: Exponential random graph models. */
-extern SEXP C_ergm_alive(SEXP);
-extern SEXP C_ergm_changestats(SEXP);
-extern SEXP C_ergm_exact(SEXP, SEXP);
-extern SEXP C_ergm_exact_mle(SEXP, SEXP, SEXP);
-extern SEXP C_ergm_gof_observed(SEXP, SEXP, SEXP);
-extern SEXP C_ergm_gof_sample(SEXP, SEXP, SEXP);
-extern SEXP C_ergm_info(SEXP);
-extern SEXP C_ergm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_ergm_mcmle(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_ergm_mple(SEXP, SEXP, SEXP);
-extern SEXP C_ergm_new(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP,
-                       SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_ergm_sample_networks(SEXP);
-extern SEXP C_ergm_simulate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_ergm_stats(SEXP);
-extern SEXP C_tergm_mple(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-
-/* saom.c: Stochastic actor-oriented models. */
-extern SEXP C_saom_alive(SEXP);
-extern SEXP C_saom_contributions(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_saom_distances(SEXP);
-extern SEXP C_saom_estimate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_saom_initial(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_saom_new(SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_saom_simulate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
-extern SEXP C_saom_targets(SEXP, SEXP, SEXP, SEXP);
-
 /* temporal.c: Temporal networks. */
 extern SEXP C_temporal_active_at(SEXP, SEXP);
 extern SEXP C_temporal_aggregate(SEXP, SEXP);
@@ -263,31 +235,6 @@ static const R_CallMethodDef call_methods[] = {
     /* qap.c */
     {"C_mrqap", (DL_FUNC)&C_mrqap, 15},
     {"C_qap_cor", (DL_FUNC)&C_qap_cor, 10},
-    /* ergm.c */
-    {"C_ergm_alive", (DL_FUNC)&C_ergm_alive, 1},
-    {"C_ergm_changestats", (DL_FUNC)&C_ergm_changestats, 1},
-    {"C_ergm_exact", (DL_FUNC)&C_ergm_exact, 2},
-    {"C_ergm_exact_mle", (DL_FUNC)&C_ergm_exact_mle, 3},
-    {"C_ergm_gof_observed", (DL_FUNC)&C_ergm_gof_observed, 3},
-    {"C_ergm_gof_sample", (DL_FUNC)&C_ergm_gof_sample, 3},
-    {"C_ergm_info", (DL_FUNC)&C_ergm_info, 1},
-    {"C_ergm_loglik", (DL_FUNC)&C_ergm_loglik, 10},
-    {"C_ergm_mcmle", (DL_FUNC)&C_ergm_mcmle, 12},
-    {"C_ergm_mple", (DL_FUNC)&C_ergm_mple, 3},
-    {"C_ergm_new", (DL_FUNC)&C_ergm_new, 17},
-    {"C_ergm_sample_networks", (DL_FUNC)&C_ergm_sample_networks, 1},
-    {"C_ergm_simulate", (DL_FUNC)&C_ergm_simulate, 11},
-    {"C_ergm_stats", (DL_FUNC)&C_ergm_stats, 1},
-    {"C_tergm_mple", (DL_FUNC)&C_tergm_mple, 9},
-    /* saom.c */
-    {"C_saom_alive", (DL_FUNC)&C_saom_alive, 1},
-    {"C_saom_contributions", (DL_FUNC)&C_saom_contributions, 8},
-    {"C_saom_distances", (DL_FUNC)&C_saom_distances, 1},
-    {"C_saom_estimate", (DL_FUNC)&C_saom_estimate, 8},
-    {"C_saom_initial", (DL_FUNC)&C_saom_initial, 5},
-    {"C_saom_new", (DL_FUNC)&C_saom_new, 5},
-    {"C_saom_simulate", (DL_FUNC)&C_saom_simulate, 10},
-    {"C_saom_targets", (DL_FUNC)&C_saom_targets, 4},
     /* temporal.c */
     {"C_temporal_active_at", (DL_FUNC)&C_temporal_active_at, 2},
     {"C_temporal_aggregate", (DL_FUNC)&C_temporal_aggregate, 2},

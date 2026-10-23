@@ -24,7 +24,6 @@ Imports:
     tools,
     utils
 Suggests:
-    btergm,
     ergm,
     igraph,
     keyplayer,
@@ -33,7 +32,6 @@ Suggests:
     network,
     networkDynamic,
     rmarkdown,
-    RSiena,
     sf,
     sfnetworks,
     sna,

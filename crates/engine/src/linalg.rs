@@ -3,7 +3,7 @@
 //! eigendecomposition, and the Moore-Penrose inverse.
 //!
 //! These routines serve the small systems of the estimation methods (the
-//! p-by-p information matrices of ERGMs and SAOMs), the n-by-n problems of
+//! p-by-p matrices of model fits), the n-by-n problems of
 //! classical scaling, power centrality, and the leading eigenvector
 //! method, and the projected eigenproblems of the Lanczos solver. They are
 //! unblocked O(n^3) algorithms with O(n^2) memory, not a replacement for

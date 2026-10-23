@@ -22,14 +22,12 @@ use engine::{Error, Graph, WeightKind};
 
 mod cyber;
 mod descriptive;
-mod ergm;
 mod files;
 mod groups;
 mod layout;
 mod positions;
 mod qap;
 mod roles;
-mod saom;
 mod spectral;
 mod subgroups;
 mod temporal;

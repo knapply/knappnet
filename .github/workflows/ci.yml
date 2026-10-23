@@ -133,9 +133,6 @@ jobs:
             any::Matrix
             any::keyplayer
             any::tsna
-            any::ergm
-            any::btergm
-            any::RSiena
             knapply/homophily
       - name: Fixtures are reproducible
         run: |

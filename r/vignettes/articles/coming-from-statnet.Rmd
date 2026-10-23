@@ -88,9 +88,8 @@ functions have no `gmode`.
 | `netlm(y, x, nullhyp = "qap")` | `mrqap(y, x)` | Double semi-partialling (Dekker et al. 2007), sna's default. |
 | `netlm(y, x, nullhyp = "qapy")` | `mrqap(y, x, method = "y")` | Y-permutation (Krackhardt 1988). |
 
-Assortativity, the E-I index, ego networks, two-mode networks, and
-layouts are coming soon. Statistical models (ERGMs and stochastic
-actor-oriented models) are planned.
+Statistical models (ERGMs and stochastic actor-oriented models) are
+planned.
 
 ## Conventions: what changes with `convention = "sna"`
 
