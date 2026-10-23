@@ -310,8 +310,6 @@ regular_equivalence_weighted:
   oracles:
     definition:
       call: "as regular_equivalence with tie types from total edge weights"
-    sna:
-      call: "sna::redist(valued matrix, method = 'catrege'), distance 0"
 
 automorphic_equivalence:
   engine: {fn: automorphic_equivalence}

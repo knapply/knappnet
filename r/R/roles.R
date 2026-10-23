@@ -33,9 +33,11 @@
 #' class and isolated nodes in another, as Borgatti and Everett note.
 #' Classes are numbered from 1 in order of their first node.
 #'
-#' The result matches the maximal regular equivalence computed by sna's
-#' `redist(method = "catrege")` with `seed.partition` and by UCINET's
-#' CATREGE; sna's `equiv.clust()` then cuts the resulting distance matrix.
+#' The validation suite compares the result with the classes at distance 0
+#' in sna's `redist(method = "catrege")`, with and without
+#' `seed.partition`; UCINET's CATREGE computes the same partition. REGE,
+#' the iterative algorithm for valued data that scores the degree of
+#' regular equivalence between pairs, is not provided.
 #'
 #' @references
 #' White, D. R., & Reitz, K. P. (1983). Graph and semigroup homomorphisms
@@ -172,8 +174,11 @@ automorphic_equivalence <- function(x, max_steps = 1e6) {
 #' count (Wasserman and Faust 1994, ch. 10): the share of the variance in
 #' the ties that the block densities account for, 1 for a perfect
 #' blockmodel and 0 when every block has the same density. It is `NaN`
-#' when the ties or the densities have no variance. UCINET reports the
-#' same correlation for its density blockmodels.
+#' when the ties or the densities have no variance.
+#'
+#' The validation suite compares block densities with
+#' `sna::blockmodel(block.content = "density")`, which also leaves the
+#' diagonal out; UCINET's density blockmodel documents the same definition.
 #'
 #' @references
 #' White, H. C., Boorman, S. A., & Breiger, R. L. (1976). Social structure

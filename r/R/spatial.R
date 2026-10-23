@@ -23,9 +23,8 @@
 #' is accurate to well under a millimetre on the Earth except between
 #' nearly antipodal points, where it loses about half its digits (an error
 #' of up to about 0.2 m). A sphere is an approximation: distances on it
-#' differ from ellipsoidal geodesics by up to about 0.5%; for survey-grade
-#' lengths use `sf::st_distance()` on the result of `as_sf()`. Coordinates
-#' must be finite and latitudes within \[-90, 90\].
+#' differ from ellipsoidal geodesics by up to about 0.5%. Coordinates must
+#' be finite and latitudes within \[-90, 90\].
 #'
 #' `edge_lengths()` gives the distance between the endpoints of every
 #' edge (0 for a self-loop); `summary()` or `hist()` of it describe the
@@ -45,11 +44,6 @@
 #' longitude and latitude, which is undefined (`NaN`) when that mean
 #' vanishes, as for two antipodal points.
 #'
-#' `as_sf()` converts the nodes (points) or edges (line segments) to an
-#' sf object with CRS EPSG:4326 for longitude and latitude and no CRS for
-#' planar coordinates. The sf package is needed and is not installed with
-#' this one.
-#'
 #' @references
 #' Barthelemy, M. (2011). Spatial networks. *Physics Reports*, 499(1-3),
 #' 1-101. \doi{10.1016/j.physrep.2010.11.002}
@@ -64,13 +58,13 @@
 #' spatial analysis. *Papers of the Regional Science Association*, 10(1),
 #' 83-132. \doi{10.1007/BF01934680}
 #'
-#' @return `spatial_network()` returns `x` with the coordinate columns
-#'   recorded in `x$roles`. `edge_lengths()` returns a numeric vector
-#'   aligned with the rows of `x$edges`; `distance_decay()` a numeric vector
-#'   the length of `d`. `group_geometry()` returns a data frame with one row
-#'   per group: `group`, `size`, the centroid coordinates (named after the
-#'   coordinate columns), `mean_distance`, and `standard_distance`.
-#'   `as_sf()` returns an sf data frame.
+#' @return `spatial_network()` returns `x` with the coordinate columns and
+#'   coordinate system recorded in `x$roles` (`x`, `y`, `crs`, `radius`).
+#'   `edge_lengths()` returns a numeric vector aligned with the rows of
+#'   `x$edges`; `distance_decay()` a numeric vector the length of `d`.
+#'   `group_geometry()` returns a data frame with one row per group:
+#'   `group`, `size`, the centroid coordinates (named after the coordinate
+#'   columns), `mean_distance`, and `standard_distance`.
 #' @seealso [proximity_network()] to build a network from locations.
 #' @examples
 #' nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
@@ -100,7 +94,8 @@ spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "plan
     stop("`radius` must be a single positive number.", call. = FALSE)
   }
   check_coordinates(x$nodes[[cx]], x$nodes[[cy]], cx, cy, crs, "x$nodes")
-  x$roles$coords <- c(cx, cy)
+  x$roles$x <- cx
+  x$roles$y <- cy
   x$roles$crs <- crs
   x$roles$radius <- as.double(radius)
   x
@@ -129,24 +124,35 @@ check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
   invisible(NULL)
 }
 
-# Coordinates and coordinate system of a spatial network, as the engine
-# takes them.
-spatial_coords <- function(x) {
+# Node coordinates of a spatial network: an n-by-2 matrix (longitude and
+# latitude, or x and y), whether they are longitude and latitude, the
+# sphere radius, and the column names. Every point-based function reads
+# coordinates through this helper, so that node geometries of other kinds
+# can later be reduced to representative points in one place.
+node_coordinates <- function(x) {
   check_netframe(x)
-  if (is.null(x$roles$coords)) {
+  if (is.null(x$roles$x) || is.null(x$roles$y) || is.null(x$roles$crs)) {
     stop("`x` has no coordinates; record them with spatial_network(x, coords = ...).",
          call. = FALSE)
   }
-  cx <- x$roles$coords[[1L]]
-  cy <- x$roles$coords[[2L]]
+  cx <- x$roles$x
+  cy <- x$roles$y
   if (!all(c(cx, cy) %in% names(x$nodes))) {
     stop(sprintf("Coordinate columns `%s` and `%s` are no longer in `x$nodes`.", cx, cy),
          call. = FALSE)
   }
   check_coordinates(x$nodes[[cx]], x$nodes[[cy]], cx, cy, x$roles$crs, "x$nodes")
-  list(x = as.double(x$nodes[[cx]]), y = as.double(x$nodes[[cy]]),
-       crs = if (x$roles$crs == "lonlat") 0L else 1L, radius = x$roles$radius,
-       names = c(cx, cy))
+  coords <- cbind(as.double(x$nodes[[cx]]), as.double(x$nodes[[cy]]))
+  colnames(coords) <- c(cx, cy)
+  list(coords = coords, lonlat = identical(x$roles$crs, "lonlat"),
+       radius = if (is.null(x$roles$radius)) 6371008.7714 else x$roles$radius)
+}
+
+# The engine's view of node_coordinates(): separate vectors and codes.
+spatial_coords <- function(x) {
+  p <- node_coordinates(x)
+  list(x = p$coords[, 1L], y = p$coords[, 2L], crs = if (p$lonlat) 0L else 1L,
+       radius = p$radius, names = colnames(p$coords))
 }
 
 #' @rdname spatial_network
@@ -200,29 +206,6 @@ group_geometry <- function(x, groups) {
   out$mean_distance <- m[, 4L]
   out$standard_distance <- m[, 5L]
   out
-}
-
-#' @rdname spatial_network
-#' @param what `"nodes"` or `"edges"`.
-#' @export
-as_sf <- function(x, what = c("nodes", "edges")) {
-  what <- match.arg(what)
-  p <- spatial_coords(x)
-  if (!requireNamespace("sf", quietly = TRUE)) {
-    stop("as_sf() needs the sf package; install it with install.packages(\"sf\").",
-         call. = FALSE)
-  }
-  crs <- if (p$crs == 0L) 4326L else NA_integer_
-  if (what == "nodes") {
-    return(sf::st_as_sf(x$nodes, coords = p$names, crs = crs, remove = FALSE))
-  }
-  src <- x$index$src + 1L
-  tgt <- x$index$tgt + 1L
-  lines <- lapply(seq_along(src), function(i) {
-    sf::st_linestring(rbind(c(p$x[src[i]], p$y[src[i]]), c(p$x[tgt[i]], p$y[tgt[i]])))
-  })
-  geometry <- sf::st_sfc(lines, crs = crs)
-  sf::st_sf(x$edges, geometry = geometry)
 }
 
 #' Proximity networks from locations
@@ -284,8 +267,8 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
   knn <- match.arg(knn)
   threads <- resolve_threads(threads)
   if (inherits(nodes, "netframe")) {
-    if (missing(coords) && !is.null(nodes$roles$coords)) {
-      coords <- nodes$roles$coords
+    if (missing(coords) && !is.null(nodes$roles$x) && !is.null(nodes$roles$y)) {
+      coords <- c(nodes$roles$x, nodes$roles$y)
       if (missing(crs)) crs <- nodes$roles$crs
       if (missing(radius)) radius <- nodes$roles$radius
     }

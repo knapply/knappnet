@@ -43,10 +43,10 @@ equivalence is degenerate: every node with at least one tie ends in one
 class and isolated nodes in another, as Borgatti and Everett note. Classes
 are numbered from 1 in order of their first node.
 
-The result matches the classes at distance 0 in sna's
-\code{redist(method = "catrege")}, with and without \code{seed.partition},
-on every network in the validation suite; UCINET's CATREGE computes the
-same partition. REGE, the iterative algorithm for valued data that scores
+The validation suite compares the result with the classes at distance 0
+in sna's \code{redist(method = "catrege")}, with and without
+\code{seed.partition}, on every network it holds; UCINET's CATREGE
+computes the same partition. REGE, the iterative algorithm for valued data that scores
 the degree of regular equivalence between pairs, is not provided.
 }
 \references{

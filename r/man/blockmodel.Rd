@@ -67,10 +67,9 @@ ties that the block densities account for, 1 for a perfect blockmodel and
 0 when every block has the same density. It is \code{NaN} when the ties or
 the densities have no variance.
 
-Block densities match \code{sna::blockmodel()} with
-\code{block.content = "density"} (which, like this function, leaves the
-diagonal out) on every network in the validation suite; UCINET's density
-blockmodel documents the same definition.
+The validation suite compares block densities with
+\code{sna::blockmodel(block.content = "density")}, which also leaves the
+diagonal out; UCINET's density blockmodel documents the same definition.
 }
 \references{
 White, H. C., Boorman, S. A., & Breiger, R. L. (1976). Social structure

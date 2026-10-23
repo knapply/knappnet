@@ -1,5 +1,5 @@
 # Geospatial networks: edge lengths, proximity networks, distance decay,
-# group geometry, and sf conversion. Hand-checked against the haversine
+# and group geometry. Hand-checked against the haversine
 # formula and plain Euclidean distances.
 
 cities <- function() {
@@ -23,7 +23,7 @@ haversine_km <- function(lon1, lat1, lon2, lat2) {
 
 test_that("spatial_network() records coordinates and checks them", {
   g <- cities()
-  expect_equal(g$roles$coords, c("lon", "lat"))
+  expect_equal(c(g$roles$x, g$roles$y), c("lon", "lat"))
   expect_equal(g$roles$crs, "lonlat")
   expect_equal(g$roles$radius, 6371.0088)
   expect_s3_class(g, "netframe")
@@ -84,7 +84,7 @@ test_that("proximity networks join nearby points", {
   expect_equal(g$edges$to, c("b", "c", "e"))
   expect_equal(g$edges$distance, c(1, 1, 0.5))
   expect_equal(g$roles$weight, "distance")
-  expect_equal(g$roles$coords, c("x", "y"))
+  expect_equal(c(g$roles$x, g$roles$y), c("x", "y"))
   expect_equal(edge_lengths(g), g$edges$distance)
   # Coincident points are joined; nothing else at radius 0.
   dup <- proximity_network(rbind(pts, data.frame(id = "f", x = 0, y = 0)),
@@ -169,23 +169,4 @@ test_that("group geometry gives centroids and dispersion", {
   anti <- group_geometry(g, c("x", "x", "y", "y"))
   expect_true(is.nan(anti$lon[1]))
   expect_error(group_geometry(g, 1:2), "one value per node")
-})
-
-test_that("as_sf() converts nodes and edges", {
-  skip_if_not_installed("sf")
-  g <- cities()
-  nodes <- as_sf(g, "nodes")
-  expect_s3_class(nodes, "sf")
-  expect_equal(nrow(nodes), 4L)
-  expect_equal(sf::st_crs(nodes)$epsg, 4326L)
-  edges <- as_sf(g, "edges")
-  expect_s3_class(edges, "sf")
-  expect_equal(nrow(edges), 4L)
-  expect_true(all(sf::st_geometry_type(edges) == "LINESTRING"))
-  expect_equal(as.numeric(sf::st_length(edges))[4], 0)
-  p <- netframe(data.frame(from = 1, to = 2),
-                nodes = data.frame(id = 1:2, x = c(0, 3), y = c(0, 4)), directed = FALSE)
-  p <- spatial_network(p, coords = c("x", "y"), crs = "planar")
-  expect_true(is.na(sf::st_crs(as_sf(p))))
-  expect_equal(as.numeric(sf::st_length(as_sf(p, "edges"))), 5)
 })

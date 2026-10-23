@@ -3,7 +3,6 @@
 \alias{edge_lengths}
 \alias{distance_decay}
 \alias{group_geometry}
-\alias{as_sf}
 \title{Geospatial networks}
 \usage{
 spatial_network(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
@@ -15,8 +14,6 @@ distance_decay(d, scale, form = c("exponential", "gaussian", "power"),
                exponent = 2)
 
 group_geometry(x, groups)
-
-as_sf(x, what = c("nodes", "edges"))
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}; for every function but
@@ -40,16 +37,15 @@ for kilometres.}
 \item{exponent}{The exponent \eqn{e} of the \code{"power"} form.}
 \item{groups}{The group of each node: a vector aligned with the rows of
 \code{x$nodes}, or the name of a column of \code{x$nodes}.}
-\item{what}{\code{"nodes"} or \code{"edges"}.}
 }
 \value{\code{spatial_network()} returns \code{x} with the coordinate
-columns recorded in \code{x$roles}. \code{edge_lengths()} returns a
+columns and coordinate system recorded in \code{x$roles} (\code{x},
+\code{y}, \code{crs}, \code{radius}). \code{edge_lengths()} returns a
 numeric vector aligned with the rows of \code{x$edges};
 \code{distance_decay()} a numeric vector the length of \code{d}.
 \code{group_geometry()} returns a data frame with one row per group:
 \code{group}, \code{size}, the centroid coordinates (named after the
-coordinate columns), \code{mean_distance}, and \code{standard_distance}.
-\code{as_sf()} returns an sf data frame.}
+coordinate columns), \code{mean_distance}, and \code{standard_distance}.}
 \description{
 A spatial network is a netframe whose nodes have coordinates: longitude
 and latitude in degrees, or planar x and y. \code{spatial_network()}
@@ -61,9 +57,8 @@ Great-circle distances use the haversine formula (Sinnott 1984), which is
 accurate to well under a millimetre on the Earth except between nearly
 antipodal points, where it loses about half its digits (an error of up to
 about 0.2 m). A sphere is an approximation: distances on it differ from
-ellipsoidal geodesics by up to about 0.5\%; for survey-grade lengths use
-\code{sf::st_distance()} on the result of \code{as_sf()}. Coordinates must
-be finite and latitudes within \eqn{[-90, 90]}.
+ellipsoidal geodesics by up to about 0.5\%. Coordinates must be finite and
+latitudes within \eqn{[-90, 90]}.
 
 \code{edge_lengths()} gives the distance between the endpoints of every
 edge (0 for a self-loop); \code{summary()} or \code{hist()} of it describe
@@ -83,11 +78,6 @@ longitude and latitude it is the geographic midpoint, the normalized mean
 of the members' unit vectors converted back to longitude and latitude,
 which is undefined (\code{NaN}) when that mean vanishes, as for two
 antipodal points.
-
-\code{as_sf()} converts the nodes (points) or edges (line segments) to an
-sf object with CRS EPSG:4326 for longitude and latitude and no CRS for
-planar coordinates. The sf package is needed and is not installed with
-this one.
 }
 \references{
 Barthelemy, M. (2011). Spatial networks. \emph{Physics Reports}, 499(1-3),
@@ -116,8 +106,4 @@ g <- spatial_network(netframe(edges, nodes, directed = FALSE),
 edge_lengths(g)
 distance_decay(edge_lengths(g), scale = 500)
 group_geometry(g, "region")
-
-if (requireNamespace("sf", quietly = TRUE)) {
-  as_sf(g, "edges")
-}
 }

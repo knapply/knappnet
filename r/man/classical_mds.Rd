@@ -57,9 +57,9 @@ exactly). Non-metric scaling (Kruskal 1964) is not provided; see
 
 The eigenproblem is solved in the compiled engine by Householder reduction
 to tridiagonal form and the implicit QL algorithm (Golub and Van Loan
-2013), so results do not depend on R's LAPACK build. Coordinates match
-\code{cmdscale(d, k, eig = TRUE)} up to sign on every network in the
-validation suite.
+2013), so results do not depend on R's LAPACK build. The validation suite
+compares coordinates, eigenvalues, and fit with
+\code{cmdscale(d, k, eig = TRUE)}.
 }
 \references{
 Torgerson, W. S. (1952). Multidimensional scaling: I. Theory and method.

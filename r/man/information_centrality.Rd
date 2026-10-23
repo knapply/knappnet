@@ -41,9 +41,8 @@ so under the \code{"networkx"} convention they are an error, and \eqn{n}
 is the number of nodes in the network, with no isolates allowed.
 
 The inverse is computed by Cholesky factorization in the compiled engine.
-Results match \code{sna::infocent()} and NetworkX's
-\code{information_centrality()} on every connected network in the
-validation suite.
+The validation suite compares the result with \code{sna::infocent()} and
+NetworkX's \code{information_centrality()}.
 }
 \references{
 Stephenson, K., & Zelen, M. (1989). Rethinking centrality: Methods and
