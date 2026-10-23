@@ -111,14 +111,20 @@ def _ok(status, err):
         raise RuntimeError(err.value.decode())
 
 
-def e_betweenness(g, threads):
-    return g.betweenness(threads=threads)
+def e_betweenness(g, threads, weighted=False):
+    return g.betweenness(weighted=weighted, threads=threads)
 
 
-def e_closeness(g, threads, harmonic=False, wf=False):
+MODES = {"out": 1, "in": 2, "all": 3}
+
+
+def e_closeness(g, threads, harmonic=False, wf=False, mode="all", weighted=False):
+    """Closeness (Wasserman-Faust when `wf`, as NetworkX) or harmonic
+    centrality. NetworkX measures distances to a node, which is mode "in"
+    for directed graphs."""
     out, err = _out(g.n)
-    _ok(LIB.net_closeness(g.handle, int(harmonic), 3, 0, 0, int(wf), 1 if wf else 0, threads,
-                          out, err, ERR_LEN), err)
+    _ok(LIB.net_closeness(g.handle, int(harmonic), MODES[mode], int(weighted), 0, int(wf),
+                          1 if wf else 0, threads, out, err, ERR_LEN), err)
     return list(out)[:g.n]
 
 
@@ -164,48 +170,69 @@ def preferential(n, k, seed):
     return sorted(tuple(sorted(e)) for e in nx.barabasi_albert_graph(n, k, seed=seed).edges())
 
 
+def weights_for(m, integer, seed):
+    """Whole numbers 1 to 5 (the engine's Dial path) or reals in [0.1, 3]
+    (Dijkstra's algorithm)."""
+    rng = random.Random(seed)
+    return [float(rng.randint(1, 5)) if integer else rng.uniform(0.1, 3.0) for _ in range(m)]
+
+
 class Net:
-    def __init__(self, label, n, edges, directed):
+    def __init__(self, label, n, edges, directed, weights=None):
         self.label, self.n, self.edges, self.directed = label, n, edges, directed
         src, tgt = [a for a, _ in edges], [b for _, b in edges]
-        self.g = Graph(n, src, tgt, None, directed)
+        self.g = Graph(n, src, tgt, weights, directed)
         self.nx = nx.DiGraph() if directed else nx.Graph()
         self.nx.add_nodes_from(range(n))
-        self.nx.add_edges_from(edges)
-        self.ig = ig.Graph(n=n, edges=edges, directed=directed) if ig else None
+        if weights is None:
+            self.nx.add_edges_from(edges)
+        else:
+            self.nx.add_weighted_edges_from((a, b, w) for (a, b), w in zip(edges, weights))
+        self.ig = None
+        if ig:
+            self.ig = ig.Graph(n=n, edges=edges, directed=directed,
+                               edge_attrs={"weight": weights} if weights is not None else None)
         self.nk = None
-        if nk:
+        if nk and weights is None:
             self.nk = nk.Graph(n, directed=directed)
             for a, b in edges:
                 self.nk.addEdge(a, b)
 
 
 rows = []
+notes = {}
 
 
-def record(net, measure, ours1, ours, tool, theirs, agree):
+def record(net, measure, ours1, ours, tool, theirs, agree, note=None):
+    """`note` (optional) is printed after the row and again if the tools
+    disagree, for example both modularity values for Louvain."""
     rows.append({"graph": net.label, "measure": measure, "knappnet_1_thread": ours1,
                  "knappnet": ours, "tool": tool, "tool_seconds": theirs,
                  "speedup_1_thread": theirs / ours1, "speedup": theirs / ours,
                  "agree": agree})
+    if note:
+        notes[(net.label, measure, tool)] = note
     print(f"{net.label:<24} {measure:<24} {tool:<9} {ours1:9.4f} {ours:9.4f} {theirs:9.4f} "
-          f"{theirs / ours1:7.1f}x {theirs / ours:7.1f}x {'agree' if agree else 'DISAGREE'}",
-          flush=True)
+          f"{theirs / ours1:7.1f}x {theirs / ours:7.1f}x {'agree' if agree else 'DISAGREE'}"
+          f"{'  ' + note if note else ''}", flush=True)
 
 
 def both(f):
     return timing(lambda: f(1)), timing(lambda: f(0))
 
 
-def compare(net, measure, ours_fn, threaded, tools):
-    """tools: list of (name, available, run, check) where check(ours, theirs)."""
+def compare(net, measure, ours_fn, threaded, tools, note=None):
+    """tools: list of (name, available, run, check) where check(ours, theirs).
+    note(ours, theirs), if given, describes the two results for the output."""
     one, all_ = both(ours_fn) if threaded else (timing(lambda: ours_fn(0)),) * 2
     ours = ours_fn(0)
     for name, available, run, check in tools:
         if not available:
             continue
         theirs_t = timing(run)
-        record(net, measure, one, all_, name, theirs_t, bool(check(ours, run())))
+        theirs = run()
+        record(net, measure, one, all_, name, theirs_t, bool(check(ours, theirs)),
+               note(ours, theirs) if note else None)
 
 
 def main() -> int:
@@ -270,6 +297,54 @@ def main() -> int:
          lambda: nk.centrality.HarmonicCloseness(und.nk, normalized=False).run().scores(), close),
     ])
 
+    # Directed closeness and harmonic centrality: NetworkX measures
+    # distances to each node (the engine's mode "in").
+    compare(dire, "closeness", lambda k: e_closeness(dire.g, k, wf=True, mode="in"), True, [
+        ("networkx", True, lambda: list(nx.closeness_centrality(dire.nx).values()), close),
+    ])
+    compare(dire, "harmonic centrality",
+            lambda k: e_closeness(dire.g, k, harmonic=True, mode="in"), True, [
+                ("networkx", True, lambda: list(nx.harmonic_centrality(dire.nx).values()), close),
+                ("igraph", ig is not None,
+                 lambda: dire.ig.harmonic_centrality(mode="in", normalized=False), close),
+            ])
+
+    # Weighted shortest paths: whole-number weights take the engine's Dial
+    # bucket queue, real weights Dijkstra's algorithm.
+    n_w = int(2000 * SCALE)
+    for directed in (False, True):
+        for integer in (True, False):
+            edges = gnm(n_w, 5 * n_w, directed, 10 + 2 * directed + integer)
+            w = weights_for(len(edges), integer, 20 + 2 * directed + integer)
+            kind = "integer (Dial)" if integer else "real (Dijkstra)"
+            net = Net(f"{'directed, ' if directed else ''}{kind} weights, {n_w} / {len(edges)}",
+                      n_w, edges, directed, w)
+            mode = "in" if directed else "all"
+            compare(net, "betweenness", lambda k, net=net: e_betweenness(net.g, k, True), True, [
+                ("networkx", True,
+                 lambda net=net: list(nx.betweenness_centrality(
+                     net.nx, normalized=False, weight="weight").values()), close),
+                ("igraph", ig is not None,
+                 lambda net=net: net.ig.betweenness(weights="weight"), close),
+            ])
+            compare(net, "closeness",
+                    lambda k, net=net, mode=mode: e_closeness(net.g, k, wf=True, mode=mode,
+                                                              weighted=True), True, [
+                        ("networkx", True,
+                         lambda net=net: list(nx.closeness_centrality(
+                             net.nx, distance="weight").values()), close),
+                    ])
+            compare(net, "harmonic centrality",
+                    lambda k, net=net, mode=mode: e_closeness(net.g, k, harmonic=True, mode=mode,
+                                                              weighted=True), True, [
+                        ("networkx", True,
+                         lambda net=net: list(nx.harmonic_centrality(
+                             net.nx, distance="weight").values()), close),
+                        ("igraph", ig is not None,
+                         lambda net=net, mode=mode: net.ig.harmonic_centrality(
+                             mode=mode, weights="weight", normalized=False), close),
+                    ])
+
     def unit(v):
         s = math.sqrt(sum(x * x for x in v))
         return [abs(x) / s for x in v]
@@ -325,12 +400,13 @@ def main() -> int:
          lambda o, t: len(o) == len(t)),
     ])
 
-    # Louvain is randomized, so tools find different partitions; they agree
-    # when their modularity is within 2% of each other.
+    # Louvain is a randomized heuristic, so tools find different partitions.
+    # Agreement means comparable quality: the engine's modularity is at least
+    # 98% of the other tool's (finding a higher modularity is fine).
     q_ours = subgroups.louvain(pa.g, 1.0, False, 1)[1]
 
     def near(q):
-        return abs(q - q_ours) <= 0.02 * abs(q)
+        return q_ours >= 0.98 * q
     compare(pa, "Louvain communities", lambda k: subgroups.louvain(pa.g, 1.0, False, 1), False, [
         ("networkx", True,
          lambda: nx.community.modularity(pa.nx, nx.community.louvain_communities(pa.nx, seed=1)),
@@ -342,7 +418,7 @@ def main() -> int:
              nk.community.detectCommunities(pa.nk, algo=nk.community.PLM(pa.nk, False),
                                             inspect=False), pa.nk),
          lambda o, t: near(t)),
-    ])
+    ], note=lambda o, t: f"modularity {q_ours:.4f} (knappnet) vs {t:.4f}")
 
     names = nx.algorithms.triads.TRIAD_NAMES
     compare(dire, "triad census", lambda k: dire.g.triad_census(threads=k), True, [
@@ -379,7 +455,8 @@ def main() -> int:
     if bad:
         print("\nResults differ for:")
         for r in bad:
-            print(f"  {r['graph']}: {r['measure']} vs {r['tool']}")
+            note = notes.get((r["graph"], r["measure"], r["tool"]))
+            print(f"  {r['graph']}: {r['measure']} vs {r['tool']}" + (f" ({note})" if note else ""))
         return 1
     print("\nAll results agree.")
     return 0

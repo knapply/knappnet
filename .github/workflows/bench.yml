@@ -1,6 +1,8 @@
 # Full benchmarks against igraph, sna, NetworkX, python-igraph, and
-# NetworKit. Run on demand and weekly; results appear as annotations on the
-# run and as CSV artifacts. The quick versions run in ci.yml on every change.
+# NetworKit, and the scale tier of the validation corpus
+# (validation/scale/). Run on demand and weekly; results appear as
+# annotations on the run and as CSV artifacts. The quick benchmarks run in
+# ci.yml on every change.
 name: Benchmarks
 
 on:
@@ -58,3 +60,27 @@ jobs:
         with:
           name: bench-${{ matrix.os }}
           path: bench/results
+
+  scale:
+    name: validation at scale
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - name: Install tools
+        run: |
+          python -m pip install networkx numpy scipy pyyaml
+          Rscript -e 'install.packages(c("igraph", "sna", "yaml"), repos = "https://cloud.r-project.org")'
+          cargo build --release -p capi
+      - name: Engine against NetworkX
+        run: python validation/scale/check_scale.py
+      - name: Engine against igraph and sna
+        if: always()
+        run: Rscript validation/scale/check_scale.R
