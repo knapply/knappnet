@@ -37,8 +37,8 @@ def _lib():
         "net_fast_greedy": ([handle, f64, i32, i64p, f64p, cp, sz], i32),
         "net_core_periphery": ([handle, i32, i32, i64, i64, i64, u64, i32, i32p, f64p, cp, sz],
                                i32),
-        "net_core_periphery_continuous": ([handle, i32, i64, i64, u64, i32, f64p, f64p, i64p, cp, sz],
-                                          i32),
+        "net_core_periphery_continuous": ([handle, i32, i32, i64, f64, i64, u64, i32, f64p, f64p,
+                                           f64p, i64p, cp, sz], i32),
         "net_compactness": ([handle, i32, i32, i32, i32, f64p, cp, sz], i32),
         "net_small_world": ([handle, i32, i64, u64, i32, f64p, cp, sz], i32),
         "net_edge_lists_count": ([handle], i64),
@@ -193,17 +193,24 @@ def core_periphery(g, links: str = "missing", weighted: bool = False, starts: in
     return [bool(c) for c in list(core)[:g.n]], corr.value
 
 
-def core_periphery_continuous(g, weighted: bool = False, max_iter: int = 1000,
-                              starts: int = 20, seed: int = 1, threads: int = 1):
+CONTINUOUS_FIT = {"minres": 0, "correlation": 1}
+
+
+def core_periphery_continuous(g, fit: str = "minres", weighted: bool = False,
+                              max_iter: int = 1000, tol: float = 1e-10, starts: int = 20,
+                              seed: int = 1, threads: int = 1):
+    """Returns (coreness, correlation, residual)."""
     lib = _lib()
     err = _err()
     c = (ctypes.c_double * max(g.n, 1))()
     corr = ctypes.c_double()
+    resid = ctypes.c_double()
     iters = ctypes.c_int64()
-    _check(lib.net_core_periphery_continuous(g.handle, int(weighted), max_iter, starts, seed,
-                                             threads, c, ctypes.byref(corr),
+    _check(lib.net_core_periphery_continuous(g.handle, CONTINUOUS_FIT[fit], int(weighted),
+                                             max_iter, tol, starts, seed, threads, c,
+                                             ctypes.byref(corr), ctypes.byref(resid),
                                              ctypes.byref(iters), err, ERR_LEN), err)
-    return list(c)[:g.n], corr.value
+    return list(c)[:g.n], corr.value, resid.value
 
 
 def compactness(g, mode: str = "out", weighted: bool = False, weights_as: str = "distance",
@@ -381,11 +388,17 @@ def _core_periphery(g, spec, fx):
 
 @register("core_periphery_continuous")
 def _core_periphery_continuous(g, spec, fx):
+    """The correlation of the fitted pattern ("fit"), the residual sum of
+    squares ("residual"), or the unit-norm coreness ("coreness")."""
+    output = spec.get("output", "fit")
     try:
-        c, corr = core_periphery_continuous(g, spec.get("weighted", False))
+        c, corr, resid = core_periphery_continuous(g, spec.get("fit", "minres"),
+                                                   spec.get("weighted", False))
     except EngineError:
-        return [-1.0]
-    return [corr] if spec.get("output", "fit") == "fit" else c
+        return [-1.0] * g.n if output == "coreness" else [-1.0]
+    if output == "coreness":
+        return c
+    return [resid if output == "residual" else corr]
 
 
 @register("compactness")

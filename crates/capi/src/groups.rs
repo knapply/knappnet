@@ -17,8 +17,8 @@ use std::ffi::c_char;
 
 use engine::generate::{self, Degrees, EdgeList};
 use engine::metrics::coreperiphery::{
-    compactness, continuous_core_periphery, core_periphery, small_world, ContinuousOptions,
-    CoreLinks, CorePeripheryOptions, SmallWorldOptions,
+    compactness, continuous_core_periphery, core_periphery, small_world, ContinuousFit,
+    ContinuousOptions, CoreLinks, CorePeripheryOptions, SmallWorldOptions,
 };
 use engine::metrics::degree::DegreeMode;
 use engine::metrics::descriptive::PathOptions;
@@ -435,10 +435,13 @@ pub unsafe extern "C" fn net_core_periphery(
     })
 }
 
-/// Continuous core-periphery fit from `starts` starting points (the degree
-/// start plus seeded random ones): coreness (non-negative, unit norm) to
-/// `coreness`, the correlation to `*correlation`, iterations of the best
-/// start to `*iterations`.
+/// Continuous core-periphery fit. `fit`: 0 = MINRES (least squares,
+/// deterministic, `tol` the convergence tolerance), 1 = maximum correlation
+/// from `starts` starting points (the degree start plus seeded random
+/// ones). Writes coreness (non-negative, unit norm) to `coreness`, the
+/// correlation of the final pattern to `*correlation`, the residual sum of
+/// squares to `*residual` (NaN for the correlation fit), and the iterations
+/// (sweeps) made to `*iterations`.
 ///
 /// # Safety
 /// `h` must be a live handle; `coreness` must hold n values; the scalar
@@ -446,13 +449,16 @@ pub unsafe extern "C" fn net_core_periphery(
 #[no_mangle]
 pub unsafe extern "C" fn net_core_periphery_continuous(
     h: *const GraphHandle,
+    fit: i32,
     weighted: i32,
     max_iter: i64,
+    tol: f64,
     starts: i64,
     seed: u64,
     threads_: i32,
     coreness: *mut f64,
     correlation: *mut f64,
+    residual: *mut f64,
     iterations: *mut i64,
     err: *mut c_char,
     err_len: usize,
@@ -460,8 +466,10 @@ pub unsafe extern "C" fn net_core_periphery_continuous(
     guard(err, err_len, || {
         let g = handle(h)?;
         let opts = ContinuousOptions {
+            fit: ContinuousFit::from_code(fit)?,
             weighted: weighted != 0,
             max_iter: count(max_iter, "max_iter")?,
+            tol,
             starts: count(starts, "the number of starts")?,
             seed,
             threads: threads(threads_),
@@ -469,6 +477,7 @@ pub unsafe extern "C" fn net_core_periphery_continuous(
         let r = continuous_core_periphery(g, opts)?;
         slice_mut(coreness, g.node_count()).copy_from_slice(&r.coreness);
         slice_mut(correlation, 1)[0] = r.correlation;
+        slice_mut(residual, 1)[0] = r.residual;
         slice_mut(iterations, 1)[0] = r.iterations as i64;
         Ok(())
     })

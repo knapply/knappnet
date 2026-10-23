@@ -11,7 +11,9 @@ pub mod discrete;
 pub mod small_world;
 
 pub use compactness::compactness;
-pub use continuous::{continuous_core_periphery, ContinuousCorePeriphery, ContinuousOptions};
+pub use continuous::{
+    continuous_core_periphery, ContinuousCorePeriphery, ContinuousFit, ContinuousOptions,
+};
 pub use discrete::{core_periphery, CoreLinks, CorePeriphery, CorePeripheryOptions};
 pub use small_world::{small_world, SmallWorld, SmallWorldOptions};
 

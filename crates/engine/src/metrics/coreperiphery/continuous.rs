@@ -3,27 +3,55 @@
 //! Borgatti and Everett (1999, `borgatti1999models`, section 4) give every
 //! node a coreness c_i and take the pattern matrix delta_ij = c_i c_j, so
 //! that ties are expected between core nodes, less so between core and
-//! peripheral nodes, and least between peripheral nodes. Coreness is
-//! chosen to maximize the Pearson correlation between the data and the
-//! pattern. The authors maximize it numerically (with a Fletcher-Powell
-//! procedure); this module uses the quasi-Newton method of Broyden,
-//! Fletcher, Goldfarb, and Shanno with a backtracking line search that
-//! enforces the Armijo condition (Nocedal and Wright 2006,
-//! `nocedal2006numerical`, chapters 3 and 6), using the exact gradient of
-//! the correlation.
+//! peripheral nodes, and least between peripheral nodes. Two criteria fit
+//! the coreness:
+//!
+//! - MINRES (the default, and UCINET's): minimize the sum of squared
+//!   residuals sum_{i != j} (a_ij - c_i c_j)^2 over c >= 0, the minimum
+//!   residual method of factor analysis (Comrey 1962, `comrey1962minimum`)
+//!   with one factor and the diagonal left out, which Borgatti and Everett
+//!   suggest and Boyd, Fitzgerald, Mahutga, and Smith (2010,
+//!   `boyd2010computing`) describe for this model. Each coreness in turn is
+//!   set to the value that minimizes the residuals given the others,
+//!   c_i = sum_{j != i} (a_ij + a_ji) c_j / (2 sum_{j != i} c_j^2) (the two
+//!   terms coincide for undirected data), clamped at 0; a sweep over all
+//!   nodes never raises the residual sum, and sweeps continue until no
+//!   coreness changes by more than `tol` (relative to the largest) or
+//!   `max_iter` sweeps have been made. The start is c proportional to each
+//!   node's total value. With the diagonal included the minimizer would be
+//!   the principal eigenvector of the symmetrized data scaled by the square
+//!   root of its eigenvalue; leaving the diagonal out changes the solution
+//!   slightly, which is the point of MINRES. The result is scaled to unit
+//!   Euclidean norm, as UCINET reports it. On data such as a star, whose
+//!   leaves share no ties, the residual sum has no minimizer: it keeps
+//!   falling as the hub's coreness grows and the leaves' shrink, so the
+//!   sweeps stop at `max_iter`; the unit-norm coreness still converges (to
+//!   the hub alone) and is reported.
+//! - Correlation: maximize the Pearson correlation between the data and the
+//!   pattern, the criterion Borgatti and Everett state. The authors
+//!   maximize it numerically (with a Fletcher-Powell procedure); this module
+//!   uses the quasi-Newton method of Broyden, Fletcher, Goldfarb, and Shanno
+//!   with a backtracking line search that enforces the Armijo condition
+//!   (Nocedal and Wright 2006, `nocedal2006numerical`, chapters 3 and 6),
+//!   using the exact gradient of the correlation. The correlation is
+//!   invariant to scaling c, so the result is scaled to unit norm.
+//!   Caution: on many networks the supremum of the correlation is only
+//!   approached as all coreness values become equal, where the pattern
+//!   c_i c_j = (c + d_i)(c + d_j) reduces to the additive pattern d_i + d_j
+//!   up to scale; the returned coreness is then nearly uniform and carries
+//!   little information, while the correlation is that of the best additive
+//!   fit. MINRES does not have this degeneracy.
 //!
 //! Conventions:
 //! - Pairs and values as in [`super::discrete`]: pairs of distinct nodes,
 //!   each unordered pair once for undirected networks and both ordered
 //!   pairs for directed networks; binary values, or total weights.
-//! - Coreness is constrained to be non-negative, by writing c_i = t_i^2 and
-//!   optimizing over t. Borgatti and Everett do not state a sign
-//!   constraint, but without one the product pattern also fits two
-//!   separate dense groups (with coreness of opposite signs), which is not
-//!   a core-periphery pattern.
-//! - The correlation does not change when c is multiplied by a positive
-//!   number, so the result is scaled to unit Euclidean norm.
-//! - The correlation has several local maxima in general (and the
+//! - Coreness is constrained to be non-negative (by clamping for MINRES,
+//!   and by writing c_i = t_i^2 and optimizing over t for the correlation).
+//!   Borgatti and Everett do not state a sign constraint, but without one
+//!   the product pattern also fits two separate dense groups (with coreness
+//!   of opposite signs), which is not a core-periphery pattern.
+//! - The correlation fit has several local maxima in general (and the
 //!   substitution c = t^2 adds stationary points where some t_i = 0), so
 //!   the search runs from `starts` points and keeps the best: the first
 //!   start is c proportional to each node's total value plus 1 (degree
@@ -33,7 +61,13 @@
 //!   search stops when the largest gradient component is below 1e-9 or no
 //!   step improves the correlation, after at most `max_iter` iterations.
 //!   Among starts with the same best correlation the earliest wins. Cost
-//!   O(n^2) per iteration and O(n^2) memory per thread.
+//!   O(n^2) per iteration and O(n^2) memory per thread. MINRES is
+//!   deterministic and uses O(n^2) memory and O(n^2) time per sweep.
+//! - Both fits report the correlation between the data and the final
+//!   pattern, and the residual sum of squares of the unit-norm pattern
+//!   scaled to the data (`residual` is the MINRES objective at the
+//!   minimizer, before scaling to unit norm, for the MINRES fit, and NaN
+//!   for the correlation fit).
 //! - A network whose values are all equal is rejected.
 
 use super::PairRows;
@@ -42,13 +76,41 @@ use crate::graph::Graph;
 use crate::parallel;
 use crate::rng::Stream;
 
+/// The criterion fitted by [`continuous_core_periphery`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ContinuousFit {
+    /// Minimum residual sum of squares (UCINET).
+    #[default]
+    Minres,
+    /// Maximum correlation with the pattern (Borgatti and Everett 1999).
+    Correlation,
+}
+
+impl ContinuousFit {
+    /// Decodes the C interface codes: 0 = MINRES, 1 = correlation.
+    pub fn from_code(code: i32) -> Result<ContinuousFit> {
+        match code {
+            0 => Ok(ContinuousFit::Minres),
+            1 => Ok(ContinuousFit::Correlation),
+            _ => Err(Error::InvalidArgument(format!(
+                "unknown continuous core-periphery fit code {code}"
+            ))),
+        }
+    }
+}
+
 /// Options for [`continuous_core_periphery`].
 #[derive(Debug, Clone, Copy)]
 pub struct ContinuousOptions {
+    /// The criterion.
+    pub fit: ContinuousFit,
     /// Use total weights between nodes as values instead of binary ties.
     pub weighted: bool,
-    /// Iteration limit per start.
+    /// Iteration limit per start (sweeps, for MINRES).
     pub max_iter: usize,
+    /// Convergence tolerance of MINRES: largest change in coreness,
+    /// relative to the largest coreness, below which sweeps stop.
+    pub tol: f64,
     /// Number of starts (the degree start plus `starts - 1` random ones).
     pub starts: usize,
     /// Seed for the random starts.
@@ -60,8 +122,10 @@ pub struct ContinuousOptions {
 impl Default for ContinuousOptions {
     fn default() -> Self {
         ContinuousOptions {
+            fit: ContinuousFit::Minres,
             weighted: false,
             max_iter: 1000,
+            tol: 1e-10,
             starts: 20,
             seed: 1,
             threads: 0,
@@ -76,7 +140,11 @@ pub struct ContinuousCorePeriphery {
     pub coreness: Vec<f64>,
     /// Correlation between the data and the pattern c_i c_j.
     pub correlation: f64,
-    /// Iterations made.
+    /// Residual sum of squares sum_{i != j} (a_ij - c_i c_j)^2 at the
+    /// MINRES minimizer (before scaling to unit norm); NaN for the
+    /// correlation fit.
+    pub residual: f64,
+    /// Iterations (sweeps) made.
     pub iterations: usize,
 }
 
@@ -200,6 +268,9 @@ pub fn continuous_core_periphery(
                 .into(),
         ));
     }
+    if opts.fit == ContinuousFit::Minres {
+        return minres(&obj, opts);
+    }
     let parts = parallel::for_each_item(opts.starts, opts.threads, Vec::new, |acc, s| {
         let t = if s == 0 {
             // Total value plus 1, as t = sqrt(c).
@@ -239,6 +310,79 @@ pub fn continuous_core_periphery(
     Ok(ContinuousCorePeriphery {
         coreness: c,
         correlation: r,
+        residual: f64::NAN,
+        iterations,
+    })
+}
+
+/// MINRES: coordinate descent on sum_{i != j} (a_ij - c_i c_j)^2 with
+/// c >= 0. See the module documentation.
+fn minres(obj: &Objective, opts: ContinuousOptions) -> Result<ContinuousCorePeriphery> {
+    if !(opts.tol.is_finite() && opts.tol >= 0.0) {
+        return Err(Error::InvalidArgument(format!(
+            "tol must be a finite non-negative number, not {}",
+            opts.tol
+        )));
+    }
+    let n = obj.n;
+    // Symmetrized values s_ij = a_ij + a_ji (2 a_ij for undirected data),
+    // so that the update reads c_i = sum_j s_ij c_j / (2 sum_j c_j^2).
+    let sym = |i: usize, j: usize| -> f64 {
+        if obj.directed {
+            obj.a[i * n + j] + obj.a[j * n + i]
+        } else {
+            2.0 * obj.a[i * n + j]
+        }
+    };
+    // Start: total value of each node (its row and column sums).
+    let mut c: Vec<f64> = (0..n)
+        .map(|i| (0..n).filter(|&j| j != i).map(|j| sym(i, j)).sum::<f64>())
+        .collect();
+    let scale = c.iter().cloned().fold(0.0f64, f64::max);
+    if scale > 0.0 {
+        for x in c.iter_mut() {
+            *x /= scale;
+        }
+    }
+    let mut sum_sq: f64 = c.iter().map(|x| x * x).sum();
+    let mut iterations = 0;
+    while iterations < opts.max_iter {
+        iterations += 1;
+        let mut change = 0.0f64;
+        for i in 0..n {
+            let rest = sum_sq - c[i] * c[i];
+            let new = if rest > 0.0 {
+                let num: f64 = (0..n).filter(|&j| j != i).map(|j| sym(i, j) * c[j]).sum();
+                (num / (2.0 * rest)).max(0.0)
+            } else {
+                0.0
+            };
+            change = change.max((new - c[i]).abs());
+            sum_sq += new * new - c[i] * c[i];
+            c[i] = new;
+        }
+        let top = c.iter().cloned().fold(0.0f64, f64::max);
+        if change <= opts.tol * top.max(f64::MIN_POSITIVE) {
+            break;
+        }
+    }
+    // Residual sum of squares over the pairs in the fit.
+    let mut residual = 0.0;
+    obj.for_pairs(|i, j, a| {
+        let d = a - c[i] * c[j];
+        residual += d * d;
+    });
+    let (r, _) = obj.eval(&c);
+    let norm = c.iter().map(|x| x * x).sum::<f64>().sqrt();
+    if norm > 0.0 {
+        for x in c.iter_mut() {
+            *x /= norm;
+        }
+    }
+    Ok(ContinuousCorePeriphery {
+        coreness: c,
+        correlation: r,
+        residual,
         iterations,
     })
 }
@@ -385,20 +529,26 @@ mod tests {
     #[test]
     fn star_core_is_the_center() {
         let g = und(6, &[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]);
-        let opts = ContinuousOptions {
-            max_iter: 500,
-            ..Default::default()
-        };
-        let r = continuous_core_periphery(&g, opts).unwrap();
-        let top = (0..6)
-            .max_by(|&a, &b| r.coreness[a].total_cmp(&r.coreness[b]))
-            .unwrap();
-        assert_eq!(top, 0);
-        assert!(r.coreness.iter().all(|&x| x >= 0.0));
-        assert!((r.coreness.iter().map(|x| x * x).sum::<f64>() - 1.0).abs() < 1e-12);
-        // Leaves are symmetric.
-        assert!((r.coreness[1] - r.coreness[5]).abs() < 1e-6);
-        assert!(continuous_core_periphery(&und(3, &[]), opts).is_err());
+        for fit in [ContinuousFit::Minres, ContinuousFit::Correlation] {
+            let opts = ContinuousOptions {
+                fit,
+                max_iter: 500,
+                ..Default::default()
+            };
+            let r = continuous_core_periphery(&g, opts).unwrap();
+            let top = (0..6)
+                .max_by(|&a, &b| r.coreness[a].total_cmp(&r.coreness[b]))
+                .unwrap();
+            assert_eq!(top, 0, "{fit:?}");
+            assert!(r.coreness.iter().all(|&x| x >= 0.0));
+            assert!((r.coreness.iter().map(|x| x * x).sum::<f64>() - 1.0).abs() < 1e-12);
+            // Leaves are symmetric.
+            assert!(
+                (r.coreness[1] - r.coreness[5]).abs() < 1e-6,
+                "{fit:?} {r:?}"
+            );
+            assert!(continuous_core_periphery(&und(3, &[]), opts).is_err());
+        }
     }
 
     #[test]
@@ -427,6 +577,65 @@ mod tests {
         // A regular network has a constant degree start; random starts
         // still give an answer.
         let cycle = und(5, &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]);
-        assert!(continuous_core_periphery(&cycle, ContinuousOptions::default()).is_ok());
+        let opts = ContinuousOptions {
+            fit: ContinuousFit::Correlation,
+            ..Default::default()
+        };
+        assert!(continuous_core_periphery(&cycle, opts).is_ok());
+    }
+
+    #[test]
+    fn minres_is_a_stationary_point_of_the_residuals() {
+        // Two triangles joined by a bridge, plus a pendant.
+        let g = und(
+            7,
+            &[
+                (0, 1),
+                (0, 2),
+                (1, 2),
+                (2, 3),
+                (3, 4),
+                (3, 5),
+                (4, 5),
+                (5, 6),
+            ],
+        );
+        let r = continuous_core_periphery(&g, ContinuousOptions::default()).unwrap();
+        let obj = Objective::new(&g, false).unwrap();
+        // Rescale the unit-norm coreness to the minimizer and check the
+        // first-order condition of each coordinate.
+        let scale = {
+            let (mut num, mut den) = (0.0, 0.0);
+            obj.for_pairs(|i, j, a| {
+                let y = r.coreness[i] * r.coreness[j];
+                num += a * y;
+                den += y * y;
+            });
+            (num / den).sqrt()
+        };
+        let c: Vec<f64> = r.coreness.iter().map(|x| x * scale).collect();
+        let mut residual = 0.0;
+        obj.for_pairs(|i, j, a| residual += (a - c[i] * c[j]).powi(2));
+        assert!(
+            (residual - r.residual).abs() < 1e-6,
+            "{residual} vs {}",
+            r.residual
+        );
+        for i in 0..7 {
+            let grad: f64 = (0..7)
+                .filter(|&j| j != i)
+                .map(|j| -2.0 * (obj.a[i * 7 + j] - c[i] * c[j]) * c[j])
+                .sum();
+            assert!(
+                grad.abs() < 1e-6 || (c[i] == 0.0 && grad > 0.0),
+                "{i}: {grad}"
+            );
+        }
+        // The hub of a star has the highest coreness and the fit is exact
+        // up to the leaf-leaf pairs.
+        let star = und(5, &[(0, 1), (0, 2), (0, 3), (0, 4)]);
+        let s = continuous_core_periphery(&star, ContinuousOptions::default()).unwrap();
+        assert!(s.coreness[0] > s.coreness[1]);
+        assert!(s.correlation > 0.9);
     }
 }

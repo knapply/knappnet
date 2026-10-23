@@ -361,8 +361,36 @@ core_periphery_weighted:
         validated on the smaller fixtures, whose optimum is known exactly)
 
 
-core_periphery_continuous:
-  engine: {fn: core_periphery_continuous}
+core_periphery_minres:
+  engine: {fn: core_periphery_continuous, fit: minres, output: residual}
+  applies_to: any
+  tolerance: {rel: 1.0e-6, abs: 1.0e-8}
+  oracles:
+    definition:
+      call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; the residual"
+      undefined_on: [star8]
+      undefined_reason: >-
+        a star's leaves share no ties, so the residual sum has no minimizer
+        (it falls as the hub's coreness grows without bound); both the engine
+        and the oracle stop at their iteration limits with different
+        residuals
+
+core_periphery_minres_coreness:
+  engine: {fn: core_periphery_continuous, fit: minres, output: coreness}
+  applies_to: any
+  tolerance: {rel: 0, abs: 1.0e-5}
+  oracles:
+    definition:
+      call: "scipy L-BFGS-B (c >= 0) from 21 starts minimizing sum (a_ij - c_i c_j)^2; unit-norm coreness"
+      undefined_on: [star8, pair]
+      undefined_reason: >-
+        star8 has no minimizer (see core_periphery_minres), so the leaves'
+        coreness depends on where the iterations stop; pair has one arc, so
+        only the product c_1 c_2 = 1/2 is determined and the coreness
+        direction is not unique
+
+core_periphery_correlation:
+  engine: {fn: core_periphery_continuous, fit: correlation, output: fit}
   applies_to: any
   tolerance: {rel: 0, abs: 1.0e-7}
   oracles:

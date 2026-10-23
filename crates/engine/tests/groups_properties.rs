@@ -17,8 +17,8 @@ use engine::generate::{self, Degrees, EdgeList};
 use engine::metrics::cliques::max_cliques;
 use engine::metrics::community::modularity;
 use engine::metrics::coreperiphery::{
-    compactness, continuous_core_periphery, core_periphery, small_world, ContinuousOptions,
-    CoreLinks, CorePeripheryOptions, SmallWorldOptions,
+    compactness, continuous_core_periphery, core_periphery, small_world, ContinuousFit,
+    ContinuousOptions, CoreLinks, CorePeripheryOptions, SmallWorldOptions,
 };
 use engine::metrics::degree::DegreeMode;
 use engine::metrics::descriptive::PathOptions;
@@ -663,8 +663,10 @@ fn core_periphery_fits_report_their_correlation() {
             );
         }
         let opts = ContinuousOptions {
+            fit: ContinuousFit::Correlation,
             weighted: false,
             max_iter: 500,
+            tol: 1e-10,
             starts: 3,
             seed: 3,
             threads: 2,
@@ -672,8 +674,73 @@ fn core_periphery_fits_report_their_correlation() {
         let r = continuous_core_periphery(&g, opts);
         if degenerate {
             assert!(r.is_err());
+            assert!(continuous_core_periphery(&g, ContinuousOptions::default()).is_err());
             continue;
         }
+        // MINRES: a stationary point of the residual sum of squares with
+        // non-negative coreness, and the reported residual.
+        let mr = continuous_core_periphery(&g, ContinuousOptions::default()).unwrap();
+        assert!(mr.coreness.iter().all(|&v| v >= 0.0));
+        let scale = {
+            let (mut num, mut den) = (0.0, 0.0);
+            for (i, &(a, b)) in pairs.iter().enumerate() {
+                let y = mr.coreness[a] * mr.coreness[b];
+                num += x[i] * y;
+                den += y * y;
+            }
+            if den > 0.0 {
+                (num / den).sqrt()
+            } else {
+                0.0
+            }
+        };
+        let mc: Vec<f64> = mr.coreness.iter().map(|v| v * scale).collect();
+        let residual: f64 = pairs
+            .iter()
+            .enumerate()
+            .map(|(i, &(a, b))| (x[i] - mc[a] * mc[b]).powi(2))
+            .sum();
+        assert!(
+            (residual - mr.residual).abs() <= 1e-6 * (1.0 + mr.residual),
+            "{residual} vs {}",
+            mr.residual
+        );
+        // When a hub's leaves share no ties the residual has no minimizer
+        // (it falls as the hub's coreness grows without bound) and the
+        // sweeps stop at the iteration limit; otherwise the result is a
+        // stationary point.
+        let converged = mr.iterations < ContinuousOptions::default().max_iter;
+        for i in (0..c.n).filter(|_| converged) {
+            let grad: f64 = pairs
+                .iter()
+                .enumerate()
+                .filter(|(_, &(a, b))| a == i || b == i)
+                .map(|(k, &(a, b))| {
+                    let other = if a == i { b } else { a };
+                    -2.0 * (x[k] - mc[a] * mc[b]) * mc[other]
+                })
+                .sum();
+            // The gradient scales with c^3; allow the tolerance of the sweeps.
+            let top = mc.iter().cloned().fold(0.0f64, f64::max);
+            let allowed = 1e-6 * (1.0 + top).powi(3);
+            assert!(
+                grad.abs() < allowed || (mc[i] == 0.0 && grad > -allowed),
+                "{i}: {grad} {mc:?}"
+            );
+        }
+        let y: Vec<f64> = pairs
+            .iter()
+            .map(|&(a, b)| mr.coreness[a] * mr.coreness[b])
+            .collect();
+        let expected = pearson(&x, &y);
+        assert!(
+            same(mr.correlation, expected)
+                || (mr.correlation - expected).abs() < 1e-6
+                || (mr.correlation.is_nan() && expected.is_nan()),
+            "{} vs {expected}: {:?}",
+            mr.correlation,
+            mr.coreness
+        );
         // Two nodes give a single pair, whose pattern has no variance.
         let Ok(r) = r else {
             assert!(c.n == 2, "{r:?}");

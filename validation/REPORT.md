@@ -76,7 +76,9 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `core_periphery_ones` | 12 / 0 / 0 / 0 |  |  |  |  |  |
 | `core_periphery_zeros` | 12 / 0 / 0 / 0 |  |  |  |  |  |
 | `core_periphery_weighted` | 1 / 0 / 0 / 0 |  |  |  |  |  |
-| `core_periphery_continuous` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `core_periphery_minres` | 27 / 0 / 0 / 0 |  |  |  |  |  |
+| `core_periphery_minres_coreness` | 26 / 0 / 0 / 0 |  |  |  |  |  |
+| `core_periphery_correlation` | 28 / 0 / 0 / 0 |  |  |  |  |  |
 | `compactness` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
 | `compactness_weighted` | 7 / 0 / 0 / 0 |  | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
 | `small_world_observed` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |

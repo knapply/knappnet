@@ -34,7 +34,9 @@ strategy:
 - Core-periphery (Borgatti and Everett 1999): exhaustive search over every
   core (small networks only) for the discrete model; for the continuous
   model, scipy's BFGS from many random starts maximizing the correlation
-  with c_i c_j over c = t^2.
+  with c_i c_j over c = t^2, and scipy's bounded L-BFGS-B from many starts
+  minimizing the MINRES residual sum_{i != j} (a_ij - c_i c_j)^2 over
+  c >= 0.
 - Compactness (Borgatti 2006): all-pairs distances by Floyd-Warshall in
   exact arithmetic.
 - Small-world inputs: transitivity by counting triangles and connected
@@ -550,6 +552,39 @@ def discrete_cp(fx, links, weighted):
     return [-1.0 if best == -np.inf else float(best)]
 
 
+def minres_cp(fx, weighted, output):
+    """MINRES by bounded quasi-Newton from several starts; the residual, or
+    the unit-norm coreness."""
+    from scipy.optimize import Bounds
+    a, mask = value_matrix(fx, weighted)
+    x = a[mask]
+    if fx.n < 2 or np.var(x) == 0:
+        return [-1.0] if output == "residual" else [-1.0] * fx.n
+
+    def objective(c):
+        y = np.outer(c, c)[mask]
+        r = x - y
+        gm = np.zeros((fx.n, fx.n))
+        gm[mask] = -2.0 * r
+        return float(r @ r), (gm + gm.T) @ c
+
+    rng = np.random.default_rng(2024)
+    deg = (a.sum(axis=0) + a.sum(axis=1)) / 2.0
+    starts = [deg / max(deg.max(), 1e-12)] + [rng.uniform(0.0, 1.0, fx.n) for _ in range(20)]
+    best = None
+    for c0 in starts:
+        res = minimize(objective, c0, jac=True, method="L-BFGS-B",
+                       bounds=Bounds(0.0, np.inf),
+                       options={"ftol": 1e-15, "gtol": 1e-12, "maxiter": 20000})
+        if best is None or res.fun < best.fun:
+            best = res
+    c = best.x
+    if output == "residual":
+        return [float(best.fun)]
+    norm = np.linalg.norm(c)
+    return list(c / norm) if norm > 0 else [-1.0] * fx.n
+
+
 def continuous_cp(fx, weighted):
     a, mask = value_matrix(fx, weighted)
     x = a[mask]
@@ -670,6 +705,8 @@ def compute(spec: dict, fx):
     if fn == "core_periphery":
         return discrete_cp(fx, e.get("links", "missing"), e.get("weighted", False))
     if fn == "core_periphery_continuous":
+        if e.get("fit", "minres") == "minres":
+            return minres_cp(fx, e.get("weighted", False), e.get("output", "residual"))
         return continuous_cp(fx, e.get("weighted", False))
     if fn == "compactness":
         return compactness(fx, e.get("weighted", False))
