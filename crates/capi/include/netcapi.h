@@ -67,20 +67,28 @@ int32_t net_graph_simplify(const GraphHandle *h, int32_t undirected,
 /* ---- Data model and validation ------------------------------------------
  * A frame is a node table and an edge table of typed columns (integer,
  * double, text, logical; each with missing values), the roles that give
- * columns structural meaning, and the declared properties of the
- * network. It is filled in steps (columns, roles, weight type,
- * declarations, geometry), validated, and built into a graph. Every
- * change after validation discards the diagnostics and the build.
+ * columns structural meaning, three optional long tables (layers, node
+ * spells, node changes), and the declared properties of the network
+ * (docs/DATA_MODEL.md is the specification). It is filled in steps
+ * (columns, roles, weight type, declarations, geometry), validated, and
+ * built into a graph of the observed ties. Every change after validation
+ * discards the diagnostics and the build.
  *
- * Codes: table 0 = nodes, 1 = edges. Node roles 0 = id, 1 = mode,
- * 2 = node_start, 3 = node_end, 4 = x, 5 = y, 6 = node_missing; edge
- * roles 0 = source, 1 = target, 2 = weight, 3 = relation, 4 = sign,
- * 5 = start, 6 = end, 7 = wave, 8 = edge_missing. weight_type 0 =
- * distance, 1 = strength, -1 = none. Declarations 0 = directed,
- * 1 = loops, 2 = multiple, 3 = between_modes_only, 4 = add_nodes, with
- * value 0 = false, 1 = true, -1 = not declared (1 to 3 only). Coordinate
- * kinds 0 = unknown, 1 = longitude and latitude, 2 = planar. Combine
- * 0 = sum, 1 = mean, 2 = min, 3 = max, 4 = first, 5 = count.
+ * Codes: table 0 = nodes, 1 = edges, 2 = layers, 3 = node_spells,
+ * 4 = node_changes. Node roles 0 = id, 1 = mode, 2 = node_start,
+ * 3 = node_end, 4 = x, 5 = y, 6 = node_missing, 7 = ego; edge roles
+ * 0 = source, 1 = target, 2 = weight, 3 = relation, 4 = sign, 5 = start,
+ * 6 = end, 7 = wave, 8 = edge_missing, 9 = source_layer,
+ * 10 = target_layer, 11 = ego; layer table role 0 = layer; node spells
+ * roles 0 = id, 1 = start, 2 = end; node changes roles 0 = id, 1 = time.
+ * weight_type 0 = distance, 1 = strength, -1 = none. Declarations
+ * 0 = directed, 1 = loops, 2 = multiple, 3 = between_modes_only,
+ * 4 = add_nodes, 5 = egos_are_nodes, 6 = couplings_only,
+ * 7 = overlapping_spells, with value 0 = false, 1 = true, -1 = not
+ * declared (1 to 3 and 5 to 7 only). Coordinate kinds 0 = unknown,
+ * 1 = longitude and latitude, 2 = planar. Combine 0 = sum, 1 = mean,
+ * 2 = min, 3 = max, 4 = first, 5 = count. Edge classes 0 = intralayer,
+ * 1 = coupling, 2 = interlayer. Subgraphs 0 = one layer, 1 = one ego.
  *
  * Buffers: a column of n values is read from the caller's buffers and
  * copied; `missing` is n bytes (non-zero = missing) or NULL. Logical
@@ -93,7 +101,7 @@ int32_t net_graph_simplify(const GraphHandle *h, int32_t undirected,
 typedef struct FrameHandle FrameHandle;
 
 /* Number of doubles net_frame_summary writes. */
-#define NET_FRAME_SUMMARY_LEN 26
+#define NET_FRAME_SUMMARY_LEN 37
 
 /* An empty frame; directed != 0 for a directed network. */
 FrameHandle *net_frame_new(int32_t directed);
@@ -129,7 +137,8 @@ int32_t net_frame_add_string(FrameHandle *h, int32_t table, const char *name,
                              const uint8_t *missing, int64_t n, char *err,
                              size_t err_len);
 
-/* Assigns role of table to the column called name; NULL clears the role. */
+/* Assigns role of table to the column called name (the role codes depend
+ * on the table; see above); NULL clears the role. */
 int32_t net_frame_set_role(FrameHandle *h, int32_t table, int32_t role,
                            const char *name, char *err, size_t err_len);
 
@@ -141,8 +150,9 @@ int32_t net_frame_set_weight_type(FrameHandle *h, int32_t weight_type,
 int32_t net_frame_declare(FrameHandle *h, int32_t which, int32_t value,
                           char *err, size_t err_len);
 
-/* Records whether table carries geometry and its coordinate reference
- * system (crs may be NULL). The two tables' systems must agree. */
+/* Records whether table (nodes or edges) carries geometry and its
+ * coordinate reference system (crs may be NULL). The two tables' systems
+ * must agree. */
 int32_t net_frame_set_geometry(FrameHandle *h, int32_t table, int32_t present,
                                const char *crs, char *err, size_t err_len);
 
@@ -160,9 +170,9 @@ int32_t net_frame_validate(FrameHandle *h, int32_t threads, int64_t *errors,
 int64_t net_frame_diagnostic_count(const FrameHandle *h);
 
 /* Diagnostic i: code (such as "E_UNKNOWN_NODE"), message, severity
- * (0 error, 1 note), table (0 nodes, 1 edges, -1 network), the number of
- * affected rows in all, and how many net_frame_diagnostic_rows lists (at
- * most 50). Any output may be NULL. */
+ * (0 error, 1 note), table (a table code, or -1 for the network), the
+ * number of affected rows in all, and how many net_frame_diagnostic_rows
+ * lists (at most 50). Any output may be NULL. */
 int32_t net_frame_diagnostic(const FrameHandle *h, int64_t i, const char **code,
                              const char **message, int32_t *severity,
                              int32_t *table, int64_t *count, int64_t *n_rows,
@@ -172,15 +182,32 @@ int32_t net_frame_diagnostic(const FrameHandle *h, int64_t i, const char **code,
 int32_t net_frame_diagnostic_rows(const FrameHandle *h, int64_t i, int64_t *rows,
                                   char *err, size_t err_len);
 
-/* Validates if needed and builds the graph (nodes: the node table's rows,
- * then nodes added from the edges in order of first appearance; edge e
- * is row e). Fails with the errors as the message when the frame is
- * invalid. Release *out with net_graph_free. */
+/* Validates if needed and builds the graph of the observed ties (nodes:
+ * the node table's rows, then nodes added from the edges in order of
+ * first appearance; edges: the rows not flagged as unobserved pairs, in
+ * row order, so edge e is row e without an edge_missing role). Fails with
+ * the errors as the message when the frame is invalid. Release *out with
+ * net_graph_free. */
 int32_t net_frame_build(FrameHandle *h, int32_t threads, GraphHandle **out,
                         char *err, size_t err_len);
 
 /* Nodes of the built graph, or -1 before a build. */
 int64_t net_frame_node_count(const FrameHandle *h);
+
+/* Edges of the built graph (observed ties), or -1 before a build. */
+int64_t net_frame_graph_edge_count(const FrameHandle *h);
+
+/* The edge table row of every graph edge (net_frame_graph_edge_count
+ * values; the identity unless rows are flagged as unobserved). */
+int32_t net_frame_edge_rows(const FrameHandle *h, int64_t *out, char *err,
+                            size_t err_len);
+
+/* The unobserved pairs: node indices and edge table row of every row
+ * flagged as missing, in row order (as many values as summary field 25);
+ * any output may be NULL. */
+int32_t net_frame_missing_pairs(const FrameHandle *h, int64_t *src,
+                                int64_t *tgt, int64_t *rows, char *err,
+                                size_t err_len);
 
 /* Nodes added from the edges, or -1 before a build. */
 int64_t net_frame_added_count(const FrameHandle *h);
@@ -195,14 +222,49 @@ int32_t net_frame_added(const FrameHandle *h, int64_t *rows, int32_t *is_target,
 int32_t net_frame_edge_index(const FrameHandle *h, int64_t *src, int64_t *tgt,
                              char *err, size_t err_len);
 
-/* Integer codes of the modes (which 0; one per node table row) or the
- * relations (which 1; one per edge), numbered by first appearance of
- * each label. Fails when the role is not set. */
+/* Integer codes of the modes (which 0; one per node table row), the
+ * relations (which 1; one per edge), the node egos (which 2; one per
+ * node), or the edge egos (which 3; one per edge), numbered by first
+ * appearance of each label. Fails when the role is not set. */
 int32_t net_frame_codes(const FrameHandle *h, int32_t which, int64_t *out,
                         char *err, size_t err_len);
 
-/* Number of edges sharing each edge's key (endpoints, relation, spell);
- * m values. */
+/* Layer codes of every edge's endpoints (indices into the summary's layer
+ * labels) and each edge's class (0 intralayer, 1 coupling, 2 interlayer);
+ * m values each, any output NULL. Fails without layer roles. */
+int32_t net_frame_edge_layers(const FrameHandle *h, int64_t *src_layer,
+                              int64_t *tgt_layer, int32_t *class, char *err,
+                              size_t err_len);
+
+/* Size of the subgraph of layer i (which 0: every node and the observed
+ * intralayer edges of that layer) or of ego i (which 1: the nodes and
+ * observed edges of that ego). */
+int32_t net_frame_subgraph_size(const FrameHandle *h, int32_t which, int64_t i,
+                                int64_t *nodes, int64_t *edges, char *err,
+                                size_t err_len);
+
+/* Builds that subgraph into *out (release with net_graph_free); node_index
+ * receives the built graph's node index of each subgraph node and
+ * edge_rows the edge table row of each subgraph edge (sizes from
+ * net_frame_subgraph_size; either may be NULL). */
+int32_t net_frame_subgraph(const FrameHandle *h, int32_t which, int64_t i,
+                           GraphHandle **out, int64_t *node_index,
+                           int64_t *edge_rows, char *err, size_t err_len);
+
+/* Number of resolved presence spells (one per node from the node roles,
+ * the rows of the node spells table, or 0), or -1 before a build. */
+int64_t net_frame_node_spell_count(const FrameHandle *h);
+
+/* The presence spells sorted by node and start: offsets (n + 1 values)
+ * delimit each node's spells in start and end (net_frame_node_spell_count
+ * values each; infinities when unbounded), and rows gives each spell's
+ * row of the node spells table (or the node's row). Any output NULL. */
+int32_t net_frame_node_spells(const FrameHandle *h, int64_t *offsets,
+                              double *start, double *end, int64_t *rows,
+                              char *err, size_t err_len);
+
+/* Number of edges sharing each edge's key (endpoints with their layers,
+ * relation, spell); m values. */
 int32_t net_frame_multiplicity(const FrameHandle *h, int64_t *out, char *err,
                                size_t err_len);
 
@@ -220,26 +282,34 @@ int32_t net_frame_simplify(const FrameHandle *h, int32_t combine,
                            int32_t drop_loops, int64_t *group, double *weight,
                            int64_t *kept, char *err, size_t err_len);
 
-/* Derived properties as NET_FRAME_SUMMARY_LEN doubles: 0 nodes, 1 edges,
- * 2 directed, 3 modes, 4 between_modes_only (-1 undeclared), 5 weighted,
- * 6 weight type (0 distance, 1 strength, -1 none), 7 smallest weight,
- * 8 largest weight, 9 relations, 10 signed, 11 negative edges, 12 time
- * kind (0 static, 1 contacts, 2 edge spells, 3 waves), 13 earliest
- * start, 14 latest end, 15 node spells, 16 node geometry, 17 edge
- * geometry, 18 coordinate kind (-1 none), 19 loops, 20 parallel edges,
- * 21 isolates, 22 weak components, 23 density, 24 unobserved nodes,
- * 25 unobserved edges. Undefined values are NaN. Builds if needed. */
+/* Derived properties as NET_FRAME_SUMMARY_LEN doubles: 0 nodes, 1 edge
+ * rows, 2 directed, 3 modes, 4 between_modes_only (-1 undeclared),
+ * 5 weighted, 6 weight type (0 distance, 1 strength, -1 none),
+ * 7 smallest weight, 8 largest weight, 9 relations, 10 signed,
+ * 11 negative edges, 12 time kind (0 static, 1 contacts, 2 edge spells,
+ * 3 waves), 13 earliest start, 14 latest end, 15 node spells (1 from the
+ * node roles, 2 from a table), 16 node geometry, 17 edge geometry,
+ * 18 coordinate kind (-1 none), 19 loops, 20 parallel edges, 21 isolates,
+ * 22 weak components, 23 density, 24 unobserved nodes, 25 unobserved
+ * edges, 26 layers, 27 layer table given, 28 intralayer edges,
+ * 29 coupling edges, 30 interlayer edges, 31 couplings_only (-1
+ * undeclared), 32 egos, 33 egos that are nodes, 34 egos_are_nodes (-1
+ * undeclared), 35 node spell rows, 36 node change rows. Isolates,
+ * components, and density are those of the observed graph. Undefined
+ * values are NaN. Builds if needed. */
 int32_t net_frame_summary(FrameHandle *h, int32_t threads, double *out,
                           char *err, size_t err_len);
 
-/* Label i of the modes (which 0) or relations (which 1), the weight
- * column (which 2, i 0), or the coordinate reference system (which 3,
- * i 0); NULL when out of range or before net_frame_summary. */
+/* Label i of the modes (which 0), relations (which 1), layers (which 4),
+ * or egos (which 5), the weight column (which 2, i 0), or the coordinate
+ * reference system (which 3, i 0); NULL when out of range or before
+ * net_frame_summary. */
 const char *net_frame_summary_label(const FrameHandle *h, int32_t which,
                                     int64_t i);
 
-/* Nodes per mode (which 0) or edges per relation (which 1); out holds as
- * many values as the summary reports. */
+/* Nodes per mode (which 0), edges per relation (which 1), intralayer
+ * edges per layer (which 2), nodes per ego (which 3), or edge rows per
+ * ego (which 4); out holds as many values as the summary reports. */
 int32_t net_frame_summary_counts(const FrameHandle *h, int32_t which,
                                  int64_t *out, char *err, size_t err_len);
 

@@ -44,13 +44,15 @@ fn mask_get(mask: &Mask, i: usize) -> bool {
     mask.as_ref().is_some_and(|m| m[i])
 }
 
-fn check_mask(mask: &Mask, len: usize, what: &str) -> Result<()> {
+fn check_mask(mask: &Mask, len: usize, which: Which) -> Result<()> {
     match mask {
         Some(m) if m.len() != len => Err(Error::LengthMismatch {
-            what: if what == "nodes" {
-                "node column mask"
-            } else {
-                "edge column mask"
+            what: match which {
+                Which::Nodes => "node column mask",
+                Which::Edges => "edge column mask",
+                Which::Layers => "layer column mask",
+                Which::NodeSpells => "node spell column mask",
+                Which::NodeChanges => "node change column mask",
             },
             expected: len,
             found: m.len(),
@@ -225,7 +227,7 @@ impl Column {
     }
 
     /// Checks that a mask, if any, has one entry per value.
-    fn check(&self, table: &str) -> Result<()> {
+    fn check(&self, table: Which) -> Result<()> {
         match self {
             Column::Int(v, m) => check_mask(m, v.len(), table),
             Column::Bool(v, m) => check_mask(m, v.len(), table),
@@ -253,22 +255,53 @@ impl Column {
     }
 }
 
-/// One of the two tables of a frame.
+/// One of the tables of a frame: the node and edge tables, and the
+/// optional long tables.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Which {
     /// The node table.
     Nodes,
     /// The edge table.
     Edges,
+    /// The layer table of a multilayer network.
+    Layers,
+    /// The node spells table (several presence spells per node).
+    NodeSpells,
+    /// The node changes table (time-varying node attributes).
+    NodeChanges,
 }
 
 impl Which {
+    /// Every table, in code order (the C interface codes are positions).
+    pub const ALL: [Which; 5] = [
+        Which::Nodes,
+        Which::Edges,
+        Which::Layers,
+        Which::NodeSpells,
+        Which::NodeChanges,
+    ];
+
     /// The table's name in messages.
     pub fn name(self) -> &'static str {
         match self {
             Which::Nodes => "nodes",
             Which::Edges => "edges",
+            Which::Layers => "layers",
+            Which::NodeSpells => "node_spells",
+            Which::NodeChanges => "node_changes",
         }
+    }
+
+    /// Decodes the C interface codes, which are positions in [`Self::ALL`].
+    pub fn from_code(code: i32) -> Result<Which> {
+        usize::try_from(code)
+            .ok()
+            .and_then(|i| Which::ALL.get(i).copied())
+            .ok_or_else(|| {
+                Error::InvalidArgument(format!(
+                    "unknown table code {code}; 0 = nodes, 1 = edges, 2 = layers, 3 = node_spells, 4 = node_changes"
+                ))
+            })
     }
 }
 
@@ -326,7 +359,7 @@ impl Table {
     /// Adds a column. Its length must match the table's rows, and its name
     /// must be new.
     pub fn push(&mut self, which: Which, name: &str, column: Column) -> Result<usize> {
-        column.check(which.name())?;
+        column.check(which)?;
         if self.names.iter().any(|n| n == name) {
             return Err(Error::InvalidArgument(format!(
                 "`{which}` already has a column named `{name}`"
@@ -338,6 +371,9 @@ impl Table {
                     what: match which {
                         Which::Nodes => "node column",
                         Which::Edges => "edge column",
+                        Which::Layers => "layer column",
+                        Which::NodeSpells => "node spell column",
+                        Which::NodeChanges => "node change column",
                     },
                     expected: n,
                     found: column.len(),
@@ -405,6 +441,9 @@ mod tests {
         let fixed = Table::with_rows(3);
         assert_eq!(fixed.nrow(), 3);
         assert!(fixed.has_rows());
+        assert_eq!(Which::from_code(3).unwrap(), Which::NodeSpells);
+        assert!(Which::from_code(5).is_err());
+        assert_eq!(Which::Layers.to_string(), "layers");
     }
 
     #[test]

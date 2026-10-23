@@ -10,21 +10,28 @@
 //! the frame after validation discards the diagnostics and the build.
 //!
 //! Integer codes used by these functions:
-//! - `table`: 0 = nodes, 1 = edges.
+//! - `table`: 0 = nodes, 1 = edges, 2 = layers, 3 = node_spells,
+//!   4 = node_changes.
 //! - node `role`: 0 = id, 1 = mode, 2 = node_start, 3 = node_end, 4 = x,
-//!   5 = y, 6 = node_missing. Edge `role`: 0 = source, 1 = target,
-//!   2 = weight, 3 = relation, 4 = sign, 5 = start, 6 = end, 7 = wave,
-//!   8 = edge_missing.
+//!   5 = y, 6 = node_missing, 7 = ego. Edge `role`: 0 = source,
+//!   1 = target, 2 = weight, 3 = relation, 4 = sign, 5 = start, 6 = end,
+//!   7 = wave, 8 = edge_missing, 9 = source_layer, 10 = target_layer,
+//!   11 = ego. Layer table `role`: 0 = layer. Node spells `role`: 0 = id,
+//!   1 = start, 2 = end. Node changes `role`: 0 = id, 1 = time.
 //! - `weight_type`: 0 = distance, 1 = strength, -1 = none.
 //! - declaration `which`: 0 = directed, 1 = loops, 2 = multiple,
-//!   3 = between_modes_only, 4 = add_nodes; `value` 0 = false,
-//!   1 = true, -1 = not declared (for 1 to 3).
+//!   3 = between_modes_only, 4 = add_nodes, 5 = egos_are_nodes,
+//!   6 = couplings_only, 7 = overlapping_spells; `value` 0 = false,
+//!   1 = true, -1 = not declared (for 1 to 3 and 5 to 7).
 //! - coordinate `kind`: 0 = unknown, 1 = longitude and latitude,
 //!   2 = planar.
 //! - diagnostic `severity`: 0 = error, 1 = note; diagnostic `table`:
-//!   0 = nodes, 1 = edges, -1 = the network as a whole.
+//!   a table code, or -1 for the network as a whole.
 //! - `combine`: 0 = sum, 1 = mean, 2 = min, 3 = max, 4 = first,
 //!   5 = count.
+//! - edge `class` (`net_frame_edge_layers`): 0 = intralayer,
+//!   1 = coupling, 2 = interlayer.
+//! - subgraph `which` (`net_frame_subgraph`): 0 = one layer, 1 = one ego.
 //! - summary numbers (`net_frame_summary`, [`SUMMARY_LEN`] doubles):
 //!   see the header comment of `net_frame_summary`.
 //!
@@ -36,15 +43,16 @@ use std::ffi::{c_char, CStr, CString};
 
 use engine::frame::multiplicity::{is_simple, multiplicity};
 use engine::frame::{
-    build_validated, simplify, summarize, Built, Column, Combine, CoordinateKind, Declaration,
-    EdgeRole, Frame, NodeRole, Severity, Strings, Summary, Validation, WeightType, Which,
+    build_validated, ego_subgraph, layer_subgraph, missing_pairs, simplify, summarize, Built,
+    ChangeRole, Column, Combine, CoordinateKind, Declaration, EdgeRole, Frame, LayerRole, NodeRole,
+    Severity, SpellRole, Strings, Subgraph, Summary, Validation, WeightType, Which,
 };
 use engine::Error;
 
 use crate::{count, deref, guard, slice, slice_mut, thread_count, GraphHandle};
 
 /// Number of doubles `net_frame_summary` writes.
-pub const SUMMARY_LEN: usize = 26;
+pub const SUMMARY_LEN: usize = 37;
 
 /// Opaque frame handle.
 pub struct FrameHandle {
@@ -99,6 +107,8 @@ impl FrameHandle {
                 strs(&s.relation_labels),
                 s.weight_column.iter().map(|s| cstring(s)).collect(),
                 s.crs.iter().map(|s| cstring(s)).collect(),
+                strs(&s.layer_labels),
+                strs(&s.ego_labels),
             ];
             self.summary = Some(s);
         }
@@ -129,12 +139,13 @@ unsafe fn name_arg<'a>(p: *const c_char, what: &str) -> Result<&'a str, Error> {
 }
 
 fn which(table: i32) -> Result<Which, Error> {
-    match table {
-        0 => Ok(Which::Nodes),
-        1 => Ok(Which::Edges),
-        _ => Err(Error::InvalidArgument(format!(
-            "unknown table code {table}; 0 = nodes, 1 = edges"
-        ))),
+    Which::from_code(table)
+}
+
+fn table_code(which: Option<Which>) -> i32 {
+    match which {
+        Some(w) => Which::ALL.iter().position(|x| *x == w).expect("listed") as i32,
+        None => -1,
     }
 }
 
@@ -156,10 +167,7 @@ unsafe fn add_column(
     let f = frame_mut(h)?;
     let name = name_arg(name, "column name")?;
     f.touch();
-    match which(table)? {
-        Which::Nodes => f.frame.add_node_column(name, column)?,
-        Which::Edges => f.frame.add_edge_column(name, column)?,
-    };
+    f.frame.add_column(which(table)?, name, column)?;
     Ok(())
 }
 
@@ -311,7 +319,8 @@ pub unsafe extern "C" fn net_frame_add_string(
 }
 
 /// Assigns `role` of `table` to the column called `name`, or clears the
-/// role when `name` is null.
+/// role when `name` is null. The role codes depend on the table (see
+/// the module codes).
 ///
 /// # Safety
 /// `h` must be a live handle; `name` null or NUL-terminated.
@@ -327,23 +336,60 @@ pub unsafe extern "C" fn net_frame_set_role(
     guard(err, err_len, || {
         let f = frame_mut(h)?;
         f.touch();
+        let name = if name.is_null() {
+            None
+        } else {
+            Some(name_arg(name, "column name")?)
+        };
         match which(table)? {
             Which::Nodes => {
                 let role = NodeRole::from_code(role)?;
-                if name.is_null() {
-                    f.frame.clear_node_role(role);
-                    Ok(())
-                } else {
-                    f.frame.set_node_role(role, name_arg(name, "column name")?)
+                match name {
+                    Some(name) => f.frame.set_node_role(role, name),
+                    None => {
+                        f.frame.clear_node_role(role);
+                        Ok(())
+                    }
                 }
             }
             Which::Edges => {
                 let role = EdgeRole::from_code(role)?;
-                if name.is_null() {
-                    f.frame.clear_edge_role(role);
-                    Ok(())
-                } else {
-                    f.frame.set_edge_role(role, name_arg(name, "column name")?)
+                match name {
+                    Some(name) => f.frame.set_edge_role(role, name),
+                    None => {
+                        f.frame.clear_edge_role(role);
+                        Ok(())
+                    }
+                }
+            }
+            Which::Layers => {
+                let role = LayerRole::from_code(role)?;
+                match name {
+                    Some(name) => f.frame.set_layer_role(role, name),
+                    None => {
+                        f.frame.clear_layer_role(role);
+                        Ok(())
+                    }
+                }
+            }
+            Which::NodeSpells => {
+                let role = SpellRole::from_code(role)?;
+                match name {
+                    Some(name) => f.frame.set_spell_role(role, name),
+                    None => {
+                        f.frame.clear_spell_role(role);
+                        Ok(())
+                    }
+                }
+            }
+            Which::NodeChanges => {
+                let role = ChangeRole::from_code(role)?;
+                match name {
+                    Some(name) => f.frame.set_change_role(role, name),
+                    None => {
+                        f.frame.clear_change_role(role);
+                        Ok(())
+                    }
                 }
             }
         }
@@ -429,6 +475,11 @@ pub unsafe extern "C" fn net_frame_set_geometry(
                 g.edges = present != 0;
                 g.edge_crs = crs;
             }
+            other => {
+                return Err(Error::InvalidArgument(format!(
+                    "only `nodes` and `edges` carry geometry, not `{other}`"
+                )))
+            }
         }
         Ok(())
     })
@@ -501,7 +552,7 @@ pub unsafe extern "C" fn net_frame_diagnostic_count(h: *const FrameHandle) -> i6
 
 /// Reads diagnostic `i`: its code and message (valid while the handle
 /// lives and the frame is unchanged), severity (0 = error, 1 = note),
-/// table (0 = nodes, 1 = edges, -1 = network), the number of affected
+/// table (a table code, or -1 for the network), the number of affected
 /// rows in all, and how many of them `net_frame_diagnostic_rows` lists.
 /// Any output pointer may be null.
 ///
@@ -545,11 +596,7 @@ pub unsafe extern "C" fn net_frame_diagnostic(
             };
         }
         if !table.is_null() {
-            *table = match d.table {
-                Some(Which::Nodes) => 0,
-                Some(Which::Edges) => 1,
-                None => -1,
-            };
+            *table = table_code(d.table);
         }
         if !count_out.is_null() {
             *count_out = d.count as i64;
@@ -702,11 +749,13 @@ pub unsafe extern "C" fn net_frame_edge_index(
 }
 
 /// The integer codes of the modes (`which == 0`, n values: one per node
-/// of the node table, in order of first appearance of each mode label)
-/// or relations (`which == 1`, m values). Fails when the role is not set.
+/// of the node table, in order of first appearance of each mode label),
+/// relations (`which == 1`, m values), node egos (`which == 2`, one per
+/// node), or edge egos (`which == 3`, m values). Fails when the role is
+/// not set.
 ///
 /// # Safety
-/// `out` must hold n (modes) or m (relations) values.
+/// `out` must hold as many values as the selector says.
 #[no_mangle]
 pub unsafe extern "C" fn net_frame_codes(
     h: *const FrameHandle,
@@ -717,23 +766,296 @@ pub unsafe extern "C" fn net_frame_codes(
 ) -> i32 {
     guard(err, err_len, || {
         let b = built_ref(h)?;
-        let d = match which {
-            0 => b.resolved.modes.as_ref(),
-            1 => b.resolved.relations.as_ref(),
+        let (codes, role): (Option<&[u32]>, &str) = match which {
+            0 => (b.resolved.modes.as_ref().map(|d| &d.codes[..]), "mode"),
+            1 => (
+                b.resolved.relations.as_ref().map(|d| &d.codes[..]),
+                "relation",
+            ),
+            2 => (b.resolved.egos.as_ref().map(|e| &e.node[..]), "ego"),
+            3 => (b.resolved.egos.as_ref().map(|e| &e.edge[..]), "ego"),
             _ => {
                 return Err(Error::InvalidArgument(format!(
                     "unknown codes selector {which}"
                 )))
             }
-        }
-        .ok_or_else(|| {
-            Error::InvalidArgument(format!(
-                "the frame has no {} role",
-                if which == 0 { "mode" } else { "relation" }
-            ))
-        })?;
-        for (o, &c) in slice_mut(out, d.codes.len()).iter_mut().zip(&d.codes) {
+        };
+        let codes =
+            codes.ok_or_else(|| Error::InvalidArgument(format!("the frame has no {role} role")))?;
+        for (o, &c) in slice_mut(out, codes.len()).iter_mut().zip(codes) {
             *o = c as i64;
+        }
+        Ok(())
+    })
+}
+
+/// The layer codes of every edge's endpoints (indices into the summary's
+/// layer labels) and each edge's class (0 = intralayer, 1 = coupling,
+/// 2 = interlayer); any output may be null. Fails without layer roles.
+///
+/// # Safety
+/// Each non-null output must hold m values.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_edge_layers(
+    h: *const FrameHandle,
+    src_layer: *mut i64,
+    tgt_layer: *mut i64,
+    class: *mut i32,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let b = built_ref(h)?;
+        let r = &b.resolved;
+        let l = r
+            .layers
+            .as_ref()
+            .ok_or_else(|| Error::InvalidArgument("the frame has no layer roles".into()))?;
+        let m = l.src.len();
+        if !src_layer.is_null() {
+            for (o, &c) in slice_mut(src_layer, m).iter_mut().zip(&l.src) {
+                *o = c as i64;
+            }
+        }
+        if !tgt_layer.is_null() {
+            for (o, &c) in slice_mut(tgt_layer, m).iter_mut().zip(&l.tgt) {
+                *o = c as i64;
+            }
+        }
+        if !class.is_null() {
+            for (e, o) in slice_mut(class, m).iter_mut().enumerate() {
+                *o = l.class(e, &r.src, &r.tgt).code();
+            }
+        }
+        Ok(())
+    })
+}
+
+/// Number of edges of the built graph (the observed ties), or -1 before
+/// a build.
+///
+/// # Safety
+/// `h` must be null or a live handle.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_graph_edge_count(h: *const FrameHandle) -> i64 {
+    match frame_ref(h) {
+        Ok(f) => f.built.as_ref().map_or(-1, |b| b.edges.count as i64),
+        Err(_) => -1,
+    }
+}
+
+/// The edge table row of every graph edge, in graph edge order (the
+/// identity unless rows are flagged as unobserved pairs).
+///
+/// # Safety
+/// `out` must hold `net_frame_graph_edge_count` values.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_edge_rows(
+    h: *const FrameHandle,
+    out: *mut i64,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let b = built_ref(h)?;
+        for (e, o) in slice_mut(out, b.edges.count).iter_mut().enumerate() {
+            *o = b.edges.row(e) as i64;
+        }
+        Ok(())
+    })
+}
+
+/// The unobserved pairs: the node indices and the edge table row of
+/// every row flagged as missing, in row order. Any output may be null.
+/// The count is the summary's number of unobserved edges.
+///
+/// # Safety
+/// Each non-null output must hold as many values as there are flagged
+/// rows.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_missing_pairs(
+    h: *const FrameHandle,
+    src: *mut i64,
+    tgt: *mut i64,
+    rows: *mut i64,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let b = built_ref(h)?;
+        let pairs = missing_pairs(b);
+        let k = pairs.len();
+        if !src.is_null() {
+            for (o, p) in slice_mut(src, k).iter_mut().zip(&pairs) {
+                *o = p.0 as i64;
+            }
+        }
+        if !tgt.is_null() {
+            for (o, p) in slice_mut(tgt, k).iter_mut().zip(&pairs) {
+                *o = p.1 as i64;
+            }
+        }
+        if !rows.is_null() {
+            for (o, p) in slice_mut(rows, k).iter_mut().zip(&pairs) {
+                *o = p.2 as i64;
+            }
+        }
+        Ok(())
+    })
+}
+
+fn subgraph_of(b: &Built, which: i32, i: i64) -> Result<Subgraph, Error> {
+    let i = count(i, "subgraph index")?;
+    match which {
+        0 => layer_subgraph(b, i),
+        1 => ego_subgraph(b, i),
+        _ => Err(Error::InvalidArgument(format!(
+            "unknown subgraph selector {which}; 0 = layer, 1 = ego"
+        ))),
+    }
+}
+
+/// The size of the subgraph of layer `i` (`which == 0`: every node and
+/// the observed intralayer edges of that layer) or of ego `i`
+/// (`which == 1`: the nodes and observed edges of that ego): writes its
+/// node and edge counts.
+///
+/// # Safety
+/// `nodes` and `edges` must be writable.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_subgraph_size(
+    h: *const FrameHandle,
+    which: i32,
+    i: i64,
+    nodes: *mut i64,
+    edges: *mut i64,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let s = subgraph_of(built_ref(h)?, which, i)?;
+        *nodes = s.nodes.len() as i64;
+        *edges = s.edges.len() as i64;
+        Ok(())
+    })
+}
+
+/// Builds the subgraph described by `net_frame_subgraph_size` into
+/// `*out` (release with `net_graph_free`) and writes, for each of its
+/// nodes, the built graph's node index, and for each of its edges, the
+/// edge table row; either array may be null.
+///
+/// # Safety
+/// `node_index` and `edge_rows` must be null or hold the counts
+/// `net_frame_subgraph_size` reported; `out` writable.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_subgraph(
+    h: *const FrameHandle,
+    which: i32,
+    i: i64,
+    out: *mut *mut GraphHandle,
+    node_index: *mut i64,
+    edge_rows: *mut i64,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let s = subgraph_of(built_ref(h)?, which, i)?;
+        if !node_index.is_null() {
+            for (o, &k) in slice_mut(node_index, s.nodes.len())
+                .iter_mut()
+                .zip(&s.nodes)
+            {
+                *o = k as i64;
+            }
+        }
+        if !edge_rows.is_null() {
+            for (o, &k) in slice_mut(edge_rows, s.edges.len()).iter_mut().zip(&s.edges) {
+                *o = k as i64;
+            }
+        }
+        *out = Box::into_raw(Box::new(GraphHandle(s.graph)));
+        Ok(())
+    })
+}
+
+/// Number of presence spells the built frame resolved: one per node from
+/// the `node_start` and `node_end` roles, the sorted rows of the node
+/// spells table, or 0 without either. -1 before a build.
+///
+/// # Safety
+/// `h` must be null or a live handle.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_node_spell_count(h: *const FrameHandle) -> i64 {
+    match frame_ref(h) {
+        Ok(f) => f.built.as_ref().map_or(-1, |b| {
+            let r = &b.resolved;
+            if let Some(t) = &r.spell_table {
+                t.rows.len() as i64
+            } else {
+                r.node_spells.as_ref().map_or(0, |s| s.len() as i64)
+            }
+        }),
+        Err(_) => -1,
+    }
+}
+
+/// The resolved presence spells, sorted by node and start: `offsets`
+/// (n + 1 values) delimit each node's spells in `start` and `end`
+/// (`net_frame_node_spell_count` values each, infinities for unbounded
+/// ends), and `rows` gives each spell's row of the node spells table
+/// (or the node's row when the spells come from the node roles). Any
+/// output may be null.
+///
+/// # Safety
+/// Outputs must be null or hold the sizes above.
+#[no_mangle]
+pub unsafe extern "C" fn net_frame_node_spells(
+    h: *const FrameHandle,
+    offsets: *mut i64,
+    start: *mut f64,
+    end: *mut f64,
+    rows: *mut i64,
+    err: *mut c_char,
+    err_len: usize,
+) -> i32 {
+    guard(err, err_len, || {
+        let b = built_ref(h)?;
+        let r = &b.resolved;
+        let n = r.n;
+        let (offs, s, e, rw): (Vec<usize>, Vec<f64>, Vec<f64>, Vec<usize>) =
+            if let Some(t) = &r.spell_table {
+                (
+                    t.offsets.clone(),
+                    t.start.clone(),
+                    t.end.clone(),
+                    t.rows.clone(),
+                )
+            } else if let Some(sp) = &r.node_spells {
+                (
+                    (0..=n).collect(),
+                    sp.iter().map(|x| x.0).collect(),
+                    sp.iter().map(|x| x.1).collect(),
+                    (0..n).collect(),
+                )
+            } else {
+                (vec![0; n + 1], Vec::new(), Vec::new(), Vec::new())
+            };
+        if !offsets.is_null() {
+            for (o, &k) in slice_mut(offsets, n + 1).iter_mut().zip(&offs) {
+                *o = k as i64;
+            }
+        }
+        if !start.is_null() {
+            slice_mut(start, s.len()).copy_from_slice(&s);
+        }
+        if !end.is_null() {
+            slice_mut(end, e.len()).copy_from_slice(&e);
+        }
+        if !rows.is_null() {
+            for (o, &k) in slice_mut(rows, rw.len()).iter_mut().zip(&rw) {
+                *o = k as i64;
+            }
         }
         Ok(())
     })
@@ -839,8 +1161,14 @@ pub unsafe extern "C" fn net_frame_simplify(
 /// spells, 16 node geometry, 17 edge geometry, 18 coordinate kind (-1
 /// none, 0 unknown, 1 lonlat, 2 planar), 19 loops, 20 parallel edges,
 /// 21 isolates, 22 weak components, 23 density, 24 unobserved nodes,
-/// 25 unobserved edges. Undefined values are NaN. Builds the graph if
-/// needed.
+/// 25 unobserved edges, 26 number of layers, 27 layer table given,
+/// 28 intralayer edges, 29 coupling edges, 30 interlayer edges,
+/// 31 couplings_only (-1 undeclared), 32 number of egos, 33 egos that
+/// are nodes, 34 egos_are_nodes (-1 undeclared), 35 node spell rows
+/// (table), 36 node change rows. Field 15 is 1 for spells from the node
+/// roles and 2 for a node spells table. Field 1 counts edge rows; the
+/// built graph has field 1 minus field 25 edges. Undefined values are
+/// NaN. Builds the graph if needed.
 ///
 /// # Safety
 /// `out` must hold `SUMMARY_LEN` doubles.
@@ -877,7 +1205,11 @@ pub unsafe extern "C" fn net_frame_summary(
             s.time.code() as f64,
             s.time_start,
             s.time_end,
-            flag(s.node_spells),
+            if s.node_spell_table {
+                2.0
+            } else {
+                flag(s.node_spells)
+            },
             flag(s.node_geometry),
             flag(s.edge_geometry),
             match s.coordinates {
@@ -893,17 +1225,29 @@ pub unsafe extern "C" fn net_frame_summary(
             s.density,
             s.missing_nodes as f64,
             s.missing_edges as f64,
+            s.layer_labels.len() as f64,
+            flag(s.layer_table),
+            s.intralayer as f64,
+            s.coupling as f64,
+            s.interlayer as f64,
+            opt(s.couplings_only),
+            s.ego_labels.len() as f64,
+            s.egos_as_nodes as f64,
+            opt(s.egos_are_nodes),
+            s.node_spell_rows as f64,
+            s.node_change_rows as f64,
         ];
         slice_mut(out, SUMMARY_LEN).copy_from_slice(&values);
         Ok(())
     })
 }
 
-/// Label `i` of the summary's modes (`which == 0`) or relations
-/// (`which == 1`), the weight column name (`which == 2`, `i == 0`), or
-/// the coordinate reference system (`which == 3`, `i == 0`); NULL when
-/// out of range or before `net_frame_summary`. Valid while the handle
-/// lives and the frame is unchanged.
+/// Label `i` of the summary's modes (`which == 0`), relations
+/// (`which == 1`), layers (`which == 4`), or egos (`which == 5`), the
+/// weight column name (`which == 2`, `i == 0`), or the coordinate
+/// reference system (`which == 3`, `i == 0`); NULL when out of range or
+/// before `net_frame_summary`. Valid while the handle lives and the
+/// frame is unchanged.
 ///
 /// # Safety
 /// `h` must be null or a live handle.
@@ -929,11 +1273,13 @@ pub unsafe extern "C" fn net_frame_summary_label(
 }
 
 /// The number of nodes in each mode (`which == 0`, as many values as
-/// modes) or edges in each relation (`which == 1`).
+/// modes), edges in each relation (`which == 1`), intralayer edges in
+/// each layer (`which == 2`), nodes in each ego's network (`which == 3`),
+/// or edge rows in each ego's network (`which == 4`).
 ///
 /// # Safety
-/// `out` must hold as many values as the summary reports modes or
-/// relations.
+/// `out` must hold as many values as the summary reports modes,
+/// relations, layers, or egos.
 #[no_mangle]
 pub unsafe extern "C" fn net_frame_summary_counts(
     h: *const FrameHandle,
@@ -951,6 +1297,9 @@ pub unsafe extern "C" fn net_frame_summary_counts(
         let counts = match which {
             0 => &s.mode_counts,
             1 => &s.relation_counts,
+            2 => &s.layer_counts,
+            3 => &s.ego_node_counts,
+            4 => &s.ego_edge_counts,
             _ => {
                 return Err(Error::InvalidArgument(format!(
                     "unknown counts selector {which}"
