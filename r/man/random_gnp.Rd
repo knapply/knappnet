@@ -165,9 +165,10 @@ g <- random_gnp(20, 0.2, seed = 1, threads = 2)
 g
 nrow(random_gnm(20, 30, seed = 1, threads = 2)$edges)
 
-# A configuration-model network with the karate club's degrees.
+# A configuration-model network with the karate club's degrees (a
+# multigraph; simple draws by rejection are rare with two large hubs).
 karate <- example_network("karate")
-cm <- random_configuration(degree(karate), simple = TRUE, seed = 1, threads = 2)
+cm <- random_configuration(degree(karate), seed = 1, threads = 2)
 all(degree(cm) == degree(karate))
 
 # U|MAN with 5 mutual and 10 asymmetric dyads on 8 nodes.
