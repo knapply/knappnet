@@ -122,8 +122,10 @@ reference:
   - betweenness
   - closeness
   - eigenvector_centrality
-  # INTEGRATION (spectral centralities): PageRank, Katz, and Bonacich
-  # power centrality topics go here.
+  - pagerank
+  - katz_centrality
+  - power_centrality
+  - hub_score
 
 - title: Cohesion and subgroups
   contents:
@@ -133,12 +135,14 @@ reference:
   - modularity
   - cluster_louvain
 
-# INTEGRATION (mixing): assortativity, the E-I index, and homophily.
-# - title: Mixing and homophily
-#   desc: >-
-#     Whether ties form within or across groups defined by node attributes.
-#   contents:
-#   - <new topics>
+- title: Mixing and homophily
+  desc: >-
+    Whether ties form within or across groups defined by node attributes.
+  contents:
+  - mixing_matrix
+  - ei_index
+  - assortativity
+  - homophily
 
 - title: Brokerage and positions
   contents:

@@ -22,6 +22,7 @@ Imports:
     tools,
     utils
 Suggests:
+    ergm,
     igraph,
     knitr,
     Matrix,

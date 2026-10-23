@@ -43,6 +43,16 @@ extern SEXP C_twomode_density(SEXP, SEXP);
 extern SEXP C_twomode_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_twomode_eigenvector(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_project(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_pagerank(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_katz(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_power_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_hits(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_nominal(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_values(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_assortativity_degree(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_mixing_matrix(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ei_index(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_group_shares(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -86,6 +96,16 @@ static const R_CallMethodDef call_methods[] = {
     {"C_twomode_centrality", (DL_FUNC)&C_twomode_centrality, 6},
     {"C_twomode_eigenvector", (DL_FUNC)&C_twomode_eigenvector, 5},
     {"C_project", (DL_FUNC)&C_project, 6},
+    {"C_pagerank", (DL_FUNC)&C_pagerank, 10},
+    {"C_katz", (DL_FUNC)&C_katz, 10},
+    {"C_power_centrality", (DL_FUNC)&C_power_centrality, 9},
+    {"C_hits", (DL_FUNC)&C_hits, 7},
+    {"C_assortativity_nominal", (DL_FUNC)&C_assortativity_nominal, 6},
+    {"C_assortativity_values", (DL_FUNC)&C_assortativity_values, 6},
+    {"C_assortativity_degree", (DL_FUNC)&C_assortativity_degree, 5},
+    {"C_mixing_matrix", (DL_FUNC)&C_mixing_matrix, 7},
+    {"C_ei_index", (DL_FUNC)&C_ei_index, 6},
+    {"C_group_shares", (DL_FUNC)&C_group_shares, 4},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */
