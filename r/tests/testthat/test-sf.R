@@ -547,6 +547,10 @@ test_that("GeoPackage files round-trip spatial networks", {
   expect_equal(unname(edge_lengths(back)), unname(edge_lengths(g)))
   # Both tables spatial, undirected, and lengths as weights.
   roads <- from_lines(lattice_lines())
+  # A new file for each network: on Windows a GeoPackage read earlier in the
+  # session can stay locked by GDAL, so it cannot be replaced here.
+  path <- tempfile(fileext = ".gpkg")
+  on.exit(unlink(path), add = TRUE)
   write_network(roads, path)
   rb <- read_network(path)
   expect_false(rb$directed)
@@ -555,7 +559,9 @@ test_that("GeoPackage files round-trip spatial networks", {
   expect_equal(rb$edges$street, roads$edges$street)
   expect_equal(as.vector(edge_lengths(rb)), as.vector(edge_lengths(roads)))
   expect_equal(unname(distances(rb)), unname(distances(roads)))
-  # Overwriting, explicit format, and arguments that override the file.
+  # Explicit format, and arguments that override the file.
+  path <- tempfile(fileext = ".gpkg")
+  on.exit(unlink(path), add = TRUE)
   write_network(roads, path, format = "gpkg")
   expect_true(read_network(path, directed = TRUE)$directed)
   expect_equal(read_network(path, weight = "length", weight_type = "strength")$roles$weight_type,
@@ -574,6 +580,8 @@ test_that("GeoPackage files round-trip spatial networks", {
   expect_error(read_network(bare), "layer")
   # Writing a plain network to a GeoPackage gives aspatial tables.
   plain <- netframe(data.frame(from = c("a", "b"), to = c("b", "c")), directed = FALSE)
+  path <- tempfile(fileext = ".gpkg")
+  on.exit(unlink(path), add = TRUE)
   write_network(plain, path)
   pb <- read_network(path)
   expect_false(pb$directed)
