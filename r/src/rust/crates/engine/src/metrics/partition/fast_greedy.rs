@@ -48,6 +48,7 @@ use super::{additive_weights, as_labels, relabel, require_undirected};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::community::modularity;
+use crate::union_find::UnionFind;
 
 /// Result of [`fast_greedy`].
 #[derive(Debug, Clone, PartialEq)]
@@ -180,19 +181,11 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
         }
     }
     // Replay the first best_step mergers.
-    let mut parent: Vec<usize> = (0..n).collect();
-    fn find(p: &mut [usize], mut v: usize) -> usize {
-        while p[v] != v {
-            p[v] = p[p[v]];
-            v = p[v];
-        }
-        v
-    }
+    let mut sets = UnionFind::new(n);
     for &(a, b) in &merges[..best_step] {
-        let (ra, rb) = (find(&mut parent, a as usize), find(&mut parent, b as usize));
-        parent[rb.max(ra)] = ra.min(rb);
+        sets.union(a as usize, b as usize);
     }
-    let roots: Vec<usize> = (0..n).map(|v| find(&mut parent, v)).collect();
+    let roots: Vec<usize> = (0..n).map(|v| sets.find(v)).collect();
     let membership = relabel(&roots);
     let q = modularity(g, &as_labels(&membership), resolution, weighted)?;
     Ok(FastGreedy {

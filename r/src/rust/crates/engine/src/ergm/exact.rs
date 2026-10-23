@@ -21,8 +21,9 @@
 use crate::error::{Error, Result};
 use crate::matrix::Dense;
 
-use super::linalg::{invert_symmetric, solve_spd};
+use super::invert_symmetric;
 use super::model::Model;
+use crate::linalg::solve_spd;
 
 /// Largest number of free dyads enumerated.
 pub const MAX_FREE_DYADS: usize = 22;

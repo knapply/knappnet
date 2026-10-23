@@ -48,6 +48,7 @@
 use super::simple_rows;
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::metrics::community::dense_labels;
 use crate::parallel;
 use crate::rng::Stream;
 
@@ -376,19 +377,7 @@ pub fn factions(g: &Graph, opts: FactionOptions) -> Result<Factions> {
         }
     }
     let group = best.expect("at least one start").1;
-    // Relabel by first appearance.
-    let mut label = vec![usize::MAX; k];
-    let mut next = 0;
-    let membership: Vec<usize> = group
-        .iter()
-        .map(|&c| {
-            if label[c] == usize::MAX {
-                label[c] = next;
-                next += 1;
-            }
-            label[c]
-        })
-        .collect();
+    let membership = dense_labels(&group).0;
     let st = State::new(&ties, membership.clone(), k, w);
     Ok(Factions {
         membership,
