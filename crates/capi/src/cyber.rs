@@ -21,7 +21,7 @@ use engine::metrics::resilience::{
 };
 use engine::{Error, Graph, WeightKind};
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 fn node_set(g: &Graph, nodes: *const i64, k: i64) -> Result<Vec<u32>, Error> {
     if k < 0 {
@@ -127,7 +127,7 @@ pub unsafe extern "C" fn net_key_players(
             method: KppMethod::from_code(method)?,
             restarts: restarts.max(1) as usize,
             seed,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             ..kpp_options(measure, m, mode, weighted, weights_as)?
         };
         let found = key_players(g, k as usize, opts)?;
@@ -168,7 +168,7 @@ pub unsafe extern "C" fn net_group_centrality(
             weighted: weighted != 0,
             weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         slice_mut(out, 1)[0] =
             group_centrality(g, &group, GroupMeasure::from_code(measure)?, opts)?;
@@ -197,7 +197,7 @@ pub unsafe extern "C" fn net_flow_betweenness(
             g,
             capacity != 0,
             FlowScale::from_code(scale)?,
-            threads.max(0) as usize,
+            thread_count(threads),
         )?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);
         Ok(())

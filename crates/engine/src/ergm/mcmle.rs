@@ -56,9 +56,10 @@
 use crate::error::{Error, Result};
 use crate::matrix::Dense;
 
-use super::linalg::{invert_symmetric, matmul, quadratic_form, solve_spd};
+use super::invert_symmetric;
 use super::model::Model;
 use super::sampler::{simulate, Sample, SampleOptions};
+use crate::linalg::{matmul, quadratic_form, solve_spd};
 
 /// Settings for the Monte Carlo MLE.
 #[derive(Debug, Clone)]

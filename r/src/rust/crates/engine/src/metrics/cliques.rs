@@ -28,63 +28,20 @@
 //! - `min_size` drops maximal cliques with fewer members (as igraph's
 //!   `min`); it does not report non-maximal subsets of larger cliques.
 
+use crate::graph::{Csr, Graph};
 use crate::metrics::cores;
 use crate::parallel;
-use crate::Graph;
 
-/// Undirected simple adjacency: sorted, without duplicates or loops.
-struct Simple {
-    offsets: Vec<usize>,
-    targets: Vec<u32>,
-}
-
-impl Simple {
-    fn new(g: &Graph) -> Simple {
-        let n = g.node_count();
-        let mut offsets = Vec::with_capacity(n + 1);
-        let mut targets = Vec::new();
-        offsets.push(0);
-        for v in 0..n {
-            let a = g.out().neighbors(v);
-            let b: &[u32] = if g.is_directed() {
-                g.inc().neighbors(v)
-            } else {
-                &[]
-            };
-            // Merge two sorted rows, skipping repeats and v itself.
-            let (mut i, mut j) = (0, 0);
-            let start = targets.len();
-            while i < a.len() || j < b.len() {
-                let x = if j == b.len() || (i < a.len() && a[i] <= b[j]) {
-                    i += 1;
-                    a[i - 1]
-                } else {
-                    j += 1;
-                    b[j - 1]
-                };
-                if x as usize != v && targets[start..].last() != Some(&x) {
-                    targets.push(x);
-                }
-            }
-            offsets.push(targets.len());
-        }
-        Simple { offsets, targets }
-    }
-
-    #[inline]
-    fn neighbors(&self, v: usize) -> &[u32] {
-        &self.targets[self.offsets[v]..self.offsets[v + 1]]
-    }
-
-    fn degeneracy_order(&self) -> Vec<u32> {
-        let n = self.offsets.len() - 1;
-        let deg = (0..n).map(|v| self.neighbors(v).len()).collect();
-        cores::peel(deg, |v, buf| {
-            buf.clear();
-            buf.extend_from_slice(self.neighbors(v));
-        })
-        .1
-    }
+/// The order in which nodes are peeled from the simple graph `adj`: a
+/// degeneracy ordering, so each node has few later neighbors.
+fn degeneracy_order(adj: &Csr) -> Vec<u32> {
+    let n = adj.node_count();
+    let deg = (0..n).map(|v| adj.neighbors(v).len()).collect();
+    cores::peel(deg, |v, buf| {
+        buf.clear();
+        buf.extend_from_slice(adj.neighbors(v));
+    })
+    .1
 }
 
 /// Elements of sorted `a` that are also in sorted `b`.
@@ -171,7 +128,7 @@ impl Sink for Largest {
 }
 
 /// Bron-Kerbosch with Tomita pivoting. `p` and `x` are sorted.
-fn expand<S: Sink>(adj: &Simple, r: &mut Vec<u32>, mut p: Vec<u32>, mut x: Vec<u32>, sink: &mut S) {
+fn expand<S: Sink>(adj: &Csr, r: &mut Vec<u32>, mut p: Vec<u32>, mut x: Vec<u32>, sink: &mut S) {
     if p.is_empty() {
         if x.is_empty() {
             sink.report(r);
@@ -228,7 +185,7 @@ fn expand<S: Sink>(adj: &Simple, r: &mut Vec<u32>, mut p: Vec<u32>, mut x: Vec<u
 }
 
 /// Runs the outer, degeneracy-ordered loop on node `order[i]`.
-fn from_node<S: Sink>(adj: &Simple, order: &[u32], rank: &[usize], i: usize, sink: &mut S) {
+fn from_node<S: Sink>(adj: &Csr, order: &[u32], rank: &[usize], i: usize, sink: &mut S) {
     let v = order[i] as usize;
     let mut p = Vec::new();
     let mut x = Vec::new();
@@ -243,9 +200,9 @@ fn from_node<S: Sink>(adj: &Simple, order: &[u32], rank: &[usize], i: usize, sin
     expand(adj, &mut r, p, x, sink);
 }
 
-fn setup(g: &Graph) -> (Simple, Vec<u32>, Vec<usize>) {
-    let adj = Simple::new(g);
-    let order = adj.degeneracy_order();
+fn setup(g: &Graph) -> (Csr, Vec<u32>, Vec<usize>) {
+    let adj = g.simple_undirected(false);
+    let order = degeneracy_order(&adj);
     let mut rank = vec![0usize; order.len()];
     for (i, &v) in order.iter().enumerate() {
         rank[v as usize] = i;

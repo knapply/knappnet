@@ -15,7 +15,7 @@ use std::path::Path;
 use engine::io::{self, Column, Format, Kind, Network, ReadOptions, Table, Value, WriteOptions};
 use engine::Error;
 
-use crate::guard;
+use crate::{deref, guard};
 
 /// Opaque network handle.
 pub struct NetworkHandle {
@@ -78,8 +78,7 @@ unsafe fn opt_str<'a>(p: *const c_char) -> Option<&'a str> {
 }
 
 unsafe fn handle<'a>(h: *const NetworkHandle) -> Result<&'a NetworkHandle, Error> {
-    h.as_ref()
-        .ok_or_else(|| Error::InvalidArgument("network handle is null".into()))
+    deref(h, "network")
 }
 
 fn table_index(which: i32) -> Result<usize, Error> {

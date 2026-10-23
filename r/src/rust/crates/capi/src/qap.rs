@@ -12,7 +12,7 @@ use engine::qap::{
 };
 use engine::Error;
 
-use super::{guard, slice, slice_mut};
+use crate::{guard, slice, slice_mut, thread_count};
 
 /// Number of values `net_qap_cor` writes to `summary`.
 pub const QAP_COR_SUMMARY_LEN: usize = 7;
@@ -85,7 +85,7 @@ pub unsafe extern "C" fn net_qap_cor(
             mode: QapMode::from_code(mode)?,
             diag: diag != 0,
             permutations: permutations(exhaustive, reps, seed)?,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             keep_draws: !dist.is_null(),
         };
         let res = qap_cor(&ym, &xm, opts)?;
@@ -167,7 +167,7 @@ pub unsafe extern "C" fn net_mrqap(
             statistic: MrqapStatistic::from_code(statistic)?,
             permutations: permutations(exhaustive, reps, seed)?,
             tol,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             keep_draws: !dist.is_null(),
         };
         let res = mrqap(&ym, &xm, opts)?;

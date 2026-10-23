@@ -130,6 +130,24 @@ pub fn path_lengths(
     }
 }
 
+/// The edge weights of `g` for additive use by `what` (for example
+/// "modularity"), in input order, checked to be non-negative. With
+/// `weighted == false` the result is `None`; a weighted request on a graph
+/// without weights is an error.
+pub fn additive_weights<'a>(g: &'a Graph, weighted: bool, what: &str) -> Result<Option<&'a [f64]>> {
+    if !weighted {
+        return Ok(None);
+    }
+    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
+    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
+        return Err(Error::InvalidArgument(format!(
+            "edge {edge} has negative weight {}; {what} requires non-negative weights",
+            w[edge]
+        )));
+    }
+    Ok(Some(w))
+}
+
 fn integer(lens: Vec<f64>, max: u64) -> Lengths {
     Lengths::Integer(lens.into_iter().map(|x| x as u32).collect(), max as u32)
 }

@@ -27,7 +27,7 @@ use engine::metrics::topography::{
 };
 use engine::{Error, WeightKind};
 
-use crate::{guard, handle, slice_mut, GraphHandle};
+use crate::{guard, handle, slice_mut, thread_count, GraphHandle};
 
 /// Builds the adjacency-matrix reading of a graph, as sna and UCINET see
 /// it: parallel edges collapse into one, keeping the largest (`keep == 0`)
@@ -151,7 +151,7 @@ pub unsafe extern "C" fn net_centralization(
             loops: loops != 0,
             normalized: normalized != 0,
             convention: Convention::from_code(convention)?,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         slice_mut(out, 1)[0] = centralization(g, opts)?;
         Ok(())
@@ -185,7 +185,7 @@ pub unsafe extern "C" fn net_closeness(
             weights_as: WeightKind::from_code(weights_as)?,
             normalized: normalized != 0,
             unreachable: Unreachable::from_code(unreachable)?,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
             ..Default::default()
         };
         let values = if harmonic != 0 {
@@ -235,7 +235,7 @@ pub unsafe extern "C" fn net_eigenvector(
             } else {
                 defaults.max_iter
             },
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let e = eigenvector_centrality(g, opts)?;
         slice_mut(out, g.node_count()).copy_from_slice(&e.values);

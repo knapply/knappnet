@@ -66,21 +66,7 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::rng::Stream;
-
-fn check_weights(g: &Graph, weighted: bool) -> Result<Option<&[f64]>> {
-    if !weighted {
-        return Ok(None);
-    }
-    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-        return Err(Error::InvalidArgument(format!(
-            "edge {edge} has negative weight {}; modularity requires \
-             non-negative weights",
-            w[edge]
-        )));
-    }
-    Ok(Some(w))
-}
+use crate::weights::additive_weights;
 
 fn check_resolution(resolution: f64) -> Result<()> {
     if !(resolution.is_finite() && resolution >= 0.0) {
@@ -91,8 +77,10 @@ fn check_resolution(resolution: f64) -> Result<()> {
     Ok(())
 }
 
-/// Relabels arbitrary labels to 0..k in order of first appearance.
-fn dense_labels<T: Copy + Eq + std::hash::Hash>(labels: &[T]) -> (Vec<usize>, usize) {
+/// Relabels arbitrary labels to 0..k in order of first appearance,
+/// returning the new labels and k. Every partition the engine reports
+/// is numbered this way.
+pub(crate) fn dense_labels<T: Copy + Eq + std::hash::Hash>(labels: &[T]) -> (Vec<usize>, usize) {
     let mut seen: HashMap<T, usize> = HashMap::new();
     let out = labels
         .iter()
@@ -121,7 +109,7 @@ pub fn modularity(g: &Graph, membership: &[i64], resolution: f64, weighted: bool
         )));
     }
     check_resolution(resolution)?;
-    let w = check_weights(g, weighted)?;
+    let w = additive_weights(g, weighted, "modularity")?;
     let (comm, k) = dense_labels(membership);
     Ok(modularity_dense(g, &comm, k, resolution, w))
 }
@@ -315,7 +303,7 @@ pub fn louvain(g: &Graph, resolution: f64, weighted: bool, seed: u64) -> Result<
         ));
     }
     check_resolution(resolution)?;
-    let w = check_weights(g, weighted)?;
+    let w = additive_weights(g, weighted, "modularity")?;
     let n = g.node_count();
     let mut level = Level::from_graph(g, w);
     let two_m: f64 = level.weights.iter().sum();

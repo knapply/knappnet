@@ -31,7 +31,7 @@ use engine::metrics::spectral::{
 };
 use engine::Error;
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{count, guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 fn tolerance(tol: f64) -> f64 {
     if tol > 0.0 {
@@ -47,10 +47,6 @@ fn iterations(max_iter: i64) -> usize {
     } else {
         DEFAULT_MAX_ITER
     }
-}
-
-fn count(k: i64, what: &str) -> Result<usize, Error> {
-    usize::try_from(k).map_err(|_| Error::InvalidArgument(format!("negative {what}")))
 }
 
 /// PageRank. `personalization` may be null (uniform); otherwise it holds n
@@ -92,7 +88,7 @@ pub unsafe extern "C" fn net_pagerank(
             loops: LoopWeight::from_code(loops)?,
             tol: tolerance(tol),
             max_iter: iterations(max_iter),
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let values = pagerank(g, &opts)?;
         slice_mut(out, n).copy_from_slice(&values);
@@ -135,7 +131,7 @@ pub unsafe extern "C" fn net_katz(
             normalized: normalized != 0,
             tol: tolerance(tol),
             max_iter: iterations(max_iter),
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let values = katz(g, &opts)?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);
@@ -174,7 +170,7 @@ pub unsafe extern "C" fn net_bonacich_power(
             rescale: rescale != 0,
             tol: tolerance(tol),
             max_iter: iterations(max_iter),
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let values = bonacich_power(g, opts)?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);
@@ -214,7 +210,7 @@ pub unsafe extern "C" fn net_hits(
             scale: HitsScale::from_code(scale)?,
             tol: tolerance(tol),
             max_iter: iterations(max_iter),
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         let r = hits(g, opts)?;
         slice_mut(hubs, n).copy_from_slice(&r.hubs);

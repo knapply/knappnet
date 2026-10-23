@@ -14,14 +14,7 @@
  * exist, so an R error (an allocation failure, or a string that cannot be
  * translated) never leaks one.
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
-
-#include "netcapi.h"
-
-#define ERR_LEN 1024
+#include "glue.h"
 
 static void network_finalizer(SEXP ptr) {
   NetworkHandle *h = (NetworkHandle *)R_ExternalPtrAddr(ptr);
@@ -59,14 +52,11 @@ static SEXP table_to_list(NetworkHandle *h, int which) {
     } else {
       double *vals = (double *)R_alloc(nrow > 0 ? nrow : 1, sizeof(double));
       int32_t *na = (int32_t *)R_alloc(nrow > 0 ? nrow : 1, sizeof(int32_t));
-      if (net_table_numeric(h, which, c, vals, na, err, ERR_LEN) != 0) {
-        UNPROTECT(2);
-        Rf_error("%s", err);
-      }
+      int status = net_table_numeric(h, which, c, vals, na, err, ERR_LEN);
+      check_status(status, err, 2);
       if (kind == 0) {
         col = PROTECT(Rf_allocVector(LGLSXP, (R_xlen_t)nrow));
-        for (int64_t r = 0; r < nrow; r++)
-          LOGICAL(col)[r] = na[r] ? NA_LOGICAL : (vals[r] != 0);
+        for (int64_t r = 0; r < nrow; r++) LOGICAL(col)[r] = na[r] ? NA_LOGICAL : (vals[r] != 0);
       } else {
         /* Integers that fit R's 32-bit integers stay integer; others become
          * doubles so no value is lost. */
@@ -75,8 +65,7 @@ static SEXP table_to_list(NetworkHandle *h, int which) {
           if (!na[r] && (vals[r] > 2147483647.0 || vals[r] < -2147483647.0)) fits = 0;
         if (fits) {
           col = PROTECT(Rf_allocVector(INTSXP, (R_xlen_t)nrow));
-          for (int64_t r = 0; r < nrow; r++)
-            INTEGER(col)[r] = na[r] ? NA_INTEGER : (int)vals[r];
+          for (int64_t r = 0; r < nrow; r++) INTEGER(col)[r] = na[r] ? NA_INTEGER : (int)vals[r];
         } else {
           col = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)nrow));
           for (int64_t r = 0; r < nrow; r++) REAL(col)[r] = na[r] ? NA_REAL : vals[r];
@@ -103,10 +92,8 @@ SEXP C_read_network(SEXP path, SEXP format, SEXP directed) {
   SEXP holder = PROTECT(network_holder());
   NetworkHandle *h = NULL;
   char err[ERR_LEN] = {0};
-  if (net_read(file, fmt, dir, &h, err, ERR_LEN) != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+  int status = net_read(file, fmt, dir, &h, err, ERR_LEN);
+  check_status(status, err, 1);
   R_SetExternalPtrAddr(holder, h);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 4));
@@ -184,8 +171,8 @@ static int add_columns(NetworkHandle *h, int which, SEXP cols, char *err) {
   return 0;
 }
 
-SEXP C_write_network(SEXP directed, SEXP graph, SEXP nodes, SEXP edges, SEXP path,
-                     SEXP format, SEXP weight) {
+SEXP C_write_network(SEXP directed, SEXP graph, SEXP nodes, SEXP edges, SEXP path, SEXP format,
+                     SEXP weight) {
   if (TYPEOF(path) != STRSXP || XLENGTH(path) != 1 ||
       (!Rf_isNull(format) && (TYPEOF(format) != STRSXP || XLENGTH(format) != 1)) ||
       (!Rf_isNull(weight) && (TYPEOF(weight) != STRSXP || XLENGTH(weight) != 1))) {
@@ -210,6 +197,6 @@ SEXP C_write_network(SEXP directed, SEXP graph, SEXP nodes, SEXP edges, SEXP pat
   }
   network_finalizer(holder);
   UNPROTECT(1);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
   return R_NilValue;
 }

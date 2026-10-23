@@ -22,7 +22,7 @@ use engine::metrics::descriptive::{
 };
 use engine::{Error, Graph, WeightKind};
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 fn path_options(
     mode: i32,
@@ -34,7 +34,7 @@ fn path_options(
         mode: DegreeMode::from_code(mode)?,
         weighted: weighted != 0,
         weights_as: WeightKind::from_code(weights_as)?,
-        threads: threads.max(0) as usize,
+        threads: thread_count(threads),
         ..Default::default()
     })
 }
@@ -47,7 +47,7 @@ fn clustering_options(
     Ok(ClusteringOptions {
         weighting: Weighting::from_code(weighting)?,
         undefined: Undefined::from_code(undefined)?,
-        threads: threads.max(0) as usize,
+        threads: thread_count(threads),
     })
 }
 
@@ -274,7 +274,7 @@ pub unsafe extern "C" fn net_reachability(
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        let values = reachability(g, DegreeMode::from_code(mode)?, threads.max(0) as usize)?;
+        let values = reachability(g, DegreeMode::from_code(mode)?, thread_count(threads))?;
         slice_mut(out, g.node_count()).copy_from_slice(&values);
         Ok(())
     })

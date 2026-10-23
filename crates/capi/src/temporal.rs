@@ -29,7 +29,7 @@ use engine::temporal::{
 };
 use engine::Error;
 
-use crate::{guard, slice, slice_mut};
+use crate::{deref, guard, slice, slice_mut, thread_count};
 
 /// Opaque temporal network handle.
 pub struct TemporalHandle(TemporalNetwork);
@@ -38,21 +38,13 @@ pub struct TemporalHandle(TemporalNetwork);
 pub struct TemporalResult(Vec<Vec<f64>>);
 
 fn temporal<'a>(h: *const TemporalHandle) -> Result<&'a TemporalNetwork, Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument(
-            "temporal network handle is null".into(),
-        ));
-    }
     // SAFETY: non-null handles are only created by `net_temporal_new`.
-    Ok(unsafe { &(*h).0 })
+    unsafe { deref(h, "temporal network") }.map(|t| &t.0)
 }
 
 fn result<'a>(h: *const TemporalResult) -> Result<&'a [Vec<f64>], Error> {
-    if h.is_null() {
-        return Err(Error::InvalidArgument("result handle is null".into()));
-    }
     // SAFETY: non-null result handles are only created by this module.
-    Ok(unsafe { &(*h).0 })
+    unsafe { deref(h, "result") }.map(|r| &r.0[..])
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -82,7 +74,7 @@ fn options(
         max_wait,
         strict: strict != 0,
         traversal,
-        threads: threads.max(0) as usize,
+        threads: thread_count(threads),
     })
 }
 
