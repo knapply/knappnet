@@ -98,6 +98,13 @@ reference:
   - reachability
   - cut_points
 
+- title: Example data
+  desc: >-
+    Classic and dark networks for teaching and for reproducing published
+    analyses, including the Noordin Top network.
+  contents:
+  - example_network
+
 - title: Conversion and files
   desc: >-
     Convert to and from igraph, tidygraph, network (statnet), and adjacency
@@ -115,8 +122,10 @@ reference:
   - betweenness
   - closeness
   - eigenvector_centrality
-  # INTEGRATION (spectral centralities): PageRank, Katz, and Bonacich
-  # power centrality topics go here.
+  - pagerank
+  - katz_centrality
+  - power_centrality
+  - hub_score
 
 - title: Cohesion and subgroups
   contents:
@@ -126,12 +135,14 @@ reference:
   - modularity
   - cluster_louvain
 
-# INTEGRATION (mixing): assortativity, the E-I index, and homophily.
-# - title: Mixing and homophily
-#   desc: >-
-#     Whether ties form within or across groups defined by node attributes.
-#   contents:
-#   - <new topics>
+- title: Mixing and homophily
+  desc: >-
+    Whether ties form within or across groups defined by node attributes.
+  contents:
+  - mixing_matrix
+  - ei_index
+  - assortativity
+  - homophily
 
 - title: Brokerage and positions
   contents:
@@ -172,10 +183,13 @@ reference:
   - qap_cor
   - mrqap
 
-# INTEGRATION (layouts and plotting).
-# - title: Layouts and plotting
-#   contents:
-#   - <new topics>
+- title: Layouts and plotting
+  desc: >-
+    Layouts computed in the engine and a default plot that needs no
+    arguments.
+  contents:
+  - plot.netframe
+  - layout_network
 
 - title: Conventions
   desc: >-

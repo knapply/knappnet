@@ -42,4 +42,17 @@ Applications}. Cambridge University Press. \doi{10.1017/CBO9780511815478}
 \examples{
 g <- netframe(data.frame(from = c(1, 2, 3), to = c(2, 3, 4)), directed = FALSE)
 graph_density(g)
+
+# A repeated edge and a self-loop: igraph and NetworkX count every edge,
+# while sna and UCINET count distinct ties between different nodes.
+h <- netframe(data.frame(from = c(1, 1, 2, 3), to = c(2, 2, 3, 3)), directed = FALSE)
+graph_density(h)                          # igraph
+graph_density(h, convention = "networkx") # NetworkX
+graph_density(h, convention = "sna")      # sna
+graph_density(h, convention = "ucinet")   # UCINET
+
+# A single node: NetworkX reports 0, the others NaN.
+one <- netframe(data.frame(from = integer(0), to = integer(0)), nodes = data.frame(id = 1))
+graph_density(one)
+graph_density(one, convention = "networkx")
 }
