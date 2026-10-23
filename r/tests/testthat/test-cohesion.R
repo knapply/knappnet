@@ -56,8 +56,8 @@ test_that("lambda sets nest by connectivity", {
   expect_equal(lapply(ls$sets, `[[`, "members"), list(1:7, c(1, 2, 3), c(4, 5, 6)))
   expect_equal(vapply(ls$sets, `[[`, numeric(1), "lambda"), c(1, 2, 2))
   expect_output(print(ls), "lambda = 2")
-  pdf(NULL)
-  on.exit(dev.off(), add = TRUE)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   expect_invisible(plot(ls))
 })
 
@@ -143,8 +143,8 @@ test_that("hierarchical clustering wraps hclust", {
 })
 
 test_that("plot_partition draws", {
-  pdf(NULL)
-  on.exit(dev.off(), add = TRUE)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   g <- two_triangles()
   f <- factions(g, k = 2, seed = 1, threads = 2)
   expect_invisible(plot_partition(g, f, seed = 1))

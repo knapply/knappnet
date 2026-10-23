@@ -516,7 +516,7 @@ removal_tree <- function(n, from, to, labels) {
     ra <- find(a)
     rb <- find(b)
     if (ra == rb) return(FALSE)
-    merge <<- rbind(merge, c(cluster[ra], cluster[rb]))
+    merge <<- rbind(merge, as.integer(c(cluster[ra], cluster[rb])))
     height <<- c(height, h)
     parent[rb] <<- ra
     cluster[ra] <<- nrow(merge)

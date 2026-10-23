@@ -73,8 +73,8 @@ test_that("continuous core-periphery fits", {
 })
 
 test_that("core-periphery plots draw", {
-  pdf(NULL)
-  on.exit(dev.off(), add = TRUE)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   g <- cp_net()
   cp <- core_periphery(g, seed = 1, threads = 2)
   cc <- core_periphery(g, method = "continuous", threads = 2)
@@ -100,8 +100,8 @@ test_that("small-world quotient is a ratio of ratios", {
   expect_equal(local$clustering, average_clustering(g))
   expect_false(isTRUE(all.equal(local$quotient, sw$quotient)))
   expect_output(print(sw), "quotient")
-  pdf(NULL)
-  on.exit(dev.off(), add = TRUE)
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
   expect_invisible(plot(sw))
   expect_error(small_world(g, reps = 0), "at least 1")
 })
