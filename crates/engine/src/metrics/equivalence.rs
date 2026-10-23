@@ -302,7 +302,10 @@ fn iterate(init: &Dense, block: &[usize], opts: ConcorOptions) -> Iteration {
         if converged(&m) {
             break;
         }
-        let next = column_correlations(&m, opts.threads);
+        let next = {
+            let _t = crate::linalg::phase::start("concor: column correlations");
+            column_correlations(&m, opts.threads)
+        };
         let step = next
             .as_slice()
             .iter()

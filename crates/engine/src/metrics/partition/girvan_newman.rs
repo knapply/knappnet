@@ -224,7 +224,11 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
                 eb[e] = 0.0;
             }
         }
-        rem.betweenness(&affected, &mut eb, threads);
+        {
+            let _t = crate::linalg::phase::start("girvan-newman: edge betweenness");
+            rem.betweenness(&affected, &mut eb, threads);
+        }
+        let _t = crate::linalg::phase::start("girvan-newman: components and modularity");
         if split {
             current = partition_of(n, &edges, &rem.alive)?;
         }

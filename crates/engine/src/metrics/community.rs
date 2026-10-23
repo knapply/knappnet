@@ -313,9 +313,14 @@ pub fn louvain(g: &Graph, resolution: f64, weighted: bool, seed: u64) -> Result<
         loop {
             let mut comm: Vec<usize> = (0..level.n()).collect();
             let mut rng = Stream::new(seed, levels as u64);
-            if !move_nodes(&level, &mut comm, resolution, two_m, &mut rng) {
+            let moved = {
+                let _t = crate::linalg::phase::start("louvain: local moves");
+                move_nodes(&level, &mut comm, resolution, two_m, &mut rng)
+            };
+            if !moved {
                 break;
             }
+            let _t = crate::linalg::phase::start("louvain: aggregation");
             levels += 1;
             let (dense, k) = dense_labels(&comm);
             for m in membership.iter_mut() {

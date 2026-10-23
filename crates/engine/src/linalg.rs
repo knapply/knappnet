@@ -551,6 +551,64 @@ pub fn pseudo_inverse(a: &Dense, tol: f64) -> Result<(Dense, usize)> {
     Ok((inv, rank))
 }
 
+/// Coarse phase timers for the benchmark harness
+/// (`examples/bench_models.rs`).
+///
+/// Long-running algorithms open a [`phase::start`] timer around their main
+/// phases (for example local moves and aggregation in Louvain, or drawing
+/// permutations and computing statistics in QAP). Timing is off unless
+/// [`phase::enable`] switched it on, and then costs one relaxed atomic load
+/// per timer; when on, each closed timer adds its elapsed time to a global
+/// table, summed over threads (so parallel phases report CPU time).
+#[doc(hidden)]
+pub mod phase {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Mutex;
+    use std::time::Instant;
+
+    static ENABLED: AtomicBool = AtomicBool::new(false);
+    static TOTALS: Mutex<Vec<(&'static str, f64, u64)>> = Mutex::new(Vec::new());
+
+    /// Switches phase timing on or off.
+    pub fn enable(on: bool) {
+        ENABLED.store(on, Ordering::Relaxed);
+    }
+
+    /// Returns and clears the totals: (phase, seconds, number of timers).
+    pub fn take() -> Vec<(&'static str, f64, u64)> {
+        std::mem::take(&mut *TOTALS.lock().unwrap_or_else(|e| e.into_inner()))
+    }
+
+    /// A running timer; it records its phase when dropped.
+    pub struct Timer(Option<(&'static str, Instant)>);
+
+    /// Starts timing `name` if timing is enabled.
+    #[inline]
+    pub fn start(name: &'static str) -> Timer {
+        if ENABLED.load(Ordering::Relaxed) {
+            Timer(Some((name, Instant::now())))
+        } else {
+            Timer(None)
+        }
+    }
+
+    impl Drop for Timer {
+        fn drop(&mut self) {
+            if let Some((name, t0)) = self.0.take() {
+                let dt = t0.elapsed().as_secs_f64();
+                let mut tot = TOTALS.lock().unwrap_or_else(|e| e.into_inner());
+                match tot.iter_mut().find(|x| x.0 == name) {
+                    Some(x) => {
+                        x.1 += dt;
+                        x.2 += 1;
+                    }
+                    None => tot.push((name, dt, 1)),
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

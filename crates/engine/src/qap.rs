@@ -538,8 +538,11 @@ pub fn qap_cor(y: &Dense, x: &Dense, opts: QapCorOptions) -> Result<QapCorResult
             xp: vec![0.0; cells.len()],
         },
         |s, item| {
+            let t = crate::linalg::phase::start("qap: permute");
             draw_permutation(opts.permutations, item, &mut s.perm, &mut s.pool);
             gather(x, opts.mode, &cells, Some(&s.perm), &mut s.xp);
+            drop(t);
+            let _t = crate::linalg::phase::start("qap: statistic");
             let (r, _) = pearson(&yv, &s.xp);
             s.tail.add(r, observed);
             if keep {
@@ -819,7 +822,10 @@ pub fn mrqap(y: &Dense, x: &[Dense], opts: MrqapOptions) -> Result<MrqapResult> 
             ws: Workspace::default(),
         },
         |s, item| {
+            let t = crate::linalg::phase::start("mrqap: draw permutation");
             draw_permutation(opts.permutations, item, &mut s.perm, &mut s.pool);
+            drop(t);
+            let _t = crate::linalg::phase::start("mrqap: permute and refit");
             let mut stats = vec![f64::NAN; p];
             match method {
                 MrqapMethod::YPermutation => {

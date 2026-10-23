@@ -134,6 +134,7 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
             }
         }
     }
+    let _t = crate::linalg::phase::start("fast greedy: mergers");
     let mut merges: Vec<(u32, u32)> = Vec::new();
     // Running sum of the numerators: modularity after the mergers so far is
     // the initial modularity plus 2 total / (2m)^2.
