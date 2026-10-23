@@ -59,10 +59,11 @@ reason each was not shipped):
 - **Panel waves with changing composition, time-varying attributes, node
   spells and missing data**: Knecht's (2008) classroom (RSiena's
   `klas12b`: four waves, delinquency and alcohol per wave, a leaver, 9 =
-  missing codes) is the right data set and `data-raw/knecht.py` builds
-  it, but the RSiena page states no terms and the btergm package needed
-  Andrea Knecht's written permission (17 April 2014) to redistribute it;
-  not shipped until the owner has the same permission. Lazega's lawyers
+  missing codes) would fit, but the RSiena page states no terms and the
+  btergm package needed Andrea Knecht's written permission (17 April
+  2014) to redistribute it, so it is not used: the package ships only
+  data that need no permission. Panels are derived from bundled data
+  instead (e.g. waves cut from `workplace_contacts`). Lazega's lawyers
   (RSiena page, no stated terms) and the Teenage Friends and Lifestyle
   excerpt `s50` ("for illustration") were not shipped for the same
   reason.
