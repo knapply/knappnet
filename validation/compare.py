@@ -98,14 +98,15 @@ def main() -> int:
             tol = spec.get("tolerance", {})
             rel, abs_ = float(tol.get("rel", 0)), float(tol.get("abs", 0))
             for oracle, ospec in spec["oracles"].items():
+                if (name in ospec.get("undefined_on", [])
+                        or tags & set(ospec.get("undefined_when", []))):
+                    # No well-defined answer to compare on this fixture, for
+                    # the reason recorded in the manifest (whether or not the
+                    # oracle wrote a value).
+                    tally[(variant, oracle)]["undefined"] += 1
+                    continue
                 theirs = read_values(oracle, name, variant)
                 if theirs is None:
-                    if (name in ospec.get("undefined_on", [])
-                            or tags & set(ospec.get("undefined_when", []))):
-                        # The oracle gives no answer here, for the reason
-                        # recorded in the manifest.
-                        tally[(variant, oracle)]["undefined"] += 1
-                        continue
                     key = "manual" if oracle in MANUAL_ORACLES else "not run"
                     tally[(variant, oracle)][key] += 1
                     if key == "not run":

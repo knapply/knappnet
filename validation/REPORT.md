@@ -100,15 +100,15 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `katz_weighted` | 7 / 0 / 0 / 0 |  |  |  | 7 / 0 / 0 / 0 |  |  |
 | `katz_igraph` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  |  |  |  |
 | `katz_exogenous` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 28 |  |  |  |  |
-| `bonacich` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
-| `bonacich_negative` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
+| `bonacich` | 26 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
+| `bonacich_negative` | 26 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
 | `bonacich_unit` | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 23 |  |  |  |  |
 | `bonacich_sna` | 25 / 0 / 0 / 0 |  |  |  |  | 0 / 0 / 0 / 23 |  |
-| `bonacich_rescale` | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
-| `hits_authorities` | 20 / 0 / 0 / 3 |  | 0 / 0 / 0 / 23 |  |  |  |  |
-| `hits_hubs` | 20 / 0 / 0 / 3 |  | 0 / 0 / 0 / 23 |  |  |  |  |
-| `hits_authorities_networkx` | 20 / 0 / 0 / 3 |  |  |  | 26 / 0 / 0 / 0 |  |  |
-| `hits_hubs_networkx` | 20 / 0 / 0 / 3 |  |  |  | 26 / 0 / 0 / 0 |  |  |
+| `bonacich_rescale` | 26 / 0 / 0 / 0 |  | 0 / 0 / 0 / 26 |  |  |  |  |
+| `hits_authorities` | 20 / 0 / 0 / 0 |  | 0 / 0 / 0 / 20 |  |  |  |  |
+| `hits_hubs` | 20 / 0 / 0 / 0 |  | 0 / 0 / 0 / 20 |  |  |  |  |
+| `hits_authorities_networkx` | 20 / 0 / 0 / 0 |  |  |  | 26 / 0 / 0 / 0 |  |  |
+| `hits_hubs_networkx` | 20 / 0 / 0 / 0 |  |  |  | 26 / 0 / 0 / 0 |  |  |
 | `assortativity_degree` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |  |  |  |  |
 | `assortativity_degree_networkx` | 28 / 0 / 0 / 0 |  |  |  | 28 / 0 / 0 / 0 |  |  |
 | `assortativity_degree_undirected` | 9 / 0 / 0 / 0 |  | 0 / 0 / 0 / 9 |  |  |  |  |
