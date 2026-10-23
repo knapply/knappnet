@@ -27,6 +27,7 @@ pub mod rng;
 pub mod saom;
 pub mod spatial;
 pub mod temporal;
+pub mod union_find;
 pub mod weights;
 
 pub use error::{Error, Result};

@@ -90,6 +90,7 @@ use crate::metrics::eigenvector::{
     check_nonnegative, symmetric_leading, LoopWeight, SparseOp, Stop,
 };
 use crate::metrics::topography::{components, ComponentKind};
+use crate::union_find::UnionFind;
 
 /// Default tolerance of the iterative solvers.
 pub const DEFAULT_TOL: f64 = 1e-12;
@@ -755,23 +756,13 @@ pub fn hits(g: &Graph, opts: HitsOptions) -> Result<Hits> {
     let at = a.transpose(n);
     // Blocks of the bipartite graph with hub copies 0..n and authority
     // copies n..2n, joined by every positive entry.
-    let mut parent: Vec<usize> = (0..2 * n).collect();
-    fn find(p: &mut [usize], mut v: usize) -> usize {
-        while p[v] != v {
-            p[v] = p[p[v]];
-            v = p[v];
-        }
-        v
-    }
+    let mut sets = UnionFind::new(2 * n);
     let mut any = false;
     for i in 0..n {
         for (j, w) in a.row(i) {
             if w > 0.0 {
                 any = true;
-                let (x, y) = (find(&mut parent, i), find(&mut parent, n + j));
-                if x != y {
-                    parent[x.max(y)] = x.min(y);
-                }
+                sets.union(i, n + j);
             }
         }
     }
@@ -794,7 +785,7 @@ pub fn hits(g: &Graph, opts: HitsOptions) -> Result<Hits> {
         if !present {
             continue;
         }
-        let r = find(&mut parent, v);
+        let r = sets.find(v);
         if block_of[r] == usize::MAX {
             block_of[r] = blocks.len();
             blocks.push((Vec::new(), Vec::new()));

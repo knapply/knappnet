@@ -54,6 +54,7 @@ use crate::metrics::degree::{degree, DegreeMode};
 use crate::metrics::eigenvector::{
     eigenvector_centrality, EigenScale, EigenvectorOptions, LoopWeight,
 };
+use crate::union_find::UnionFind;
 
 /// Share of possible edges present. See the module documentation.
 pub fn density(g: &Graph, loops: bool) -> f64 {
@@ -205,33 +206,16 @@ pub fn components(g: &Graph, kind: ComponentKind) -> Components {
     Components { membership, sizes }
 }
 
-/// Weak components by union-find over the edge list (Tarjan 1975,
-/// `tarjan1975efficiency`), which
-/// reads the edges sequentially rather than following neighbors around
-/// memory. Union by index (the smaller root wins) and path halving keep
-/// trees shallow. Returns each node's root; the caller relabels.
+/// Weak components by union-find over the edge list
+/// ([`crate::union_find::UnionFind`]), which reads the edges sequentially
+/// rather than following neighbors around memory. Returns each node's
+/// root; the caller relabels.
 fn weak(g: &Graph) -> Vec<u32> {
-    let n = g.node_count();
-    let mut parent: Vec<u32> = (0..n as u32).collect();
-    fn find(parent: &mut [u32], mut v: u32) -> u32 {
-        while parent[v as usize] != v {
-            let p = parent[v as usize];
-            parent[v as usize] = parent[p as usize];
-            v = parent[v as usize];
-        }
-        v
-    }
+    let mut sets = UnionFind::new(g.node_count());
     for (&a, &b) in g.edge_sources().iter().zip(g.edge_targets()) {
-        let (ra, rb) = (find(&mut parent, a), find(&mut parent, b));
-        if ra != rb {
-            let (lo, hi) = if ra < rb { (ra, rb) } else { (rb, ra) };
-            parent[hi as usize] = lo;
-        }
+        sets.union(a as usize, b as usize);
     }
-    for v in 0..n as u32 {
-        parent[v as usize] = find(&mut parent, v);
-    }
-    parent
+    sets.roots()
 }
 
 /// Tarjan's algorithm with an explicit stack. Returns a component number

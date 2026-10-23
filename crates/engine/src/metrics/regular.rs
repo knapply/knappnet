@@ -63,6 +63,7 @@ use std::collections::HashMap;
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::union_find::UnionFind;
 
 // ---- Regular equivalence -----------------------------------------------------
 
@@ -226,30 +227,20 @@ pub fn automorphic_equivalence(g: &Graph, max_steps: usize) -> Result<Vec<u32>> 
         max_steps,
     };
     let base = search.refine(s.loops.iter().map(|&l| l as u32).collect())?;
-    let mut orbit: Vec<usize> = (0..n).collect();
-    fn find(p: &mut [usize], mut v: usize) -> usize {
-        while p[v] != v {
-            p[v] = p[p[v]];
-            v = p[v];
-        }
-        v
-    }
+    let mut orbit = UnionFind::new(n);
     // Representatives of the distinct orbits found so far in each cell.
     let mut reps: HashMap<u32, Vec<usize>> = HashMap::new();
     for b in 0..n {
         let cell = reps.entry(base[b]).or_default();
         let mut placed = false;
         for &a in cell.iter() {
-            if find(&mut orbit, a) == find(&mut orbit, b) {
+            if orbit.same(a, b) {
                 placed = true;
                 break;
             }
             if let Some(perm) = search.map_node(&base, a, b)? {
                 for (v, &image) in perm.iter().enumerate() {
-                    let (x, y) = (find(&mut orbit, v), find(&mut orbit, image));
-                    if x != y {
-                        orbit[x.max(y)] = x.min(y);
-                    }
+                    orbit.union(v, image);
                 }
                 placed = true;
                 break;
@@ -259,7 +250,7 @@ pub fn automorphic_equivalence(g: &Graph, max_steps: usize) -> Result<Vec<u32>> 
             cell.push(b);
         }
     }
-    let roots: Vec<i64> = (0..n).map(|v| find(&mut orbit, v) as i64).collect();
+    let roots: Vec<i64> = (0..n).map(|v| orbit.find(v) as i64).collect();
     Ok(first_appearance(roots.into_iter()))
 }
 

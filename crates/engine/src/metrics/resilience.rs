@@ -83,6 +83,7 @@ use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
 use crate::rng::Stream;
+use crate::union_find::UnionFind;
 use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
 
 const EPSILON: f64 = 1e-10;
@@ -406,7 +407,7 @@ struct Scorer<'a> {
     opts: KppOptions,
     search: Search,
     removed: Vec<bool>,
-    parent: Vec<u32>,
+    sets: UnionFind,
     size: Vec<u32>,
 }
 
@@ -418,7 +419,7 @@ impl<'a> Scorer<'a> {
             opts,
             search: Search::new(n),
             removed: vec![false; n],
-            parent: vec![0; n],
+            sets: UnionFind::new(n),
             size: vec![0; n],
         }
     }
@@ -469,32 +470,21 @@ impl<'a> Scorer<'a> {
     fn undirected_fragmentation(&mut self, rest: usize) -> f64 {
         let g = &self.p.g;
         let n = g.node_count();
-        for v in 0..n {
-            self.parent[v] = v as u32;
-            self.size[v] = 1;
-        }
-        fn find(parent: &mut [u32], mut v: u32) -> u32 {
-            while parent[v as usize] != v {
-                let p = parent[v as usize];
-                parent[v as usize] = parent[p as usize];
-                v = parent[v as usize];
-            }
-            v
+        self.sets.reset(n);
+        for v in self.size.iter_mut() {
+            *v = 1;
         }
         for (&a, &b) in g.edge_sources().iter().zip(g.edge_targets()) {
             if self.removed[a as usize] || self.removed[b as usize] {
                 continue;
             }
-            let (ra, rb) = (find(&mut self.parent, a), find(&mut self.parent, b));
-            if ra != rb {
-                let (lo, hi) = if ra < rb { (ra, rb) } else { (rb, ra) };
-                self.parent[hi as usize] = lo;
-                self.size[lo as usize] += self.size[hi as usize];
+            if let Some((lo, hi)) = self.sets.union(a as usize, b as usize) {
+                self.size[lo] += self.size[hi];
             }
         }
         let mut within: u128 = 0;
         for v in 0..n {
-            if !self.removed[v] && self.parent[v] == v as u32 {
+            if !self.removed[v] && self.sets.is_root(v) {
                 let s = self.size[v] as u128;
                 within += s * (s - 1);
             }
