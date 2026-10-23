@@ -23,8 +23,9 @@ ergm_gof(object, nsim = 100, seed = NULL,
 \arguments{
 \item{object}{A fitted model from \code{\link{ergm_fit}}.}
 \item{nsim}{Number of networks to simulate.}
-\item{seed}{Seed for the simulation, a whole number in [0, 2^53);
-\code{NULL} draws one from R's random number generator.}
+\item{seed}{Seed for the simulation, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{stats}{Which statistics to compare: any of \code{"degree"} (in- and
 out-degree for directed networks), \code{"esp"}, \code{"dsp"},
 \code{"distance"}, \code{"triad"} (directed networks only), and

@@ -1,6 +1,6 @@
 \name{plot_partition}
 \alias{plot_partition}
-\title{Draw a network colored by a partition}
+\title{Plot a partition of the network}
 \description{
 Draws the network with \code{\link{plot.netframe}}, coloring each node by
 its group in a partition: communities from \code{\link{cluster_louvain}},

@@ -33,12 +33,12 @@ diagonal).}
 deviations (estimated in phase 1) are truncated.}
 \item{theta_bound}{Estimation stops with an error when a parameter exceeds
 this in absolute value, a sign of divergence.}
-\item{seed}{Seed for the simulations, a whole number in [0, 2^53).
-\code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes results reproducible.}
-\item{threads}{Number of threads for phases 1 and 3; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
-\code{\link{netframe}}). Results do not depend on the thread count except
+\item{seed}{Seed for the simulations, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
+\item{threads}{Number of threads for phases 1 and 3, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}). Results do not depend on the thread count except
 in the last bits of floating-point sums.}
 \item{keep_simulations}{Whether to keep the auxiliary statistics of every
 phase 3 simulation for \code{\link{saom_gof}} (\eqn{n_3 (3n + 16)} numbers

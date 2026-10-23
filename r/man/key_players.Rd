@@ -37,19 +37,20 @@ by the other criteria.}
 follows the arcs (the set reaches others; \eqn{i} reaches \eqn{j}),
 \code{"in"} reverses them, and \code{"all"} ignores direction. Ignored for
 undirected networks.}
-\item{weighted}{Whether to use edge weights as path lengths. \code{NULL}
-(the default) uses them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
+\item{weighted}{Whether to use edge weights as path lengths. \code{NULL} (the
+default) uses them when the network has a weight column.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{method}{\code{"greedy"} (Borgatti's swap heuristic with random
 restarts) or \code{"exact"} (every set of size \code{k}; refused when there
 are more than 50 million sets).}
 \item{restarts}{Number of random starting sets for the greedy search.}
-\item{seed}{Seed of the random starting sets, a whole number in
-\eqn{[0, 2^{53})}. \code{NULL} draws one from R's generator, so
-\code{set.seed()} makes results reproducible.}
-\item{threads}{Number of threads; \code{0} uses all available cores (see
-"Threads" in \code{\link{netframe}}). Results do not depend on it.}
+\item{seed}{Seed for the random starting sets, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}). Results do not depend on it.}
 }
 \details{
 With \eqn{S} the set and \eqn{n} the number of nodes of the network being

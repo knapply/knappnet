@@ -27,9 +27,8 @@ distance_weighted_fragmentation(x, mode = c("out", "in", "all"), weighted = NULL
 \code{"in"} paths to it, and \code{"all"} ignores direction.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{weights_as}{How to read weights: \code{"distance"} (larger keeps nodes
-farther apart) or \code{"strength"} (larger brings them closer; lengths
-\eqn{1/w}). \code{NULL} uses the network's \code{weight_type}.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}

@@ -31,7 +31,9 @@ gives the first-order neighborhood.}
 measures.}
 \item{include_ego}{Whether ego itself is counted (igraph's
 \code{mindist = 0}) or only its alters (\code{mindist = 1}).}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 For a node with \eqn{k} alters (the nodes within \code{order} steps; see

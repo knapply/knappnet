@@ -13,6 +13,9 @@
 \alias{to_network}
 \alias{to_tbl_graph}
 \alias{as.matrix.netframe}
+\alias{as.igraph.netframe}
+\alias{as.network.netframe}
+\alias{as_tbl_graph.netframe}
 \title{Convert networks to and from other packages}
 \description{
 \code{as_netframe()} turns network objects from other packages, adjacency

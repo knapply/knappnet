@@ -2,7 +2,7 @@
 \alias{cluster_girvan_newman}
 \alias{cluster_leading_eigen}
 \alias{cluster_fast_greedy}
-\title{Girvan-Newman, leading eigenvector, and greedy modularity communities}
+\title{Divisive, spectral, and greedy community detection}
 \description{
 Three classic partitioning methods for undirected networks, each returning
 the partition with its modularity (see \code{\link{modularity}}):
@@ -34,11 +34,11 @@ cluster_fast_greedy(x, resolution = 1, weighted = NULL)
 \arguments{
 \item{x}{An undirected \code{\link{netframe}}.}
 \item{threads}{Number of threads for the betweenness computations, a whole
-number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
-(see \sQuote{Threads} in \code{\link{netframe}}).}
-\item{weighted}{Whether to use edge weights, as given (larger means a
-stronger tie). \code{NULL} (the default) uses them when the network has a
-weight column. They must not be negative.}
+number; \code{0} uses all available cores, or 2 during \verb{R CMD check} (see
+\sQuote{Threads} in \code{\link{netframe}}).}
+\item{weighted}{Whether to use edge weights, as given (larger means a stronger
+tie). \code{NULL} (the default) uses them when the network has a weight
+column. They must not be negative.}
 \item{resolution}{Resolution parameter \eqn{\gamma} (non-negative); see
 \code{\link{modularity}}.}
 }

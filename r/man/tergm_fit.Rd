@@ -5,7 +5,7 @@
 \alias{print.summary.tergm_fit}
 \alias{coef.tergm_fit}
 \alias{confint.tergm_fit}
-\title{Temporal exponential random graph models by pooled pseudolikelihood}
+\title{Temporal exponential random graph models}
 \description{
 Fits a discrete-time temporal ERGM (TERGM; Hanneke, Fu, and Xing 2010) to a
 sequence of networks on the same nodes by maximum pseudolikelihood pooled
@@ -28,12 +28,14 @@ tergm_fit(formula, boot = 200, seed = NULL, level = 0.95, threads = 0L,
 whose right-hand side sums the model terms of \code{\link{ergm_fit}} and
 the temporal terms below.}
 \item{boot}{Number of bootstrap replicates.}
-\item{seed}{Seed for the bootstrap, a whole number in [0, 2^53);
-\code{NULL} draws one from R's random number generator.}
+\item{seed}{Seed for the bootstrap, a whole number between 0 and \eqn{2^{53}};
+\code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{level}{Confidence level of the percentile intervals; for
 \code{confint()}, \code{NULL} keeps the fit's level.}
-\item{threads}{Number of threads; \code{0} uses all available cores, or 2
-during \verb{R CMD check}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{control}{Pseudolikelihood settings (\code{mple_max_iter},
 \code{mple_tol}) from \code{\link{ergm_control}}.}
 \item{object}{A \code{tergm_fit} object.}

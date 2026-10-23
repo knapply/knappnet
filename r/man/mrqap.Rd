@@ -25,9 +25,9 @@ names become coefficient names (\code{x1}, \code{x2}, \ldots otherwise).}
 \item{reps}{Number of random permutations.}
 \item{method}{\code{"dsp"} (double semi-partialling, the default) or
 \code{"y"} (permutation of the response).}
-\item{seed}{Seed for the permutations, a whole number in [0, 2^53).
-\code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes results reproducible.}
+\item{seed}{Seed for the permutations, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{intercept}{Whether to include an intercept.}
 \item{mode}{\code{"digraph"} uses every ordered pair of distinct nodes;
 \code{"graph"} uses each unordered pair once, read from the lower triangle,

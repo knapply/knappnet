@@ -19,8 +19,8 @@ authority_score(x, weighted = NULL, scale = NULL,
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
 \item{weighted}{Whether to use edge weights, as given whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must not be negative.}
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
 \item{scale}{\code{"max"} (largest score 1, igraph), \code{"sum"} (scores sum
 to 1, NetworkX), or \code{"unit"} (Euclidean length 1). \code{NULL} uses the
 convention's choice.}

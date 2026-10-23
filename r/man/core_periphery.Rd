@@ -36,8 +36,8 @@ pairs: \code{"missing"}, \code{"ones"}, or \code{"zeros"}; see Details.}
 \item{fit}{For the continuous model: \code{"minres"} (least squares,
 UCINET's method) or \code{"correlation"}; see Details.}
 \item{weighted}{Whether to use edge weights (total weight between two nodes)
-as the pair values instead of binary ties; \code{NULL} uses them when the
-network has a weight column.}
+as the pair values instead of binary ties; \code{NULL} (the default) uses them
+when the network has a weight column.}
 \item{starts}{Number of starting points (random cores for the discrete
 model, points for the continuous correlation fit).}
 \item{max_stall}{Steps without improvement after which a discrete start

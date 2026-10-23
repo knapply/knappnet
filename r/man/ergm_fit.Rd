@@ -51,12 +51,12 @@ enter no estimate, and are left out of the count of dyads.}
 \item{start}{Starting coefficients for \code{"MCMLE"} and \code{"exact"};
 \code{NULL} uses the pseudolikelihood estimate when it is finite and zero
 otherwise.}
-\item{seed}{Seed for the Markov chains, a whole number in [0, 2^53).
-\code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes results reproducible.}
-\item{threads}{Number of threads for parallel chains; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
-\code{\link{netframe}}).}
+\item{seed}{Seed for the Markov chains, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
+\item{threads}{Number of threads for parallel chains, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 \item{burnin, interval, nsim, chains}{Markov chain settings: proposals
 discarded before sampling, proposals between samples, samples per chain,
 and the number of chains run in parallel. Each chain has its own random

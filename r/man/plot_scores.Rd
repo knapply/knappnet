@@ -1,6 +1,6 @@
 \name{plot_scores}
 \alias{plot_scores}
-\title{Ranked dot plot of node scores}
+\title{Plot ranked scores}
 \description{
 Draws scores such as centralities as a dot plot sorted from the highest
 down, labelled with node identifiers: the quickest way to read off who

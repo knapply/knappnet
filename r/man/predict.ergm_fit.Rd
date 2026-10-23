@@ -1,6 +1,6 @@
 \name{predict.ergm_fit}
 \alias{predict.ergm_fit}
-\title{Conditional tie probabilities from an exponential random graph model}
+\title{Tie probabilities from an exponential random graph model}
 \description{
 For every free dyad, the probability of a tie given the rest of the
 network as observed,

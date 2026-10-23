@@ -27,7 +27,9 @@ gives the first-order neighborhood.}
 \code{"in"}; see Details.}
 \item{include_ego}{Whether ego itself is part of the result (igraph's
 \code{mindist = 0}) or only its alters (\code{mindist = 1}).}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 The result is the subgraph induced by ego and its alters, as igraph's

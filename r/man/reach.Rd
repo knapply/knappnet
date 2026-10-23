@@ -27,8 +27,8 @@ reaches, \code{"in"} the nodes that reach it, and \code{"all"} ignores
 direction. Ignored for undirected networks.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
 \item{normalized}{Whether to divide by \eqn{n - 1}, the largest possible
 count (UCINET reports reach as this proportion).}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available

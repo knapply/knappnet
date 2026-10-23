@@ -120,7 +120,7 @@ Tsvetovat, M., Reminga, J., and Carley, K. M. (2004). DyNetML: Interchange
 format for rich social network data. Technical report CMU-ISRI-04-105,
 Carnegie Mellon University. \doi{10.1184/R1/6622022.v1}
 
-Altman, N., Carley, K. M., and Reminga, J. (2020). ORA User's Guide 2020.
+Altman, N., Carley, K. M., & Reminga, J. (2020). ORA User's Guide 2020.
 Technical report CMU-ISR-20-110, Carnegie Mellon University.
 }
 \examples{

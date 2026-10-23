@@ -1,6 +1,6 @@
 \name{plot_coreness}
 \alias{plot_coreness}
-\title{Draw the k-core shells of a network}
+\title{Plot the k-core shells of a network}
 \description{
 Places nodes on concentric rings by \code{\link{coreness}}, the innermost
 ring holding the nodes of the highest core, and colors them by coreness,
@@ -15,8 +15,9 @@ plot_coreness(x, mode = c("all", "out", "in"), seed = NULL, threads = 0L, ...)
 \code{"in"}, as in \code{\link{coreness}}.}
 \item{seed}{Seed for the layout whose angles order the nodes within each
 ring (see Details), as in \code{\link{layout_network}}.}
-\item{threads}{Number of threads for that layout; \code{0} uses all
-available cores.}
+\item{threads}{Number of threads for that layout, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 \item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
 \code{node_label} or \code{main}.}
 }

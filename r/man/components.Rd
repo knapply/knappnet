@@ -47,6 +47,7 @@ Tarjan, R. (1972). Depth-first search and linear graph algorithms.
 
 Tarjan, R. E. (1975). Efficiency of a good but not linear set union
 algorithm. \emph{Journal of the ACM}, 22(2), 215-225.
+\doi{10.1145/321879.321884}
 
 Borgatti, S. P. (2006). Identifying sets of key players in a social network.
 \emph{Computational and Mathematical Organization Theory}, 12(1), 21-34.

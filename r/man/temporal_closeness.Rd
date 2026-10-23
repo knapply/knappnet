@@ -27,8 +27,8 @@ Pan and Saramäki's own rule is \code{strict = TRUE},
 \code{traversal = "duration"}: each contact starts strictly after the
 previous one ends. The defaults allow simultaneous contacts to chain, as
 in Holme and Saramäki (2012).}
-\item{threads}{Number of threads, a whole number; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
 \details{

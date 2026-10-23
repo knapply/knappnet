@@ -26,10 +26,10 @@ block_summary(bm)
 result of \code{\link{concor}} or \code{\link{regular_equivalence}}. Only
 equality of values matters; blocks are listed in order of first
 appearance.}
-\item{weighted}{Whether to use total edge weights as tie values, so that
-block densities are mean tie values. \code{NULL} uses weights when the
-network has a weight column; they are used as given, whatever the
-network's \code{weight_type}.}
+\item{weighted}{Whether to use total edge weights as tie values, so that block
+densities are mean tie values. \code{NULL} (the default) uses weights when the
+network has a weight column; they are used as given, whatever the network's
+\code{weight_type}.}
 \item{loops}{Whether self-loops and the diagonal of the adjacency matrix
 count: with \code{FALSE} (the default, and the usual practice) the
 diagonal blocks have \eqn{n_r (n_r - 1)} pairs, with \code{TRUE}

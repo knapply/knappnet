@@ -13,7 +13,9 @@ reachability(x, mode = c("out", "in", "all"), threads = 0L)
 reaches, \code{"in"} the nodes that reach it, and \code{"all"} the nodes
 joined to it when directions are ignored (the size of its weak component,
 less one). Ignored for undirected networks.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 Weights, parallel edges, and self-loops do not matter. Undirected networks

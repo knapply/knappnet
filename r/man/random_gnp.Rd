@@ -79,8 +79,8 @@ for undirected networks.}
 draws one from R's random number generator, so \code{\link{set.seed}()}
 makes results reproducible.}
 \item{threads}{Number of threads for drawing replicates in parallel, a whole
-number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
-(see \sQuote{Threads} in \code{\link{netframe}}).}
+number; \code{0} uses all available cores, or 2 during \verb{R CMD check} (see
+\sQuote{Threads} in \code{\link{netframe}}).}
 }
 \details{
 Unless stated otherwise the networks are simple: no self-loops, no parallel

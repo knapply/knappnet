@@ -20,8 +20,8 @@ example_networks()
 \code{NULL} keeps all, with a \code{relation} column on the edges.}
 
 \item{weighted}{For networks with a tie-strength column, whether to use it as
-the network's weights (as strengths). Default \code{FALSE}, so measures
-treat the network as binary unless asked.}
+the network's weights (as strengths). Default \code{FALSE}, so measures treat
+the network as binary unless asked.}
 }
 \details{
 \describe{
@@ -72,7 +72,7 @@ treat the network as binary unless asked.}
 \code{example_networks()}: a data frame describing each network.
 }
 \references{
-Roberts, N., and Everton, S. F. (2011). Roberts and Everton Terrorist Data:
+Roberts, N., & Everton, S. F. (2011). Roberts and Everton Terrorist Data:
 Noordin Top Terrorist Network (Subset). Association of Religion Data
 Archives.
 
@@ -82,27 +82,27 @@ Asia Report 114.
 Everton, S. F. (2012). \emph{Disrupting Dark Networks}. Cambridge University
 Press. \doi{10.1017/CBO9781139136877}
 
-Cunningham, D., Everton, S. F., and Murphy, P. (2016). \emph{Understanding
+Cunningham, D., Everton, S. F., & Murphy, P. (2016). \emph{Understanding
 Dark Networks: A Strategic Framework for the Use of Social Network Analysis}.
 Rowman & Littlefield.
 
 Koschade, S. (2006). A social network analysis of Jemaah Islamiyah: The
 applications to counterterrorism and intelligence. \emph{Studies in Conflict &
-Terrorism}, 29(6), 559-575.
+Terrorism}, 29(6), 559-575. \doi{10.1080/10576100600798418}
 
 Zachary, W. W. (1977). An information flow model for conflict and fission in
 small groups. \emph{Journal of Anthropological Research}, 33(4), 452-473.
 \doi{10.1086/jar.33.4.3629752}
 
-Padgett, J. F., and Ansell, C. K. (1993). Robust action and the rise of the
+Padgett, J. F., & Ansell, C. K. (1993). Robust action and the rise of the
 Medici, 1400-1434. \emph{American Journal of Sociology}, 98(6), 1259-1319.
 \doi{10.1086/230190}
 
-Breiger, R. L., and Pattison, P. E. (1986). Cumulated social roles: The
+Breiger, R. L., & Pattison, P. E. (1986). Cumulated social roles: The
 duality of persons and their algebras. \emph{Social Networks}, 8(3), 215-256.
 \doi{10.1016/0378-8733(86)90006-7}
 
-Davis, A., Gardner, B. B., and Gardner, M. R. (1941). \emph{Deep South: A
+Davis, A., Gardner, B. B., & Gardner, M. R. (1941). \emph{Deep South: A
 Social Anthropological Study of Caste and Class}. University of Chicago Press.
 }
 \examples{

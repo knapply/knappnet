@@ -1,6 +1,6 @@
 \name{plot_timeline}
 \alias{plot_timeline}
-\title{Timeline of contacts in a temporal network}
+\title{Plot the timeline of contacts}
 \description{
 Draws when each pair of nodes (or each node) is in contact: one row per
 pair, with a tick for every instantaneous contact and a bar for every

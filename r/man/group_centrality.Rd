@@ -30,10 +30,11 @@ networks.}
 \item{weighted}{Whether closeness and betweenness use edge weights as path
 lengths. \code{NULL} (the default) uses them when the network has a weight
 column. Degree is defined on binary ties and refuses \code{TRUE}.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
-\item{threads}{Number of threads for betweenness; \code{0} uses all
-available cores (see "Threads" in \code{\link{netframe}}).}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
+\item{threads}{Number of threads for betweenness, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 }
 \details{
 For a group \eqn{C} of \eqn{k} nodes in a network of \eqn{n}:

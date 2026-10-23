@@ -14,10 +14,10 @@ information_centrality(x, weighted = NULL, convention = c("sna", "networkx"))
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
-\item{weighted}{Whether to use edge weights as tie strengths (conductances:
-a stronger tie carries more information), whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must be positive.}
+\item{weighted}{Whether to use edge weights as tie strengths (conductances: a
+stronger tie carries more information), whatever the network's
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must be positive.}
 \item{convention}{\code{"sna"} returns \eqn{I_i} as below, the value of
 \code{sna::infocent()} and UCINET; \code{"networkx"} returns \eqn{I_i / n},
 the value of NetworkX's \code{information_centrality()}, which computes

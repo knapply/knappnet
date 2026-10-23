@@ -2,6 +2,7 @@
 \alias{cug_test}
 \alias{print.cug_test}
 \alias{summary.cug_test}
+\alias{print.summary.cug_test}
 \alias{plot.cug_test}
 \title{Conditional uniform graph tests}
 \description{
@@ -39,8 +40,8 @@ arguments passed to \code{\link[graphics]{plot.histogram}} and on to
 \eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
 \code{\link{set.seed}()} makes results reproducible.}
 \item{threads}{Number of threads for drawing the random networks, a whole
-number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
-(see \sQuote{Threads} in \code{\link{netframe}}).}
+number; \code{0} uses all available cores, or 2 during \verb{R CMD check} (see
+\sQuote{Threads} in \code{\link{netframe}}).}
 \item{object}{A \code{cug_test}.}
 \item{breaks}{Breakpoints for the histogram, as in
 \code{\link[graphics]{hist}}.}

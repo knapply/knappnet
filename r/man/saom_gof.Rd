@@ -2,7 +2,7 @@
 \alias{saom_gof}
 \alias{print.saom_gof}
 \alias{plot.saom_gof}
-\title{Goodness of fit of a SAOM by auxiliary statistics}
+\title{Goodness of fit of a stochastic actor-oriented model}
 \description{
 Compares a statistic of the observed networks (summed over the waves after
 the first) with its distribution over the networks simulated in phase 3 of

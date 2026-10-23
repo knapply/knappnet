@@ -14,8 +14,8 @@ cluster_louvain(x, resolution = 1, weighted = NULL, seed = NULL)
 \code{\link{modularity}}.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{seed}{Seed for the random node order: a whole number between 0 and
-\eqn{2^{53}}. \code{NULL} draws one from R's random number generator, so
+\item{seed}{Seed for the random node order, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
 \code{\link{set.seed}()} makes results reproducible.}
 }
 \details{

@@ -1,5 +1,6 @@
 \name{to_sf}
 \alias{to_sf}
+\alias{st_as_sf.netframe}
 \alias{check_geometry}
 \alias{transform_network}
 \alias{spatial_filter}

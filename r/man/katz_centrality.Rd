@@ -23,8 +23,8 @@ value per node, or the name of a column of \code{x$nodes}.}
 (NetworkX, igraph), \code{"out"} walks starting there, and \code{"all"}
 ignores direction.}
 \item{weighted}{Whether to use edge weights, as given whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must not be negative.}
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
 \item{normalized}{Whether to scale the scores to Euclidean length 1.
 \code{NULL} uses the convention's default: \code{TRUE} for NetworkX,
 \code{FALSE} for igraph.}

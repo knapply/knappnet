@@ -17,10 +17,12 @@ cohesion, distances, and degree distribution.
 shortest-path search from every node of the largest component. \code{NULL}
 (the default) computes them when that component has at most 5,000 nodes and
 otherwise skips them, saying so.}
-\item{weighted}{Whether the mean distance and diameter use edge weights
-(which must then be positive). \code{NULL} uses them when the network has a
-weight column; see \code{\link{distances}}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{weighted}{Whether the mean distance and diameter use edge weights (which
+must then be positive). \code{NULL} (the default) uses them when the network
+has a weight column; see \code{\link{distances}}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{...}{Not used.}
 \item{x}{A \code{summary.netframe} object.}
 \item{digits}{Significant digits for proportions and means.}

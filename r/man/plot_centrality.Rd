@@ -1,6 +1,6 @@
 \name{plot_centrality}
 \alias{plot_centrality}
-\title{Draw a network with nodes sized and colored by a score}
+\title{Plot a score on the network}
 \description{
 Draws the network with \code{\link{plot.netframe}}, sizing and coloring
 each node by a score such as a centrality, with a legend named after the

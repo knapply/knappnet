@@ -19,8 +19,9 @@ plot_triad_census(x, expected = TRUE, log = FALSE, threads = 0L, ...)
 observed ones.}
 \item{log}{Whether to use a logarithmic count axis (counts of 0 are drawn
 at the bottom).}
-\item{threads}{Number of threads for the census; \code{0} uses all
-available cores.}
+\item{threads}{Number of threads for the census, a whole number; \code{0} uses
+all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{...}{Further arguments passed to \code{\link[graphics]{barplot}},
 such as \code{main}.}
 }

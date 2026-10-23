@@ -1,6 +1,6 @@
 \name{plot_robustness}
 \alias{plot_robustness}
-\title{Robustness of a network to node removal}
+\title{Plot the robustness of a network to node removal}
 \description{
 Removes nodes one at a time in a given order and tracks how the network
 falls apart: the share of nodes in the largest component, or the
@@ -32,8 +32,9 @@ each point, so the cost is \code{steps} times that of
 \item{mode}{\code{"weak"} or \code{"strong"} components, as in
 \code{\link{components}}.}
 \item{seed}{Seed for the random order (see \code{\link{set.seed}}).}
-\item{threads}{Number of threads for betweenness; \code{0} uses all
-available cores.}
+\item{threads}{Number of threads for betweenness, a whole number; \code{0}
+uses all available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads}
+in \code{\link{netframe}}).}
 \item{label}{Legend label for the curve of \code{nodes}.}
 \item{...}{Further arguments passed to \code{\link[graphics]{plot}}, such
 as \code{main}.}

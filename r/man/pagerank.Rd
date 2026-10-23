@@ -22,9 +22,9 @@ value per node (aligned with \code{x$nodes}), or the name of such a column of
 with equal probability.}
 \item{directed}{Whether to follow the direction of ties in directed networks.
 \code{FALSE} treats every tie as reciprocal.}
-\item{weighted}{Whether to choose ties in proportion to their weights, used
-as given whatever the network's \code{weight_type}. \code{NULL} uses weights
-when the network has a weight column. They must not be negative.}
+\item{weighted}{Whether to choose ties in proportion to their weights, used as
+given whatever the network's \code{weight_type}. \code{NULL} (the default)
+uses weights when the network has a weight column. They must not be negative.}
 \item{dangling}{Where a walker at a node without out-ties (or whose out-ties
 all have weight 0) jumps: \code{"personalized"} by the personalization
 vector, as igraph and NetworkX do, or \code{"uniform"} to any node with equal

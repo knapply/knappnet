@@ -25,10 +25,12 @@ average_clustering(x, weighted = FALSE, method = NULL,
 \item{convention}{How a coefficient that is 0 / 0 is reported, and which
 weighted coefficient is the default: \code{"igraph"} (the default) or
 \code{"networkx"}; see Details and \code{\link{conventions}}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
-\item{weighted}{Whether to compute a weighted local coefficient (see
-Details). The binary coefficient is the default, whatever the network's
-weights, as in igraph and NetworkX.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
+\item{weighted}{Whether to compute a weighted local coefficient (see Details).
+The binary coefficient is the default, whatever the network's weights, as in
+igraph and NetworkX.}
 \item{method}{The weighted coefficient: \code{"barrat"} (Barrat et al. 2004,
 igraph) or \code{"onnela"} (Onnela et al. 2005, NetworkX). \code{NULL} uses
 the convention's choice.}

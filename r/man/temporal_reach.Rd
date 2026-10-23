@@ -32,8 +32,8 @@ than \code{min_wait}, so with \code{min_wait = 0} contacts at the same
 time never chain.}
 \item{traversal}{Time to traverse a contact: a number (or
 \code{difftime}), \code{0} by default, or \code{"duration"}.}
-\item{threads}{Number of threads, a whole number; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
 \details{

@@ -15,8 +15,7 @@ concor(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
 \item{x}{A \code{\link{netframe}}.}
 \item{depth}{Number of rounds of splitting (at least 1).}
 \item{weighted}{Whether ties are total edge weights rather than 0 or 1.
-\code{NULL} (the default) uses weights when the network has a weight
-column.}
+\code{NULL} (the default) uses weights when the network has a weight column.}
 \item{tolerance}{Convergence tolerance, between 0 and 1.}
 \item{max_iter}{Maximum number of iterations per split.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available

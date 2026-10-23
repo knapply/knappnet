@@ -27,9 +27,9 @@ ergm_simulate(formula, coef, nsim = 1, seed = NULL, burnin = 10000,
 \item{coef}{Coefficients, one per statistic in formula order. For a fitted
 model, \code{NULL} uses the estimates.}
 \item{nsim}{Number of networks to draw.}
-\item{seed}{Seed, a whole number in [0, 2^53); \code{NULL} draws one from
-R's random number generator, so \code{\link{set.seed}} makes results
-reproducible.}
+\item{seed}{Seed, a whole number between 0 and \eqn{2^{53}}; \code{NULL} draws
+one from R's random number generator, so \code{\link{set.seed}()} makes
+results reproducible.}
 \item{burnin, interval, proposal, threads}{Sampler settings; see
 \code{\link{ergm_control}}. For a fitted model the defaults are its
 control settings.}

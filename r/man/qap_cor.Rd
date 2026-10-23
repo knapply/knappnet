@@ -21,9 +21,9 @@ qap_cor(y, x, reps = 1000, seed = NULL, diag = FALSE,
 \item{y, x}{Square numeric matrices of the same size, or
 \code{\link{netframe}}s (see \code{attr}).}
 \item{reps}{Number of random permutations.}
-\item{seed}{Seed for the permutations, a whole number in [0, 2^53).
-\code{NULL} draws one from R's random number generator, so
-\code{\link{set.seed}} makes results reproducible.}
+\item{seed}{Seed for the permutations, a whole number between 0 and
+\eqn{2^{53}}; \code{NULL} draws one from R's random number generator, so
+\code{\link{set.seed}()} makes results reproducible.}
 \item{diag}{Whether to use the diagonal (self-dyads).}
 \item{mode}{\code{"digraph"} uses every ordered pair of distinct nodes;
 \code{"graph"} uses each unordered pair once, read from the lower triangle,

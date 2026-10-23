@@ -22,8 +22,8 @@ contacts are weak (Bonacich 1987).}
 (Bonacich, igraph, sna), \code{"in"} along in-ties, \code{"all"} ignores
 direction.}
 \item{weighted}{Whether to use edge weights, as given whatever the network's
-\code{weight_type}. \code{NULL} uses them when the network has a weight
-column. They must not be negative.}
+\code{weight_type}. \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
 \item{loops}{Whether self-loops enter the diagonal of the adjacency matrix
 (the number of loops, or their weights). igraph and sna ignore the diagonal
 by default.}

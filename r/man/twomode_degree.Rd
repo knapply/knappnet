@@ -30,7 +30,9 @@ twomode_density(x)
 \item{tol}{Convergence tolerance for eigenvector scores: iteration stops when
 no score (scaled so the largest is 1) changes by more than \code{tol}.}
 \item{max_iter}{Iteration cap. Not converging within it is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 The scores are those of the bipartite graph; only the normalization differs

@@ -17,9 +17,9 @@ ties \emph{to} the node (igraph with \code{directed = TRUE}, NetworkX),
 \code{"out"} the nodes it has ties to (sna), and \code{"all"} ignores
 direction (igraph's R default, \code{directed = FALSE}, and UCINET, which
 symmetrizes). \code{NULL} uses the convention's choice.}
-\item{weighted}{Whether to use edge weights, as given (larger means a
-stronger tie), whatever the network's \code{weight_type}. \code{NULL} uses
-them when the network has a weight column. They must not be negative.}
+\item{weighted}{Whether to use edge weights, as given (larger means a stronger
+tie), whatever the network's \code{weight_type}. \code{NULL} (the default)
+uses them when the network has a weight column. They must not be negative.}
 \item{scale}{\code{"max"} (largest score 1, igraph) or \code{"unit"}
 (Euclidean norm 1, NetworkX, sna, and UCINET). \code{NULL} uses the
 convention's choice.}

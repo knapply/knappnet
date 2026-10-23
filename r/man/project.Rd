@@ -14,12 +14,14 @@ project(x, which = c("first", "second", "both"), weighted = TRUE,
 \arguments{
 \item{x}{A two-mode \code{\link{netframe}} (see \code{\link{twomode}}).}
 \item{which}{\code{"first"}, \code{"second"}, or \code{"both"} modes.}
-\item{weighted}{Whether the result has a \code{weight} column. Weights are
-tie strengths (\code{weight_type = "strength"}), since sharing more partners
+\item{weighted}{Whether the result has a \code{weight} column. Weights are tie
+strengths (\code{weight_type = "strength"}), since sharing more partners
 brings two nodes closer.}
 \item{method}{How ties are weighted; see Details.}
 \item{loops}{Whether to keep the diagonal as self-loops.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 Tie weights, chosen by \code{method}, are

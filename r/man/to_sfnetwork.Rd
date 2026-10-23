@@ -1,5 +1,6 @@
 \name{to_sfnetwork}
 \alias{to_sfnetwork}
+\alias{as_sfnetwork.netframe}
 \title{Convert to and from sfnetworks}
 \description{
 \code{to_sfnetwork()} turns a spatial netframe into an \code{sfnetwork}

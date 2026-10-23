@@ -1,6 +1,6 @@
 \name{plot.saom_fit}
 \alias{plot.saom_fit}
-\title{Plot estimation diagnostics of a SAOM fit}
+\title{Plot the estimation diagnostics of a SAOM}
 \description{
 \code{which = "trajectory"} draws the parameter values after every phase 2
 iteration of the Robbins-Monro algorithm, with the subphases separated by

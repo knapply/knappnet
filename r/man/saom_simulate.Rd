@@ -21,9 +21,9 @@ from the observed network at its start.}
 \code{NULL} to simulate until the observed number of changes of each
 period is reached, as conditional estimation does.}
 \item{n}{Number of panels to simulate.}
-\item{seed}{Seed, a whole number in [0, 2^53); \code{NULL} draws one from
-R's random number generator. Simulation \eqn{s} uses stream \eqn{s - 1} of
-the seed.}
+\item{seed}{Seed, a whole number between 0 and \eqn{2^{53}}; \code{NULL} draws
+one from R's random number generator, so \code{\link{set.seed}()} makes
+results reproducible. Simulation \eqn{s} uses stream \eqn{s - 1} of the seed.}
 }
 \value{
 A list of \code{n} simulated panels. Each panel is a list with one

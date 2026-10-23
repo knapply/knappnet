@@ -1,6 +1,6 @@
 \name{plot_ego}
 \alias{plot_ego}
-\title{Draw an ego network}
+\title{Plot an ego network}
 \description{
 Extracts the ego network of one node with \code{\link{ego_network}} and
 draws it with ego enlarged and colored apart from its alters.

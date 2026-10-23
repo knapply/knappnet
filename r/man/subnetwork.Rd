@@ -4,7 +4,7 @@
 \alias{remove_isolates}
 \alias{remove_pendants}
 \alias{largest_component}
-\title{Subnetworks: node selection, filters, isolates, pendants, components}
+\title{Subnetworks}
 \description{
 Induced subnetworks keep a set of nodes and every edge between them:
 \describe{

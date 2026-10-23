@@ -22,9 +22,9 @@ regular_equivalence(x, seed = NULL, weighted = NULL)
 different seed classes are never equivalent; only equality of values
 matters. \code{NULL} starts from a single class.}
 \item{weighted}{Whether to treat total edge weights as categories of tie:
-nodes with ties of different weights are then not equivalent. \code{NULL}
-uses weights when the network has a weight column. Weights are categories,
-not magnitudes, so \code{weight_type} does not matter.}
+nodes with ties of different weights are then not equivalent. \code{NULL} (the
+default) uses weights when the network has a weight column. Weights are
+categories, not magnitudes, so \code{weight_type} does not matter.}
 }
 \details{
 The type of tie between \eqn{i} and \eqn{k} is the pair (tie from \eqn{i}

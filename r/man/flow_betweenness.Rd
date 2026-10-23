@@ -25,8 +25,9 @@ default) uses them when the network's weights are strengths
 strength is how much can flow through a tie; distances are not capacities,
 so networks weighted by distance use unit capacities unless
 \code{capacity = TRUE}.}
-\item{threads}{Number of threads; \code{0} uses all available cores (see
-"Threads" in \code{\link{netframe}}).}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \details{
 Let \eqn{f(i, j)} be the maximum flow from \eqn{i} to \eqn{j} (the

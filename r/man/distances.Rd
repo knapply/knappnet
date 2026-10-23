@@ -4,7 +4,7 @@
 \alias{diameter}
 \alias{eccentricity}
 \alias{radius}
-\title{Shortest-path distances, mean distance, diameter, eccentricity, and radius}
+\title{Shortest-path distances and their summaries}
 \description{
 \code{distances()} gives the length of a shortest path between every pair of
 nodes. \code{mean_distance()} averages those lengths and \code{diameter()} is
@@ -40,9 +40,11 @@ undirected networks. The defaults follow igraph: \code{"out"} for
 \code{"all"} for \code{eccentricity()} and \code{radius()}.}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-\item{weights_as}{Override the network's \code{weight_type}:
-\code{"distance"} or \code{"strength"}.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 \item{unconnected}{What to do when some node does not reach every other:
 \code{TRUE} averages (or maximizes) over the pairs joined by a path, and
 \code{FALSE} returns \code{Inf}.}

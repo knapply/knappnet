@@ -32,8 +32,8 @@ strictly increasing times, so contacts at the same time never chain.}
 \code{difftime}), \code{0} by default, or \code{"duration"} for each
 contact's own duration (its end minus its start), as for a flight or a
 phone call that must finish before the information moves on.}
-\item{threads}{Number of threads, a whole number; \code{0} uses all
-available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
 \details{

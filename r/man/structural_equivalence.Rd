@@ -16,8 +16,7 @@ structural_equivalence(x, method = c("euclidean", "correlation", "hamming"),
 \item{method}{\code{"euclidean"}, \code{"correlation"}, or
 \code{"hamming"}.}
 \item{weighted}{Whether ties are total edge weights rather than 0 or 1.
-\code{NULL} (the default) uses weights when the network has a weight
-column.}
+\code{NULL} (the default) uses weights when the network has a weight column.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
