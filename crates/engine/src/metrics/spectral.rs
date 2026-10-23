@@ -82,6 +82,8 @@
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::linalg;
+use crate::matrix::Dense;
 use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::eigenvector::{
@@ -650,59 +652,22 @@ pub fn bonacich_power(g: &Graph, opts: BonacichOptions) -> Result<Vec<f64>> {
 }
 
 /// Solves (I - t A) y = b by Gaussian elimination with partial pivoting
-/// (Golub and Van Loan 2013, `golub2013matrix`, section 3.4).
+/// ([`crate::linalg::solve`]).
 fn dense_solve(op: &SparseOp, t: f64, b: &[f64]) -> Result<Vec<f64>> {
     let n = op.dim();
-    let mut a = vec![0.0f64; n * n];
+    let mut a = Dense::identity(n);
     for i in 0..n {
-        a[i * n + i] = 1.0;
         for (j, w) in op.row(i) {
-            a[i * n + j] -= t * w;
+            a.set(i, j, a.get(i, j) - t * w);
         }
     }
-    let scale = a.iter().fold(0.0f64, |m, v| m.max(v.abs()));
-    let mut x = b.to_vec();
-    for k in 0..n {
-        let mut p = k;
-        for i in (k + 1)..n {
-            if a[i * n + k].abs() > a[p * n + k].abs() {
-                p = i;
-            }
-        }
-        if a[p * n + k].abs() <= 1e-12 * scale {
-            return Err(Error::InvalidArgument(
-                "I - exponent x A is singular (exponent is the reciprocal of an \
-                 eigenvalue), so power centrality is undefined; choose another exponent"
-                    .into(),
-            ));
-        }
-        if p != k {
-            for j in 0..n {
-                a.swap(k * n + j, p * n + j);
-            }
-            x.swap(k, p);
-        }
-        let pivot = a[k * n + k];
-        for i in (k + 1)..n {
-            let f = a[i * n + k] / pivot;
-            if f == 0.0 {
-                continue;
-            }
-            a[i * n + k] = 0.0;
-            for j in (k + 1)..n {
-                a[i * n + j] -= f * a[k * n + j];
-            }
-            x[i] -= f * x[k];
-        }
-    }
-    for k in (0..n).rev() {
-        let mut s = x[k];
-        for j in (k + 1)..n {
-            s -= a[k * n + j] * x[j];
-        }
-        x[k] = s / a[k * n + k];
-    }
-    Ok(x)
+    linalg::solve(&a, b, 1e-12).ok_or_else(|| {
+        Error::InvalidArgument(
+            "I - exponent x A is singular (exponent is the reciprocal of an \
+             eigenvalue), so power centrality is undefined; choose another exponent"
+                .into(),
+        )
+    })
 }
 
 /// How hub and authority scores are scaled.

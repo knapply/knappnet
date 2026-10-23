@@ -54,10 +54,11 @@
 use super::data::Panel;
 use super::effects::{targets, Model};
 use super::gof::{aux_len, aux_statistics};
-use super::linalg::{invert, multiply, multiply_vector, pseudo_inverse, quadratic_form, transpose};
 use super::network::Network;
 use super::simulate::{Simulator, Stopping};
 use crate::error::{Error, Result};
+use crate::linalg::{self, matmul, matvec, pseudo_inverse, quadratic_form, transpose};
+use crate::matrix::Dense;
 use crate::parallel;
 use crate::rng::Stream;
 
@@ -334,8 +335,26 @@ fn moments(runs: &[Run], p: usize, periods: usize) -> Moments {
     }
 }
 
+/// A row-major `p` by `p` slice as a matrix.
+fn square(a: &[f64], p: usize) -> Dense {
+    Dense::from_row_major(p, p, a.to_vec()).expect("a p by p matrix")
+}
+
+/// The inverse of a `p` by `p` matrix of the estimation algorithm, or an
+/// error naming the usual cause when it is singular.
+fn invert(a: &[f64], p: usize) -> Result<Dense> {
+    linalg::invert(&square(a, p), 1e-13).ok_or_else(|| {
+        Error::InvalidArgument(
+            "a matrix in the estimation algorithm is singular (the derivative or \
+             covariance matrix of the statistics); some effects may be perfectly \
+             collinear or have statistics that never vary"
+                .into(),
+        )
+    })
+}
+
 /// `w diag(D) + (1 - w) D`, inverted.
-fn step_matrix(derivative: &[f64], p: usize, w: f64) -> Result<Vec<f64>> {
+fn step_matrix(derivative: &[f64], p: usize, w: f64) -> Result<Dense> {
     let mut d = vec![0.0; p * p];
     for a in 0..p {
         for b in 0..p {
@@ -511,7 +530,7 @@ pub fn estimate(panel: &Panel, model: &Model, opts: &EstimateOptions) -> Result<
     let step = step_matrix(&m1.derivative, p, opts.diagonalize)?;
     {
         let dev: Vec<f64> = (0..p).map(|a| m1.mean[a] - target[a]).collect();
-        let delta = multiply_vector(&step, &dev, p);
+        let delta = matvec(&step, &dev);
         for a in 0..p {
             theta[a] -= opts.firstg * delta[a];
         }
@@ -545,7 +564,7 @@ pub fn estimate(panel: &Panel, model: &Model, opts: &EstimateOptions) -> Result<
                     }
                 }
             }
-            let delta = multiply_vector(&step, &dev, p);
+            let delta = matvec(&step, &dev);
             for a in 0..p {
                 theta[a] -= gain * delta[a];
             }
@@ -600,17 +619,17 @@ pub fn estimate(panel: &Panel, model: &Model, opts: &EstimateOptions) -> Result<
         })
         .collect();
     let tconv_max = match invert(&m3.cov, p) {
-        Ok(inv) => quadratic_form(&inv, &dev, p).max(0.0).sqrt(),
+        Ok(inv) => quadratic_form(&inv, &dev).max(0.0).sqrt(),
         Err(_) => {
-            let (pinv, _) = pseudo_inverse(&m3.cov, p, 1e-10)?;
-            quadratic_form(&pinv, &dev, p).max(0.0).sqrt()
+            let (pinv, _) = pseudo_inverse(&square(&m3.cov, p), 1e-10)?;
+            quadratic_form(&pinv, &dev).max(0.0).sqrt()
         }
     };
     let (covariance, se) = match invert(&m3.derivative, p) {
         Ok(dinv) => {
-            let cov = multiply(&multiply(&dinv, &m3.cov, p), &transpose(&dinv, p), p);
-            let se = (0..p).map(|a| cov[a * p + a].max(0.0).sqrt()).collect();
-            (cov, se)
+            let cov = matmul(&matmul(&dinv, &square(&m3.cov, p)), &transpose(&dinv));
+            let se = (0..p).map(|a| cov.get(a, a).max(0.0).sqrt()).collect();
+            (cov.as_slice().to_vec(), se)
         }
         Err(_) => (vec![f64::NAN; p * p], vec![f64::NAN; p]),
     };

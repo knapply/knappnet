@@ -11,12 +11,10 @@
 //! - Modularity is that of [`crate::metrics::community::modularity`].
 //! - Groups are labelled 0, 1, ... in order of their first node.
 
-mod eigen;
 pub mod fast_greedy;
 pub mod girvan_newman;
 pub mod leading_eigen;
 
-pub(crate) use eigen::symmetric_eigen;
 pub use fast_greedy::{fast_greedy, FastGreedy};
 pub use girvan_newman::{girvan_newman, GirvanNewman};
 pub use leading_eigen::{leading_eigen, LeadingEigen};

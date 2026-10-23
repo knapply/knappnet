@@ -17,6 +17,7 @@ pub mod generate;
 pub mod graph;
 pub mod io;
 pub mod layout;
+pub mod linalg;
 pub mod logs;
 pub mod matrix;
 pub mod metrics;
