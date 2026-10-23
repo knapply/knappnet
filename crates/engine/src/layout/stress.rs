@@ -521,21 +521,29 @@ fn full_stress(
     // One pass: J(z) and each node's share of the stress of z. With
     // r = 1 / d and w = r^2, a term contributes w x_j + r (x_i - x_j) / e
     // to the numerator, w to the denominator, and (e r - 1)^2 to stress.
-    //
-    // Rows are taken LANES at a time (see [`stress_rows`]): each row's sums
-    // still run over j in order, so the values do not depend on the
-    // grouping.
     let pass = |z: &[[f64; 2]], j: &mut Vec<[f64; 3]>| -> f64 {
-        let mut tiles = vec![[[0.0; 3]; LANES]; (c + LANES - 1) / LANES];
-        par_fill(&mut tiles, threads, 16, |g, out| {
-            let row = |l: usize| (g * LANES + l).min(c - 1);
-            let rows: [&[f64]; LANES] = std::array::from_fn(|l| &inv[row(l)][..]);
-            let zi: [[f64; 2]; LANES] = std::array::from_fn(|l| z[row(l)]);
-            *out = crate::linalg::simd::dispatch!(stress_rows(z, &rows, &zi));
+        par_fill(j, threads, 64, |i, out| {
+            let zi = z[i];
+            let row = &inv[i];
+            let (mut nx, mut ny, mut den, mut s) = (0.0, 0.0, 0.0, 0.0);
+            for (zj, &r) in z.iter().zip(row) {
+                let w = r * r;
+                let (dx, dy) = (zi[0] - zj[0], zi[1] - zj[1]);
+                let e = (dx * dx + dy * dy).sqrt();
+                // The diagonal has r = 0 and adds nothing.
+                nx += w * zj[0];
+                ny += w * zj[1];
+                if e > 0.0 {
+                    let f = r / e;
+                    nx += f * dx;
+                    ny += f * dy;
+                }
+                den += w;
+                let u = e * r - 1.0;
+                s += if r > 0.0 { u * u } else { 0.0 };
+            }
+            *out = [nx / den, ny / den, s];
         });
-        for (i, r) in j.iter_mut().enumerate() {
-            *r = tiles[i / LANES][i % LANES];
-        }
         // Each pair is counted from both ends.
         j.iter().map(|r| r[2]).sum::<f64>() / 2.0
     };
@@ -587,47 +595,6 @@ fn full_stress(
         }
     }
     best
-}
-
-/// Rows per group in the majorization pass of [`full_stress`].
-const LANES: usize = 4;
-
-/// For LANES nodes i at once (positions `zi`, reciprocal distance rows
-/// `rows`), the update J(z)_i and the node's share of the stress: with
-/// r = 1 / d and w = r^2, each j contributes w x_j + r (x_i - x_j) / e to
-/// the numerator, w to the denominator, and (e r - 1)^2 to stress. The
-/// rows are independent and each one's sums run over j in order, as for a
-/// single row, so the compiler may keep the rows in vector lanes without
-/// changing any result.
-#[inline(always)]
-fn stress_rows(
-    z: &[[f64; 2]],
-    rows: &[&[f64]; LANES],
-    zi: &[[f64; 2]; LANES],
-) -> [[f64; 3]; LANES] {
-    let c = z.len();
-    let rows: [&[f64]; LANES] = std::array::from_fn(|l| &rows[l][..c]);
-    let (mut nx, mut ny, mut den, mut s) = ([0.0; LANES], [0.0; LANES], [0.0; LANES], [0.0; LANES]);
-    for (k, zj) in z.iter().enumerate() {
-        for l in 0..LANES {
-            let r = rows[l][k];
-            let w = r * r;
-            let (dx, dy) = (zi[l][0] - zj[0], zi[l][1] - zj[1]);
-            let e = (dx * dx + dy * dy).sqrt();
-            // The diagonal has r = 0 and adds nothing.
-            nx[l] += w * zj[0];
-            ny[l] += w * zj[1];
-            if e > 0.0 {
-                let f = r / e;
-                nx[l] += f * dx;
-                ny[l] += f * dy;
-            }
-            den[l] += w;
-            let u = e * r - 1.0;
-            s[l] += if r > 0.0 { u * u } else { 0.0 };
-        }
-    }
-    std::array::from_fn(|l| [nx[l] / den[l], ny[l] / den[l], s[l]])
 }
 
 /// Sparse stress with pivots (Ortmann, Klimenta, and Brandes 2017).
