@@ -15,6 +15,7 @@
 #' | DyNetML | `.xml` | yes | yes | ORA (CASOS, Carnegie Mellon) |
 #' | Edge list | `.csv`, `.tsv` | yes | yes | spreadsheets, any tool |
 #' | DOT | `.dot`, `.gv` | no | yes | Graphviz |
+#' | GeoPackage | `.gpkg` | yes | yes | QGIS, GDAL, sf (spatial networks; needs sf) |
 #'
 #' Attributes keep their types where the format records them (GraphML,
 #' GEXF, JSON) and are inferred otherwise. Node identifiers that are all
@@ -33,6 +34,19 @@
 #' `<DynamicNetwork>`, `<DynamicMetaNetwork>`, `<MetaNetwork>`, or
 #' `<MetaMatrix>`). Writing a `.xml` file without `format` produces GraphML;
 #' use `format = "dynetml"` (or `"ora"`) to write DyNetML.
+#'
+#' @section GeoPackage:
+#' A GeoPackage (`.gpkg`) holds a spatial network (see [to_sf()]) as two
+#' layers, `nodes` and `edges`, each written with [sf::st_write()] when it
+#' has geometry and as a plain table otherwise, plus a small table layer
+#' `network` with the direction, the identifier, endpoint, and weight
+#' columns, and network-level attributes (as text). Reading needs only
+#' the `nodes` and `edges` layers: without `network`, the first node
+#' column is the identifier, the edge columns are `from` and `to`, the
+#' network is directed unless `directed` says otherwise, and the weight
+#' is found as for other formats. Geometries and their CRS round-trip;
+#' attribute types follow GDAL's GeoPackage driver (logical columns come
+#' back as integers). Requires the sf package.
 #'
 #' @section DyNetML:
 #' DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA
@@ -75,8 +89,8 @@
 #'
 #' @param file Path to the file.
 #' @param format Format name (`"graphml"`, `"gexf"`, `"gml"`, `"pajek"`,
-#'   `"dl"`, `"json"`, `"dynetml"`, `"csv"`, `"tsv"`, or `"dot"`), or `NULL`
-#'   to use the file extension.
+#'   `"dl"`, `"json"`, `"dynetml"`, `"csv"`, `"tsv"`, `"gpkg"`, or `"dot"`),
+#'   or `NULL` to use the file extension.
 #' @param directed For formats that do not record direction (UCINET DL and
 #'   edge lists), whether edges are directed. Defaults to `TRUE`.
 #' @param nodes For edge lists only: a data frame of nodes, or the path to
@@ -113,6 +127,7 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
   check_string_or_null(weight, "weight")
   check_string_or_null(format, "format")
   fmt <- resolve_format(format, file, write = FALSE)
+  if (fmt == "gpkg") return(read_gpkg(file, directed, weight, weight_type))
 
   if (fmt %in% c("csv", "tsv")) {
     sep <- if (fmt == "tsv") "\t" else ","
@@ -182,6 +197,7 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
   if (!is.null(weight) && !weight %in% names(x$edges)) {
     stop(sprintf("Edge column `%s` not found.", weight), call. = FALSE)
   }
+  if (fmt == "gpkg") return(write_gpkg(x, file, weight))
   # GEXF stores the edge weight in an attribute that must be called
   # `weight`; every other format keeps the column's own name.
   tables <- export_tables(x, if (fmt == "gexf") weight)
@@ -210,7 +226,7 @@ format_names <- c(
   graphml = "graphml", xml = "graphml", gexf = "gexf", gml = "gml",
   pajek = "pajek", net = "pajek", paj = "pajek", dl = "dl", ucinet = "dl",
   json = "json", dynetml = "dynetml", ora = "dynetml", csv = "csv", tsv = "tsv",
-  txt = "tsv", dot = "dot", gv = "dot"
+  txt = "tsv", dot = "dot", gv = "dot", gpkg = "gpkg", geopackage = "gpkg"
 )
 
 resolve_format <- function(format, file, write) {

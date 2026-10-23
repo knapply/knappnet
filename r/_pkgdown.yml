@@ -45,6 +45,8 @@ navbar:
       menu:
       - text: Conventions across tools
         href: articles/conventions.html
+      - text: Spatial networks with sf
+        href: articles/spatial-networks.html
       - text: How results are validated
         href: articles/validation.html
       - text: Performance
@@ -73,6 +75,7 @@ articles:
   - articles/conventions
   - articles/validation
   - articles/performance
+  - articles/spatial-networks
 
 # Every help topic must appear below; pkgdown stops if one is missing.
 # Sections marked INTEGRATION are for topics being added in parallel:
@@ -184,6 +187,10 @@ reference:
   contents:
   - spatial_network
   - proximity_network
+  - to_sf
+  - from_lines
+  - to_sfnetwork
+  - plot_spatial
 
 - title: Ego networks
   desc: >-
