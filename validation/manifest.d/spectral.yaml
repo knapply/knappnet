@@ -324,6 +324,12 @@ assortativity_degree:
       call: "igraph::assortativity_degree(g, directed = TRUE)"
     homophily:
       call: "homophily::assort_degree(g)"
+      differs_when: [multi_edges]
+      reason: >-
+        homophily computes degrees from the adjacency matrix but correlates
+        them over the edge list, so with parallel edges the two disagree;
+        this engine (like igraph) uses each edge's endpoints' degrees counted
+        with multiplicity throughout.
 
 assortativity_degree_networkx:
   engine: {fn: assortativity_degree, directed: true, loops: once}

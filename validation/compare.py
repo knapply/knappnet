@@ -178,11 +178,12 @@ def main() -> int:
           f"undefined for the oracle {total['undefined']}")
     for v, o, f, d in failures:
         print(f"FAIL {v} vs {o} on {f}: {d}")
-    if failures:
-        return 1
     if "--strict" in sys.argv[1:] and total["not run"]:
         for v, o, f in missing:
             print(f"not run: {v} vs {o} on {f}")
+    if failures:
+        return 1
+    if "--strict" in sys.argv[1:] and total["not run"]:
         print("Some oracles have not been run (--strict).")
         return 1
     return 0
