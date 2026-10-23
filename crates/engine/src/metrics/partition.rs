@@ -34,29 +34,12 @@ pub(crate) fn require_undirected(g: &Graph, method: &str) -> Result<()> {
 
 /// Relabels group labels to 0..k in order of first appearance.
 pub(crate) fn relabel(labels: &[usize]) -> Vec<usize> {
-    let mut map = std::collections::HashMap::new();
-    labels
-        .iter()
-        .map(|&c| {
-            let next = map.len();
-            *map.entry(c).or_insert(next)
-        })
-        .collect()
+    crate::metrics::community::dense_labels(labels).0
 }
 
 /// Weights for additive use (modularity), checked to be non-negative.
 pub(crate) fn additive_weights(g: &Graph, weighted: bool) -> Result<Option<&[f64]>> {
-    if !weighted {
-        return Ok(None);
-    }
-    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-        return Err(Error::InvalidArgument(format!(
-            "edge {edge} has negative weight {}; modularity requires non-negative weights",
-            w[edge]
-        )));
-    }
-    Ok(Some(w))
+    crate::weights::additive_weights(g, weighted, "modularity")
 }
 
 pub(crate) fn as_labels(m: &[usize]) -> Vec<i64> {

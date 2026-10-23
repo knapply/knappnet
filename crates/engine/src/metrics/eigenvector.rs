@@ -108,6 +108,7 @@ use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::topography::{components, ComponentKind};
 use crate::parallel;
+use crate::weights::additive_weights;
 
 /// How eigenvector scores are scaled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -323,14 +324,7 @@ pub fn eigenvector_centrality(g: &Graph, opts: EigenvectorOptions) -> Result<Eig
 
 /// Refuses negative edge weights.
 pub(crate) fn check_nonnegative(g: &Graph, what: &str) -> Result<()> {
-    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-        return Err(Error::InvalidArgument(format!(
-            "edge {edge} has weight {}; {what} requires nonnegative weights",
-            w[edge]
-        )));
-    }
-    Ok(())
+    additive_weights(g, true, what).map(|_| ())
 }
 
 /// Power iteration on A' + I for directed matrices, iterated as one block.

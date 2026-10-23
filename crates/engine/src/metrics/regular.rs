@@ -63,6 +63,7 @@ use std::collections::HashMap;
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::metrics::community::dense_labels;
 use crate::union_find::UnionFind;
 
 // ---- Regular equivalence -----------------------------------------------------
@@ -193,13 +194,13 @@ fn tie_types(g: &Graph, weighted: bool) -> Result<Vec<Vec<(u32, u32, u32)>>> {
     Ok(rows)
 }
 
+/// Class labels numbered 0, 1, ... in order of first appearance.
 fn first_appearance(labels: impl Iterator<Item = i64>) -> Vec<u32> {
-    let mut seen: HashMap<i64, u32> = HashMap::new();
-    labels
-        .map(|l| {
-            let len = seen.len() as u32;
-            *seen.entry(l).or_insert(len)
-        })
+    let labels: Vec<i64> = labels.collect();
+    dense_labels(&labels)
+        .0
+        .into_iter()
+        .map(|c| c as u32)
         .collect()
 }
 

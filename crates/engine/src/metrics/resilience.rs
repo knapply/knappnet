@@ -84,7 +84,7 @@ use crate::metrics::degree::DegreeMode;
 use crate::parallel;
 use crate::rng::Stream;
 use crate::union_find::UnionFind;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{additive_weights, path_lengths, Lengths, PathAlgorithm, WeightKind};
 
 const EPSILON: f64 = 1e-10;
 const TIE: f64 = 1e-9;
@@ -1123,17 +1123,7 @@ impl FlowNet {
 }
 
 fn flow_capacities(g: &Graph, use_capacity: bool) -> Result<Option<&[f64]>> {
-    if !use_capacity {
-        return Ok(None);
-    }
-    let w = g.edge_weights().ok_or(Error::MissingWeights)?;
-    if let Some(edge) = w.iter().position(|&x| x < 0.0) {
-        return Err(Error::InvalidArgument(format!(
-            "edge {edge} has capacity {}; capacities must be non-negative",
-            w[edge]
-        )));
-    }
-    Ok(Some(w))
+    additive_weights(g, use_capacity, "a flow capacity")
 }
 
 /// How flow betweenness is scaled.
