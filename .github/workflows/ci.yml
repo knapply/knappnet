@@ -85,6 +85,10 @@ jobs:
         with:
           use-public-rspm: true
       - name: Install oracles
+        env:
+          # remotes uses the GitHub API to install homophily; unauthenticated
+          # requests are rate-limited.
+          GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python -m pip install networkx numpy scipy pyyaml
           Rscript -e 'install.packages(c("igraph", "sna", "yaml"), repos = "https://cloud.r-project.org")'

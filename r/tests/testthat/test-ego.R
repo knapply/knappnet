@@ -82,7 +82,7 @@ test_that("ego_network returns the induced subgraph with its attributes", {
   expect_equal(unname(vapply(all, function(x) as.numeric(nrow(x$nodes)), 0)), ego_size(g))
   some <- ego_networks(g, c("e", "a"))
   expect_equal(names(some), c("e", "a"))
-  expect_error(ego_network(g, "zz"), "not found")
+  expect_error(ego_network(g, "zz"), "not in the network")
   expect_error(ego_network(g, c("a", "b")), "single")
 })
 

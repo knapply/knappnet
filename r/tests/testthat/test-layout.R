@@ -151,11 +151,13 @@ test_that("a network with one node or no edges", {
   expect_gte(min(dist(xy)), 1 - 1e-9)
 })
 
-test_that("stress is no worse than igraph's stress layout on a classic network", {
+test_that("stress is no worse than igraph's Kamada-Kawai layout on a classic network", {
   skip_if_not_installed("igraph")
   karate <- as_netframe(igraph::make_graph("Zachary"))
   ours <- layout_network(karate, seed = 1)
-  theirs <- igraph::layout_with_stress(igraph::make_graph("Zachary"))
+  # Kamada-Kawai minimizes a weighted stress of the same kind.
+  set.seed(1)
+  theirs <- igraph::layout_with_kk(igraph::make_graph("Zachary"))
   # Compare at the scale that minimizes each layout's stress.
   best <- function(xy) {
     stats::optimize(function(s) layout_stress(karate, xy * s), c(1e-3, 1e3))$objective

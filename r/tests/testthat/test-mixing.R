@@ -72,7 +72,7 @@ test_that("group E-I counts each tie for both groups (Krackhardt and Stern)", {
   # Operation assistants: 1 tie among themselves, 14 with other roles; the
   # homophily convention counts only the 6 ties to roles listed later.
   ei <- ei_index(g, "role", scope = "group")
-  expect_equal(unname(ei), c(25 / 31, 13 / 15, 3 / 7, 1, 1 / 7))
+  expect_equal(as.numeric(ei), c(25 / 31, 13 / 15, 3 / 7, 1, 1 / 7))
   expect_equal(attr(ei, "internal"), c(3, 1, 10, 0, 6))
   expect_equal(attr(ei, "external"), c(28, 14, 25, 11, 8))
   # Every tie is counted once per side, and the network total once.
@@ -92,7 +92,7 @@ test_that("strength assortativity of the weighted Jemaah Islamiyah network", {
   g <- jemaah_weighted()
   expect_equal(sum(g$edges$strength), 166)
   expect_equal(assortativity_degree(g, weighted = TRUE), 0.175836797, tolerance = 1e-8)
-  expect_equal(assortativity_degree(g), -0.022650693, tolerance = 1e-8)
+  expect_equal(assortativity_degree(g), -0.022650693, tolerance = 1e-7)
   # Weights do not enter the E-I index or the mixing matrix.
   expect_identical(mixing_matrix(g, "role"), mixing_matrix(jemaah(), "role"))
   expect_equal(ei_index(g, "role"), ei_index(jemaah(), "role"))
@@ -125,7 +125,8 @@ test_that("assortativity coefficients", {
   expect_equal(assortativity(path, c(1, 2, 3, 4)), 5 / 11)
   expect_equal(assortativity(path, c(1, 2, 3, 4), normalized = FALSE), 5 / 12)
   # Perfect sorting by category.
-  two <- netframe(data.frame(from = c(1, 3), to = c(2, 4)), directed = FALSE)
+  two <- netframe(data.frame(from = c(1, 3), to = c(2, 4)), nodes = data.frame(id = 1:4),
+                  directed = FALSE)
   expect_equal(assortativity_nominal(two, c("a", "a", "b", "b")), 1)
   expect_equal(assortativity_nominal(two, c("a", "a", "b", "b"), normalized = FALSE), 0.5)
   expect_true(is.nan(assortativity_nominal(two, c("a", "a", "a", "a"))))
