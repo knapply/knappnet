@@ -9,8 +9,8 @@
 #' netframe has times.
 #'
 #' @param edges A data frame of contacts, one row per contact, or a
-#'   [netframe()] whose edge table holds the times (as returned by log
-#'   readers); its nodes, endpoints, weights, and other roles are kept.
+#'   [netframe()] whose edge table holds the times; its nodes, endpoints,
+#'   weights, and other roles are kept.
 #' @param nodes A data frame of nodes, or `NULL`; see [netframe()]. Must be
 #'   `NULL` when `edges` is a netframe.
 #' @param start Column of `edges` holding each contact's start time, by
@@ -63,8 +63,8 @@
 #'
 #' **Log data.** Tables of events such as authentication logs or network
 #' flows (one row per event, with source, destination, and time) are
-#' contact sequences: pass them, or the netframe a log reader returns,
-#' straight to `temporal_network()`. Millions of contacts are fine; slicing
+#' contact sequences: pass them, or a netframe built from them, straight to
+#' `temporal_network()`. Millions of contacts are fine; slicing
 #' and paths run in compiled code after a single sort by time.
 #'
 #' @section Missing values and invalid input:
@@ -79,7 +79,7 @@
 #'
 #' Butts, C. T., Leslie-Cook, A., Krivitsky, P. N., & Bender-deMoll, S.
 #' (2026). networkDynamic: Dynamic extensions for network objects. R
-#' package. \url{https://CRAN.R-project.org/package=networkDynamic}
+#' package version 0.12.0. \doi{10.32614/CRAN.package.networkDynamic}
 #'
 #' @seealso [network_at()], [network_window()], [snapshots()],
 #'   [aggregate_network()], [temporal_distances()], [temporal_reach()],
@@ -517,8 +517,12 @@ temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure
 #' temporal_reach(g)
 #' temporal_reach(g, mode = "in")
 #' reachability_ratio(g)
-#' # Strictly increasing times do not change this network.
-#' reachability_ratio(g, strict = TRUE)
+#' # Simultaneous contacts: a -> b and b -> c both at time 1.
+#' same <- temporal_network(data.frame(from = c("a", "b"), to = c("b", "c"), time = c(1, 1)))
+#' # Non-decreasing times (Kempe et al. 2002; Holme and Saramaki 2012): a reaches c.
+#' temporal_reach(same, strict = FALSE)
+#' # Strictly increasing times (Pan and Saramaki 2011): a reaches only b.
+#' temporal_reach(same, strict = TRUE)
 #' @export
 temporal_reach <- function(x, mode = c("out", "in"), start = NULL, end = NULL, min_wait = 0,
                            max_wait = Inf, strict = FALSE, traversal = 0, threads = 0L) {

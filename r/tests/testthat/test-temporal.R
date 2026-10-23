@@ -49,7 +49,7 @@ test_that("start, end, and duration columns are found and checked", {
                "temporal network")
 })
 
-test_that("a netframe from a log reader can be made temporal", {
+test_that("a netframe whose edges carry a time column can be made temporal", {
   x <- netframe(data.frame(src = c("a", "b"), dst = c("b", "c"), start = c(1, 2),
                            bytes = c(10, 20)), weight = "bytes")
   g <- temporal_network(x)
