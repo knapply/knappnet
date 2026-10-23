@@ -179,9 +179,9 @@ plot_component_sizes <- function(x, mode = c("weak", "strong"), log = FALSE, ...
 #' among the \eqn{D = n(n-1)/2} dyads, the three dyads of a random triad
 #' under U|MAN have \eqn{m} mutual, \eqn{a} asymmetric, and \eqn{k} null
 #' dyads with probability
-#' \deqn{\binom{M}{m} \binom{A}{a} \binom{N}{k} / \binom{D}{3},}{choose(M, m) choose(A, a) choose(N, k) / choose(D, 3),}
+#' \deqn{{M \choose m} {A \choose a} {N \choose k} / {D \choose 3},}{choose(M, m) choose(A, a) choose(N, k) / choose(D, 3),}
 #' and each orientation of the asymmetric dyads is equally likely, so the
-#' expected count of a triad type is \eqn{\binom{n}{3}}{choose(n, 3)} times
+#' expected count of a triad type is \eqn{{n \choose 3}}{choose(n, 3)} times
 #' that probability times the share of orientations giving the type
 #' (1/4, 1/4, 1/2 for 021D, 021U, 021C; 1/2, 1/2 for 111D, 111U; 3/4, 1/4
 #' for 030T, 030C; 1/4, 1/4, 1/2 for 120D, 120U, 120C; 1 otherwise). These

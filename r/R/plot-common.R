@@ -78,8 +78,10 @@ draw_heatmap <- function(m, row_labels = rownames(m), col_labels = colnames(m),
   top <- if (!is.null(main)) 3 else 1
   old <- graphics::par(mar = c(max(bottom, 2), max(left, 2), top, right))
   on.exit(graphics::par(old), add = TRUE)
-  graphics::image(seq_len(nc), seq_len(nr), z, col = col, breaks = breaks, axes = FALSE,
-                  xlab = "", ylab = "", main = main, ...)
+  # Cell boundaries rather than centers, so that one-row and one-column
+  # matrices draw too.
+  graphics::image(seq(0.5, nc + 0.5, by = 1), seq(0.5, nr + 0.5, by = 1), z, col = col,
+                  breaks = breaks, axes = FALSE, xlab = "", ylab = "", main = main, ...)
   if (show_col) {
     graphics::axis(1, at = seq_len(nc), labels = col_labels, las = 2, tick = FALSE,
                    cex.axis = cex_labels, line = -0.5)

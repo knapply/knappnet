@@ -40,7 +40,8 @@ plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   dots <- list(...)
   args <- c(list(x = d, breaks = breaks, plot = FALSE), dots[intersect(names(dots), "include.lowest")])
   h <- do.call(graphics::hist, args)
-  xlim <- range(c(h$breaks, x$statistic), na.rm = TRUE)
+  observed <- x$statistic
+  xlim <- range(c(h$breaks, observed), na.rm = TRUE)
   if (is.null(dots$main)) dots$main <- "QAP correlation test"
   if (is.null(dots$xlab)) dots$xlab <- "Correlation under permutation"
   if (is.null(dots$col)) dots$col <- "gray80"
@@ -49,12 +50,14 @@ plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   old <- graphics::par(mar = c(5.1, 4.1, 4.1, 1.1))
   on.exit(graphics::par(old), add = TRUE)
   do.call(graphics::hist, c(list(x = d, breaks = breaks), dots))
-  graphics::abline(v = x$statistic, col = plot_accent, lwd = 2.5)
-  usr <- graphics::par("usr")
-  side <- if (x$statistic > mean(usr[1:2])) -0.2 else 1.2
-  graphics::text(x$statistic, usr[4] - 0.04 * diff(usr[3:4]),
-                 sprintf("observed r = %s", format(x$statistic, digits = 3)),
-                 adj = c(side, 1), col = plot_accent, cex = 0.85)
+  if (is.finite(observed)) {
+    graphics::abline(v = observed, col = plot_accent, lwd = 2.5)
+    usr <- graphics::par("usr")
+    right_side <- observed > mean(usr[1:2])
+    graphics::text(observed, usr[4] - 0.04 * diff(usr[3:4]),
+                   sprintf("observed r = %s", format(observed, digits = 3)),
+                   adj = c(if (right_side) 1.05 else -0.05, 1), col = plot_accent, cex = 0.85)
+  }
   undefined <- length(x$dist) - length(d)
   sub <- sprintf("Pr(>=|r|) = %s over %s; %s dyads", format(x$p.value[[3L]], digits = 3),
                  qap_draws_text(x), format(as.integer(x$dyads), big.mark = ","))

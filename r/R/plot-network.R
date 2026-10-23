@@ -40,7 +40,7 @@ plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
     stop("`title` must be a single string.", call. = FALSE)
   }
   w <- with_node_column(x, as.numeric(scores), title)
-  plot(w$x, node_size = w$name, node_color = if (color) w$name else NULL, ...)
+  invisible(plot(w$x, node_size = w$name, node_color = if (color) w$name else NULL, ...))
 }
 
 #' Draw a network colored by a partition
@@ -62,9 +62,10 @@ plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
 #' Groups are colored with the qualitative palette of [plot.netframe()] in
 #' order of their first appearance in `x$nodes`, so group numbers from
 #' [cluster_louvain()] (numbered in order of first appearance) keep their
-#' order. More than 15 groups are listed in the legend as a count.
-#' Modularity, when `membership` carries one (as [cluster_louvain()]'s
-#' result does), is written under the title.
+#' order. More than 15 groups are listed in the legend as a count. When
+#' `membership` carries a modularity (as [cluster_louvain()]'s result does)
+#' and no `main` is given, the title reports the number of groups and the
+#' modularity.
 #'
 #' @return The layout used, invisibly, as [plot.netframe()] returns.
 #' @seealso [cluster_louvain()], [plot_matrix()] for the same partition as
@@ -88,13 +89,10 @@ plot_partition <- function(x, membership, title = "group", ...) {
   g <- plot_groups(x, membership, "membership")
   w <- with_node_column(x, g, title)
   dots <- list(...)
-  xy <- do.call(plot, c(list(x = w$x, node_color = w$name), dots))
-  if (!is.null(q) && is.numeric(q) && length(q) == 1L) {
-    graphics::mtext(sprintf("%d groups, modularity %s", nlevels(g), format(q, digits = 3)),
-                    side = 3, line = if (is.null(dots$main)) -1 else 0.2, cex = 0.8,
-                    col = "gray30")
+  if (is.null(dots$main) && !is.null(q) && is.numeric(q) && length(q) == 1L) {
+    dots$main <- sprintf("%d groups, modularity %s", nlevels(g), format(q, digits = 3))
   }
-  invisible(xy)
+  invisible(do.call(plot, c(list(x = w$x, node_color = w$name), dots)))
 }
 
 #' Draw the k-core shells of a network
@@ -303,19 +301,19 @@ plot_robustness <- function(x, nodes = NULL, strategy = c("degree", "betweenness
       if (length(keep) < 2L) NaN else fragmentation(sub, mode)
     }
   }
-  curve_for <- function(order, counts) {
-    vapply(counts, function(k) evaluate(order[seq_len(k)]), numeric(1))
+  curve_for <- function(removal, counts) {
+    vapply(counts, function(k) evaluate(removal[seq_len(k)]), numeric(1))
   }
   counts <- unique(round(seq(0, n - 1, length.out = min(steps, n))))
   curves <- list()
   for (s in strategy) {
-    order <- switch(s,
+    removal <- switch(s,
       degree = order(degree(x), decreasing = TRUE),
       betweenness = order(betweenness(x, threads = threads), decreasing = TRUE),
       random = sample.int(n)
     )
     curves[[s]] <- data.frame(curve = s, removed = counts, fraction = counts / n,
-                              value = curve_for(order, counts), stringsAsFactors = FALSE)
+                              value = curve_for(removal, counts), stringsAsFactors = FALSE)
   }
   if (!is.null(nodes)) {
     pos <- set_positions(x, nodes, "nodes", allow_empty = FALSE)
