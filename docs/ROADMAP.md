@@ -252,3 +252,78 @@ and are listed so they are not lost.
 - Validation against the books' own worked numbers on the shipped data
   sets, with `convention = "ucinet"`, documenting the cases where the
   book's figure is not reproducible and why.
+
+## State of the art: proposals from the October 2026 algorithm survey
+
+A survey of current graph algorithms and systems (traversal and centrality;
+cohesion, communities, and motifs; systems, scale, and dynamics) ranked
+the ideas below for knappnet. Citations are checked against Crossref
+before each item is implemented. Items marked † overlap with the
+optimization work under way (density-aware storage, push/pull and
+multi-source BFS, triangle kernels).
+
+**Now**
+
+1. Frontier layer with sparse/dense switching (Ligra/GBBS `edgeMap`;
+   push/pull BFS; bitset frontiers for dense networks; batched
+   multi-source searches) †.
+2. One ordered triangle kernel (degree ordering, merge/galloping/bitset
+   intersection) for triangle counts, clustering variants, and per-edge
+   support †.
+3. Deterministic parallel reductions (a fixed reduction tree independent
+   of the thread count) and compensated summation in dense linear algebra.
+4. Exact betweenness reductions: pendant, twin, and degree-2 compression
+   and decomposition at articulation points.
+5. Exact diameter, radius, and eccentricity by bounding (2-sweep, iFUB,
+   Takes and Kosters; SumSweep for directed networks).
+6. Degree-preserving null models: edge-switch MCMC with mixing
+   diagnostics, curveball for two-mode networks, sequential importance
+   sampling for small networks (fixes simple configuration-model draws).
+7. Maximum clique by branch and bound with bitset colouring bounds.
+8. k-truss and (r,s)-nucleus decompositions on the triangle kernel.
+9. Partition comparison and consensus clustering (ARI, NMI, VI, AMI,
+   reduced mutual information, element-centric similarity).
+10. Sparse-aware QAP with exact enumeration up to about 12 nodes and
+    Monte Carlo standard errors.
+
+**Next**
+
+- Approximate betweenness with error guarantees (Riondato and
+  Kornaropoulos; KADABRA), thread-count independent; top-k closeness
+  (Bergamini et al.); local personalized PageRank (push and Monte Carlo).
+- Lazy and stochastic greedy for group centrality and key players.
+- Information centrality through a Cholesky factorization.
+- Degree-corrected and nested stochastic block models with MCMC and
+  description-length model selection (Peixoto).
+- Exact 3- and 4-node motif counts (PGD and ESCAPE identities) with
+  degree-preserving null z-scores; then 5-node.
+- Deterministic parallel Leiden and Louvain.
+- Generalized cores (weighted, D-core, two-mode, multilayer) and
+  densest subgraph (Greedy++).
+- Overlapping and local communities (clique percolation, link
+  communities, conductance-guaranteed local clustering).
+- Core-periphery significance tests and extensions.
+- Temporal reachability for all pairs and the exact 3-edge temporal motif
+  census; sliding-window analysis of contact streams.
+- Compressed CSR and a borrowed-storage constructor so R or Python can
+  pass memory-mapped graphs.
+- Fast generators: Chung-Lu, parallel G(n, m) and R-MAT, LFR.
+- Balanced static scheduling by cost.
+
+**Later**
+
+- HyperBall/HyperANF sketches for distance distributions on very large
+  graphs; internal node reordering; radix and 4-ary heaps and stepping
+  algorithms for single-source paths.
+- Regular equivalence by partition refinement in O(m log n); canonical
+  labelling for larger motifs; Bethe-Hessian clustering with a sparse
+  eigensolver.
+- An optional GPU backend for O(nm) kernels on graphs with millions of
+  edges.
+
+**Considered and rejected**: the 2025 directed shortest-path algorithm
+that beats Dijkstra asymptotically (3-4 times slower in practice),
+contraction hierarchies and hub labels, exact modularity by integer
+programming, skip-gram and graph-neural-network embeddings, distributed
+implementations, and a promise of bitwise-identical results across
+platforms.

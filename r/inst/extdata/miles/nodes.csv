@@ -1,0 +1,129 @@
+name,city,state,latitude,longitude,population
+"Ravenna, OH",Ravenna,OH,41.16,-81.24,11987
+"Reading, PA",Reading,PA,40.33,-75.93,78686
+"Red Bluff, CA",Red Bluff,CA,40.18,-122.24,9490
+"Regina, SK",Regina,SK,50.42,-104.65,162613
+"Reno, NV",Reno,NV,39.52,-119.81,100756
+"Rhinelander, WI",Rhinelander,WI,45.64,-89.42,7873
+"Richfield, UT",Richfield,UT,38.77,-112.09,5482
+"Richmond, IN",Richmond,IN,39.83,-84.89,41349
+"Richmond, VA",Richmond,VA,37.54,-77.45,219214
+"Roanoke, VA",Roanoke,VA,37.27,-79.94,100220
+"Rochester, MN",Rochester,MN,44.02,-92.46,57890
+"Rochester, NY",Rochester,NY,43.16,-77.61,241741
+"Rock Springs, WY",Rock Springs,WY,41.59,-109.23,19458
+"Rockford, IL",Rockford,IL,42.27,-89.1,139712
+"Rocky Mount, NC",Rocky Mount,NC,35.94,-77.8,41283
+"Roswell, NM",Roswell,NM,33.4,-104.53,39676
+"Rutland, VT",Rutland,VT,43.61,-72.97,18436
+"Sacramento, CA",Sacramento,CA,38.59,-121.49,275741
+"Saginaw, MI",Saginaw,MI,43.43,-83.94,77508
+"Saint Augustine, FL",Saint Augustine,FL,29.89,-81.32,11985
+"Saint Cloud, MN",Saint Cloud,MN,45.57,-94.17,42566
+"Saint Johnsbury, VT",Saint Johnsbury,VT,44.42,-72.02,7150
+"Saint Joseph, MI",Saint Joseph,MI,42.1,-86.48,9622
+"Saint Joseph, MO",Saint Joseph,MO,39.77,-94.84,76691
+"Saint Louis, MO",Saint Louis,MO,38.62,-90.19,453085
+"Saint Paul, MN",Saint Paul,MN,44.95,-93.1,270230
+"Salem, OR",Salem,OR,44.94,-123.03,89233
+"Salida, CO",Salida,CO,38.53,-106.0,44870
+"Salina, KS",Salina,KS,38.84,-97.61,41843
+"Salinas, CA",Salinas,CA,36.67,-121.65,80479
+"Salisbury, MD",Salisbury,MD,38.37,-75.6,16429
+"Salt Lake City, UT",Salt Lake City,UT,40.76,-111.88,163697
+"San Angelo, TX",San Angelo,TX,31.46,-100.44,73240
+"San Antonio, TX",San Antonio,TX,29.42,-98.5,786023
+"San Bernardino, CA",San Bernardino,CA,34.11,-117.31,118794
+"San Diego, CA",San Diego,CA,32.71,-117.15,875538
+"San Francisco, CA",San Francisco,CA,37.78,-122.42,678974
+"San Jose, CA",San Jose,CA,37.34,-121.88,629546
+"Sandusky, OH",Sandusky,OH,41.45,-82.71,31360
+"Santa Ana, CA",Santa Ana,CA,33.76,-117.87,204023
+"Santa Barbara, CA",Santa Barbara,CA,34.42,-119.7,74414
+"Santa Fe, NM",Santa Fe,NM,35.68,-105.95,48953
+"Santa Rosa, CA",Santa Rosa,CA,38.44,-122.72,83320
+"Sarasota, FL",Sarasota,FL,27.34,-82.53,48868
+"Sault Sainte Marie, MI",Sault Sainte Marie,MI,46.49,-84.35,14448
+"Savannah, GA",Savannah,GA,32.08,-81.09,141634
+"Schenectady, NY",Schenectady,NY,42.82,-73.95,67972
+"Scottsbluff, NE",Scottsbluff,NE,41.87,-103.66,14156
+"Scranton, PA",Scranton,PA,41.41,-75.67,88117
+"Seattle, WA",Seattle,WA,47.6,-122.33,493846
+"Sedalia, MO",Sedalia,MO,38.71,-93.23,20927
+"Selma, AL",Selma,AL,32.42,-87.02,26684
+"Seminole, OK",Seminole,OK,35.23,-96.68,8590
+"Sheridan, WY",Sheridan,WY,44.8,-106.96,15146
+"Sherman, TX",Sherman,TX,33.64,-96.61,30413
+"Shreveport, LA",Shreveport,LA,32.51,-93.75,205820
+"Sioux City, IA",Sioux City,IA,42.49,-96.39,82003
+"Sioux Falls, SD",Sioux Falls,SD,43.54,-96.73,81343
+"South Bend, IN",South Bend,IN,41.68,-86.25,109727
+"Spokane, WA",Spokane,WA,47.67,-117.41,171300
+"Springfield, IL",Springfield,IL,39.8,-89.65,100054
+"Springfield, MA",Springfield,MA,42.1,-72.59,152319
+"Springfield, MO",Springfield,MO,37.22,-93.29,133116
+"Springfield, OH",Springfield,OH,39.92,-83.81,72563
+"Staunton, VA",Staunton,VA,38.15,-79.07,21857
+"Sterling, CO",Sterling,CO,40.62,-103.22,11385
+"Steubenville, OH",Steubenville,OH,40.36,-80.62,26400
+"Stevens Point, WI",Stevens Point,WI,44.52,-89.57,22970
+"Stockton, CA",Stockton,CA,37.96,-121.29,149779
+"Stroudsburg, PA",Stroudsburg,PA,40.99,-75.19,5148
+"Sumter, SC",Sumter,SC,33.92,-80.35,24890
+"Swainsboro, GA",Swainsboro,GA,32.6,-82.34,7602
+"Syracuse, NY",Syracuse,NY,43.05,-76.15,170105
+"Tacoma, WA",Tacoma,WA,47.24,-122.43,158501
+"Tallahassee, FL",Tallahassee,FL,30.45,-84.28,81548
+"Tampa, FL",Tampa,FL,27.95,-82.45,271523
+"Terre Haute, IN",Terre Haute,IN,39.47,-87.41,61125
+"Texarkana, TX",Texarkana,TX,33.43,-94.05,31271
+"Toledo, OH",Toledo,OH,41.65,-83.54,354635
+"Topeka, KS",Topeka,KS,39.05,-95.67,115266
+"Toronto, ON",Toronto,ON,43.65,-79.38,599217
+"Traverse City, MI",Traverse City,MI,44.76,-85.63,15516
+"Trenton, NJ",Trenton,NJ,40.23,-74.77,92124
+"Trinidad, CO",Trinidad,CO,37.17,-104.51,9663
+"Tucson, AZ",Tucson,AZ,32.22,-110.97,330537
+"Tulsa, OK",Tulsa,OK,36.16,-95.91,360919
+"Tupelo, MS",Tupelo,MS,34.26,-88.71,23905
+"Tuscaloosa, AL",Tuscaloosa,AL,33.21,-87.57,75211
+"Twin Falls, ID",Twin Falls,ID,42.56,-114.47,26209
+"Tyler, TX",Tyler,TX,32.35,-95.3,70508
+"Uniontown, PA",Uniontown,PA,39.9,-79.73,14510
+"Utica, NY",Utica,NY,43.11,-75.23,75632
+"Valdosta, GA",Valdosta,GA,30.83,-83.28,37596
+"Valley City, ND",Valley City,ND,46.92,-98.01,7774
+"Vancouver, BC",Vancouver,BC,49.27,-123.12,414281
+"Vicksburg, MS",Vicksburg,MS,32.35,-90.88,25434
+"Victoria, TX",Victoria,TX,28.81,-97.01,50695
+"Vincennes, IN",Vincennes,IN,38.68,-87.53,20857
+"Waco, TX",Waco,TX,31.55,-97.14,101261
+"Walla Walla, WA",Walla Walla,WA,46.07,-118.33,25618
+"Warren, PA",Warren,PA,41.85,-79.14,12146
+"Washington, DC",Washington,DC,38.89,-77.03,638432
+"Waterbury, CT",Waterbury,CT,41.55,-73.05,103266
+"Waterloo, IA",Waterloo,IA,42.5,-92.34,75985
+"Watertown, NY",Watertown,NY,43.98,-75.92,27861
+"Watertown, SD",Watertown,SD,44.9,-97.11,15649
+"Waukegan, IL",Waukegan,IL,42.36,-87.83,67653
+"Wausau, WI",Wausau,WI,44.96,-89.64,32426
+"Waycross, GA",Waycross,GA,31.22,-82.35,19371
+"Weed, CA",Weed,CA,41.42,-122.39,2879
+"Wenatchee, WA",Wenatchee,WA,47.42,-120.32,17257
+"West Palm Beach, FL",West Palm Beach,FL,26.72,-80.05,63305
+"Wheeling, WV",Wheeling,WV,40.07,-80.72,43070
+"Wichita, KS",Wichita,KS,37.69,-97.34,279835
+"Wichita Falls, TX",Wichita Falls,TX,33.9,-98.49,94201
+"Williamson, WV",Williamson,WV,37.68,-82.28,5219
+"Williamsport, PA",Williamsport,PA,41.25,-77.0,33401
+"Williston, ND",Williston,ND,48.15,-103.62,13336
+"Wilmington, DE",Wilmington,DE,39.75,-75.55,70195
+"Wilmington, NC",Wilmington,NC,34.24,-77.92,139238
+"Winchester, VA",Winchester,VA,39.19,-78.16,20217
+"Winnipeg, MB",Winnipeg,MB,49.88,-97.15,564473
+"Winston-Salem, NC",Winston-Salem,NC,36.1,-80.25,131885
+"Wisconsin Dells, WI",Wisconsin Dells,WI,43.63,-89.77,2521
+"Worcester, MA",Worcester,MA,42.27,-71.8,161799
+"Yakima, WA",Yakima,WA,46.6,-120.51,49826
+"Yankton, SD",Yankton,SD,42.88,-97.39,12011
+"Youngstown, OH",Youngstown,OH,41.1,-80.65,115436

@@ -72,6 +72,7 @@ codes! {
     // Structure.
     E_ENDPOINTS_UNDECLARED => Error, "the edge table has no source and target roles";
     E_ID_UNDECLARED => Error, "the node table has no identifier role";
+    E_TABLE_ROLE_UNDECLARED => Error, "a layers, node_spells, or node_changes table lacks one of its required roles";
     E_ENDPOINT_TYPE => Error, "the source and target columns must be integer, double, or text and of the same type";
     E_ID_TYPE => Error, "the node identifier column must have the same type as the edge endpoints";
     E_MISSING_ENDPOINT => Error, "edge endpoints must not be missing";
@@ -84,6 +85,8 @@ codes! {
     E_PARALLEL_DECLARED => Error, "parallel edges are present but were declared absent";
     E_MODE_WITHIN => Error, "edges within a mode are present but edges were declared to join different modes only";
     E_MODE_UNDECLARED => Error, "edges were declared to join different modes, but no mode role is set";
+    E_INTERLAYER_DECLARED => Error, "interlayer edges between different actors are present but were declared absent (couplings_only)";
+    E_EGO_UNKNOWN => Error, "egos were declared to be nodes, but some ego identifiers are not node identifiers";
     E_DECLARATION_CONFLICT => Error, "the declarations contradict each other";
     // Weights.
     E_WEIGHT_TYPE => Error, "the weight column must be numeric";
@@ -98,12 +101,25 @@ codes! {
     E_RELATION_MISSING => Error, "every edge must belong to a relation";
     E_SIGN_TYPE => Error, "the sign column must be integer or logical";
     E_SIGN_VALUE => Error, "signs must be -1 or 1 (or FALSE and TRUE) and not missing";
+    // Layers.
+    E_LAYER_ROLE_PAIR => Error, "the source_layer and target_layer roles must be set together";
+    E_LAYER_TYPE => Error, "layer columns must be discrete (text, integer, or logical) and of one type";
+    E_LAYER_MISSING => Error, "every edge needs a layer at each endpoint";
+    E_LAYER_UNKNOWN => Error, "edge layers must be identifiers in the layer table";
+    E_LAYER_ID_MISSING => Error, "layer identifiers must not be missing";
+    E_LAYER_ID_DUPLICATE => Error, "layer identifiers must be unique";
+    // Egos.
+    E_EGO_TYPE => Error, "ego columns must be text or integer and of one type";
+    E_EGO_MISSING => Error, "every node and edge needs an ego";
+    E_EGO_SELF => Error, "a node that is an ego must belong to its own ego network";
+    E_EGO_MISMATCH => Error, "an edge must join two nodes of one ego, and carry that ego";
     // Time.
     E_TIME_TYPE => Error, "time columns must be numeric";
     E_TIME_MISSING => Error, "edge times must not be missing";
     E_TIME_NOT_FINITE => Error, "edge times must be finite";
     E_SPELL_ORDER => Error, "an edge must not end before it starts";
     E_NODE_SPELL_ORDER => Error, "a node must not leave before it arrives";
+    E_NODE_SPELL_OVERLAP => Error, "the presence spells of one node must not overlap";
     E_SPELL_OUTSIDE_NODE => Error, "an edge can only be active while both of its endpoints are present";
     E_WAVE_TYPE => Error, "the wave column must be integer";
     E_WAVE_MISSING => Error, "every edge must belong to a wave";
@@ -115,6 +131,7 @@ codes! {
     E_CRS_MISMATCH => Error, "the node and edge geometries must share one coordinate reference system";
     // Missing-data roles.
     E_MISSING_ROLE_TYPE => Error, "missing-data roles must be logical columns without missing values";
+    E_MISSING_CONFLICT => Error, "a pair cannot be both an observed tie and an unobserved pair";
     // Notes.
     N_NODES_ADDED => Note, "nodes were added from edge endpoints absent from the node table";
     N_ISOLATES => Note, "some nodes have no edges";
