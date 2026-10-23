@@ -28,6 +28,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+      - name: No R function defined twice
+        run: python3 tools/check_r_functions.py
       - name: Format
         run: cargo fmt --all --check
       - name: Lint
@@ -112,6 +114,11 @@ jobs:
           set -o pipefail
           mkdir -p ci-logs
           python validation/qap_check.py 2>&1 | tee ci-logs/qap.log
+      - name: Layout properties
+        run: |
+          set -o pipefail
+          mkdir -p ci-logs
+          python validation/layout_check.py 2>&1 | tee ci-logs/layout.log
       - name: Benchmarks agree with NetworkX (small networks)
         run: |
           set -o pipefail
