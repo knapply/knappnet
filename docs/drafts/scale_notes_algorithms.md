@@ -4,7 +4,9 @@ Working notes for docs/SCALE.md (kernel ledger). Scope: Louvain, fast
 greedy, leading eigenvector, Girvan-Newman, maximal cliques, factions and
 core-periphery, structural equivalence and CONCOR, REGE (CATREGE), stress
 layouts, QAP/MRQAP, random graphs, dense linear algebra. Path and
-traversal kernels are in the paths workstream's notes.
+traversal kernels are in the paths workstream's notes; Leiden, Infomap,
+label propagation, Walktrap and the other community methods in
+scale_notes_communities.md.
 
 Measurements: `cargo run --release --example bench_models` on a 2-vCPU
 Xeon (2.1 GHz, AVX-512 capable), 7 GB RAM, one thread unless stated; heap

@@ -16,6 +16,14 @@
 //! returned. Candidate mergers are kept in a priority queue, and each
 //! group's ties to other groups in an ordered map that is merged into the
 //! larger of the two maps, as in Clauset, Newman, and Moore (2004).
+//! Queue entries are re-evaluated lazily: a merger only lowers the gains of
+//! the merged group's other ties (its total degree grew), so a stored gain
+//! is an upper bound unless a tie weight changed, and every change of a
+//! tie weight pushes a fresh entry. An entry is acted on only when its
+//! stored gain equals the current one; otherwise it is pushed again with
+//! the current gain. This chooses the same mergers, in the same order, as
+//! updating every affected entry at once, without the O(degree) queue
+//! updates per merger that dominate on networks with hubs.
 //!
 //! Conventions:
 //! - Undirected networks only (igraph's `cluster_fast_greedy()`; NetworkX's
