@@ -20,12 +20,18 @@
 //!   most strongly tied to those already placed), each to an existing
 //!   group or to a new one (groups opened in order, which removes the
 //!   symmetry between group labels), best-scoring choices first.
-//! - Bound: with the placed nodes fixed, each unplaced node can gain at
-//!   most max(0, max over groups of its total B to the group's placed
-//!   members), and each pair of unplaced nodes at most max(0, B_ij); a
-//!   branch whose value plus these gains cannot beat the best partition
-//!   found so far is cut. The starting incumbent is the better of
-//!   singletons and one group.
+//! - Russian doll search (Verfaillie, Lemaitre, and Schiex 1996,
+//!   `verfaillie1996russian`): the suffixes of the order (the last 2
+//!   nodes, the last 3, ..., all) are solved in turn, and the optimum
+//!   F*(i) of the suffix starting at node i bounds the pairs among the
+//!   unplaced nodes. With the nodes before i placed, a branch can gain at
+//!   most F*(i) plus, for each unplaced node, max(0, max over groups of
+//!   its total B to the group's placed members); a branch whose value
+//!   plus this bound cannot beat the best partition found so far is cut.
+//! - Starting incumbents: the suffix's first node alone beside the
+//!   optimum of the next suffix, and (undirected networks) the best of
+//!   five Leiden runs ([`super::leiden`]) restricted to the suffix. They
+//!   only speed the search; the result is optimal either way.
 //!
 //! With whole-number weights and gamma = 1 every quantity is an integer
 //! multiple of 1/m' and the search compares them exactly.
@@ -37,11 +43,15 @@
 //!   non-negative, parallel edges add up, and self-loops only add a
 //!   constant.
 //! - Size limit: at most 60 nodes in any component, and at most 10^9
-//!   branch-and-bound steps in all; beyond either the function returns an
-//!   error rather than a partition that might not be optimal. Sparse
-//!   networks of 30 to 40 nodes typically take well under a second;
-//!   dense ones take much longer.
-//! - Ties between optimal partitions go to the first found. Nodes of
+//!   branch-and-bound steps in all (a few minutes); beyond either the
+//!   function returns an error rather than a partition that might not be
+//!   optimal. Running time depends on structure more than size: Zachary's
+//!   karate club (34 nodes) and the Southern women (32) take well under a
+//!   second, a dense G(30, 0.6) about 40 seconds, while sparse random
+//!   graphs of 40 to 50 nodes, with little community structure, may not
+//!   finish within the step limit.
+//! - Which of several optimal partitions is returned is unspecified (it
+//!   depends on the search order). Nodes of
 //!   degree zero are groups of their own. A network without edges has
 //!   modularity NaN and one group per node.
 //! - Groups are labelled 0, 1, ... in order of their first node.
@@ -54,6 +64,7 @@ use crate::metrics::community::modularity;
 /// Largest component the search accepts.
 pub const MAX_COMPONENT: usize = 60;
 const MAX_STEPS: u64 = 1_000_000_000;
+const WARM_STARTS: u64 = 5;
 
 /// Result of [`optimal_modularity`].
 #[derive(Debug, Clone, PartialEq)]
@@ -68,8 +79,10 @@ struct Search<'a> {
     /// Pair scores, dense k x k, in search order.
     b: &'a [f64],
     k: usize,
-    /// suffix[i]: sum of positive B over pairs among nodes i.. (search order).
-    suffix: Vec<f64>,
+    /// First node of the suffix being solved.
+    start: usize,
+    /// opt[i]: maximum of F over the nodes i.. alone (known for i > start).
+    opt: &'a [f64],
     group: Vec<usize>,
     /// gain[v * k + c]: total B from v to the placed members of group c.
     gain: Vec<f64>,
@@ -81,7 +94,7 @@ struct Search<'a> {
 
 impl Search<'_> {
     fn bound(&self, depth: usize) -> f64 {
-        let mut ub = self.suffix[depth];
+        let mut ub = self.opt[depth];
         for v in depth..self.k {
             let row = &self.gain[v * self.k..v * self.k + self.groups];
             ub += row.iter().copied().fold(0.0, f64::max);
@@ -110,7 +123,7 @@ impl Search<'_> {
             }
             return Ok(());
         }
-        if value + self.bound(depth) <= self.best {
+        if depth > self.start && value + self.bound(depth) <= self.best {
             return Ok(());
         }
         let v = depth;
@@ -214,6 +227,33 @@ pub fn optimal_modularity(g: &Graph, resolution: f64, weighted: bool) -> Result<
             )));
         }
     }
+    // A good starting incumbent prunes far more: the best of a few Leiden
+    // runs (undirected networks only, as Leiden requires). Its groups are
+    // connected, so it restricts to each component.
+    let warm: Option<Vec<usize>> = if g.is_directed() {
+        None
+    } else {
+        let mut best: Option<(f64, Vec<usize>)> = None;
+        for seed in 0..WARM_STARTS {
+            let r = super::leiden(
+                g,
+                &super::LeidenOptions {
+                    objective: super::LeidenObjective::Modularity,
+                    resolution,
+                    beta: 0.01,
+                    n_iterations: -1,
+                    weighted,
+                    node_weights: None,
+                    initial: None,
+                    seed,
+                },
+            )?;
+            if best.as_ref().map_or(true, |b| r.quality > b.0) {
+                best = Some((r.quality, r.membership));
+            }
+        }
+        best.map(|b| b.1)
+    };
     let mut label = vec![0usize; n];
     let mut next = 0usize;
     let mut steps = 0u64;
@@ -272,35 +312,52 @@ pub fn optimal_modularity(g: &Graph, resolution: f64, weighted: bool) -> Result<
             .flat_map(|&i| order.iter().map(move |&j| (i, j)))
             .map(|(i, j)| full[i][j])
             .collect();
-        let mut suffix = vec![0.0f64; k + 1];
-        for i in (0..k).rev() {
-            let row: f64 = ((i + 1)..k).map(|j| b[i * k + j].max(0.0)).sum();
-            suffix[i] = suffix[i + 1] + row;
+        // Russian doll search: solve the suffixes start.., start = k - 2
+        // down to 0, each bounded by the optima of the shorter suffixes.
+        let warm_value = |wg: &[usize], start: usize| -> f64 {
+            (start..k)
+                .flat_map(|i| ((i + 1)..k).map(move |j| (i, j)))
+                .filter(|&(i, j)| wg[i] == wg[j])
+                .map(|(i, j)| b[i * k + j])
+                .sum()
+        };
+        let warm_group: Option<Vec<usize>> = warm
+            .as_ref()
+            .map(|w| order.iter().map(|&i| w[members[i]]).collect());
+        let mut opt = vec![0.0f64; k + 1];
+        let mut prev: Vec<usize> = (0..k).collect();
+        for start in (0..k - 1).rev() {
+            // Incumbents: `start` alone beside the best of start + 1.., and
+            // the warm start restricted to start...
+            let mut best_group = prev.clone();
+            best_group[start] = k + start;
+            let mut best = opt[start + 1];
+            if let Some(wg) = &warm_group {
+                let value = warm_value(wg, start);
+                if value > best {
+                    best = value;
+                    best_group.clone_from(wg);
+                }
+            }
+            let mut s = Search {
+                b: &b,
+                k,
+                start,
+                opt: &opt,
+                group: vec![0; k],
+                gain: vec![0.0; k * k],
+                groups: 0,
+                best,
+                best_group,
+                steps,
+            };
+            s.run(start, 0.0)?;
+            let (value, group) = (s.best, s.best_group);
+            steps = s.steps;
+            opt[start] = value;
+            prev = group;
         }
-        // Incumbent: the better of one group and singletons.
-        let together: f64 = (0..k)
-            .flat_map(|i| ((i + 1)..k).map(move |j| (i, j)))
-            .map(|(i, j)| b[i * k + j])
-            .sum();
-        let (best, best_group) = if together > 0.0 {
-            (together, vec![0; k])
-        } else {
-            (0.0, (0..k).collect())
-        };
-        let mut s = Search {
-            b: &b,
-            k,
-            suffix,
-            group: vec![0; k],
-            gain: vec![0.0; k * k],
-            groups: 0,
-            best,
-            best_group,
-            steps,
-        };
-        s.run(0, 0.0)?;
-        steps = s.steps;
-        let (groups, _) = crate::metrics::community::dense_labels(&s.best_group);
+        let (groups, _) = crate::metrics::community::dense_labels(&prev);
         let kg = groups.iter().copied().max().unwrap_or(0) + 1;
         for (pos, &i) in order.iter().enumerate() {
             label[members[i]] = next + groups[pos];
