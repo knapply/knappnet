@@ -2,8 +2,8 @@
 //! pivots for large components.
 //!
 //! Sources:
-//! - Stress majorization (Gansner, Koren, and North 2004,
-//!   `gansner2004graph`) minimizes stress(X) = sum_{i<j} w_ij
+//! - Stress majorization (Gansner, Koren, and North 2005,
+//!   `gansner2005graph`) minimizes stress(X) = sum_{i<j} w_ij
 //!   (||x_i - x_j|| - d_ij)^2 with w_ij = d_ij^-2 (Kamada and Kawai 1989,
 //!   `kamada1989algorithm`). Holding every node but i fixed, the majorizing
 //!   function of Gansner et al. is minimized by the localized update
@@ -95,7 +95,7 @@ pub enum StressAlgorithm {
     /// stress beyond.
     #[default]
     Auto,
-    /// Stress majorization on all pairs (Gansner, Koren, and North 2004).
+    /// Stress majorization on all pairs (Gansner, Koren, and North 2005).
     Full,
     /// Sparse stress with pivots (Ortmann, Klimenta, and Brandes 2017).
     Sparse,

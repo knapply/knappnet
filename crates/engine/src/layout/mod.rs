@@ -2,7 +2,7 @@
 //!
 //! | Function | Method | Cost | Source |
 //! |---|---|---|---|
-//! | [`stress_layout`] | stress majorization on all pairs (the default up to [`FULL_STRESS_AUTO_MAX`] nodes per component) | O(n^2) memory and time per iteration | Gansner, Koren, and North 2004 (`gansner2004graph`) |
+//! | [`stress_layout`] | stress majorization on all pairs (the default up to [`FULL_STRESS_AUTO_MAX`] nodes per component) | O(n^2) memory and time per iteration | Gansner, Koren, and North 2005 (`gansner2005graph`) |
 //! | [`stress_layout`] | sparse stress with pivots (the default for larger components) | O(k n + m) per iteration | Ortmann, Klimenta, and Brandes 2017 (`ortmann2017sparse`) |
 //! | [`fr_layout`] | force-directed placement, exact or with a Barnes-Hut quadtree | O(n^2) or O(n log n) per iteration | Fruchterman and Reingold 1991 (`fruchterman1991graph`), Barnes and Hut 1986 (`barnes1986hierarchical`) |
 //! | [`circle_layout`], [`star_layout`], [`grid_layout`] | fixed positions | O(n) | |

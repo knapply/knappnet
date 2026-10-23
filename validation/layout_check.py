@@ -22,8 +22,10 @@ validation/fixtures/:
    NetworkX's shortest paths, after scaling each layout by the factor that
    minimizes its stress (NetworkX rescales its output to [-1, 1]). The
    engine's own stress function must agree with this formula.
-5. Sparse stress against stress on all pairs, on fixtures and on larger
-   generated graphs, reported as the ratio of their stresses.
+5. Sparse stress against stress on all pairs, reported as the ratio of
+   their stresses: on fixtures with n/5 pivots (a deliberately coarse
+   approximation; with every node a pivot the two models coincide), and on
+   larger generated graphs with the default 100 pivots.
 6. Simple layouts: the circle lies on the unit circle, tree edges join
    consecutive levels in trees, two-mode rows follow the node types.
 
@@ -235,7 +237,7 @@ def check_fixtures() -> None:
 def check_quality() -> None:
     print("== Stress on the largest component (lower is better)")
     print(f"   {'fixture':<24}{'n':>5}{'engine':>12}{'networkx kk':>14}{'ratio':>8}"
-          f"{'sparse/full':>13}")
+          f"{'sparse k=n/5':>15}")
     for name in fixture_names():
         fx = load_fixture(name)
         n, src, tgt, w = largest_component(fx)
@@ -260,7 +262,7 @@ def check_quality() -> None:
             ratio = s_ours / s_kk if s_kk > 0 else (1.0 if s_ours < 1e-12 else math.inf)
             label = name + (" (w)" if weighted else "")
             print(f"   {label:<24}{n:>5}{s_ours:>12.4f}{s_kk:>14.4f}{ratio:>8.3f}"
-                  f"{(s_sparse / s_ours if s_ours > 0 else 1.0):>13.3f}")
+                  f"{(s_sparse / s_ours if s_ours > 0 else 1.0):>15.3f}")
             check(s_ours <= ALLOWANCE * s_kk + 1e-9,
                   f"{label}: stress {s_ours:.6g} worse than NetworkX {s_kk:.6g}")
 

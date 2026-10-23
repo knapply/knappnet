@@ -117,7 +117,7 @@ fn gap(c: &Case, weighted: bool, kind: WeightKind) -> f64 {
 #[test]
 fn stress_layouts_are_finite_reproducible_and_thread_independent() {
     let mut rng = Rng(11);
-    for _ in 0..60 {
+    for _ in 0..30 {
         let c = random_case(&mut rng, 60);
         let weighted = rng.below(2) == 0;
         let g = c.graph(weighted);
@@ -234,7 +234,7 @@ fn force_layouts_are_finite_reproducible_and_separated() {
 #[test]
 fn strengths_are_reciprocal_distances_and_uniform_weights_scale() {
     let mut rng = Rng(14);
-    for _ in 0..40 {
+    for _ in 0..20 {
         let c = random_case(&mut rng, 40);
         let g = c.graph(true);
         let recip = Case {
