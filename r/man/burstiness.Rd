@@ -2,6 +2,11 @@
 \alias{burstiness}
 \alias{inter_event_times}
 \title{Inter-event times and burstiness}
+\description{
+\code{inter_event_times()} lists the times between consecutive events of
+each node or pair of nodes; \code{burstiness()} summarizes them with Goh
+and Barabási's (2008) burstiness and memory coefficients.
+}
 \usage{
 burstiness(x, by = c("node", "pair"), mode = c("all", "out", "in"))
 
@@ -12,19 +17,6 @@ inter_event_times(x, by = c("node", "pair"), mode = c("all", "out", "in"))
 \item{by}{\code{"node"} or \code{"pair"}.}
 \item{mode}{For nodes of directed networks: \code{"all"}, \code{"out"},
 or \code{"in"}. Ignored for pairs and for undirected networks.}
-}
-\value{
-\code{inter_event_times()} returns a data frame with the node (or the
-pair, as \code{from} and \code{to}) and \code{gap}, the inter-event time
-in the unit of the times, ordered by node (or pair) and then time.
-\code{burstiness()} returns a data frame with one row per node (aligned
-with \code{x$nodes}) or per pair (in order of first contact), with
-\code{events}, \code{burstiness}, and \code{memory}.
-}
-\description{
-\code{inter_event_times()} lists the times between consecutive events of
-each node or pair of nodes; \code{burstiness()} summarizes them with Goh
-and Barabási's (2008) burstiness and memory coefficients.
 }
 \details{
 The events of a node are the start times of its contacts: all of them
@@ -53,6 +45,14 @@ with fewer than two inter-event times or when all are 0, and \eqn{M} with
 fewer than three or when either sequence is constant. Neither coefficient
 corrects for the number of events (Kim and Jo 2016 discuss finite-size
 effects), so compare nodes with similar activity.
+}
+\value{
+\code{inter_event_times()} returns a data frame with the node (or the
+pair, as \code{from} and \code{to}) and \code{gap}, the inter-event time
+in the unit of the times, ordered by node (or pair) and then time.
+\code{burstiness()} returns a data frame with one row per node (aligned
+with \code{x$nodes}) or per pair (in order of first contact), with
+\code{events}, \code{burstiness}, and \code{memory}.
 }
 \references{
 Goh, K.-I., & Barabási, A.-L. (2008). Burstiness and memory in complex

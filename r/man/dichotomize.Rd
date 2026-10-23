@@ -1,6 +1,13 @@
 \name{dichotomize}
 \alias{dichotomize}
 \title{Dichotomize a weighted network}
+\description{
+Keeps the edges whose weight passes a test against a threshold and drops
+the weight role, giving a binary network (UCINET: Transform > Dichotomize,
+with the same cut-off operators; Hanneman and Riddle 2005, chapter 6). Edges
+that fail the test are removed; the weight column stays on the surviving
+edges as an ordinary attribute, and every other column is kept.
+}
 \usage{
 dichotomize(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="), column = NULL)
 }
@@ -14,13 +21,6 @@ dichotomize(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="), column =
 \code{NULL} uses the network's weight column.}
 }
 \value{An unweighted netframe.}
-\description{
-Keeps the edges whose weight passes a test against a threshold and drops
-the weight role, giving a binary network (UCINET: Transform > Dichotomize,
-with the same cut-off operators; Hanneman and Riddle 2005, chapter 6). Edges
-that fail the test are removed; the weight column stays on the surviving
-edges as an ordinary attribute, and every other column is kept.
-}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

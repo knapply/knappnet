@@ -3,6 +3,17 @@
 \alias{print.saom_gof}
 \alias{plot.saom_gof}
 \title{Goodness of fit of a SAOM by auxiliary statistics}
+\description{
+Compares a statistic of the observed networks (summed over the waves after
+the first) with its distribution over the networks simulated in phase 3 of
+the estimation, as proposed by Lospinoso and Snijders (2019) and
+implemented in RSiena's \code{sienaGOF()}. The discrepancy is the
+Mahalanobis distance of the observed statistic from the mean of the
+simulated ones, using a generalized (Moore-Penrose) inverse of their
+covariance matrix, and the p-value is the proportion of simulations whose
+own distance is at least as large. A small p-value means the model does
+not reproduce this feature of the data.
+}
 \usage{
 saom_gof(fit, statistic = c("indegree", "outdegree", "triad_census", "geodesic"),
          levels = NULL, cumulative = TRUE)
@@ -32,17 +43,6 @@ An object of class \code{"saom_gof"} with \code{observed}, \code{simulated}
 \code{distance} (the observed Mahalanobis distance), and \code{distances}
 (one per simulation). \code{plot()} draws the simulated distributions with
 the observed values as a red line and returns \code{x} invisibly.
-}
-\description{
-Compares a statistic of the observed networks (summed over the waves after
-the first) with its distribution over the networks simulated in phase 3 of
-the estimation, as proposed by Lospinoso and Snijders (2019) and
-implemented in RSiena's \code{sienaGOF()}. The discrepancy is the
-Mahalanobis distance of the observed statistic from the mean of the
-simulated ones, using a generalized (Moore-Penrose) inverse of their
-covariance matrix, and the p-value is the proportion of simulations whose
-own distance is at least as large. A small p-value means the model does
-not reproduce this feature of the data.
 }
 \references{
 Lospinoso, J., and Snijders, T. A. B. (2019). Goodness of fit for

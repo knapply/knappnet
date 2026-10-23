@@ -1,6 +1,12 @@
 \name{centralization}
 \alias{centralization}
 \title{Freeman centralization}
+\description{
+How far the distribution of a centrality is from the most unequal one
+possible: the sum of differences between the largest score and every score,
+divided by the largest value that sum can take in a network of the same
+size, which a star attains (Freeman 1978).
+}
 \usage{
 centralization(x, measure = c("degree", "betweenness", "closeness", "eigenvector"),
                mode = NULL,
@@ -27,13 +33,6 @@ centralization index, so \code{"networkx"} is an error.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A number.}
-\description{
-How far the distribution of a centrality is from the most unequal one
-possible: the sum of differences between the largest score and every score,
-divided by the largest value that sum can take in a network of the same
-size, which a star attains (Freeman 1978).
 }
 \details{
 Degree uses edge counts and betweenness is unnormalized shortest-path
@@ -76,11 +75,13 @@ centralization as a percentage in some routines; this function always
 returns a proportion. UCINET versions before 6.849 used \eqn{(n-1)(n-2)} for
 directed degree centralization.
 }
+\value{A number.}
 \references{
 Freeman, L. C. (1978). Centrality in social networks: Conceptual
 clarification. \emph{Social Networks}, 1(3), 215-239.
 \doi{10.1016/0378-8733(78)90021-7}
 }
+\seealso{\code{\link{centralize}} for the index of any vector of scores.}
 \examples{
 star <- netframe(data.frame(from = 1, to = 2:6), directed = FALSE)
 centralization(star)
@@ -104,4 +105,3 @@ centralization(netframe(data.frame(from = 1, to = 2), nodes = data.frame(id = 1:
 # Centralization of any scores, given the theoretical maximum:
 centralize(degree(star), theoretical_max = 5 * 4)
 }
-\seealso{\code{\link{centralize}} for the index of any vector of scores.}

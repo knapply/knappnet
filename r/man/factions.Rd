@@ -1,6 +1,19 @@
 \name{factions}
 \alias{factions}
 \title{Factions}
+\description{
+Partitions the nodes into \code{k} groups that best match the ideal of
+cohesive, mutually separate groups, as UCINET's Network > Subgroups >
+Factions routine does (Borgatti, Everett, and Freeman 2002; Hanneman and
+Riddle 2005, chapter 11). The ideal pattern has every pair within a group
+tied and no pair across groups tied. With \code{fit = "errors"} the
+partition minimizes the number of errors, absent ties within groups plus
+present ties between groups (the Hamming distance to the ideal, the
+criterion of a binary blockmodel with complete diagonal blocks; Doreian,
+Batagelj, and Ferligoj 2005); with \code{fit = "correlation"} it maximizes
+the Pearson correlation between the adjacency matrix and the ideal pattern
+(the criterion Borgatti and Everett 1999 use for core-periphery models).
+}
 \usage{
 factions(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
          max_stall = 200L, tenure = NULL, seed = NULL, threads = 0L)
@@ -20,25 +33,6 @@ left); \code{NULL} chooses \code{max(7, n / 4)}.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-An integer vector of group labels aligned with the rows of \code{x$nodes},
-numbered 1, 2, ... in order of first appearance, with the number of errors
-in attribute \code{"errors"} and the correlation with the ideal pattern in
-attribute \code{"correlation"}.
-}
-\description{
-Partitions the nodes into \code{k} groups that best match the ideal of
-cohesive, mutually separate groups, as UCINET's Network > Subgroups >
-Factions routine does (Borgatti, Everett, and Freeman 2002; Hanneman and
-Riddle 2005, chapter 11). The ideal pattern has every pair within a group
-tied and no pair across groups tied. With \code{fit = "errors"} the
-partition minimizes the number of errors, absent ties within groups plus
-present ties between groups (the Hamming distance to the ideal, the
-criterion of a binary blockmodel with complete diagonal blocks; Doreian,
-Batagelj, and Ferligoj 2005); with \code{fit = "correlation"} it maximizes
-the Pearson correlation between the adjacency matrix and the ideal pattern
-(the criterion Borgatti and Everett 1999 use for core-periphery models).
 }
 \details{
 The adjacency matrix is binary: parallel edges count once, self-loops are
@@ -67,6 +61,12 @@ missing tie within a group and a present tie between groups alike, while
 the correlation weighs them by how rare ties are and by the sizes of the
 groups, so on a sparse network it tolerates missing ties within a large
 group more readily.
+}
+\value{
+An integer vector of group labels aligned with the rows of \code{x$nodes},
+numbered 1, 2, ... in order of first appearance, with the number of errors
+in attribute \code{"errors"} and the correlation with the ideal pattern in
+attribute \code{"correlation"}.
 }
 \references{
 Borgatti, S. P., Everett, M. G., & Freeman, L. C. (2002). \emph{UCINET for

@@ -1,6 +1,13 @@
 \name{snapshots}
 \alias{snapshots}
 \title{Snapshots of a temporal network}
+\description{
+Splits a temporal network into a series of windows, sliding (\code{step}
+smaller than \code{width}), tumbling (\code{step} equal to \code{width},
+the default), or with gaps (\code{step} larger), or between given
+\code{breaks}. Each window \eqn{[a, b)} holds the contacts active in it,
+as in \code{\link{network_window}}.
+}
 \usage{
 snapshots(x, width = NULL, step = width, breaks = NULL, from = NULL,
   to = NULL, nodes = c("all", "present", "active"))
@@ -19,18 +26,6 @@ every contact falls in some window.}
 \item{nodes}{Which nodes each snapshot keeps: \code{"all"} (the default),
 \code{"present"}, or \code{"active"}; see \code{\link{network_at}}.}
 }
-\value{
-A list of temporal networks, one per window, with attribute
-\code{"windows"}, a data frame of window \code{start} and \code{end}
-times.
-}
-\description{
-Splits a temporal network into a series of windows, sliding (\code{step}
-smaller than \code{width}), tumbling (\code{step} equal to \code{width},
-the default), or with gaps (\code{step} larger), or between given
-\code{breaks}. Each window \eqn{[a, b)} holds the contacts active in it,
-as in \code{\link{network_window}}.
-}
 \details{
 Contacts are sorted by time once and the whole series is computed in one
 pass, with a heap of active contacts, in \eqn{O(m \log m)}{O(m log m)}
@@ -40,6 +35,11 @@ instantaneous contact at \eqn{t} is in the windows with
 \eqn{a \le t < b}{a <= t < b}. Snapshots keep every column and role of
 \code{x}, with contacts in their original order and not clipped to the
 window.
+}
+\value{
+A list of temporal networks, one per window, with attribute
+\code{"windows"}, a data frame of window \code{start} and \code{end}
+times.
 }
 \seealso{
 \code{\link{rolling}} to apply a measure to every snapshot,

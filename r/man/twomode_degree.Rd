@@ -5,6 +5,11 @@
 \alias{twomode_eigenvector}
 \alias{twomode_density}
 \title{Centrality and density of two-mode networks}
+\description{
+Degree, closeness, betweenness, and eigenvector centrality of the nodes of a
+two-mode network, normalized as Borgatti and Everett (1997) and Borgatti and
+Halgin (2011) describe, and two-mode density.
+}
 \usage{
 twomode_degree(x, normalized = TRUE)
 
@@ -26,15 +31,6 @@ twomode_density(x)
 no score (scaled so the largest is 1) changes by more than \code{tol}.}
 \item{max_iter}{Iteration cap. Not converging within it is an error.}
 \item{threads}{Number of threads; \code{0} uses all available cores.}
-}
-\value{
-\code{twomode_density()} returns a number; the others return a numeric
-vector aligned with the rows of \code{x$nodes}.
-}
-\description{
-Degree, closeness, betweenness, and eigenvector centrality of the nodes of a
-two-mode network, normalized as Borgatti and Everett (1997) and Borgatti and
-Halgin (2011) describe, and two-mode density.
 }
 \details{
 The scores are those of the bipartite graph; only the normalization differs
@@ -90,6 +86,10 @@ matches \code{bipartite.density()}. Raw scores match igraph's
 simplified network, and eigenvector scores match igraph's
 \code{eigen_centrality()} rescaled within each mode. UCINET reports the same
 normalized scores as percentages.
+}
+\value{
+\code{twomode_density()} returns a number; the others return a numeric
+vector aligned with the rows of \code{x$nodes}.
 }
 \references{
 Borgatti, S. P., & Everett, M. G. (1997). Network analysis of 2-mode data.

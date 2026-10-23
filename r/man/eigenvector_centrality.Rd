@@ -1,6 +1,10 @@
 \name{eigenvector_centrality}
 \alias{eigenvector_centrality}
 \title{Eigenvector centrality}
+\description{
+Each node's score is proportional to the sum of its neighbors' scores: the
+principal eigenvector of the adjacency matrix (Bonacich 1972, 1987).
+}
 \usage{
 eigenvector_centrality(x, mode = NULL, weighted = NULL, scale = NULL,
                        convention = c("igraph", "networkx", "sna", "ucinet"),
@@ -29,11 +33,6 @@ undirected networks). Not converging within it is an error.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Each node's score is proportional to the sum of its neighbors' scores: the
-principal eigenvector of the adjacency matrix (Bonacich 1972, 1987).
 }
 \details{
 Undirected networks (and \code{mode = "all"}) are solved with the Lanczos
@@ -81,6 +80,7 @@ Results match igraph's \code{eigen_centrality()}, NetworkX's
 \code{eigenvector_centrality_numpy()}, and sna's \code{evcent()} to within
 their convergence tolerances on connected networks.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Bonacich, P. (1972). Factoring and weighting approaches to status scores and
 clique identification. \emph{Journal of Mathematical Sociology}, 2(1),

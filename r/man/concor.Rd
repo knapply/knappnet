@@ -1,6 +1,12 @@
 \name{concor}
 \alias{concor}
 \title{CONCOR blockmodel}
+\description{
+Partitions nodes into positions with CONCOR (Breiger, Boorman, and Arabie
+1975): the matrix of profile correlations is correlated with itself
+repeatedly until its entries reach +1 or -1, which splits the nodes in two.
+Each block is split again, \code{depth} times in all.
+}
 \usage{
 concor(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
        threads = 0L)
@@ -16,14 +22,6 @@ column.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{An integer vector of block numbers (starting at 1) aligned with the
-rows of \code{x$nodes}.}
-\description{
-Partitions nodes into positions with CONCOR (Breiger, Boorman, and Arabie
-1975): the matrix of profile correlations is correlated with itself
-repeatedly until its entries reach +1 or -1, which splits the nodes in two.
-Each block is split again, \code{depth} times in all.
 }
 \details{
 The starting correlations are those of
@@ -53,6 +51,8 @@ within \eqn{10^{-6}} of zero during the iteration: rounding error may then
 decide that node's block, so another implementation or platform may give a
 different partition.
 }
+\value{An integer vector of block numbers (starting at 1) aligned with the
+rows of \code{x$nodes}.}
 \references{
 Breiger, R. L., Boorman, S. A., & Arabie, P. (1975). An algorithm for
 clustering relational data with applications to social network analysis and

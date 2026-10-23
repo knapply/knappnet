@@ -1,6 +1,11 @@
 \name{triad_census}
 \alias{triad_census}
 \title{Triad census}
+\description{
+Counts every set of three nodes by its type among the 16 directed triad types
+of Holland and Leinhardt (1976), using the algorithm of Batagelj and Mrvar
+(2001).
+}
 \usage{
 triad_census(x, threads = 0L)
 }
@@ -10,17 +15,12 @@ triad_census(x, threads = 0L)
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A named numeric vector of 16 counts in the standard order.}
-\description{
-Counts every set of three nodes by its type among the 16 directed triad types
-of Holland and Leinhardt (1976), using the algorithm of Batagelj and Mrvar
-(2001).
-}
 \details{
 Self-loops are ignored and parallel edges are counted once. In an undirected
 network every edge is treated as mutual, as in igraph. Weights are ignored:
 the census is defined on binary ties.
 }
+\value{A named numeric vector of 16 counts in the standard order.}
 \references{
 Holland, P. W., & Leinhardt, S. (1976). Local structure in social networks.
 \emph{Sociological Methodology}, 7, 1-45. \doi{10.2307/270703}

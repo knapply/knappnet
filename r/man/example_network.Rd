@@ -2,6 +2,10 @@
 \alias{example_network}
 \alias{example_networks}
 \title{Example networks}
+\description{
+Classic networks for teaching, testing, and reproducing published analyses,
+returned as netframes. \code{example_networks()} lists them.
+}
 \usage{
 example_network(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
                          "karate", "florentine", "southern_women"),
@@ -18,15 +22,6 @@ example_networks()
 \item{weighted}{For networks with a tie-strength column, whether to use it as
 the network's weights (as strengths). Default \code{FALSE}, so measures
 treat the network as binary unless asked.}
-}
-\value{
-\code{example_network()}: a netframe (two-mode for
-\code{"noordin_affiliations"} and \code{"southern_women"}).
-\code{example_networks()}: a data frame describing each network.
-}
-\description{
-Classic networks for teaching, testing, and reproducing published analyses,
-returned as netframes. \code{example_networks()} lists them.
 }
 \details{
 \describe{
@@ -71,20 +66,10 @@ returned as netframes. \code{example_networks()} lists them.
     network.}
 }
 }
-\examples{
-example_networks()
-
-noordin <- example_network("noordin")
-noordin
-table(noordin$edges$relation)
-
-# One relation, as in the chapter examples of Everton (2012).
-trust <- example_network("noordin", relation = c("classmates", "friendship",
-                                                 "kinship", "soulmates"))
-head(sort(betweenness(trust), decreasing = TRUE))
-
-ji <- example_network("jemaah_islamiyah", weighted = TRUE)
-ji$nodes$role
+\value{
+\code{example_network()}: a netframe (two-mode for
+\code{"noordin_affiliations"} and \code{"southern_women"}).
+\code{example_networks()}: a data frame describing each network.
 }
 \references{
 Roberts, N., and Everton, S. F. (2011). Roberts and Everton Terrorist Data:
@@ -119,4 +104,19 @@ duality of persons and their algebras. \emph{Social Networks}, 8(3), 215-256.
 
 Davis, A., Gardner, B. B., and Gardner, M. R. (1941). \emph{Deep South: A
 Social Anthropological Study of Caste and Class}. University of Chicago Press.
+}
+\examples{
+example_networks()
+
+noordin <- example_network("noordin")
+noordin
+table(noordin$edges$relation)
+
+# One relation, as in the chapter examples of Everton (2012).
+trust <- example_network("noordin", relation = c("classmates", "friendship",
+                                                 "kinship", "soulmates"))
+head(sort(betweenness(trust), decreasing = TRUE))
+
+ji <- example_network("jemaah_islamiyah", weighted = TRUE)
+ji$nodes$role
 }

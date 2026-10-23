@@ -1,6 +1,10 @@
 \name{saom_control}
 \alias{saom_control}
 \title{Settings of the SAOM estimation algorithm}
+\description{
+Settings of the three-phase Robbins-Monro algorithm used by
+\code{\link{saom_fit}}, with RSiena's defaults.
+}
 \usage{
 saom_control(conditional = TRUE, nsub = 4, n3 = 1000, n1 = NULL, firstg = 0.2,
              reduceg = 0.5, diagonalize = 0.2, truncation = 5, theta_bound = 50,
@@ -42,10 +46,6 @@ for \eqn{n} actors).}
 }
 \value{
 A list of class \code{"saom_control"}.
-}
-\description{
-Settings of the three-phase Robbins-Monro algorithm used by
-\code{\link{saom_fit}}, with RSiena's defaults.
 }
 \seealso{
 \code{\link{saom_fit}}

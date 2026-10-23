@@ -1,6 +1,12 @@
 \name{coreness}
 \alias{coreness}
 \title{Coreness (k-cores)}
+\description{
+The coreness (core number) of a node is the largest \eqn{k} such that the
+node belongs to the \eqn{k}-core: the largest subgraph in which every node
+has degree at least \eqn{k} (Seidman 1983). It is computed with the
+\eqn{O(m)} algorithm of Batagelj and Zaversnik (2003).
+}
 \usage{
 coreness(x, mode = c("all", "out", "in"))
 }
@@ -9,13 +15,6 @@ coreness(x, mode = c("all", "out", "in"))
 \item{mode}{For directed networks, \code{"all"} (in-degree plus
 out-degree), \code{"out"}, or \code{"in"}. Ignored for undirected
 networks.}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-The coreness (core number) of a node is the largest \eqn{k} such that the
-node belongs to the \eqn{k}-core: the largest subgraph in which every node
-has degree at least \eqn{k} (Seidman 1983). It is computed with the
-\eqn{O(m)} algorithm of Batagelj and Zaversnik (2003).
 }
 \details{
 In a directed network, \code{mode = "out"} builds cores on out-degree,
@@ -31,6 +30,7 @@ These conventions match \code{igraph::coreness()}. NetworkX's
 \code{core_number()} rejects self-loops and multigraphs; on simple
 networks without loops all three agree.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Seidman, S. B. (1983). Network structure and minimum degree.
 \emph{Social Networks}, 5(3), 269-287. \doi{10.1016/0378-8733(83)90028-X}

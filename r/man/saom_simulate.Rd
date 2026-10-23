@@ -1,6 +1,13 @@
 \name{saom_simulate}
 \alias{saom_simulate}
 \title{Simulate network panels from a stochastic actor-oriented model}
+\description{
+Simulates the change from each wave of \code{data} to the next under given
+parameters, as \code{\link{saom_fit}} does internally: for one time unit
+per period with the given rates, or conditional on the observed number of
+changes (\code{rates = NULL}). Useful for simulation studies and for
+generating panels from a known model.
+}
 \usage{
 saom_simulate(data, effects, theta, rates = NULL, n = 1, seed = NULL)
 }
@@ -25,13 +32,6 @@ the nodes of \code{data}; its attribute \code{"statistics"} holds the
 effect statistics of each period's network (one row per period) and
 \code{"times"} the simulated period lengths (the stopping times under rate
 1 when \code{rates} is \code{NULL}, otherwise 1).
-}
-\description{
-Simulates the change from each wave of \code{data} to the next under given
-parameters, as \code{\link{saom_fit}} does internally: for one time unit
-per period with the given rates, or conditional on the observed number of
-changes (\code{rates = NULL}). Useful for simulation studies and for
-generating panels from a known model.
 }
 \seealso{
 \code{\link{saom_fit}}, \code{\link{saom_gof}}

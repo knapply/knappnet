@@ -3,6 +3,19 @@
 \alias{print.small_world}
 \alias{plot.small_world}
 \title{Small-world quotient}
+\description{
+Watts and Strogatz (1998) call a network a small world when its clustering
+is much higher than that of a random network of the same size and density
+while its mean distance is about as short. The small-world quotient (Uzzi
+and Spiro 2005; the "small-world-ness" of Humphries and Gurney 2008)
+combines the two ratios:
+\deqn{Q = \frac{C / C_{random}}{L / L_{random}}}{Q = (C / C_random) / (L / L_random)}
+Here \eqn{C_{random}} and \eqn{L_{random}} are the means over \code{reps}
+simulated \eqn{G(n, m)} networks with the same number of nodes and edges
+(see \code{\link{random_gnm}}), rather than the approximations
+\eqn{C_{random} \approx k/n} and \eqn{L_{random} \approx \ln n / \ln k}
+used in some textbooks, which fail for small or sparse networks.
+}
 \usage{
 small_world(x, local = FALSE, reps = 100L, seed = NULL, threads = 0L)
 
@@ -24,27 +37,6 @@ cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 \item{...}{For \code{plot}, \code{main}; otherwise ignored.}
 }
-\value{
-A list of class \code{small_world} with \code{clustering} and
-\code{mean_distance} of the network, \code{random_clustering} and
-\code{random_mean_distance} (means over the random networks),
-\code{quotient}, \code{reps}, and \code{local}. \code{plot} draws the
-observed and random clustering and mean distance side by side and returns
-\code{x} invisibly.
-}
-\description{
-Watts and Strogatz (1998) call a network a small world when its clustering
-is much higher than that of a random network of the same size and density
-while its mean distance is about as short. The small-world quotient (Uzzi
-and Spiro 2005; the "small-world-ness" of Humphries and Gurney 2008)
-combines the two ratios:
-\deqn{Q = \frac{C / C_{random}}{L / L_{random}}}{Q = (C / C_random) / (L / L_random)}
-Here \eqn{C_{random}} and \eqn{L_{random}} are the means over \code{reps}
-simulated \eqn{G(n, m)} networks with the same number of nodes and edges
-(see \code{\link{random_gnm}}), rather than the approximations
-\eqn{C_{random} \approx k/n} and \eqn{L_{random} \approx \ln n / \ln k}
-used in some textbooks, which fail for small or sparse networks.
-}
 \details{
 Everything is computed on the undirected simple graph underlying the
 network (directions ignored, parallel edges once, self-loops ignored),
@@ -65,6 +57,14 @@ parallel, so the result for a given \code{seed} does not depend on
 against igraph and NetworkX; the random means depend on the seed and are
 checked for reproducibility and against the known expectation of
 \eqn{G(n, m)} (clustering near the density).
+}
+\value{
+A list of class \code{small_world} with \code{clustering} and
+\code{mean_distance} of the network, \code{random_clustering} and
+\code{random_mean_distance} (means over the random networks),
+\code{quotient}, \code{reps}, and \code{local}. \code{plot} draws the
+observed and random clustering and mean distance side by side and returns
+\code{x} invisibly.
 }
 \references{
 Watts, D. J., & Strogatz, S. H. (1998). Collective dynamics of

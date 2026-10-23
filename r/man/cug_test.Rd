@@ -4,6 +4,16 @@
 \alias{summary.cug_test}
 \alias{plot.cug_test}
 \title{Conditional uniform graph tests}
+\description{
+Compares a network statistic with its distribution over random networks
+that share some feature of the observed network (Anderson, Butts, and
+Carley 1999), as sna's \code{cug.test()} does. The null model is uniform
+over networks with the same number of nodes (\code{conditioning = "size"},
+that is \eqn{G(n, 1/2)}), the same number of edges (\code{"edges"},
+\eqn{G(n, m)}), or the same dyad census (\code{"dyad.census"}, the U|MAN
+distribution of Holland and Leinhardt 1976: the same numbers of mutual,
+asymmetric, and null dyads).
+}
 \usage{
 cug_test(x, statistic, conditioning = c("size", "edges", "dyad.census"),
          reps = 1000L, ..., seed = NULL, threads = 0L)
@@ -34,26 +44,6 @@ number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
 \item{object}{A \code{cug_test}.}
 \item{breaks}{Breakpoints for the histogram, as in
 \code{\link[graphics]{hist}}.}
-}
-\value{
-An object of class \code{cug_test}: a list with \code{observed} (the
-statistic on \code{x}), \code{null} (its values on the random networks),
-\code{p_greater} and \code{p_less}, \code{conditioning}, \code{reps},
-\code{dropped} (random networks on which the statistic was undefined), and
-\code{statistic} (the expression given). \code{summary()} adds the mean,
-standard deviation, and quantiles of the null distribution. \code{plot()}
-draws a histogram of the null distribution with the observed value marked
-and the p-values in a legend, and returns \code{x} invisibly.
-}
-\description{
-Compares a network statistic with its distribution over random networks
-that share some feature of the observed network (Anderson, Butts, and
-Carley 1999), as sna's \code{cug.test()} does. The null model is uniform
-over networks with the same number of nodes (\code{conditioning = "size"},
-that is \eqn{G(n, 1/2)}), the same number of edges (\code{"edges"},
-\eqn{G(n, m)}), or the same dyad census (\code{"dyad.census"}, the U|MAN
-distribution of Holland and Leinhardt 1976: the same numbers of mutual,
-asymmetric, and null dyads).
 }
 \details{
 \code{statistic} is any function that takes a netframe (and \code{...}) and
@@ -87,6 +77,16 @@ reported. The null generators are checked exactly by the validation suite
 (\code{validation/cug_check.py}: \eqn{G(n, m)} edge counts, U|MAN dyad
 censuses, configuration-model degrees), and the p-values against sna's
 \code{cug.test()} on the same statistics within Monte Carlo error.
+}
+\value{
+An object of class \code{cug_test}: a list with \code{observed} (the
+statistic on \code{x}), \code{null} (its values on the random networks),
+\code{p_greater} and \code{p_less}, \code{conditioning}, \code{reps},
+\code{dropped} (random networks on which the statistic was undefined), and
+\code{statistic} (the expression given). \code{summary()} adds the mean,
+standard deviation, and quantiles of the null distribution. \code{plot()}
+draws a histogram of the null distribution with the observed value marked
+and the p-values in a legend, and returns \code{x} invisibly.
 }
 \references{
 Anderson, B. S., Butts, C., & Carley, K. (1999). The interaction of size

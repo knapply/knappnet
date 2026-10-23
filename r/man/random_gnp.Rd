@@ -7,6 +7,33 @@
 \alias{random_preferential}
 \alias{random_sbm}
 \title{Random networks}
+\description{
+Seeded, reproducible random networks from the classic models:
+\describe{
+  \item{\code{random_gnp()}}{\eqn{G(n, p)}: each possible pair of nodes is
+    tied independently with probability \code{p} (Gilbert 1959).}
+  \item{\code{random_gnm()}}{\eqn{G(n, m)}: a network drawn uniformly from
+    those with exactly \code{m} edges (Erdős and Rényi 1959).}
+  \item{\code{random_configuration()}}{The configuration model: the edge
+    ends ("stubs") of a degree sequence are matched uniformly at random
+    (Bollobás 1980; Molloy and Reed 1995; Newman, Strogatz, and Watts
+    2001).}
+  \item{\code{random_uman()}}{U|MAN: a directed network drawn uniformly from
+    those with given numbers of mutual, asymmetric, and null dyads (Holland
+    and Leinhardt 1976), the null model of \code{\link{cug_test}} with
+    \code{conditioning = "dyad.census"}.}
+  \item{\code{random_small_world()}}{The Watts-Strogatz (1998) model: a ring
+    lattice joining each node to its \code{k} nearest neighbors, each edge
+    rewired with probability \code{p}.}
+  \item{\code{random_preferential()}}{The Barabási-Albert (1999) model: from
+    a star on \code{m + 1} nodes, each new node joins \code{m} existing
+    nodes drawn with probability proportional to their degree.}
+  \item{\code{random_sbm()}}{A stochastic block model (Holland, Laskey, and
+    Leinhardt 1983): nodes in blocks of the given sizes, a node of block
+    \eqn{r} and a node of block \eqn{s} tied independently with probability
+    \code{probs[r, s]}.}
+}
+}
 \usage{
 random_gnp(n, p, directed = FALSE, loops = FALSE, reps = 1L, seed = NULL,
            threads = 0L)
@@ -55,37 +82,6 @@ makes results reproducible.}
 number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
 (see \sQuote{Threads} in \code{\link{netframe}}).}
 }
-\value{
-A netframe with nodes \code{1, 2, ..., n} (integer identifiers in column
-\code{id}) when \code{reps = 1}, otherwise a list of \code{reps} netframes.
-}
-\description{
-Seeded, reproducible random networks from the classic models:
-\describe{
-  \item{\code{random_gnp()}}{\eqn{G(n, p)}: each possible pair of nodes is
-    tied independently with probability \code{p} (Gilbert 1959).}
-  \item{\code{random_gnm()}}{\eqn{G(n, m)}: a network drawn uniformly from
-    those with exactly \code{m} edges (Erdős and Rényi 1959).}
-  \item{\code{random_configuration()}}{The configuration model: the edge
-    ends ("stubs") of a degree sequence are matched uniformly at random
-    (Bollobás 1980; Molloy and Reed 1995; Newman, Strogatz, and Watts
-    2001).}
-  \item{\code{random_uman()}}{U|MAN: a directed network drawn uniformly from
-    those with given numbers of mutual, asymmetric, and null dyads (Holland
-    and Leinhardt 1976), the null model of \code{\link{cug_test}} with
-    \code{conditioning = "dyad.census"}.}
-  \item{\code{random_small_world()}}{The Watts-Strogatz (1998) model: a ring
-    lattice joining each node to its \code{k} nearest neighbors, each edge
-    rewired with probability \code{p}.}
-  \item{\code{random_preferential()}}{The Barabási-Albert (1999) model: from
-    a star on \code{m + 1} nodes, each new node joins \code{m} existing
-    nodes drawn with probability proportional to their degree.}
-  \item{\code{random_sbm()}}{A stochastic block model (Holland, Laskey, and
-    Leinhardt 1983): nodes in blocks of the given sizes, a node of block
-    \eqn{r} and a node of block \eqn{s} tied independently with probability
-    \code{probs[r, s]}.}
-}
-}
 \details{
 Unless stated otherwise the networks are simple: no self-loops, no parallel
 edges. \code{random_gnp()} and \code{random_gnm()} can include self-loops on
@@ -116,6 +112,10 @@ platform and thread count, and the first replicate of a batch of
 \code{reps} is the network \code{reps = 1} gives. The exact constraints
 (edge counts, degrees, dyad censuses) are checked by the validation suite
 (\code{validation/cug_check.py}).
+}
+\value{
+A netframe with nodes \code{1, 2, ..., n} (integer identifiers in column
+\code{id}) when \code{reps = 1}, otherwise a list of \code{reps} netframes.
 }
 \references{
 Gilbert, E. N. (1959). Random graphs. \emph{Annals of Mathematical

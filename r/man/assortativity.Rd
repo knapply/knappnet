@@ -3,6 +3,12 @@
 \alias{assortativity_nominal}
 \alias{assortativity_degree}
 \title{Assortativity coefficients}
+\description{
+Newman's (2002, 2003) assortativity: the tendency of ties to join nodes with
+similar values. \code{assortativity()} uses numeric node values,
+\code{assortativity_nominal()} categories, and \code{assortativity_degree()}
+degrees.
+}
 \usage{
 assortativity(x, values, values_in = NULL, directed = TRUE, normalized = TRUE,
               convention = c("igraph", "networkx", "homophily"))
@@ -35,13 +41,6 @@ a column of \code{x$nodes}. Missing values are not allowed.}
 \item{weighted}{For \code{assortativity_degree()}: use strengths (sums of
 weights) instead of degrees, as NetworkX does with \code{weight}.}
 }
-\value{A number.}
-\description{
-Newman's (2002, 2003) assortativity: the tendency of ties to join nodes with
-similar values. \code{assortativity()} uses numeric node values,
-\code{assortativity_nominal()} categories, and \code{assortativity_degree()}
-degrees.
-}
 \details{
 Every tie is read as arcs: an arc of a directed network once (or, with
 \code{directed = FALSE}, in both directions), an undirected edge in both
@@ -69,6 +68,7 @@ end do not vary. They match igraph's \code{assortativity()},
 \code{assort_discrete()} (which ignores direction, so it equals
 \code{directed = FALSE} here), and \code{assort_degree()}.
 }
+\value{A number.}
 \references{
 Newman, M. E. J. (2002). Assortative mixing in networks. \emph{Physical
 Review Letters}, 89(20), 208701. \doi{10.1103/PhysRevLett.89.208701}

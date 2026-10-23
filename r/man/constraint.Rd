@@ -4,6 +4,14 @@
 \alias{efficiency}
 \alias{hierarchy}
 \title{Structural holes: constraint, effective size, efficiency, and hierarchy}
+\description{
+Burt's (1992) measures of how far a node's contacts are redundant with one
+another. \code{constraint()} is high when a node's contacts are few or
+strongly tied to each other; \code{effective_size()} is the number of
+contacts, discounted for redundancy; \code{efficiency()} is effective size
+divided by the number of contacts; \code{hierarchy()} measures how far the
+constraint on a node is concentrated in a single contact.
+}
 \usage{
 constraint(x, weighted = NULL, threads = 0L)
 
@@ -20,15 +28,6 @@ hierarchy(x, weighted = NULL, threads = 0L)
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Burt's (1992) measures of how far a node's contacts are redundant with one
-another. \code{constraint()} is high when a node's contacts are few or
-strongly tied to each other; \code{effective_size()} is the number of
-contacts, discounted for redundancy; \code{efficiency()} is effective size
-divided by the number of contacts; \code{hierarchy()} measures how far the
-constraint on a node is concentrated in a single contact.
 }
 \details{
 A node's contacts are its in- and out-neighbours other than itself.
@@ -73,6 +72,7 @@ conventions match igraph's \code{constraint()} and NetworkX's
 \code{constraint()} and \code{effective_size()}. NetworkX counts
 self-loops in a node's tie volume; this package, like igraph, does not.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Burt, R. S. (1992). \emph{Structural Holes: The Social Structure of
 Competition}. Harvard University Press. \doi{10.4159/9780674029095}

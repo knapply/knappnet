@@ -6,6 +6,13 @@
 \alias{coef.tergm_fit}
 \alias{confint.tergm_fit}
 \title{Temporal exponential random graph models by pooled pseudolikelihood}
+\description{
+Fits a discrete-time temporal ERGM (TERGM; Hanneke, Fu, and Xing 2010) to a
+sequence of networks on the same nodes by maximum pseudolikelihood pooled
+over the transitions, with bootstrap confidence intervals from resampling
+the transitions (Desmarais and Cranmer 2012), the method of the
+\pkg{btergm} package (Leifeld, Cranmer, and Desmarais 2018).
+}
 \usage{
 tergm_fit(formula, boot = 200, seed = NULL, level = 0.95, threads = 0L,
           control = ergm_control())
@@ -32,22 +39,6 @@ during \verb{R CMD check}.}
 \item{object}{A \code{tergm_fit} object.}
 \item{parm}{Coefficients to report, by name or position; default all.}
 \item{...}{Not used.}
-}
-\value{
-An object of class \code{"tergm_fit"}: a list with \code{coefficients};
-\code{boot}, a boot-by-p matrix of replicate estimates (\code{NA} where a
-replicate did not converge); \code{ci}, the percentile intervals;
-\code{level}; \code{transitions}; \code{dyads} per transition;
-\code{deviance} and \code{null_deviance} of the pooled fit; \code{seed};
-\code{names}; and the \code{call}. \code{summary()} gives the coefficients
-with their intervals; \code{coef()} and \code{confint()} extract them.
-}
-\description{
-Fits a discrete-time temporal ERGM (TERGM; Hanneke, Fu, and Xing 2010) to a
-sequence of networks on the same nodes by maximum pseudolikelihood pooled
-over the transitions, with bootstrap confidence intervals from resampling
-the transitions (Desmarais and Cranmer 2012), the method of the
-\pkg{btergm} package (Leifeld, Cranmer, and Desmarais 2018).
 }
 \details{
 Each network \eqn{y_t} (\eqn{t = 2, \ldots, T}) is modeled conditional on
@@ -81,6 +72,15 @@ replicate estimates; replicates whose fit does not converge are dropped
 and counted in \code{summary()}. With few transitions the intervals are
 coarse, which is a property of the method. Replicate \eqn{r} draws from
 stream \eqn{r} of \code{seed}, so results do not depend on \code{threads}.
+}
+\value{
+An object of class \code{"tergm_fit"}: a list with \code{coefficients};
+\code{boot}, a boot-by-p matrix of replicate estimates (\code{NA} where a
+replicate did not converge); \code{ci}, the percentile intervals;
+\code{level}; \code{transitions}; \code{dyads} per transition;
+\code{deviance} and \code{null_deviance} of the pooled fit; \code{seed};
+\code{names}; and the \code{call}. \code{summary()} gives the coefficients
+with their intervals; \code{coef()} and \code{confint()} extract them.
 }
 \references{
 Hanneke, S., Fu, W., & Xing, E. P. (2010). Discrete temporal models of

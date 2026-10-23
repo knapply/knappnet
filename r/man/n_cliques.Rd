@@ -3,6 +3,21 @@
 \alias{n_clans}
 \alias{k_plexes}
 \title{n-cliques, n-clans, and k-plexes}
+\description{
+Relaxations of the clique (see \code{\link{max_cliques}}) that admit groups
+whose members are not all directly tied:
+\describe{
+  \item{n-clique}{A maximal set of nodes every two of which are joined by a
+    path of length at most \code{n} in the whole network (Luce 1950; Alba
+    1973). The paths may run through nodes outside the set. 1-cliques are
+    cliques.}
+  \item{n-clan}{An n-clique whose own subgraph has diameter at most
+    \code{n}, so that the short paths stay inside the group (Mokken 1979).}
+  \item{k-plex}{A maximal set of nodes each of which is adjacent to all but
+    at most \code{k - 1} of the other members (Seidman and Foster 1978).
+    1-plexes are cliques.}
+}
+}
 \usage{
 n_cliques(x, n = 2L, min_size = 1L, threads = 0L)
 
@@ -22,26 +37,6 @@ other members (\code{k >= 1}).}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-A list of vectors of node identifiers (values of the identifier column of
-\code{x$nodes}), one per group, each in node order; the groups are in
-lexicographic order of node positions.
-}
-\description{
-Relaxations of the clique (see \code{\link{max_cliques}}) that admit groups
-whose members are not all directly tied:
-\describe{
-  \item{n-clique}{A maximal set of nodes every two of which are joined by a
-    path of length at most \code{n} in the whole network (Luce 1950; Alba
-    1973). The paths may run through nodes outside the set. 1-cliques are
-    cliques.}
-  \item{n-clan}{An n-clique whose own subgraph has diameter at most
-    \code{n}, so that the short paths stay inside the group (Mokken 1979).}
-  \item{k-plex}{A maximal set of nodes each of which is adjacent to all but
-    at most \code{k - 1} of the other members (Seidman and Foster 1978).
-    1-plexes are cliques.}
-}
 }
 \details{
 All three use the undirected simple graph underlying the network:
@@ -74,6 +69,11 @@ Whether the limit is reached does not depend on \code{threads}.
 The validation suite checks every group against its definition by
 exhaustive enumeration, and n-cliques against NetworkX's
 \code{find_cliques()} on the distance-\code{n} power graph.
+}
+\value{
+A list of vectors of node identifiers (values of the identifier column of
+\code{x$nodes}), one per group, each in node order; the groups are in
+lexicographic order of node positions.
 }
 \references{
 Luce, R. D. (1950). Connectivity and generalized cliques in sociometric

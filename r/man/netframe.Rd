@@ -2,6 +2,12 @@
 \alias{netframe}
 \alias{print.netframe}
 \title{Create a network from node and edge data frames}
+\description{
+A network is a pair of data frames: \code{nodes}, with one row per node, and
+\code{edges}, with one row per edge. Any other columns are attributes and are
+carried along untouched. Column roles say which columns hold node
+identifiers, edge endpoints, and (optionally) edge weights.
+}
 \usage{
 netframe(edges, nodes = NULL, directed = TRUE, from = 1L, to = 2L,
          id = 1L, weight = NULL, weight_type = c("distance", "strength"),
@@ -37,12 +43,6 @@ them.}
 \value{An object of class \code{netframe}. Printing it gives the size of
 the network and whether it is weighted, and adds a line for self-loops and
 parallel edges and for missing or non-finite weights when there are any.}
-\description{
-A network is a pair of data frames: \code{nodes}, with one row per node, and
-\code{edges}, with one row per edge. Any other columns are attributes and are
-carried along untouched. Column roles say which columns hold node
-identifiers, edge endpoints, and (optionally) edge weights.
-}
 \section{Missing values and invalid input}{
 \itemize{
 \item Edge endpoints and node identifiers must not be missing (\code{NA}) or
@@ -79,7 +79,6 @@ points past the last node; other changes to rows, such as reordering,
 cannot be detected and would misalign results.
 }
 }
-
 \section{Spatial tables}{
 \code{nodes} and \code{edges} may be sf data frames (simple features). Their
 geometry columns stay in place and are recorded in \code{x$roles}
@@ -88,7 +87,6 @@ then have the same coordinate reference system. Connectivity still comes
 from \code{from} and \code{to}, never from the geometry. See
 \code{\link{to_sf}} for what the geometries are used for.
 }
-
 \section{Threads}{
 Measures that run in parallel take \code{threads}. \code{0} (the default)
 uses all available cores, except that only 2 are used when the environment
@@ -99,7 +97,6 @@ never depend on it, and floating-point results can differ in the last bits
 between thread counts. Computations run in compiled code and cannot be
 interrupted until they return.
 }
-
 \references{
 Newman, M. E. J. (2001). Scientific collaboration networks. II. Shortest
 paths, weighted networks, and centrality. \emph{Physical Review E}, 64,

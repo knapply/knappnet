@@ -4,6 +4,14 @@
 \alias{summary.qap_cor}
 \alias{print.summary.qap_cor}
 \title{QAP correlation test}
+\description{
+Tests the Pearson correlation between two networks, or any two
+\eqn{n \times n}{n x n} matrices of dyadic data, with the quadratic
+assignment procedure (QAP; Hubert and Schultz 1976; Hubert 1987;
+Krackhardt 1987). The reference distribution is formed by relabeling the
+nodes of \code{x}: its rows and columns are permuted together, which keeps
+the dependence among dyads that share a node.
+}
 \usage{
 qap_cor(y, x, reps = 1000, seed = NULL, diag = FALSE,
         mode = c("digraph", "graph"), exact = FALSE, attr = NULL,
@@ -28,23 +36,6 @@ edges otherwise.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-An object of class \code{"qap_cor"}: a list with the observed correlation
-\code{statistic}; \code{p.value}, the three proportions described below;
-\code{counts}, the numbers of draws behind them; \code{valid}, the number of
-draws with a defined correlation; \code{draws}; \code{dyads}, the number of
-dyads used; \code{dist}, the correlation of every draw in order; the
-settings used, including \code{seed}; and the \code{call}. \code{summary()}
-adds quantiles of the reference distribution.
-}
-\description{
-Tests the Pearson correlation between two networks, or any two
-\eqn{n \times n}{n x n} matrices of dyadic data, with the quadratic
-assignment procedure (QAP; Hubert and Schultz 1976; Hubert 1987;
-Krackhardt 1987). The reference distribution is formed by relabeling the
-nodes of \code{x}: its rows and columns are permuted together, which keeps
-the dependence among dyads that share a node.
 }
 \details{
 \strong{Dyads.} With \code{mode = "digraph"}, every ordered pair
@@ -90,6 +81,15 @@ which permutes both graphs independently; since only the relative labeling
 matters, the distributions are the same, but individual Monte Carlo draws
 differ. Exact enumeration is validated against an independent
 implementation for small networks.
+}
+\value{
+An object of class \code{"qap_cor"}: a list with the observed correlation
+\code{statistic}; \code{p.value}, the three proportions described below;
+\code{counts}, the numbers of draws behind them; \code{valid}, the number of
+draws with a defined correlation; \code{draws}; \code{dyads}, the number of
+dyads used; \code{dist}, the correlation of every draw in order; the
+settings used, including \code{seed}; and the \code{call}. \code{summary()}
+adds quantiles of the reference distribution.
 }
 \references{
 Hubert, L., & Schultz, J. (1976). Quadratic assignment as a general data

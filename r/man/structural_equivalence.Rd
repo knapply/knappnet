@@ -1,6 +1,12 @@
 \name{structural_equivalence}
 \alias{structural_equivalence}
 \title{Structural equivalence}
+\description{
+Compares every pair of nodes by their tie profiles: the ties each node sends
+(its row of the adjacency matrix) and receives (its column).
+Structurally equivalent nodes (Lorrain and White 1971) have identical
+profiles.
+}
 \usage{
 structural_equivalence(x, method = c("euclidean", "correlation", "hamming"),
                        weighted = NULL, threads = 0L)
@@ -15,13 +21,6 @@ column.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{A symmetric numeric matrix with node identifiers as dimnames.}
-\description{
-Compares every pair of nodes by their tie profiles: the ties each node sends
-(its row of the adjacency matrix) and receives (its column).
-Structurally equivalent nodes (Lorrain and White 1971) have identical
-profiles.
 }
 \details{
 Nodes i and j are compared over every other node k, so the diagonal and the
@@ -46,6 +45,7 @@ given whatever the network's \code{weight_type}. An undirected edge is a tie
 in both directions, so each tie appears twice in a profile, as with a
 symmetric adjacency matrix in sna. Self-loops are ignored.
 }
+\value{A symmetric numeric matrix with node identifiers as dimnames.}
 \references{
 Lorrain, F., & White, H. C. (1971). Structural equivalence of individuals in
 social networks. \emph{Journal of Mathematical Sociology}, 1(1), 49-80.

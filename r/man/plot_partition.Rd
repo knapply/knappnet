@@ -1,6 +1,12 @@
 \name{plot_partition}
 \alias{plot_partition}
 \title{Draw a network colored by a partition}
+\description{
+Draws the network with \code{\link{plot.netframe}}, coloring each node by
+its group in a partition: communities from \code{\link{cluster_louvain}},
+positions from \code{\link{concor}} or \code{\link{regular_equivalence}},
+components, or any node attribute.
+}
 \usage{
 plot_partition(x, membership, title = "group", ...)
 }
@@ -13,13 +19,6 @@ of \code{x$nodes}.}
 \item{...}{Further arguments passed to \code{\link{plot.netframe}}, such as
 \code{layout}, \code{seed}, \code{node_size}, or \code{main}.}
 }
-\value{The layout used, invisibly, as \code{\link{plot.netframe}} returns.}
-\description{
-Draws the network with \code{\link{plot.netframe}}, coloring each node by
-its group in a partition: communities from \code{\link{cluster_louvain}},
-positions from \code{\link{concor}} or \code{\link{regular_equivalence}},
-components, or any node attribute.
-}
 \details{
 Groups are colored with the qualitative palette of
 \code{\link{plot.netframe}} in order of their first appearance in
@@ -30,6 +29,7 @@ a modularity (as \code{cluster_louvain()}'s result does) and no
 \code{main} is given, the title reports the number of groups and the
 modularity.
 }
+\value{The layout used, invisibly, as \code{\link{plot.netframe}} returns.}
 \seealso{\code{\link{cluster_louvain}}, \code{\link{plot_matrix}} for the
 same partition as a sorted adjacency matrix, \code{\link{plot.blockmodel}}.}
 \examples{

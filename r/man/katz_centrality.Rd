@@ -1,6 +1,11 @@
 \name{katz_centrality}
 \alias{katz_centrality}
 \title{Katz centrality}
+\description{
+Counts the walks that end at each node, with a walk of length k weighted by
+\eqn{\alpha^k} (Katz 1953): the solution of
+\eqn{x = \alpha A^T x + \beta}{x = alpha t(A) x + beta}.
+}
 \usage{
 katz_centrality(x, alpha = 0.1, beta = 1, mode = c("in", "out", "all"),
                 weighted = NULL, normalized = NULL,
@@ -32,12 +37,6 @@ score.}
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Counts the walks that end at each node, with a walk of length k weighted by
-\eqn{\alpha^k} (Katz 1953): the solution of
-\eqn{x = \alpha A^T x + \beta}{x = alpha t(A) x + beta}.
-}
 \details{
 Expanding the solution gives \eqn{x = \beta (1 + \alpha A^T 1 + \alpha^2
 (A^T)^2 1 + \dots)}{x = beta (1 + alpha t(A) 1 + alpha^2 t(A)^2 1 + ...)}, a
@@ -56,6 +55,7 @@ scores are not normalized; under NetworkX's a self-loop adds its weight once
 to the diagonal and scores have unit length. Weights are used as given and
 must not be negative.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Katz, L. (1953). A new status index derived from sociometric analysis.
 \emph{Psychometrika}, 18(1), 39-43. \doi{10.1007/BF02289026}

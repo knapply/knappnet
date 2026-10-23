@@ -2,6 +2,12 @@
 \alias{hub_score}
 \alias{authority_score}
 \title{Hub and authority scores}
+\description{
+Kleinberg's (1999) hubs and authorities: a good hub points to good
+authorities, and a good authority is pointed to by good hubs. Authority
+scores are the leading eigenvector of \eqn{A^T A}{t(A) A} and hub scores that
+of \eqn{A A^T}{A t(A)}.
+}
 \usage{
 hub_score(x, weighted = NULL, scale = NULL, convention = c("igraph", "networkx"),
           tol = 1e-12, max_iter = 10000L, threads = 0L)
@@ -27,13 +33,6 @@ error.}
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Kleinberg's (1999) hubs and authorities: a good hub points to good
-authorities, and a good authority is pointed to by good hubs. Authority
-scores are the leading eigenvector of \eqn{A^T A}{t(A) A} and hub scores that
-of \eqn{A A^T}{A t(A)}.
-}
 \details{
 The authority vector is computed with the Lanczos method on \eqn{A^T A}{t(A)
 A}, which is never formed, and the hub vector is \eqn{A a}{A a}. Parallel
@@ -47,6 +46,7 @@ A a}{h <- A a} from equal hub scores, which is also what NetworkX's
 \code{hits()} returns; igraph's answer then depends on its starting vector.
 Without ties every score is \code{NaN}.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Kleinberg, J. M. (1999). Authoritative sources in a hyperlinked environment.
 \emph{Journal of the ACM}, 46(5), 604-632. \doi{10.1145/324133.324140}

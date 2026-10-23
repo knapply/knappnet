@@ -1,6 +1,15 @@
 \name{plot.saom_fit}
 \alias{plot.saom_fit}
 \title{Plot estimation diagnostics of a SAOM fit}
+\description{
+\code{which = "trajectory"} draws the parameter values after every phase 2
+iteration of the Robbins-Monro algorithm, with the subphases separated by
+dashed lines and the final estimate as a horizontal line: a well-behaved
+estimation settles down within each subphase. \code{which = "deviations"}
+draws boxplots of the phase 3 deviations of the simulated statistics from
+their targets, divided by their standard deviations; they should be
+centered on 0.
+}
 \usage{
 \method{plot}{saom_fit}(x, which = c("trajectory", "deviations"), ...)
 }
@@ -11,15 +20,6 @@
 }
 \value{
 \code{x}, invisibly.
-}
-\description{
-\code{which = "trajectory"} draws the parameter values after every phase 2
-iteration of the Robbins-Monro algorithm, with the subphases separated by
-dashed lines and the final estimate as a horizontal line: a well-behaved
-estimation settles down within each subphase. \code{which = "deviations"}
-draws boxplots of the phase 3 deviations of the simulated statistics from
-their targets, divided by their standard deviations; they should be
-centered on 0.
 }
 \seealso{
 \code{\link{saom_fit}}, \code{\link{saom_gof}}

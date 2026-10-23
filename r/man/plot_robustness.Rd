@@ -1,6 +1,15 @@
 \name{plot_robustness}
 \alias{plot_robustness}
 \title{Robustness of a network to node removal}
+\description{
+Removes nodes one at a time in a given order and tracks how the network
+falls apart: the share of nodes in the largest component, or the
+fragmentation of Borgatti (2006), after each removal. Curves for several
+removal strategies (highest degree first, highest betweenness first,
+random) can be compared with the removal of a chosen set such as the
+\code{\link{key_players}}, as in the attack-tolerance analyses of Albert,
+Jeong, and Barabási (2000) and Holme et al. (2002).
+}
 \usage{
 plot_robustness(x, nodes = NULL, strategy = c("degree", "betweenness", "random"),
                 measure = c("largest_component", "fragmentation"), steps = 25,
@@ -29,19 +38,6 @@ available cores.}
 \item{...}{Further arguments passed to \code{\link[graphics]{plot}}, such
 as \code{main}.}
 }
-\value{A data frame with one row per evaluated point, invisibly:
-\code{curve} (the strategy or \code{label}), \code{removed} (nodes
-removed), \code{fraction} (of the original nodes), and \code{value} (the
-measure).}
-\description{
-Removes nodes one at a time in a given order and tracks how the network
-falls apart: the share of nodes in the largest component, or the
-fragmentation of Borgatti (2006), after each removal. Curves for several
-removal strategies (highest degree first, highest betweenness first,
-random) can be compared with the removal of a chosen set such as the
-\code{\link{key_players}}, as in the attack-tolerance analyses of Albert,
-Jeong, and Barabási (2000) and Holme et al. (2002).
-}
 \details{
 Strategy orders are fixed at the start from the initial degrees or
 betweenness scores (Holme et al.'s "initial" attacks); they are not
@@ -51,6 +47,10 @@ its default weighting. Ties are broken by node order. Removing a node
 removes its edges; the remaining network keeps every other node, so the
 largest-component share is measured against the original number of nodes.
 }
+\value{A data frame with one row per evaluated point, invisibly:
+\code{curve} (the strategy or \code{label}), \code{removed} (nodes
+removed), \code{fraction} (of the original nodes), and \code{value} (the
+measure).}
 \references{
 Albert, R., Jeong, H., & Barabási, A.-L. (2000). Error and attack
 tolerance of complex networks. \emph{Nature}, 406(6794), 378-382.

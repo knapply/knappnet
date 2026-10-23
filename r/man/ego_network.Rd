@@ -2,6 +2,12 @@
 \alias{ego_network}
 \alias{ego_networks}
 \title{Ego networks}
+\description{
+\code{ego_network()} extracts the ego network of one node: the node (ego),
+every node within \code{order} steps of it (its alters), and all ties among
+them. \code{ego_networks()} does the same for several nodes, or for every
+node, at once.
+}
 \usage{
 ego_network(x, node, order = 1L, mode = c("all", "out", "in"),
   include_ego = TRUE)
@@ -23,16 +29,6 @@ gives the first-order neighborhood.}
 \code{mindist = 0}) or only its alters (\code{mindist = 1}).}
 \item{threads}{Number of threads; \code{0} uses all available cores.}
 }
-\value{
-\code{ego_network()} returns a \code{\link{netframe}}. \code{ego_networks()}
-returns a list of netframes named by the egos' identifiers.
-}
-\description{
-\code{ego_network()} extracts the ego network of one node: the node (ego),
-every node within \code{order} steps of it (its alters), and all ties among
-them. \code{ego_networks()} does the same for several nodes, or for every
-node, at once.
-}
 \details{
 The result is the subgraph induced by ego and its alters, as igraph's
 \code{make_ego_graph()} and NetworkX's \code{ego_graph()} return: every edge
@@ -46,6 +42,10 @@ nodes ego reaches along outgoing ties (whom ego names), \code{"in"} the
 nodes that reach ego (who names ego), and \code{"all"} ignores direction.
 Ties among the chosen nodes are kept whatever their direction. Undirected
 networks ignore \code{mode}. Steps are counted without weights.
+}
+\value{
+\code{ego_network()} returns a \code{\link{netframe}}. \code{ego_networks()}
+returns a list of netframes named by the egos' identifiers.
 }
 \references{
 Wasserman, S., & Faust, K. (1994). \emph{Social Network Analysis: Methods

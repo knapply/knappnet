@@ -1,6 +1,10 @@
 \name{plot_ego}
 \alias{plot_ego}
 \title{Draw an ego network}
+\description{
+Extracts the ego network of one node with \code{\link{ego_network}} and
+draws it with ego enlarged and colored apart from its alters.
+}
 \usage{
 plot_ego(x, node, order = 1L, mode = c("all", "out", "in"), ...)
 }
@@ -15,10 +19,6 @@ plot_ego(x, node, order = 1L, mode = c("all", "out", "in"), ...)
 \code{layout}, \code{seed}, or \code{main}.}
 }
 \value{The ego network (a \code{\link{netframe}}), invisibly.}
-\description{
-Extracts the ego network of one node with \code{\link{ego_network}} and
-draws it with ego enlarged and colored apart from its alters.
-}
 \seealso{\code{\link{ego_network}}, \code{\link{ego_summary}}.}
 \examples{
 g <- example_network("florentine")

@@ -2,6 +2,11 @@
 \alias{read_network}
 \alias{write_network}
 \title{Read and write network files}
+\description{
+\code{read_network()} reads a file into a \code{\link{netframe}};
+\code{write_network()} writes one out. The format is taken from the file
+extension unless \code{format} is given.
+}
 \usage{
 read_network(file, format = NULL, directed = NULL, nodes = NULL,
              weight = NULL, weight_type = c("distance", "strength"))
@@ -28,15 +33,6 @@ network's weight column.}
 \code{"strength"}); see \code{\link{netframe}}.}
 \item{nodes_file}{For edge lists only: optional path for a CSV file of nodes,
 so isolates and node attributes are kept.}
-}
-\value{
-\code{read_network()} returns a \code{\link{netframe}}.
-\code{write_network()} returns \code{file}, invisibly.
-}
-\description{
-\code{read_network()} reads a file into a \code{\link{netframe}};
-\code{write_network()} writes one out. The format is taken from the file
-extension unless \code{format} is given.
 }
 \details{
 \tabular{lllll}{
@@ -71,6 +67,10 @@ DyNetML \code{<DynamicNetwork>}, \code{<DynamicMetaNetwork>},
 \code{<MetaNetwork>}, or \code{<MetaMatrix>}). Writing a \code{.xml} file
 without \code{format} produces GraphML; use \code{format = "dynetml"} (or
 \code{"ora"}) to write DyNetML.
+}
+\value{
+\code{read_network()} returns a \code{\link{netframe}}.
+\code{write_network()} returns \code{file}, invisibly.
 }
 \section{GeoPackage}{
 A GeoPackage (\code{.gpkg}) holds a spatial network (see

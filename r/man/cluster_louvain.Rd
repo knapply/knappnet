@@ -1,6 +1,10 @@
 \name{cluster_louvain}
 \alias{cluster_louvain}
 \title{Louvain community detection}
+\description{
+Finds groups of nodes by greedy optimization of modularity with the
+method of Blondel, Guillaume, Lambiotte, and Lefebvre (2008).
+}
 \usage{
 cluster_louvain(x, resolution = 1, weighted = NULL, seed = NULL)
 }
@@ -13,13 +17,6 @@ them when the network has a weight column.}
 \item{seed}{Seed for the random node order: a whole number between 0 and
 \eqn{2^{53}}. \code{NULL} draws one from R's random number generator, so
 \code{\link{set.seed}()} makes results reproducible.}
-}
-\value{An integer vector of group labels aligned with the rows of
-\code{x$nodes}, numbered 1, 2, ... in order of first appearance, with the
-modularity of the partition in attribute \code{"modularity"}.}
-\description{
-Finds groups of nodes by greedy optimization of modularity with the
-method of Blondel, Guillaume, Lambiotte, and Lefebvre (2008).
 }
 \details{
 Each level repeatedly moves single nodes to the neighboring group that
@@ -48,6 +45,9 @@ order and are local optima. Partitions generally differ from those of
 \code{louvain_communities()}; the validation suite checks that their
 modularity is comparable.
 }
+\value{An integer vector of group labels aligned with the rows of
+\code{x$nodes}, numbered 1, 2, ... in order of first appearance, with the
+modularity of the partition in attribute \code{"modularity"}.}
 \references{
 Blondel, V. D., Guillaume, J.-L., Lambiotte, R., & Lefebvre, E. (2008).
 Fast unfolding of communities in large networks. \emph{Journal of

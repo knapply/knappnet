@@ -1,6 +1,11 @@
 \name{modularity}
 \alias{modularity}
 \title{Modularity of a partition}
+\description{
+Modularity (Newman and Girvan 2004; Newman 2006) compares the weight of
+edges inside groups with its expectation under a random network with the
+same degrees.
+}
 \usage{
 modularity(x, membership, resolution = 1, weighted = NULL)
 }
@@ -12,13 +17,6 @@ equality of values matters. Missing values are not allowed.}
 \item{resolution}{Resolution parameter \eqn{\gamma} (non-negative).}
 \item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
 them when the network has a weight column.}
-}
-\value{A single number; \code{NaN} for a network without edges (or with
-total weight zero).}
-\description{
-Modularity (Newman and Girvan 2004; Newman 2006) compares the weight of
-edges inside groups with its expectation under a random network with the
-same degrees.
 }
 \details{
 For an undirected network with total edge weight \eqn{m} and node
@@ -40,6 +38,8 @@ These conventions match \code{igraph::modularity()} and NetworkX's
 \code{community.modularity()} on multigraphs, except that NetworkX returns
 0 for a network without edges, where modularity is undefined.
 }
+\value{A single number; \code{NaN} for a network without edges (or with
+total weight zero).}
 \references{
 Newman, M. E. J., & Girvan, M. (2004). Finding and evaluating community
 structure in networks. \emph{Physical Review E}, 69(2), 026113.

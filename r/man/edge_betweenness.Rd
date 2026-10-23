@@ -1,6 +1,14 @@
 \name{edge_betweenness}
 \alias{edge_betweenness}
 \title{Edge betweenness}
+\description{
+The number of shortest paths that pass through each edge, summed over
+pairs of nodes with each path weighted by the share of the pair's shortest
+paths it represents (Girvan and Newman 2002, after Freeman 1977). Edges
+with high betweenness join parts of the network that have few other
+connections; removing them in order of betweenness is the Girvan-Newman
+community method.
+}
 \usage{
 edge_betweenness(x, weighted = NULL, normalized = FALSE, threads = 0L,
                  weights_as = NULL)
@@ -17,15 +25,6 @@ cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \item{weights_as}{Override the network's \code{weight_type}:
 \code{"distance"} or \code{"strength"}.}
 }
-\value{A numeric vector aligned with the rows of \code{x$edges}.}
-\description{
-The number of shortest paths that pass through each edge, summed over
-pairs of nodes with each path weighted by the share of the pair's shortest
-paths it represents (Girvan and Newman 2002, after Freeman 1977). Edges
-with high betweenness join parts of the network that have few other
-connections; removing them in order of betweenness is the Girvan-Newman
-community method.
-}
 \details{
 Values are computed with Brandes' (2008) accumulation for edges, one
 search per node, run in parallel. In undirected networks each unordered
@@ -39,6 +38,7 @@ Unnormalized values match igraph's \code{edge_betweenness()} and NetworkX's
 \code{edge_betweenness_centrality(normalized = False)}; normalized values
 match NetworkX's default. sna has no edge betweenness function.
 }
+\value{A numeric vector aligned with the rows of \code{x$edges}.}
 \references{
 Freeman, L. C. (1977). A set of measures of centrality based on
 betweenness. \emph{Sociometry}, 40(1), 35-41. \doi{10.2307/3033543}

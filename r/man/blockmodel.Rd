@@ -3,6 +3,15 @@
 \alias{block_summary}
 \alias{print.blockmodel}
 \title{Blockmodel of a partition}
+\description{
+Reduces a network to its positions: given a partition of the nodes into
+blocks, \code{blockmodel()} computes the density of ties within and
+between every pair of blocks, the binary image matrix that codes each
+block as present or absent at a cutoff, and how well the image fits the
+network (White, Boorman, and Breiger 1976; Wasserman and Faust 1994, ch.
+10). \code{block_summary()} lists the same quantities as one row per pair
+of blocks.
+}
 \usage{
 blockmodel(x, membership, weighted = NULL, loops = FALSE, cutoff = NULL)
 
@@ -32,24 +41,6 @@ UCINET's Blockmodel routine and Pajek apply by default.}
 \item{bm}{A blockmodel from \code{blockmodel()}.}
 \item{...}{Passed to \code{print()} for the density matrix.}
 }
-\value{\code{blockmodel()} returns a list of class \code{"blockmodel"} with
-\code{membership} (the block labels, aligned with \code{x$nodes}),
-\code{blocks} (the distinct labels, in order), \code{sizes}, the
-block-by-block matrices \code{density}, \code{ties} (sums of tie values),
-\code{pairs}, and \code{image} (1, 0, or \code{NaN}), the \code{cutoff}
-used, \code{overall_density}, and \code{r_squared}. \code{block_summary()}
-returns a data frame with one row per ordered pair of blocks: \code{from},
-\code{to}, \code{size_from}, \code{size_to}, \code{ties}, \code{pairs},
-\code{density}, and \code{image}.}
-\description{
-Reduces a network to its positions: given a partition of the nodes into
-blocks, \code{blockmodel()} computes the density of ties within and
-between every pair of blocks, the binary image matrix that codes each
-block as present or absent at a cutoff, and how well the image fits the
-network (White, Boorman, and Breiger 1976; Wasserman and Faust 1994, ch.
-10). \code{block_summary()} lists the same quantities as one row per pair
-of blocks.
-}
 \details{
 The density of block \eqn{(r, s)} is the sum of the ties from nodes in
 \eqn{r} to nodes in \eqn{s} divided by the number of such pairs. Without
@@ -71,6 +62,15 @@ The validation suite compares block densities with
 \code{sna::blockmodel(block.content = "density")}, which also leaves the
 diagonal out; UCINET's density blockmodel documents the same definition.
 }
+\value{\code{blockmodel()} returns a list of class \code{"blockmodel"} with
+\code{membership} (the block labels, aligned with \code{x$nodes}),
+\code{blocks} (the distinct labels, in order), \code{sizes}, the
+block-by-block matrices \code{density}, \code{ties} (sums of tie values),
+\code{pairs}, and \code{image} (1, 0, or \code{NaN}), the \code{cutoff}
+used, \code{overall_density}, and \code{r_squared}. \code{block_summary()}
+returns a data frame with one row per ordered pair of blocks: \code{from},
+\code{to}, \code{size_from}, \code{size_to}, \code{ties}, \code{pairs},
+\code{density}, and \code{image}.}
 \references{
 White, H. C., Boorman, S. A., & Breiger, R. L. (1976). Social structure
 from multiple networks. I. Blockmodels of roles and positions.

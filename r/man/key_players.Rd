@@ -2,6 +2,14 @@
 \alias{key_players}
 \alias{key_player_score}
 \title{Key players}
+\description{
+Borgatti's (2006) key player problems. KPP-Neg asks which \eqn{k} nodes,
+if removed, would most fragment the network: the question behind
+disrupting a covert network by arresting or isolating its members. KPP-Pos
+asks which \eqn{k} nodes are best placed to reach the rest of it: whom to
+recruit, monitor, or inform through. \code{key_players()} searches for the
+best set; \code{key_player_score()} evaluates any set.
+}
 \usage{
 key_players(x, k, measure = c("fragmentation", "distance_fragmentation",
                               "m_reach", "distance_reach"),
@@ -42,21 +50,6 @@ are more than 50 million sets).}
 \code{set.seed()} makes results reproducible.}
 \item{threads}{Number of threads; \code{0} uses all available cores (see
 "Threads" in \code{\link{netframe}}). Results do not depend on it.}
-}
-\value{
-\code{key_players()} returns a list with \code{set} (the identifiers of
-the key players, in node order), \code{index} (their rows in
-\code{x$nodes}), \code{score} (the criterion's value for the set),
-\code{measure}, and \code{evaluations} (the number of sets evaluated).
-\code{key_player_score()} returns a number.
-}
-\description{
-Borgatti's (2006) key player problems. KPP-Neg asks which \eqn{k} nodes,
-if removed, would most fragment the network: the question behind
-disrupting a covert network by arresting or isolating its members. KPP-Pos
-asks which \eqn{k} nodes are best placed to reach the rest of it: whom to
-recruit, monitor, or inform through. \code{key_players()} searches for the
-best set; \code{key_player_score()} evaluates any set.
 }
 \details{
 With \eqn{S} the set and \eqn{n} the number of nodes of the network being
@@ -113,6 +106,13 @@ centrality of the keyplayer package (\code{keyplayer::fragment()} with
 \code{binary = TRUE}; An and Liu 2016). keyplayer's group scores use a
 different construction (contracting the group into one node), so they are
 not comparable to these criteria.
+}
+\value{
+\code{key_players()} returns a list with \code{set} (the identifiers of
+the key players, in node order), \code{index} (their rows in
+\code{x$nodes}), \code{score} (the criterion's value for the set),
+\code{measure}, and \code{evaluations} (the number of sets evaluated).
+\code{key_player_score()} returns a number.
 }
 \references{
 Borgatti, S. P. (2006). Identifying sets of key players in a social network.

@@ -9,6 +9,15 @@
 \alias{vcov.ergm_fit}
 \alias{logLik.ergm_fit}
 \title{Exponential random graph models}
+\description{
+\code{ergm_fit()} fits an exponential random graph model (ERGM) to a
+network from a formula of model terms written as in the statnet
+\pkg{ergm} package. \code{ergm_stats()} evaluates the terms on the observed
+network, and \code{ergm_control()} collects the estimation settings. The
+functions carry an \code{ergm_} prefix rather than statnet's names
+(\code{ergm()}, \code{gof()}, \code{mcmc.diagnostics()}) so that both
+packages can be attached without masking each other.
+}
 \usage{
 ergm_fit(formula, estimate = c("MCMLE", "MPLE", "exact"), constraints = NULL,
          control = ergm_control(), start = NULL)
@@ -69,37 +78,6 @@ tolerance of the logistic regression behind the pseudolikelihood (R's
 close to the optimum).}
 \item{object}{A fitted model.}
 \item{...}{Not used.}
-}
-\value{
-\code{ergm_fit()} returns an object of class \code{"ergm_fit"}: a list with
-\code{coefficients}; \code{vcov}, the full covariance matrix, and
-\code{mcmc_vcov}, its Monte Carlo part (\code{NULL} unless
-\code{estimate = "MCMLE"}); \code{estimate}; \code{stats}, the observed
-statistics; \code{loglik} and \code{loglik_se} (\code{NULL} when the
-log-likelihood is not available); \code{pseudo_loglik}; \code{null_loglik};
-\code{dyads}; \code{mple}, the pseudolikelihood fit; \code{converged} and
-\code{iterations}; \code{sample}, the statistics of the final Monte Carlo
-sample (for \code{\link{mcmc_diagnostics}}); \code{model}; \code{control};
-and the \code{call}.
-
-\code{summary()} gives a coefficient table with standard errors, the
-percentage of each variance due to Monte Carlo error (\code{MCMC \%}), z
-values and p-values, and the deviance, AIC, and BIC when the
-log-likelihood is available. \code{logLik()} returns the (exact,
-path-sampled, or, for dyad-independent models, logistic) log-likelihood
-with attributes \code{df}, \code{nobs} (the dyads), and \code{se}, and
-stops when it is not available. \code{ergm_stats()} returns the observed
-statistics as a named numeric vector, like statnet's
-\code{summary(formula)}. \code{ergm_control()} returns a list.
-}
-\description{
-\code{ergm_fit()} fits an exponential random graph model (ERGM) to a
-network from a formula of model terms written as in the statnet
-\pkg{ergm} package. \code{ergm_stats()} evaluates the terms on the observed
-network, and \code{ergm_control()} collects the estimation settings. The
-functions carry an \code{ergm_} prefix rather than statnet's names
-(\code{ergm()}, \code{gof()}, \code{mcmc.diagnostics()}) so that both
-packages can be attached without masking each other.
 }
 \details{
 An ERGM gives a network \eqn{y} on \eqn{n} nodes the probability
@@ -229,6 +207,28 @@ pairs and directed ties ordered pairs; the count of dyads \eqn{D} is
 \eqn{n(n-1)/2} or \eqn{n(n-1)} minus the fixed dyads. Chain \eqn{c} draws
 from stream \eqn{c} of \code{seed}, so a fit is reproducible for a given
 seed on any number of threads and any platform.
+}
+\value{
+\code{ergm_fit()} returns an object of class \code{"ergm_fit"}: a list with
+\code{coefficients}; \code{vcov}, the full covariance matrix, and
+\code{mcmc_vcov}, its Monte Carlo part (\code{NULL} unless
+\code{estimate = "MCMLE"}); \code{estimate}; \code{stats}, the observed
+statistics; \code{loglik} and \code{loglik_se} (\code{NULL} when the
+log-likelihood is not available); \code{pseudo_loglik}; \code{null_loglik};
+\code{dyads}; \code{mple}, the pseudolikelihood fit; \code{converged} and
+\code{iterations}; \code{sample}, the statistics of the final Monte Carlo
+sample (for \code{\link{mcmc_diagnostics}}); \code{model}; \code{control};
+and the \code{call}.
+
+\code{summary()} gives a coefficient table with standard errors, the
+percentage of each variance due to Monte Carlo error (\code{MCMC \%}), z
+values and p-values, and the deviance, AIC, and BIC when the
+log-likelihood is available. \code{logLik()} returns the (exact,
+path-sampled, or, for dyad-independent models, logistic) log-likelihood
+with attributes \code{df}, \code{nobs} (the dyads), and \code{se}, and
+stops when it is not available. \code{ergm_stats()} returns the observed
+statistics as a named numeric vector, like statnet's
+\code{summary(formula)}. \code{ergm_control()} returns a list.
 }
 \references{
 Holland, P. W., & Leinhardt, S. (1981). An exponential family of

@@ -14,6 +14,18 @@
 \alias{to_tbl_graph}
 \alias{as.matrix.netframe}
 \title{Convert networks to and from other packages}
+\description{
+\code{as_netframe()} turns network objects from other packages, adjacency
+matrices, and edge lists into a \code{\link{netframe}}. \code{to_igraph()},
+\code{to_network()}, and \code{to_tbl_graph()} convert back, and
+\code{as.matrix()} gives an adjacency matrix. Node, edge, and network-level
+attributes are carried across in both directions, so existing code and data
+keep working.
+
+The usual generics of other packages also work on a netframe:
+\code{igraph::as.igraph()}, \code{network::as.network()}, and
+\code{tidygraph::as_tbl_graph()}.
+}
 \usage{
 as_netframe(x, ...)
 
@@ -60,23 +72,6 @@ matrix; \code{NULL} counts edges.}
 \item{sparse}{For \code{as.matrix()}, whether to return a sparse
 \code{Matrix}.}
 }
-\value{
-\code{as_netframe()} returns a \code{\link{netframe}}. The \code{to_*()}
-functions return objects of the corresponding package, and
-\code{as.matrix()} returns an adjacency matrix.
-}
-\description{
-\code{as_netframe()} turns network objects from other packages, adjacency
-matrices, and edge lists into a \code{\link{netframe}}. \code{to_igraph()},
-\code{to_network()}, and \code{to_tbl_graph()} convert back, and
-\code{as.matrix()} gives an adjacency matrix. Node, edge, and network-level
-attributes are carried across in both directions, so existing code and data
-keep working.
-
-The usual generics of other packages also work on a netframe:
-\code{igraph::as.igraph()}, \code{network::as.network()}, and
-\code{tidygraph::as_tbl_graph()}.
-}
 \details{
 \itemize{
 \item \strong{igraph} (including \strong{tidygraph} \code{tbl_graph}
@@ -99,6 +94,11 @@ no tie.
 }
 \code{as.matrix()} sums parallel edges. In undirected networks the matrix is
 symmetric and a self-loop contributes once to the diagonal.
+}
+\value{
+\code{as_netframe()} returns a \code{\link{netframe}}. The \code{to_*()}
+functions return objects of the corresponding package, and
+\code{as.matrix()} returns an adjacency matrix.
 }
 \examples{
 m <- matrix(c(0, 2, 0,

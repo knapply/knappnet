@@ -1,6 +1,11 @@
 \name{mds_distances}
 \alias{mds_distances}
 \title{Distances between nodes for scaling}
+\description{
+Dissimilarity matrices of the kinds Everton (2012, Appendix 3) scales with
+\code{\link{classical_mds}}: geodesic distances, or structural-equivalence
+distances between nodes' tie profiles.
+}
 \usage{
 mds_distances(x, method = c("geodesic", "euclidean", "hamming", "correlation"),
               unreachable = "max_plus_one", weighted = NULL, weights_as = NULL,
@@ -25,12 +30,6 @@ them when the network has a weight column.}
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A symmetric numeric matrix with node identifiers as dimnames.}
-\description{
-Dissimilarity matrices of the kinds Everton (2012, Appendix 3) scales with
-\code{\link{classical_mds}}: geodesic distances, or structural-equivalence
-distances between nodes' tie profiles.
-}
 \details{
 Geodesic distances ignore direction so that the matrix is symmetric, as
 classical scaling requires. Weights are handled as in
@@ -38,6 +37,7 @@ classical scaling requires. Weights are handled as in
 1/weight. Structural equivalence distances use ties as given (total
 weights when the network is weighted, or 0/1 otherwise).
 }
+\value{A symmetric numeric matrix with node identifiers as dimnames.}
 \references{
 Everton, S. F. (2012). \emph{Disrupting Dark Networks}. Cambridge
 University Press. \doi{10.1017/CBO9781139136877}

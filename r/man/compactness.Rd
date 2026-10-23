@@ -2,6 +2,18 @@
 \alias{compactness}
 \alias{distance_weighted_fragmentation}
 \title{Compactness and distance-weighted fragmentation}
+\description{
+Borgatti (2006) measures how far a network is from falling apart with the
+distance-weighted fragmentation
+\deqn{{}^{D}F = 1 - \frac{\sum_{i \ne j} 1 / d_{ij}}{n (n - 1)}}{DF = 1 - sum_{i != j} (1 / d_ij) / (n (n - 1))}
+where \eqn{1 / d_{ij} = 0} for nodes that cannot reach each other. Its
+complement, the mean reciprocal distance over ordered pairs of distinct
+nodes, is the network's compactness (the global efficiency of Latora and
+Marchiori 2001). Fragmentation is 0 for a complete network and 1 for a
+network without ties; unlike \code{\link{fragmentation}} it distinguishes
+networks that are connected but stretched out. UCINET reports both in
+Network > Cohesion > Distance.
+}
 \usage{
 compactness(x, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
             threads = 0L)
@@ -22,19 +34,6 @@ farther apart) or \code{"strength"} (larger brings them closer; lengths
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A number.}
-\description{
-Borgatti (2006) measures how far a network is from falling apart with the
-distance-weighted fragmentation
-\deqn{{}^{D}F = 1 - \frac{\sum_{i \ne j} 1 / d_{ij}}{n (n - 1)}}{DF = 1 - sum_{i != j} (1 / d_ij) / (n (n - 1))}
-where \eqn{1 / d_{ij} = 0} for nodes that cannot reach each other. Its
-complement, the mean reciprocal distance over ordered pairs of distinct
-nodes, is the network's compactness (the global efficiency of Latora and
-Marchiori 2001). Fragmentation is 0 for a complete network and 1 for a
-network without ties; unlike \code{\link{fragmentation}} it distinguishes
-networks that are connected but stretched out. UCINET reports both in
-Network > Cohesion > Distance.
-}
 \details{
 Directed networks use directed distances over ordered pairs (\code{mode}
 \code{"out"}: from \eqn{i} to \eqn{j}; \code{"in"}: to each node;
@@ -47,6 +46,7 @@ count through the shortest. Networks with fewer than two nodes give
 undirected unweighted networks and the mean of \code{1 / igraph::distances()}
 off the diagonal otherwise.
 }
+\value{A number.}
 \references{
 Borgatti, S. P. (2006). Identifying sets of key players in a social
 network. \emph{Computational and Mathematical Organization Theory}, 12(1),

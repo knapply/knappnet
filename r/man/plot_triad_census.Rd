@@ -1,6 +1,15 @@
 \name{plot_triad_census}
 \alias{plot_triad_census}
 \title{Plot the triad census}
+\description{
+Draws the \code{\link{triad_census}} as a bar chart and, by default, the
+counts expected under the U|MAN null model of Holland and Leinhardt
+(1976), which conditions on the dyad census: all networks with the same
+numbers of mutual, asymmetric, and null dyads are equally likely.
+Comparing the two shows which triadic structures (transitive triads,
+cycles, closed triangles) are over- or under-represented beyond what the
+density and reciprocity of the network already imply.
+}
 \usage{
 plot_triad_census(x, expected = TRUE, log = FALSE, threads = 0L, ...)
 }
@@ -14,18 +23,6 @@ at the bottom).}
 available cores.}
 \item{...}{Further arguments passed to \code{\link[graphics]{barplot}},
 such as \code{main}.}
-}
-\value{A data frame with one row per triad type drawn, invisibly:
-\code{type}, \code{observed}, and \code{expected} (\code{NA} when
-\code{expected = FALSE}).}
-\description{
-Draws the \code{\link{triad_census}} as a bar chart and, by default, the
-counts expected under the U|MAN null model of Holland and Leinhardt
-(1976), which conditions on the dyad census: all networks with the same
-numbers of mutual, asymmetric, and null dyads are equally likely.
-Comparing the two shows which triadic structures (transitive triads,
-cycles, closed triangles) are over- or under-represented beyond what the
-density and reciprocity of the network already imply.
 }
 \details{
 With \eqn{M}, \eqn{A}, and \eqn{N} mutual, asymmetric, and null dyads
@@ -45,6 +42,9 @@ does: self-loops ignored, parallel edges counted once, and every edge of
 an undirected network mutual, so only the four undirected types (003, 102,
 201, 300) are drawn for undirected networks.
 }
+\value{A data frame with one row per triad type drawn, invisibly:
+\code{type}, \code{observed}, and \code{expected} (\code{NA} when
+\code{expected = FALSE}).}
 \references{
 Holland, P. W., & Leinhardt, S. (1976). Local structure in social
 networks. \emph{Sociological Methodology}, 7, 1-45. \doi{10.2307/270703}

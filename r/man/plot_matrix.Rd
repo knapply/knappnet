@@ -1,6 +1,12 @@
 \name{plot_matrix}
 \alias{plot_matrix}
 \title{Plot an adjacency or incidence matrix}
+\description{
+Draws a network as its adjacency matrix (or, for a two-mode network, its
+incidence matrix) with one shaded cell per tie, the way many network texts
+present blockmodels and permuted matrices. Rows and columns can be sorted
+by a partition of the nodes, with lines between the groups.
+}
 \usage{
 plot_matrix(x, order = NULL, attr = NULL, values = FALSE, key = NULL,
             labels = NULL, ...)
@@ -24,13 +30,6 @@ matrix has more than two distinct values.}
 \item{...}{Further arguments passed to \code{\link[graphics]{image}}, such
 as \code{main}.}
 }
-\value{The matrix as drawn (after any reordering), invisibly.}
-\description{
-Draws a network as its adjacency matrix (or, for a two-mode network, its
-incidence matrix) with one shaded cell per tie, the way many network texts
-present blockmodels and permuted matrices. Rows and columns can be sorted
-by a partition of the nodes, with lines between the groups.
-}
 \details{
 Cells are shaded from light (0) to dark (the largest value) with a
 single-hue sequential palette, so a binary network shows ties as dark
@@ -41,6 +40,7 @@ diagonal. A two-mode network (\code{\link{twomode}}) is drawn as its
 \code{\link{incidence_matrix}}, first mode in rows, with the partition
 applied to each mode's nodes.
 }
+\value{The matrix as drawn (after any reordering), invisibly.}
 \seealso{\code{\link{plot.blockmodel}} for block densities,
 \code{\link{plot_mixing_matrix}} for ties between categories.}
 \examples{

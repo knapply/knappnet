@@ -1,6 +1,10 @@
 \name{plot_component_sizes}
 \alias{plot_component_sizes}
 \title{Plot the distribution of component sizes}
+\description{
+Draws how many components of each size the network has, with the largest
+component, which most measures of connectivity are about, marked.
+}
 \usage{
 plot_component_sizes(x, mode = c("weak", "strong"), log = FALSE, ...)
 }
@@ -15,10 +19,6 @@ plot_component_sizes(x, mode = c("weak", "strong"), log = FALSE, ...)
 }
 \value{A data frame with one row per distinct size, invisibly:
 \code{size} and \code{count} (the number of components of that size).}
-\description{
-Draws how many components of each size the network has, with the largest
-component, which most measures of connectivity are about, marked.
-}
 \seealso{\code{\link{components}}, \code{\link{fragmentation}}.}
 \examples{
 g <- example_network("noordin", relation = "friendship")

@@ -2,6 +2,10 @@
 \alias{summary.netframe}
 \alias{print.summary.netframe}
 \title{Summarize a network}
+\description{
+The standard descriptive table of a network: its size, ties, components,
+cohesion, distances, and degree distribution.
+}
 \usage{
 \method{summary}{netframe}(object, paths = NULL, weighted = NULL, threads = 0L, ...)
 
@@ -20,15 +24,6 @@ weight column; see \code{\link{distances}}.}
 \item{...}{Not used.}
 \item{x}{A \code{summary.netframe} object.}
 \item{digits}{Significant digits for proportions and means.}
-}
-\value{
-\code{summary()} returns an object of class \code{summary.netframe}: a list
-holding the values described in Details, with a \code{print()} method.
-\code{print()} returns its argument invisibly.
-}
-\description{
-The standard descriptive table of a network: its size, ties, components,
-cohesion, distances, and degree distribution.
 }
 \details{
 The summary reports:
@@ -56,6 +51,11 @@ The summary reports:
 Everything except the mean distance and diameter takes time roughly linear
 in the size of the network, so networks with hundreds of thousands of nodes
 are summarized quickly.
+}
+\value{
+\code{summary()} returns an object of class \code{summary.netframe}: a list
+holding the values described in Details, with a \code{print()} method.
+\code{print()} returns its argument invisibly.
 }
 \examples{
 g <- netframe(data.frame(from = c(1, 1, 2, 3, 5), to = c(2, 3, 3, 4, 6)),

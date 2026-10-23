@@ -2,6 +2,11 @@
 \alias{layout_network}
 \alias{layout_stress}
 \title{Node coordinates for drawing a network}
+\description{
+\code{layout_network()} places the nodes of a network in the plane.
+\code{layout_stress()} measures how well a layout represents the network's
+shortest-path distances.
+}
 \usage{
 layout_network(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
                              "star", "grid", "tree", "twomode"),
@@ -49,14 +54,6 @@ always approximates it.}
 Results do not depend on the number of threads.}
 \item{layout}{A layout of \code{x}: a numeric matrix or data frame with two
 columns and one row per node.}
-}
-\value{\code{layout_network()} returns a numeric matrix with columns
-\code{x} and \code{y} and one row per node, aligned with the rows of
-\code{x$nodes}. \code{layout_stress()} returns a number.}
-\description{
-\code{layout_network()} places the nodes of a network in the plane.
-\code{layout_stress()} measures how well a layout represents the network's
-shortest-path distances.
 }
 \details{
 Methods:
@@ -132,6 +129,9 @@ Stress layouts of the validation networks have stress no higher than
 NetworkX's \code{kamada_kawai_layout()} (within 2\%, and usually lower);
 see \file{validation/layout_check.py} in the source repository.
 }
+\value{\code{layout_network()} returns a numeric matrix with columns
+\code{x} and \code{y} and one row per node, aligned with the rows of
+\code{x$nodes}. \code{layout_stress()} returns a number.}
 \references{
 Gansner, E. R., Koren, Y., & North, S. (2005). Graph drawing by stress
 majorization. In \emph{Graph Drawing (GD 2004)}, Lecture Notes in Computer

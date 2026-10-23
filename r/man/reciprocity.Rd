@@ -1,18 +1,17 @@
 \name{reciprocity}
 \alias{reciprocity}
 \title{Reciprocity}
+\description{
+How far ties in a directed network are returned. Reciprocity is a property
+of dyads, so the network is read as an adjacency matrix: parallel arcs count
+once and self-loops are ignored.
+}
 \usage{
 reciprocity(x, mode = c("default", "ratio", "dyadic", "correlation"))
 }
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
 \item{mode}{Which index; see Details.}
-}
-\value{A number.}
-\description{
-How far ties in a directed network are returned. Reciprocity is a property
-of dyads, so the network is read as an adjacency matrix: parallel arcs count
-once and self-loops are ignored.
 }
 \details{
 With \eqn{M} mutual, \eqn{A} asymmetric, and \eqn{N} null dyads among the
@@ -46,6 +45,7 @@ igraph's \code{reciprocity()} also ignores self-loops by default
 (\code{ignore.loops = TRUE}); the validation suite compares it on the
 simplified network, where parallel arcs are merged as here.
 }
+\value{A number.}
 \references{
 Newman, M. E. J., Forrest, S., & Balthrop, J. (2002). Email networks and the
 spread of computer viruses. \emph{Physical Review E}, 66(3), 035101.

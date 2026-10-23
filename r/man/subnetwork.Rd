@@ -5,6 +5,23 @@
 \alias{remove_pendants}
 \alias{largest_component}
 \title{Subnetworks: node selection, filters, isolates, pendants, components}
+\description{
+Induced subnetworks keep a set of nodes and every edge between them:
+\describe{
+  \item{\code{subnetwork()}}{Keeps the nodes named in \code{nodes} (UCINET:
+    Data > Extract).}
+  \item{\code{filter_nodes()}}{Keeps the nodes for which a condition on the
+    columns of \code{x$nodes} holds, written as in \code{\link{subset}}: for
+    example \code{filter_nodes(x, role == "leader")}.}
+  \item{\code{remove_isolates()}}{Drops nodes with no ties to other nodes
+    (UCINET: Data > Remove isolates).}
+  \item{\code{remove_pendants()}}{Drops nodes with exactly one neighbor,
+    once or repeatedly (UCINET: Data > Remove pendants).}
+  \item{\code{largest_component()}}{Keeps the largest weak or strong
+    component (UCINET: Data > Extract main component).}
+}
+The menu paths follow Hanneman and Riddle (2005, chapter 6).
+}
 \usage{
 subnetwork(x, nodes)
 
@@ -26,24 +43,6 @@ missing values count as \code{FALSE}.}
 \item{mode}{\code{"weak"} or \code{"strong"} components; see
 \code{\link{components}}.}
 }
-\value{A netframe.}
-\description{
-Induced subnetworks keep a set of nodes and every edge between them:
-\describe{
-  \item{\code{subnetwork()}}{Keeps the nodes named in \code{nodes} (UCINET:
-    Data > Extract).}
-  \item{\code{filter_nodes()}}{Keeps the nodes for which a condition on the
-    columns of \code{x$nodes} holds, written as in \code{\link{subset}}: for
-    example \code{filter_nodes(x, role == "leader")}.}
-  \item{\code{remove_isolates()}}{Drops nodes with no ties to other nodes
-    (UCINET: Data > Remove isolates).}
-  \item{\code{remove_pendants()}}{Drops nodes with exactly one neighbor,
-    once or repeatedly (UCINET: Data > Remove pendants).}
-  \item{\code{largest_component()}}{Keeps the largest weak or strong
-    component (UCINET: Data > Extract main component).}
-}
-The menu paths follow Hanneman and Riddle (2005, chapter 6).
-}
 \details{
 Node and edge attributes, weights, direction, and network attributes are
 kept; node order is preserved. Isolates and pendants are judged on the
@@ -56,6 +55,7 @@ trees down to their cycles; otherwise only the nodes that are pendants in
 the original network are dropped. When several components are largest, the
 one containing the earliest node in \code{x$nodes} is kept.
 }
+\value{A netframe.}
 \references{
 Hanneman, R. A., & Riddle, M. (2005). \emph{Introduction to Social Network
 Methods}. University of California, Riverside.

@@ -1,6 +1,13 @@
 \name{plot.netframe}
 \alias{plot.netframe}
 \title{Plot a network}
+\description{
+Draws a network with base R graphics. With no arguments beyond the
+network, nodes are placed by \code{\link{layout_network}}, sized by degree,
+and labelled when the network is small; edges are semi-transparent, with
+arrows when the network is directed. Node and edge appearance can be set
+from columns of \code{x$nodes} and \code{x$edges}.
+}
 \usage{
 \method{plot}{netframe}(x, layout = NULL, node_size = NULL, node_color = NULL,
      node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
@@ -30,17 +37,6 @@ as \code{main}.}
 \item{legend}{Whether to draw legends for mapped columns and vectors.}
 \item{seed}{Seed for the layout, as in \code{\link{layout_network}}, when
 \code{layout} is \code{NULL} or a method name.}
-}
-\value{The layout used, invisibly: a matrix with columns \code{x} and
-\code{y} and one row per node, which can be passed back as \code{layout}.
-For a spatial network drawn at its locations, \code{x} invisibly, as
-\code{\link{plot_spatial}} returns.}
-\description{
-Draws a network with base R graphics. With no arguments beyond the
-network, nodes are placed by \code{\link{layout_network}}, sized by degree,
-and labelled when the network is small; edges are semi-transparent, with
-arrows when the network is directed. Node and edge appearance can be set
-from columns of \code{x$nodes} and \code{x$edges}.
 }
 \details{
 Defaults:
@@ -83,6 +79,10 @@ recorded by \code{\link{spatial_network}} or
 draws them like any network. \code{"geo"} is an error for a network without
 locations.
 }
+\value{The layout used, invisibly: a matrix with columns \code{x} and
+\code{y} and one row per node, which can be passed back as \code{layout}.
+For a spatial network drawn at its locations, \code{x} invisibly, as
+\code{\link{plot_spatial}} returns.}
 \seealso{\code{\link{layout_network}}, \code{\link{plot_spatial}}, and the
 other plotting functions: \code{\link{plot_matrix}},
 \code{\link{plot_centrality}}, \code{\link{plot_partition}},

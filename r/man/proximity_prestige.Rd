@@ -1,6 +1,17 @@
 \name{proximity_prestige}
 \alias{proximity_prestige}
 \title{Proximity prestige}
+\description{
+The prestige of a node in a directed network from the nodes that can reach
+it, its influence domain (Lin 1976; Wasserman and Faust 1994, section
+5.3.3). With \eqn{I_i} the number of nodes that reach node \eqn{i} (other
+than itself), \eqn{n} the number of nodes, and \eqn{d(j, i)} the
+shortest-path length from \eqn{j} to \eqn{i},
+\deqn{P_P(i) = \frac{I_i / (n - 1)}{\sum_{j \in I_i} d(j, i) / I_i},}{P_P(i) = (I_i / (n - 1)) / (sum_j d(j, i) / I_i),}
+the share of nodes that reach \eqn{i} divided by their mean distance from
+it. It is 0 for a node that no other node reaches and 1 for a node every
+other node points to directly.
+}
 \usage{
 proximity_prestige(x, weighted = NULL, weights_as = NULL, threads = 0L)
 }
@@ -14,18 +25,6 @@ them when the network has a weight column.}
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
 }
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-The prestige of a node in a directed network from the nodes that can reach
-it, its influence domain (Lin 1976; Wasserman and Faust 1994, section
-5.3.3). With \eqn{I_i} the number of nodes that reach node \eqn{i} (other
-than itself), \eqn{n} the number of nodes, and \eqn{d(j, i)} the
-shortest-path length from \eqn{j} to \eqn{i},
-\deqn{P_P(i) = \frac{I_i / (n - 1)}{\sum_{j \in I_i} d(j, i) / I_i},}{P_P(i) = (I_i / (n - 1)) / (sum_j d(j, i) / I_i),}
-the share of nodes that reach \eqn{i} divided by their mean distance from
-it. It is 0 for a node that no other node reaches and 1 for a node every
-other node points to directly.
-}
 \details{
 Lengths are handled as in \code{\link{closeness}}: without weights every
 edge has length 1; with weights they are distances, or strengths converted
@@ -38,6 +37,7 @@ that index computed over paths \emph{to} each node, which is NetworkX's
 \code{closeness_centrality()} on a directed graph. Neither igraph nor sna
 has a function for it.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Lin, N. (1976). \emph{Foundations of Social Research}. McGraw-Hill.
 

@@ -1,6 +1,17 @@
 \name{regular_equivalence}
 \alias{regular_equivalence}
 \title{Regular equivalence (CATREGE)}
+\description{
+Nodes are regularly equivalent when they have the same kinds of ties to
+the same kinds of nodes: for every node tied to one of them, some node of
+the same class is tied in the same way to the other (White and Reitz
+1983). Unlike structural equivalence, the alters need not be the same
+nodes. The largest such equivalence, the maximal regular equivalence, is
+found by CATREGE (Borgatti and Everett 1993): start with every node in one
+class (or with \code{seed}), and repeatedly split each class by the set of
+(type of tie, class of alter) pairs its members have, until no class
+splits.
+}
 \usage{
 regular_equivalence(x, seed = NULL, weighted = NULL)
 }
@@ -14,20 +25,6 @@ matters. \code{NULL} starts from a single class.}
 nodes with ties of different weights are then not equivalent. \code{NULL}
 uses weights when the network has a weight column. Weights are categories,
 not magnitudes, so \code{weight_type} does not matter.}
-}
-\value{An integer vector of class numbers (starting at 1) aligned with the
-rows of \code{x$nodes}, with attribute \code{rounds}, the number of
-refinement rounds that split a class.}
-\description{
-Nodes are regularly equivalent when they have the same kinds of ties to
-the same kinds of nodes: for every node tied to one of them, some node of
-the same class is tied in the same way to the other (White and Reitz
-1983). Unlike structural equivalence, the alters need not be the same
-nodes. The largest such equivalence, the maximal regular equivalence, is
-found by CATREGE (Borgatti and Everett 1993): start with every node in one
-class (or with \code{seed}), and repeatedly split each class by the set of
-(type of tie, class of alter) pairs its members have, until no class
-splits.
 }
 \details{
 The type of tie between \eqn{i} and \eqn{k} is the pair (tie from \eqn{i}
@@ -49,6 +46,9 @@ in sna's \code{redist(method = "catrege")}, with and without
 computes the same partition. REGE, the iterative algorithm for valued data that scores
 the degree of regular equivalence between pairs, is not provided.
 }
+\value{An integer vector of class numbers (starting at 1) aligned with the
+rows of \code{x$nodes}, with attribute \code{rounds}, the number of
+refinement rounds that split a class.}
 \references{
 White, D. R., & Reitz, K. P. (1983). Graph and semigroup homomorphisms on
 networks of relations. \emph{Social Networks}, 5(2), 193-234.

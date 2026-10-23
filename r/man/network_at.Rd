@@ -2,6 +2,14 @@
 \alias{network_at}
 \alias{network_window}
 \title{A temporal network at a time or in a window}
+\description{
+\code{network_at()} keeps the contacts active at one time and
+\code{network_window()} those active at some time in the window
+\eqn{[from, to)}, following the half-open rule of
+\code{\link{temporal_network}}. Both return a temporal network with all
+columns and roles, contacts in their original order, and contacts
+unchanged (not clipped to the window).
+}
 \usage{
 network_at(x, time, nodes = c("all", "present", "active"))
 
@@ -18,15 +26,6 @@ intervals (every node if it has none); \code{"active"} keeps only nodes
 with a contact in the result. Endpoints of the contacts kept are always
 kept.}
 }
-\value{A temporal network (\code{\link{netframe}}).}
-\description{
-\code{network_at()} keeps the contacts active at one time and
-\code{network_window()} those active at some time in the window
-\eqn{[from, to)}, following the half-open rule of
-\code{\link{temporal_network}}. Both return a temporal network with all
-columns and roles, contacts in their original order, and contacts
-unchanged (not clipped to the window).
-}
 \details{
 A contact from \eqn{s} to \eqn{e > s} is active at \eqn{t} when
 \eqn{s \le t < e}{s <= t < e} and in \eqn{[from, to)} when \eqn{s < to}
@@ -36,6 +35,7 @@ Node presence intervals follow the same rule. Both functions run in
 compiled code; for a series of windows use \code{\link{snapshots}}, which
 sorts the contacts once for the whole series.
 }
+\value{A temporal network (\code{\link{netframe}}).}
 \seealso{
 \code{\link{snapshots}} for a series of windows,
 \code{\link{aggregate_network}} to collapse a window into weighted edges.

@@ -1,6 +1,10 @@
 \name{betweenness}
 \alias{betweenness}
 \title{Betweenness centrality}
+\description{
+Shortest-path betweenness (Freeman 1977), computed with the algorithm of
+Brandes (2001) in parallel.
+}
 \usage{
 betweenness(x, weighted = NULL, normalized = FALSE, threads = 0L,
             weights_as = NULL,
@@ -18,11 +22,6 @@ cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{"distance"} or \code{"strength"}.}
 \item{convention}{How parallel edges and weights are treated; see
 Details.}
-}
-\value{A numeric vector aligned with the rows of \code{x$nodes}.}
-\description{
-Shortest-path betweenness (Freeman 1977), computed with the algorithm of
-Brandes (2001) in parallel.
 }
 \details{
 Endpoints are excluded and, in undirected networks, each pair of nodes is
@@ -49,6 +48,7 @@ collapse and weights are not used (\code{convention = "sna"} or
 \code{"ucinet"}). On networks without parallel edges all four agree. See
 \code{\link{conventions}}.
 }
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \references{
 Freeman, L. C. (1977). A set of measures of centrality based on betweenness.
 \emph{Sociometry}, 40(1), 35-41. \doi{10.2307/3033543}

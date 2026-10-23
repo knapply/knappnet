@@ -2,6 +2,28 @@
 \alias{plot_spatial}
 \alias{plot_edge_lengths}
 \title{Plot a spatial network on its map}
+\description{
+Draws a spatial network with base graphics at its true locations: nodes
+and edges at their geometries when the tables are sf (see
+\code{\link{to_sf}}), and at the representative points otherwise. Polygons
+are filled with the node color, lines drawn in it, points drawn as points,
+and any other geometry as sf draws it; edges follow their own geometry when
+they have one and are straight segments between representative points
+otherwise, with arrowheads at the end of directed edges. Planar coordinates
+keep an aspect ratio of 1; longitude and latitude get 1 / cos(mean
+latitude), so shapes are not stretched. Networks without sf geometry
+(coordinates recorded by \code{\link{spatial_network}}) need no sf.
+
+\code{plot_edge_lengths()} draws the distribution of
+\code{\link{edge_lengths}} as a histogram, in the unit of the lengths, and,
+when \code{scale} is given, the \code{\link{distance_decay}} curve with that
+scale on a second axis, so the choice of scale can be judged against the
+lengths it will weight.
+
+Colors come from palettes that are safe for color-blind readers: the
+Okabe-Ito palette for categories (eight colors; more categories recycle
+them, with a warning) and viridis for numbers.
+}
 \usage{
 plot_spatial(x, node_color = NULL, node_size = NULL, node_label = NULL,
              edge_width = NULL, edge_color = NULL, ..., legend = TRUE)
@@ -31,28 +53,6 @@ of \code{x$nodes} or a vector with one label per node.}
 \code{\link{distance_decay}} curve to overlay; \code{NULL} draws none.}
 }
 \value{\code{x}, invisibly.}
-\description{
-Draws a spatial network with base graphics at its true locations: nodes
-and edges at their geometries when the tables are sf (see
-\code{\link{to_sf}}), and at the representative points otherwise. Polygons
-are filled with the node color, lines drawn in it, points drawn as points,
-and any other geometry as sf draws it; edges follow their own geometry when
-they have one and are straight segments between representative points
-otherwise, with arrowheads at the end of directed edges. Planar coordinates
-keep an aspect ratio of 1; longitude and latitude get 1 / cos(mean
-latitude), so shapes are not stretched. Networks without sf geometry
-(coordinates recorded by \code{\link{spatial_network}}) need no sf.
-
-\code{plot_edge_lengths()} draws the distribution of
-\code{\link{edge_lengths}} as a histogram, in the unit of the lengths, and,
-when \code{scale} is given, the \code{\link{distance_decay}} curve with that
-scale on a second axis, so the choice of scale can be judged against the
-lengths it will weight.
-
-Colors come from palettes that are safe for color-blind readers: the
-Okabe-Ito palette for categories (eight colors; more categories recycle
-them, with a warning) and viridis for numbers.
-}
 \seealso{\code{\link{plot.netframe}} for abstract layouts,
 \code{\link{to_sf}}, \code{\link{spatial_network}}.}
 \examples{

@@ -3,38 +3,6 @@
 \alias{cluster_leading_eigen}
 \alias{cluster_fast_greedy}
 \title{Girvan-Newman, leading eigenvector, and greedy modularity communities}
-\usage{
-cluster_girvan_newman(x, threads = 0L)
-
-cluster_leading_eigen(x, weighted = NULL)
-
-cluster_fast_greedy(x, resolution = 1, weighted = NULL)
-}
-\arguments{
-\item{x}{An undirected \code{\link{netframe}}.}
-\item{threads}{Number of threads for the betweenness computations, a whole
-number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
-(see \sQuote{Threads} in \code{\link{netframe}}).}
-\item{weighted}{Whether to use edge weights, as given (larger means a
-stronger tie). \code{NULL} (the default) uses them when the network has a
-weight column. They must not be negative.}
-\item{resolution}{Resolution parameter \eqn{\gamma} (non-negative); see
-\code{\link{modularity}}.}
-}
-\value{
-An integer vector of group labels aligned with the rows of \code{x$nodes},
-numbered 1, 2, ... in order of first appearance, with the partition's
-modularity in attribute \code{"modularity"}.
-\code{cluster_girvan_newman()} also records the edges removed, in order, as
-a two-column data frame of node identifiers in attribute \code{"removed"},
-the modularity before any removal and after each removal in attribute
-\code{"path"}, and the divisive hierarchy as an \code{hclust} object in
-attribute \code{"tree"}, whose heights count removals from the end (the
-last edge removed joins two nodes at height 1, components never connected
-join at height \eqn{m + 1}), so that \code{plot()} of it draws the
-dendrogram. \code{cluster_leading_eigen()} records the number of divisions
-in attribute \code{"splits"}.
-}
 \description{
 Three classic partitioning methods for undirected networks, each returning
 the partition with its modularity (see \code{\link{modularity}}):
@@ -55,6 +23,24 @@ the partition with its modularity (see \code{\link{modularity}}):
     modularity the most, returning the best partition along the way
     (Clauset, Newman, and Moore 2004; Newman 2004).}
 }
+}
+\usage{
+cluster_girvan_newman(x, threads = 0L)
+
+cluster_leading_eigen(x, weighted = NULL)
+
+cluster_fast_greedy(x, resolution = 1, weighted = NULL)
+}
+\arguments{
+\item{x}{An undirected \code{\link{netframe}}.}
+\item{threads}{Number of threads for the betweenness computations, a whole
+number; \code{0} uses all available cores, or 2 during \verb{R CMD check}
+(see \sQuote{Threads} in \code{\link{netframe}}).}
+\item{weighted}{Whether to use edge weights, as given (larger means a
+stronger tie). \code{NULL} (the default) uses them when the network has a
+weight column. They must not be negative.}
+\item{resolution}{Resolution parameter \eqn{\gamma} (non-negative); see
+\code{\link{modularity}}.}
 }
 \details{
 All three accept only undirected networks, as the igraph functions they
@@ -105,6 +91,20 @@ that lowers modularity until no two groups are connected, as in igraph, and
 the first partition of highest modularity is returned. \code{resolution} is
 the parameter of Reichardt and Bornholdt (2006), as in NetworkX's
 \code{greedy_modularity_communities()}.
+}
+\value{
+An integer vector of group labels aligned with the rows of \code{x$nodes},
+numbered 1, 2, ... in order of first appearance, with the partition's
+modularity in attribute \code{"modularity"}.
+\code{cluster_girvan_newman()} also records the edges removed, in order, as
+a two-column data frame of node identifiers in attribute \code{"removed"},
+the modularity before any removal and after each removal in attribute
+\code{"path"}, and the divisive hierarchy as an \code{hclust} object in
+attribute \code{"tree"}, whose heights count removals from the end (the
+last edge removed joins two nodes at height 1, components never connected
+join at height \eqn{m + 1}), so that \code{plot()} of it draws the
+dendrogram. \code{cluster_leading_eigen()} records the number of divisions
+in attribute \code{"splits"}.
 }
 \references{
 Girvan, M., & Newman, M. E. J. (2002). Community structure in social and

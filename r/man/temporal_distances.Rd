@@ -1,6 +1,11 @@
 \name{temporal_distances}
 \alias{temporal_distances}
 \title{Time-respecting paths}
+\description{
+Optimal time-respecting walks between nodes of a temporal network:
+earliest arrival, latest departure, fastest, and shortest (fewest
+contacts), or Pan and Saramäki's (2011) average temporal distance.
+}
 \usage{
 temporal_distances(x, type = c("earliest_arrival", "latest_departure",
   "fastest", "shortest", "average"), from = NULL, to = NULL,
@@ -30,15 +35,6 @@ phone call that must finish before the information moves on.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all
 available cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
-}
-\value{
-A numeric matrix with one row per origin and one column per destination,
-named by node identifiers.
-}
-\description{
-Optimal time-respecting walks between nodes of a temporal network:
-earliest arrival, latest departure, fastest, and shortest (fewest
-contacts), or Pan and Saramäki's (2011) average temporal distance.
 }
 \details{
 \strong{Walks.} Following Wu et al. (2014), each contact from \eqn{u} to
@@ -98,6 +94,10 @@ of usable ones. Earliest arrival without \code{max_wait} runs 64 origins
 per pass. Origins run in parallel. Latest departure costs one pass per
 destination, and \code{"average"} one pass per node of the network.
 Results are checked against a brute-force search over all walks.
+}
+\value{
+A numeric matrix with one row per origin and one column per destination,
+named by node identifiers.
 }
 \references{
 Kempe, D., Kleinberg, J., & Kumar, A. (2002). Connectivity and inference
