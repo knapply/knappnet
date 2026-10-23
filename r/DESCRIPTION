@@ -43,5 +43,5 @@ Suggests:
     tsna
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-Config/Needs/website: pkgdown, igraph, sna, network, tidygraph, Matrix, sf, sfnetworks
+Config/Needs/website: pkgdown, igraph, Matrix, network, sf, sfnetworks, sna, tidygraph
 SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.70), GNU make
