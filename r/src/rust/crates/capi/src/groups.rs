@@ -29,22 +29,13 @@ use engine::metrics::factions::{
 use engine::metrics::partition::{fast_greedy, girvan_newman, leading_eigen};
 use engine::{Error, WeightKind};
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
+use crate::{count, guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// Opaque collection of node sets.
 pub struct NodeSetsHandle(Vec<Vec<u32>>);
 
 /// Opaque batch of edge lists.
 pub struct EdgeListsHandle(Vec<EdgeList>);
-
-fn count(value: i64, what: &str) -> Result<usize, Error> {
-    usize::try_from(value)
-        .map_err(|_| Error::InvalidArgument(format!("{what} must not be negative")))
-}
-
-fn threads(t: i32) -> usize {
-    t.max(0) as usize
-}
 
 /// # Safety
 /// `out` must be writable.
@@ -178,9 +169,9 @@ pub unsafe extern "C" fn net_n_cliques(
         let order = count(order, "n")?;
         let min_size = count(min_size, "the minimum size")?;
         let sets = if clans != 0 {
-            n_clans(g, order, min_size, threads(threads_))?
+            n_clans(g, order, min_size, thread_count(threads_))?
         } else {
-            n_cliques(g, order, min_size, threads(threads_))?
+            n_cliques(g, order, min_size, thread_count(threads_))?
         };
         give_sets(out, sets)
     })
@@ -213,7 +204,7 @@ pub unsafe extern "C" fn net_k_plexes(
             k: count(k, "k")?,
             min_size: count(min_size, "the minimum size")?,
             max_steps: max_steps.min(u64::MAX as f64) as u64,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
         };
         give_sets(out, k_plexes(g, opts)?)
     })
@@ -272,7 +263,7 @@ pub unsafe extern "C" fn net_factions(
             max_stall: count(max_stall, "the stall limit")?,
             tenure: count(tenure, "the tabu tenure")?,
             seed,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
         };
         let f = factions(g, opts)?;
         for (o, &c) in slice_mut(membership, g.node_count())
@@ -312,7 +303,7 @@ pub unsafe extern "C" fn net_girvan_newman(
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        let r = girvan_newman(g, threads(threads_))?;
+        let r = girvan_newman(g, thread_count(threads_))?;
         let m = g.edge_count();
         for (o, &c) in slice_mut(membership, g.node_count())
             .iter_mut()
@@ -424,7 +415,7 @@ pub unsafe extern "C" fn net_core_periphery(
             max_stall: count(max_stall, "the stall limit")?,
             tenure: count(tenure, "the tabu tenure")?,
             seed,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
         };
         let r = core_periphery(g, opts)?;
         for (o, &c) in slice_mut(core, g.node_count()).iter_mut().zip(&r.core) {
@@ -472,7 +463,7 @@ pub unsafe extern "C" fn net_core_periphery_continuous(
             tol,
             starts: count(starts, "the number of starts")?,
             seed,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
         };
         let r = continuous_core_periphery(g, opts)?;
         slice_mut(coreness, g.node_count()).copy_from_slice(&r.coreness);
@@ -505,7 +496,7 @@ pub unsafe extern "C" fn net_compactness(
             mode: DegreeMode::from_code(mode)?,
             weighted: weighted != 0,
             weights_as: WeightKind::from_code(weights_as)?,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
             ..Default::default()
         };
         slice_mut(out, 1)[0] = compactness(g, opts)?;
@@ -537,7 +528,7 @@ pub unsafe extern "C" fn net_small_world(
             local: local != 0,
             reps: count(reps, "the number of random networks")?,
             seed,
-            threads: threads(threads_),
+            threads: thread_count(threads_),
         };
         let r = small_world(g, opts)?;
         slice_mut(out, 5).copy_from_slice(&[
@@ -650,7 +641,7 @@ pub unsafe extern "C" fn net_random_gnp(
             loops != 0,
             reps,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -682,7 +673,7 @@ pub unsafe extern "C" fn net_random_gnm(
             loops != 0,
             reps,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -733,7 +724,7 @@ pub unsafe extern "C" fn net_random_configuration(
             count(max_tries, "max_tries")?,
             count(reps, "reps")?,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -762,7 +753,7 @@ pub unsafe extern "C" fn net_random_uman(
             count(asym, "the number of asymmetric dyads")? as u64,
             count(reps, "reps")?,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -791,7 +782,7 @@ pub unsafe extern "C" fn net_random_small_world(
             p,
             count(reps, "reps")?,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -818,7 +809,7 @@ pub unsafe extern "C" fn net_random_preferential(
             count(m, "m")?,
             count(reps, "reps")?,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })
@@ -857,7 +848,7 @@ pub unsafe extern "C" fn net_random_sbm(
             loops != 0,
             count(reps, "reps")?,
             seed,
-            threads(threads_),
+            thread_count(threads_),
         );
         give_edges(out, lists)
     })

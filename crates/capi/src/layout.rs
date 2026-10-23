@@ -21,12 +21,7 @@ use engine::layout::{
 };
 use engine::{Error, WeightKind};
 
-use crate::{guard, handle, slice, slice_mut, GraphHandle};
-
-fn count(value: i64, what: &str) -> Result<usize, Error> {
-    usize::try_from(value)
-        .map_err(|_| Error::InvalidArgument(format!("{what} must not be negative")))
-}
+use crate::{count, guard, handle, slice, slice_mut, thread_count, GraphHandle};
 
 /// # Safety
 /// `x` and `y` must each hold `n` doubles.
@@ -68,7 +63,7 @@ pub unsafe extern "C" fn net_layout_stress(
             max_iter: count(max_iter, "the iteration cap")?,
             tol,
             seed,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         write(&stress_layout(g, &opts)?, x, y);
         Ok(())
@@ -104,7 +99,7 @@ pub unsafe extern "C" fn net_layout_fr(
             approximation: FrApproximation::from_code(approximation)?,
             theta,
             seed,
-            threads: threads.max(0) as usize,
+            threads: thread_count(threads),
         };
         write(&fr_layout(g, &opts)?, x, y);
         Ok(())
@@ -246,7 +241,7 @@ pub unsafe extern "C" fn net_layout_stress_value(
             &l,
             weighted != 0,
             WeightKind::from_code(weights_as)?,
-            threads.max(0) as usize,
+            thread_count(threads),
         )?;
         slice_mut(out, 1)[0] = s;
         Ok(())
