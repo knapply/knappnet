@@ -41,7 +41,12 @@
 //! The pairwise sums run over the union of the two nodes' neighbor lists,
 //! so all pairs cost O(nm) rather than O(n^3), and each term is evaluated
 //! directly rather than by expanding squares, so identical profiles give
-//! exactly zero distance.
+//! exactly zero distance. For binary profiles of dense networks the same
+//! sums are counted with word-wide Boolean operations on bit rows
+//! (O(n^3 / 64), exact, and identical to the sparse sums); every measure
+//! is symmetric in the two nodes, so each pair is evaluated once.
+//! The iterated correlations of CONCOR are tiled products over centred
+//! columns, each sum still taken in order (O(b^3) for a block of b nodes).
 //!
 //! # CONCOR
 //!
@@ -91,6 +96,7 @@
 
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::linalg::simd;
 use crate::matrix::Dense;
 use crate::parallel;
 
@@ -302,7 +308,10 @@ fn iterate(init: &Dense, block: &[usize], opts: ConcorOptions) -> Iteration {
         if converged(&m) {
             break;
         }
-        let next = column_correlations(&m, opts.threads);
+        let next = {
+            let _t = crate::linalg::phase::start("concor: column correlations");
+            column_correlations(&m, opts.threads)
+        };
         let step = next
             .as_slice()
             .iter()
@@ -339,26 +348,81 @@ fn column_correlations(m: &Dense, threads: usize) -> Dense {
         }
         *nc = ss.sqrt();
     }
-    let rows = parallel::for_each_item(b, threads, Vec::new, |out, i| {
-        let xi = centred.row(i);
-        let mut row = vec![0.0; b];
-        for (j, slot) in row.iter_mut().enumerate() {
-            if norm[i] > 0.0 && norm[j] > 0.0 {
-                let dot: f64 = xi.iter().zip(centred.row(j)).map(|(x, y)| x * y).sum();
-                *slot = (dot / (norm[i] * norm[j])).clamp(-1.0, 1.0);
+    // Correlation is symmetric and each dot product is the same sequence
+    // of exactly rounded products whichever column comes first, so only
+    // j >= i is computed and mirrored. The products are tiled: a block of
+    // RB rows of `centred` is packed so that the RB values for one k are
+    // adjacent, and each pass over k updates RB x CB running sums, one per
+    // pair, from one packed load and CB scalars. Every sum still adds its
+    // terms in order of k, starting from the value the standard library's
+    // sum starts from, so the result is that of one sum per pair; the
+    // compiler can keep the RB sums of a column in vector registers since
+    // they are independent.
+    let zero: f64 = std::iter::empty::<f64>().sum();
+    let blocks = (b + RB - 1) / RB;
+    let rows = parallel::for_each_item(blocks, threads, Vec::new, |out, blk| {
+        let i0 = blk * RB;
+        let i1 = (i0 + RB).min(b);
+        let mut pack = vec![0.0; b * RB];
+        for r in 0..RB {
+            let row = centred.row((i0 + r).min(i1 - 1));
+            for (k, &x) in row.iter().enumerate() {
+                pack[k * RB + r] = x;
             }
         }
-        out.push((i, row));
+        let mut part: Vec<Vec<f64>> = (i0..i1).map(|i| vec![0.0; b - i]).collect();
+        let mut j = i0;
+        while j < b {
+            let cols: [&[f64]; CB] = std::array::from_fn(|c| centred.row((j + c).min(b - 1)));
+            let acc = simd::dispatch!(correlation_tile(&pack, &cols, b, zero));
+            for (r, i) in (i0..i1).enumerate() {
+                for (c, sums) in acc.iter().enumerate() {
+                    let jj = j + c;
+                    if jj < b && jj >= i && norm[i] > 0.0 && norm[jj] > 0.0 {
+                        part[r][jj - i] = (sums[r] / (norm[i] * norm[jj])).clamp(-1.0, 1.0);
+                    }
+                }
+            }
+            j += CB;
+        }
+        out.push((i0, part));
     });
-    let mut out = Dense::zeros(b, b);
-    for part in rows {
-        for (i, row) in part {
-            for (j, x) in row.into_iter().enumerate() {
-                out.set(i, j, x);
+    let mut out = vec![0.0; b * b];
+    for st in rows {
+        for (i0, part) in st {
+            for (r, row) in part.into_iter().enumerate() {
+                let i = i0 + r;
+                for (d, x) in row.into_iter().enumerate() {
+                    let j = i + d;
+                    out[i * b + j] = x;
+                    out[j * b + i] = x;
+                }
             }
         }
     }
-    out
+    Dense::from_row_major(b, b, out).expect("square")
+}
+
+/// Rows per tile in [`column_correlations`].
+const RB: usize = 8;
+/// Columns per tile in [`column_correlations`].
+const CB: usize = 4;
+
+/// The RB x CB dot products of the packed rows (`pack[k * RB + r]`) with
+/// the columns `cols`, each summed in order of k from `zero`.
+#[inline(always)]
+fn correlation_tile(pack: &[f64], cols: &[&[f64]; CB], b: usize, zero: f64) -> [[f64; RB]; CB] {
+    let mut acc = [[zero; RB]; CB];
+    let (y0, y1, y2, y3) = (&cols[0][..b], &cols[1][..b], &cols[2][..b], &cols[3][..b]);
+    for (k, p) in pack[..b * RB].chunks_exact(RB).enumerate() {
+        let y = [y0[k], y1[k], y2[k], y3[k]];
+        for (sums, &yc) in acc.iter_mut().zip(&y) {
+            for (s, &x) in sums.iter_mut().zip(p) {
+                *s += x * yc;
+            }
+        }
+    }
+    acc
 }
 
 /// Distinct ties without self-loops: out[v] holds (k, a_vk), inc[v] holds
@@ -428,24 +492,38 @@ impl Profiles {
         None
     }
 
+    /// The matrix of [`Profiles::pair`] over all pairs. Every method is
+    /// symmetric bit for bit (swapping i and j swaps the two arguments of
+    /// each term, and every term and the final combination are symmetric
+    /// in them), so only i < j is evaluated and mirrored. Binary profiles
+    /// of networks dense enough are compared as bit rows (see
+    /// [`BitProfiles`]), which gives the same values.
     fn compare(&self, method: EquivalenceMethod, threads: usize) -> Dense {
         let n = self.n;
+        let bits = BitProfiles::new(self);
         let rows = parallel::for_each_item(n, threads, Vec::new, |out, i| {
-            let mut row = vec![0.0; n];
-            for (j, slot) in row.iter_mut().enumerate() {
-                *slot = self.pair(method, i, j);
+            let mut row = vec![0.0; n - i];
+            row[0] = self.pair(method, i, i);
+            for (d, slot) in row.iter_mut().enumerate().skip(1) {
+                let j = i + d;
+                *slot = match &bits {
+                    Some(b) => b.pair(method, i, j),
+                    None => self.pair(method, i, j),
+                };
             }
             out.push((i, row));
         });
-        let mut m = Dense::zeros(n, n);
+        let mut m = vec![0.0; n * n];
         for part in rows {
             for (i, row) in part {
-                for (j, x) in row.into_iter().enumerate() {
-                    m.set(i, j, x);
+                for (d, x) in row.into_iter().enumerate() {
+                    let j = i + d;
+                    m[i * n + j] = x;
+                    m[j * n + i] = x;
                 }
             }
         }
-        m
+        Dense::from_row_major(n, n, m).expect("square")
     }
 
     fn pair(&self, method: EquivalenceMethod, i: usize, j: usize) -> f64 {
@@ -493,6 +571,101 @@ impl Profiles {
             st.add(x, x);
         }
         st.pearson(count)
+    }
+}
+
+/// Binary profiles as rows of bits: for each node, its out-row and then
+/// its in-row, `words` 64-bit words each.
+///
+/// When every profile entry is 0 or 1, each sum that [`Profiles::pair`]
+/// accumulates is a count, and counts are exact in floating point (below
+/// 2^53) whatever the order of the additions. They are popcounts: over
+/// k other than i and j, the sum of x y is the number of common bits of the
+/// rows of i and j (the bit of a node in its own rows is never set, so i
+/// and j drop out by themselves), the sum of x (and of x^2) is the degree
+/// of i less its bits at j, and the sum of (x - y)^2 and of |x - y| is the
+/// number of differing bits less those at i and j. The values are those of
+/// the sparse merge exactly (Kepner and Gilbert 2011, `kepner2011graph`,
+/// on graph algorithms as Boolean matrix products).
+struct BitProfiles {
+    n: usize,
+    words: usize,
+    bits: Vec<u64>,
+    degree: Vec<f64>,
+}
+
+impl BitProfiles {
+    /// Bit rows for binary profiles, or `None` when some entry is not 1 or
+    /// when the network is too sparse for words to beat merging lists.
+    fn new(p: &Profiles) -> Option<BitProfiles> {
+        let n = p.n;
+        let words = (n + 63) / 64;
+        let entries: usize = p.out.iter().chain(&p.inc).map(|r| r.len()).sum();
+        let binary = p.out.iter().chain(&p.inc).flatten().all(|&(_, x)| x == 1.0);
+        // A merge step per entry of the two profiles against two words per
+        // 64 columns, with a memory cap of 256 MiB.
+        let worthwhile = n >= 2 && 2 * entries >= 2 * words * n && n * words <= 1 << 24;
+        if !binary || !worthwhile {
+            return None;
+        }
+        let mut bits = vec![0u64; 2 * words * n];
+        for v in 0..n {
+            for (half, row) in [&p.out[v], &p.inc[v]].into_iter().enumerate() {
+                let base = (2 * v + half) * words;
+                for &(k, _) in row {
+                    bits[base + k as usize / 64] |= 1u64 << (k % 64);
+                }
+            }
+        }
+        let degree = (0..n)
+            .map(|v| (p.out[v].len() + p.inc[v].len()) as f64)
+            .collect();
+        Some(BitProfiles {
+            n,
+            words,
+            bits,
+            degree,
+        })
+    }
+
+    fn row(&self, v: usize, half: usize) -> &[u64] {
+        let base = (2 * v + half) * self.words;
+        &self.bits[base..base + self.words]
+    }
+
+    fn bit(&self, v: usize, half: usize, k: usize) -> f64 {
+        ((self.row(v, half)[k / 64] >> (k % 64)) & 1) as f64
+    }
+
+    /// [`Profiles::pair`] for i != j.
+    fn pair(&self, method: EquivalenceMethod, i: usize, j: usize) -> f64 {
+        let count = |op: fn(u64, u64) -> u64| -> f64 {
+            let mut c = 0u64;
+            for half in 0..2 {
+                for (a, b) in self.row(i, half).iter().zip(self.row(j, half)) {
+                    c += op(*a, *b).count_ones() as u64;
+                }
+            }
+            c as f64
+        };
+        let at_j = self.bit(i, 0, j) + self.bit(i, 1, j);
+        let at_i = self.bit(j, 0, i) + self.bit(j, 1, i);
+        match method {
+            EquivalenceMethod::Euclidean => (count(|a, b| a ^ b) - at_j - at_i).sqrt(),
+            EquivalenceMethod::Hamming => count(|a, b| a ^ b) - at_j - at_i,
+            EquivalenceMethod::Correlation => {
+                let sx = self.degree[i] - at_j;
+                let sy = self.degree[j] - at_i;
+                let st = Moments {
+                    sx,
+                    sy,
+                    sxx: sx,
+                    syy: sy,
+                    sxy: count(|a, b| a & b),
+                };
+                st.pearson(2 * (self.n - 2))
+            }
+        }
     }
 }
 
@@ -678,6 +851,84 @@ mod tests {
         )
         .unwrap();
         assert!((c.get(1, 2) - 1.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn bit_rows_match_the_sparse_merge() {
+        let mut r = crate::rng::Stream::new(11, 0);
+        for (n, p, directed) in [
+            (3usize, 0.9, true),
+            (40, 0.5, true),
+            (64, 0.3, false),
+            (65, 0.6, true),
+            (130, 0.4, true),
+            (130, 0.2, false),
+        ] {
+            let (mut s, mut t) = (Vec::new(), Vec::new());
+            for i in 0..n as i64 {
+                for j in 0..n as i64 {
+                    if (directed || i < j) && r.uniform() < p {
+                        s.push(i);
+                        t.push(j);
+                    }
+                }
+            }
+            let g = Graph::from_edges(n, &s, &t, None, directed).unwrap();
+            let prof = Profiles::new(&g, false).unwrap();
+            let bits = BitProfiles::new(&prof).expect("dense enough for bit rows");
+            for method in [
+                EquivalenceMethod::Euclidean,
+                EquivalenceMethod::Hamming,
+                EquivalenceMethod::Correlation,
+            ] {
+                for i in 0..n {
+                    for j in 0..n {
+                        if i != j {
+                            let (a, b) = (bits.pair(method, i, j), prof.pair(method, i, j));
+                            assert_eq!(a.to_bits(), b.to_bits(), "{n} {method:?} {i} {j}");
+                            let c = prof.pair(method, j, i);
+                            assert_eq!(b.to_bits(), c.to_bits(), "symmetry {n} {i} {j}");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn column_correlations_match_one_sum_per_pair() {
+        let mut r = crate::rng::Stream::new(5, 0);
+        for b in [1usize, 2, 3, 4, 5, 7, 9, 30] {
+            let mut m = Dense::zeros(b, b);
+            for i in 0..b {
+                for j in 0..b {
+                    // Some constant columns, which correlate 0 with all.
+                    let x = if j % 4 == 3 { 0.5 } else { r.uniform() };
+                    m.set(i, j, x);
+                }
+            }
+            for threads in [1, 2, 3] {
+                let fast = column_correlations(&m, threads);
+                for i in 0..b {
+                    for j in 0..b {
+                        let col = |c: usize| -> (Vec<f64>, f64) {
+                            let mean = (0..b).map(|r| m.get(r, c)).sum::<f64>() / b as f64;
+                            let x: Vec<f64> = (0..b).map(|r| m.get(r, c) - mean).collect();
+                            let ss: f64 = x.iter().map(|v| v * v).sum();
+                            (x, ss.sqrt())
+                        };
+                        let ((xi, ni), (xj, nj)) = (col(i), col(j));
+                        let want = if ni > 0.0 && nj > 0.0 {
+                            let dot: f64 = xi.iter().zip(&xj).map(|(x, y)| x * y).sum();
+                            (dot / (ni * nj)).clamp(-1.0, 1.0)
+                        } else {
+                            0.0
+                        };
+                        assert_eq!(fast.get(i, j).to_bits(), want.to_bits(), "{b} {i} {j}");
+                    }
+                }
+            }
+        }
     }
 
     #[test]

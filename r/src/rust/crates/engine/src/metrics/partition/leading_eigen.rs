@@ -103,7 +103,10 @@ pub fn leading_eigen(g: &Graph, weighted: bool) -> Result<LeadingEigen> {
                 b.set(r, r, b.get(r, r) - row_sum);
             }
             let scale = b.as_slice().iter().map(|x| x.abs()).sum::<f64>() / ng as f64;
-            let (values, vectors) = symmetric_eigen(&b)?;
+            let (values, vectors) = {
+                let _t = crate::linalg::phase::start("leading eigenvector: eigendecomposition");
+                symmetric_eigen(&b)?
+            };
             let lambda = values[ng - 1];
             if lambda.is_nan() || lambda <= 1e-10 * scale {
                 continue;

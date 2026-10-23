@@ -18,7 +18,12 @@
 //! - ego betweenness: the betweenness of ego within its own ego network
 //!   (Everett and Borgatti 2005, `everett2005ego`; Marsden 2002), computed
 //!   with Brandes' accumulation (Brandes 2001, `brandes2001faster`) on the
-//!   ego network alone.
+//!   ego network alone. For a first-order ego network in an undirected
+//!   network, where all alters are adjacent to ego, it is the sum over
+//!   non-adjacent pairs of alters of 1 / (number of their common
+//!   neighbours in the ego network, ego included), Everett and Borgatti's
+//!   (2005) formula; that form is used when it is cheaper (dense ego
+//!   networks). Both give the same value up to rounding.
 //!
 //! Burt's structural-hole measures, which are also egocentric, live in
 //! [`crate::metrics::brokerage`].
@@ -48,6 +53,7 @@
 //! - `mindist` in [`neighborhood`] drops nodes closer than `mindist` steps,
 //!   as igraph's `mindist`; `mindist = 1` drops ego itself.
 
+use crate::bitset::{batches_pay, for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
@@ -257,30 +263,72 @@ pub fn neighborhood_sizes(
         }
     }
     let count = egos.map_or(n, |l| l.len());
+    let sources: Vec<u32> = match egos {
+        Some(l) => l.iter().map(|&e| e as u32).collect(),
+        None => (0..n as u32).collect(),
+    };
+    // Breadth-first search from 64 egos at a time
+    // (`crate::bitset::MultiBfs`) over the arcs the mode follows; one
+    // batch is one work item, so the result does not depend on the thread
+    // count.
+    let view = View::new(g, opts.mode);
+    let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
+    if !batches_pay(view, max_level) {
+        // Small neighborhoods that rarely overlap: one search per ego.
+        let partials = parallel::for_each_item(
+            count,
+            opts.threads,
+            || (Bfs::new(n), Vec::new()),
+            |(bfs, found): &mut (Bfs, Vec<(usize, usize)>), i| {
+                bfs.run(g, sources[i] as usize, opts.order, opts.mode);
+                let size = bfs
+                    .order
+                    .iter()
+                    .filter(|&&v| bfs.dist[v as usize] as usize >= opts.mindist)
+                    .count();
+                bfs.reset();
+                found.push((i, size));
+            },
+        );
+        let mut out = vec![0usize; count];
+        for (_, found) in partials {
+            for (i, size) in found {
+                out[i] = size;
+            }
+        }
+        return Ok(out);
+    }
     let partials = parallel::for_each_item(
-        count,
+        (count + BATCH - 1) / BATCH,
         opts.threads,
-        || (Bfs::new(n), Vec::new()),
-        |(bfs, found): &mut (Bfs, Vec<(usize, usize)>), i| {
-            let ego = egos.map_or(i, |l| l[i]);
-            bfs.run(g, ego, opts.order, opts.mode);
-            let size = bfs
-                .order
-                .iter()
-                .filter(|&&v| bfs.dist[v as usize] as usize >= opts.mindist)
-                .count();
-            bfs.reset();
-            found.push((i, size));
+        || (MultiBfs::new(n), Vec::new()),
+        |(ms, found): &mut (MultiBfs, Vec<(usize, [usize; BATCH])>), b| {
+            let lo = b * BATCH;
+            let hi = (lo + BATCH).min(count);
+            let mut sizes = [usize::from(opts.mindist == 0); BATCH];
+            ms.run(view, &sources[lo..hi], max_level, |step| {
+                if let Step::Reached { level, sources, .. } = step {
+                    if level as usize >= opts.mindist {
+                        for_each_bit(sources, |i| sizes[i] += 1);
+                    }
+                }
+            });
+            found.push((lo, sizes));
         },
     );
     let mut out = vec![0usize; count];
     for (_, found) in partials {
-        for (i, size) in found {
-            out[i] = size;
+        for (lo, sizes) in found {
+            let hi = (lo + BATCH).min(count);
+            out[lo..hi].copy_from_slice(&sizes[..hi - lo]);
         }
     }
     Ok(out)
 }
+
+/// Largest first-order ego network whose ego betweenness is computed from
+/// pairs of alters (its bit rows then take at most 8 MB).
+const PAIR_MAX: usize = 8192;
 
 /// Per-thread state for [`ego_summary`].
 struct EgoWork {
@@ -295,6 +343,9 @@ struct EgoWork {
     sigma: Vec<f64>,
     delta: Vec<f64>,
     queue: Vec<u32>,
+    /// Bit rows of the ego network's adjacency, for
+    /// [`EgoWork::ego_betweenness_pairs`].
+    rows: Vec<u64>,
     /// (ego, [size, ties, pairs, density, components, betweenness]).
     found: Vec<(u32, [f64; 6])>,
 }
@@ -311,6 +362,7 @@ impl EgoWork {
             sigma: Vec::new(),
             delta: Vec::new(),
             queue: Vec::new(),
+            rows: Vec::new(),
             found: Vec::new(),
         }
     }
@@ -382,10 +434,12 @@ impl EgoWork {
             }
         }
 
-        let betweenness = if opts.betweenness && s > 2 {
-            self.ego_betweenness(s, directed)
-        } else {
+        let betweenness = if !opts.betweenness || s <= 2 {
             0.0
+        } else if !directed && opts.order == 1 && s <= PAIR_MAX && s * s < 256 * self.adj.len() {
+            self.ego_betweenness_pairs(s)
+        } else {
+            self.ego_betweenness(s, directed)
         };
 
         for &v in &self.bfs.order {
@@ -396,6 +450,40 @@ impl EgoWork {
             ego as u32,
             [k, ties, pairs, density, components as f64, betweenness],
         ));
+    }
+
+    /// Ego betweenness of a first-order undirected ego network from its
+    /// pairs of alters (Everett and Borgatti 2005, `everett2005ego`):
+    /// every alter is adjacent to ego, so two non-adjacent alters i and j
+    /// are at distance 2, their geodesics are their common neighbours in
+    /// the ego network (ego among them), and ego's share is 1 / (A^2)_ij;
+    /// adjacent alters contribute nothing. Rows of the ego network's
+    /// adjacency are held as bits, so each pair costs s / 64 word ANDs:
+    /// O(s^3 / 64) in all, against O(s m) for Brandes' accumulation, which
+    /// makes it the cheaper choice on dense ego networks.
+    fn ego_betweenness_pairs(&mut self, s: usize) -> f64 {
+        let words = (s + 63) / 64;
+        self.rows.clear();
+        self.rows.resize(s * words, 0);
+        for a in 0..s {
+            let row = &mut self.rows[a * words..(a + 1) * words];
+            for &b in &self.adj[self.offsets[a]..self.offsets[a + 1]] {
+                row[b as usize / 64] |= 1 << (b % 64);
+            }
+        }
+        let mut total = 0.0;
+        for i in 1..s {
+            let ri = &self.rows[i * words..(i + 1) * words];
+            for j in i + 1..s {
+                if ri[j / 64] >> (j % 64) & 1 == 1 {
+                    continue;
+                }
+                let rj = &self.rows[j * words..(j + 1) * words];
+                let common: u32 = ri.iter().zip(rj).map(|(x, y)| (x & y).count_ones()).sum();
+                total += 1.0 / common as f64;
+            }
+        }
+        total
     }
 
     /// Dependency of local node 0 (ego) summed over every other source,
@@ -498,6 +586,36 @@ pub fn ego_summary(g: &Graph, opts: EgoOptions) -> Result<EgoSummary> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pairwise_ego_betweenness_equals_brandes() {
+        // Undirected networks with parallel edges and loops, sparse to
+        // dense, so that both formulas see every kind of ego network.
+        let mut rng = crate::rng::Stream::new(7, 0);
+        for &(n, m) in &[(12usize, 20usize), (30, 200), (40, 700), (25, 400)] {
+            let s: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+            let t: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+            let g = Graph::from_edges(n, &s, &t, None, false).unwrap();
+            let opts = EgoOptions::default();
+            let mut w = EgoWork::new(n);
+            for ego in 0..n {
+                // `measure` leaves the ego network's adjacency in place.
+                w.measure(&g, ego, &opts);
+                let size = w.offsets.len() - 1;
+                if size <= 2 {
+                    continue;
+                }
+                let (a, b) = (
+                    w.ego_betweenness_pairs(size),
+                    w.ego_betweenness(size, false),
+                );
+                assert!(
+                    (a - b).abs() <= 1e-12 * b.abs().max(1.0),
+                    "ego {ego}: {a} vs {b}"
+                );
+            }
+        }
+    }
 
     fn g(n: usize, s: &[i64], t: &[i64], directed: bool) -> Graph {
         Graph::from_edges(n, s, t, None, directed).unwrap()

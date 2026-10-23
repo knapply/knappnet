@@ -10,6 +10,10 @@
 //! Vigna 2014, `boldi2014axioms`).
 //!
 //! Every node is a source of one single-source search, run in parallel.
+//! Without weights the searches run 64 at a time with the bit-parallel
+//! breadth-first search of [`crate::bitset::MultiBfs`] (Then et al. 2014,
+//! `then2014more`); the sum of reciprocal lengths is then formed level by
+//! level, as (nodes at that distance) / distance.
 //!
 //! Conventions:
 //! - Mode: `Out` uses lengths of paths leaving the node (igraph's default),
@@ -49,14 +53,13 @@
 //!   closeness") report the normalized form.
 
 use std::borrow::Cow;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 
+use crate::bitset::{for_each_bit, MultiBfs, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 /// How closeness treats nodes that cannot be reached. See the module
 /// documentation for the formulas.
@@ -234,23 +237,79 @@ pub(crate) fn oriented(g: &Graph, mode: DegreeMode) -> Result<Cow<'_, Graph>> {
 
 /// One shortest-path search from every node, in parallel.
 pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Vec<Profile>> {
-    let h = oriented(g, opts.mode)?;
+    let mut clock = parallel::probe::Clock::start();
+    // Unweighted searches read `g` in place through a view in the
+    // requested mode; weighted ones need lengths aligned with the arcs of a
+    // graph oriented for the mode, searched along its out-arcs.
+    let (h, view_mode) = if opts.weighted {
+        (oriented(g, opts.mode)?, DegreeMode::Out)
+    } else {
+        (Cow::Borrowed(g), opts.mode)
+    };
     let h = h.as_ref();
+    let view = View::new(h, view_mode);
     let n = h.node_count();
     let lengths = path_lengths(h, opts.weighted, opts.weights_as, opts.algorithm)?;
-    let partials = parallel::for_each_item(
-        n,
-        opts.threads,
-        || Search::new(n),
-        |ws, s| {
-            let p = match &lengths {
-                Lengths::Uniform => ws.bfs(h, s),
-                Lengths::Integer(lens, max) => ws.dial(h, lens, *max, s),
-                Lengths::Real(lens) => ws.dijkstra(h, lens, s),
-            };
-            ws.found.push((s as u32, p));
-        },
-    );
+    clock.mark("setup");
+    let partials = match &lengths {
+        // Unweighted: breadth-first search from 64 sources at a time
+        // (`crate::bitset::MultiBfs`); one batch is one work item, so the
+        // result does not depend on the thread count.
+        Lengths::Uniform => parallel::for_each_item(
+            (n + BATCH - 1) / BATCH,
+            opts.threads,
+            || (MultiBfs::new(n), Vec::new()),
+            |(ms, found), b| {
+                let lo = b * BATCH;
+                let hi = (lo + BATCH).min(n);
+                let sources: Vec<u32> = (lo as u32..hi as u32).collect();
+                let mut count = [0u32; BATCH];
+                let mut total = [0u64; BATCH];
+                let mut profiles = [Profile::default(); BATCH];
+                ms.run(view, &sources, u32::MAX, |step| match step {
+                    Step::Reached { sources, .. } => for_each_bit(sources, |i| count[i] += 1),
+                    Step::LevelDone(level) => {
+                        for i in 0..sources.len() {
+                            let c = count[i];
+                            if c == 0 {
+                                continue;
+                            }
+                            count[i] = 0;
+                            let p = &mut profiles[i];
+                            p.reached += c as usize;
+                            total[i] += c as u64 * level as u64;
+                            p.harmonic += c as f64 / level as f64;
+                            p.longest = level as f64;
+                        }
+                    }
+                });
+                for (i, &s) in sources.iter().enumerate() {
+                    let mut p = profiles[i];
+                    p.total = total[i] as f64;
+                    found.push((s, p));
+                }
+            },
+        )
+        .into_iter()
+        .map(|(_, found)| found)
+        .collect::<Vec<_>>(),
+        _ => parallel::for_each_item(
+            n,
+            opts.threads,
+            || Search::new(n),
+            |ws, s| {
+                let p = match &lengths {
+                    Lengths::Integer(lens, max) => ws.dial(h, lens, *max, s),
+                    Lengths::Real(lens) => ws.dijkstra(h, lens, s),
+                    Lengths::Uniform => unreachable!("handled above"),
+                };
+                ws.found.push((s as u32, p));
+            },
+        )
+        .into_iter()
+        .map(|ws| ws.found)
+        .collect(),
+    };
     // Uniform weights reduce to breadth-first search, which counts hops;
     // unlike betweenness, closeness depends on the common length itself.
     let unit = match (&lengths, opts.weighted) {
@@ -265,9 +324,10 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
         }
         _ => 1.0,
     };
+    clock.mark("search");
     let mut out = vec![Profile::default(); n];
-    for ws in partials {
-        for (s, mut p) in ws.found {
+    for found in partials {
+        for (s, mut p) in found {
             if unit != 1.0 {
                 p.total *= unit;
                 p.harmonic /= unit;
@@ -276,67 +336,31 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
             out[s as usize] = p;
         }
     }
+    clock.mark("merge");
     Ok(out)
 }
 
 /// Per-thread scratch space, reused across sources.
 struct Search {
     found: Vec<(u32, Profile)>,
-    hops: Vec<u32>,
     idist: Vec<u64>,
     dist: Vec<f64>,
     done: Vec<bool>,
-    queue: Vec<u32>,
     touched: Vec<u32>,
     buckets: Vec<Vec<u32>>,
-    heap: BinaryHeap<HeapItem>,
+    heap: IndexedHeap,
 }
 
 impl Search {
     fn new(n: usize) -> Search {
         Search {
             found: Vec::new(),
-            hops: vec![u32::MAX; n],
             idist: vec![u64::MAX; n],
             dist: vec![f64::INFINITY; n],
             done: vec![false; n],
-            queue: Vec::with_capacity(n),
             touched: Vec::new(),
             buckets: Vec::new(),
-            heap: BinaryHeap::new(),
-        }
-    }
-
-    fn bfs(&mut self, g: &Graph, s: usize) -> Profile {
-        let adj = g.out();
-        self.queue.clear();
-        self.hops[s] = 0;
-        self.queue.push(s as u32);
-        let mut head = 0;
-        let (mut total, mut harmonic, mut longest) = (0u64, 0.0, 0u32);
-        while head < self.queue.len() {
-            let v = self.queue[head] as usize;
-            head += 1;
-            let next = self.hops[v] + 1;
-            for &w in adj.neighbors(v) {
-                let w = w as usize;
-                if self.hops[w] == u32::MAX {
-                    self.hops[w] = next;
-                    self.queue.push(w as u32);
-                    total += next as u64;
-                    harmonic += 1.0 / next as f64;
-                    longest = longest.max(next);
-                }
-            }
-        }
-        for &v in &self.queue {
-            self.hops[v as usize] = u32::MAX;
-        }
-        Profile {
-            reached: self.queue.len() - 1,
-            total: total as f64,
-            harmonic,
-            longest: longest as f64,
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -402,24 +426,17 @@ impl Search {
         }
     }
 
-    /// Dijkstra's algorithm with a binary heap and lazy deletion
+    /// Dijkstra's algorithm with an indexed 4-ary heap
     /// (`dijkstra1959note`).
     fn dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize) -> Profile {
         let adj = g.out();
-        self.heap.clear();
         self.touched.clear();
         self.touched.push(s as u32);
         self.dist[s] = 0.0;
-        self.heap.push(HeapItem {
-            dist: 0.0,
-            node: s as u32,
-        });
+        self.heap.push_or_decrease(s as u32, 0.0);
         let (mut reached, mut total, mut harmonic, mut longest) = (0usize, 0.0, 0.0, 0.0f64);
-        while let Some(HeapItem { dist: d, node }) = self.heap.pop() {
+        while let Some((d, node)) = self.heap.pop() {
             let v = node as usize;
-            if self.done[v] || d > self.dist[v] {
-                continue;
-            }
             self.done[v] = true;
             if v != s {
                 reached += 1;
@@ -438,10 +455,7 @@ impl Search {
                 }
                 if alt < self.dist[w] {
                     self.dist[w] = alt;
-                    self.heap.push(HeapItem {
-                        dist: alt,
-                        node: w as u32,
-                    });
+                    self.heap.push_or_decrease(w as u32, alt);
                 }
             }
         }
@@ -455,33 +469,6 @@ impl Search {
             harmonic,
             longest,
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct HeapItem {
-    dist: f64,
-    node: u32,
-}
-
-impl PartialEq for HeapItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-impl Eq for HeapItem {}
-impl PartialOrd for HeapItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for HeapItem {
-    // Reversed so that BinaryHeap (a max-heap) pops the smallest distance.
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .dist
-            .total_cmp(&self.dist)
-            .then_with(|| other.node.cmp(&self.node))
     }
 }
 

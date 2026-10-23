@@ -472,6 +472,7 @@ fn full_stress(
     threads: usize,
 ) -> Vec<[f64; 2]> {
     let c = p.len();
+    let t = crate::linalg::phase::start("stress: all-pairs distances");
     let mut dist: Vec<Vec<f64>> = vec![Vec::new(); c];
     par_fill(&mut dist, threads, 16, |s, row| {
         let mut ws = Sssp::new(c);
@@ -479,8 +480,11 @@ fn full_stress(
         ws.run(p, s, &mut d);
         *row = d;
     });
+    drop(t);
+    let t = crate::linalg::phase::start("stress: pivot mds start");
     let pivots = maxmin_pivots(p, k, &dist);
     let mut z = pivot_mds(c, pivots.len(), |i, j| dist[pivots[j]][i], threads);
+    drop(t);
     // Reciprocal distances; the update and the stress need only these.
     let mut inv = dist;
     par_fill(&mut inv, threads, 16, |i, row| {
@@ -546,6 +550,7 @@ fn full_stress(
 
     // Majorization from z; returns the final layout and its stress.
     let majorize = |mut z: Vec<[f64; 2]>| -> (Vec<[f64; 2]>, f64) {
+        let _t = crate::linalg::phase::start("stress: majorization");
         let mut jz = vec![[0.0; 3]; c];
         let mut jy = vec![[0.0; 3]; c];
         let mut sz = pass(&z, &mut jz);
