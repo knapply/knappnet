@@ -41,7 +41,7 @@ weights).
   RAM beyond it is feasible for the first level; later levels are
   smaller and held in memory). Scalable variants: parallel Louvain-type
   local moving (Staudt and Meyerhenke 2016); Traag, Waltman, and van Eck
-  (2019) report runs on networks with billions of edges.
+  (2019) report runs on networks with hundreds of millions of edges.
 - **Spinglass** (Reichardt and Bornholdt 2006; Traag and Bruggeman
   2009): O(n) spins, O(q) totals per spin state, and O(q) scratch per
   update; one pass over the edges per temperature (about 460 sweeps with
