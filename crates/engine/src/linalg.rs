@@ -6,8 +6,12 @@
 //! p-by-p matrices of model fits), the n-by-n problems of
 //! classical scaling, power centrality, and the leading eigenvector
 //! method, and the projected eigenproblems of the Lanczos solver. They are
-//! unblocked O(n^3) algorithms with O(n^2) memory, not a replacement for
-//! LAPACK on large matrices.
+//! O(n^3) algorithms with O(n^2) memory, not a replacement for LAPACK on
+//! large matrices. The product is blocked for cache reuse, and the
+//! eigendecomposition works on the transpose of the EISPACK working matrix
+//! so that its inner loops run over contiguous memory; neither change
+//! alters any arithmetic operation or its order, so results do not depend
+//! on these choices.
 //!
 //! Sources:
 //! - Cholesky factorization and the triangular solves: Golub and Van Loan
@@ -45,6 +49,44 @@
 
 use crate::error::{Error, Result};
 use crate::matrix::Dense;
+
+// ---- Instruction sets ------------------------------------------------------
+
+/// Kernels compiled for wider vector instructions, chosen at run time.
+///
+/// `dispatch!(kernel(args))` calls `kernel` through a copy compiled with
+/// AVX2 enabled when the processor supports it (x86-64), and through the
+/// baseline copy otherwise. The kernel must be `#[inline(always)]` so that
+/// its body is compiled inside each copy. Only element-wise loops are
+/// vectorized: the compiler never reassociates floating-point sums or
+/// fuses a multiply and an add without being told to, so every copy
+/// performs the same IEEE operations in the same order and the results are
+/// identical bit for bit on every processor.
+pub(crate) mod simd {
+    /// Calls `$f(args)` through an AVX2 build when available.
+    macro_rules! dispatch {
+        ($f:ident ( $($arg:expr),* $(,)? )) => {{
+            #[cfg(target_arch = "x86_64")]
+            {
+                #[target_feature(enable = "avx2")]
+                unsafe fn wide<T>(f: impl FnOnce() -> T) -> T {
+                    f()
+                }
+                if std::is_x86_feature_detected!("avx2") {
+                    // SAFETY: the processor supports AVX2.
+                    unsafe { wide(|| $f($($arg),*)) }
+                } else {
+                    $f($($arg),*)
+                }
+            }
+            #[cfg(not(target_arch = "x86_64"))]
+            {
+                $f($($arg),*)
+            }
+        }};
+    }
+    pub(crate) use dispatch;
+}
 
 // ---- Products ---------------------------------------------------------------
 

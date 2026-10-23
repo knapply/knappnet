@@ -54,8 +54,11 @@ pub struct GirvanNewman {
 }
 
 /// The remaining simple graph, as adjacency rows of (neighbor, edge id).
+/// A removed edge is deleted from the rows of its endpoints, keeping the
+/// order of the others, so traversals see only the remaining edges in the
+/// order they had from the start.
 struct Remaining {
-    rows: Vec<Vec<(u32, usize)>>,
+    rows: Vec<Vec<(u32, u32)>>,
     edges: Vec<(u32, u32)>,
     alive: Vec<bool>,
 }
@@ -70,8 +73,8 @@ impl Remaining {
         while head < queue.len() {
             let v = queue[head];
             head += 1;
-            for &(w, e) in &self.rows[v] {
-                if self.alive[e] && !seen[w as usize] {
+            for &(w, _) in &self.rows[v] {
+                if !seen[w as usize] {
                     seen[w as usize] = true;
                     queue.push(w as usize);
                 }
@@ -92,7 +95,7 @@ impl Remaining {
             || {
                 (
                     vec![0.0f64; m],
-                    vec![usize::MAX; n],
+                    vec![u32::MAX; n],
                     vec![0.0f64; n],
                     vec![0.0f64; n],
                     Vec::<usize>::new(),
@@ -110,32 +113,31 @@ impl Remaining {
                 while head < order.len() {
                     let v = order[head];
                     head += 1;
-                    for &(w, e) in &self.rows[v] {
-                        if !self.alive[e] {
-                            continue;
-                        }
+                    let next = dist[v] + 1;
+                    for &(w, _) in &self.rows[v] {
                         let w = w as usize;
-                        if dist[w] == usize::MAX {
-                            dist[w] = dist[v] + 1;
+                        if dist[w] == u32::MAX {
+                            dist[w] = next;
                             order.push(w);
                         }
-                        if dist[w] == dist[v] + 1 {
+                        if dist[w] == next {
                             sigma[w] += sigma[v];
                         }
                     }
                 }
                 for &w in order.iter().rev() {
+                    let prev = dist[w].wrapping_sub(1);
                     for &(v, e) in &self.rows[w] {
                         let v = v as usize;
-                        if self.alive[e] && dist[v] != usize::MAX && dist[v] + 1 == dist[w] {
+                        if dist[v] == prev {
                             let c = sigma[v] / sigma[w] * (1.0 + delta[w]);
-                            acc[e] += c;
+                            acc[e as usize] += c;
                             delta[v] += c;
                         }
                     }
                 }
                 for &v in order.iter() {
-                    dist[v] = usize::MAX;
+                    dist[v] = u32::MAX;
                     sigma[v] = 0.0;
                     delta[v] = 0.0;
                 }
@@ -181,10 +183,10 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
         }
     }
     let m = edges.len();
-    let mut rows: Vec<Vec<(u32, usize)>> = vec![Vec::new(); n];
+    let mut rows: Vec<Vec<(u32, u32)>> = vec![Vec::new(); n];
     for (e, &(a, b)) in edges.iter().enumerate() {
-        rows[a as usize].push((b, e));
-        rows[b as usize].push((a, e));
+        rows[a as usize].push((b, e as u32));
+        rows[b as usize].push((a, e as u32));
     }
     let (s, t): (Vec<i64>, Vec<i64>) = edges.iter().map(|&(a, b)| (a as i64, b as i64)).unzip();
     let simple_graph = Graph::from_edges(n, &s, &t, None, false)?;
@@ -215,8 +217,11 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
             .expect("an edge remains");
         rem.alive[cut] = false;
         removed.push(edges[cut]);
-        // Recompute betweenness within the component(s) the edge joined.
         let (a, b) = edges[cut];
+        for v in [a, b] {
+            rem.rows[v as usize].retain(|&(_, e)| e as usize != cut);
+        }
+        // Recompute betweenness within the component(s) the edge joined.
         let mut affected = rem.component(a as usize);
         let split = !affected.contains(&(b as usize));
         if split {
@@ -224,7 +229,7 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
         }
         for &v in &affected {
             for &(_, e) in &rem.rows[v] {
-                eb[e] = 0.0;
+                eb[e as usize] = 0.0;
             }
         }
         {

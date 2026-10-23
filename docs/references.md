@@ -130,6 +130,7 @@ cited by author and year in an R help page or a vignette instead.
 | `geyer1992constrained` | Geyer and Thompson (1992). Constrained Monte Carlo Maximum Likelihood for Dependent Data. *Journal of the Royal Statistical Society: Series B (Methodological)*. |  |
 | `geyer1992practical` | Geyer (1992). Practical Markov Chain Monte Carlo. *Statistical Science*. |  |
 | `gilbert1959random` | Gilbert (1959). Random Graphs. *Annals of Mathematical Statistics*. | `crates/engine/src/generate.rs` |
+| `gilbert1992sparse` | Gilbert, Moler, and Schreiber (1992). Sparse Matrices in MATLAB: Design and Implementation. *SIAM Journal on Matrix Analysis and Applications*. | `crates/engine/src/metrics/community.rs` |
 | `girvan2002community` | Girvan and Newman (2002). Community structure in social and biological networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/partition/girvan_newman.rs`, `crates/engine/src/metrics/reach.rs` |
 | `glover1989tabu` | Glover (1989). Tabu Search–-Part I. *ORSA Journal on Computing*. | `crates/engine/src/metrics/coreperiphery/discrete.rs`, `crates/engine/src/metrics/factions/kgroups.rs` |
 | `goh2008burstiness` | Goh and Barabási (2008). Burstiness and Memory in Complex Systems. *EPL (Europhysics Letters)*. | `crates/engine/src/temporal/events.rs`, `crates/engine/src/temporal/mod.rs` |
@@ -173,6 +174,7 @@ cited by author and year in an R help page or a vignette instead.
 | `kamada1989algorithm` | Kamada and Kawai (1989). An Algorithm for Drawing General Undirected Graphs. *Information Processing Letters*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/layout/stress.rs`, `docs/ROADMAP.md` |
 | `katz1953new` | Katz (1953). A New Status Index Derived from Sociometric Analysis. *Psychometrika*. | `crates/engine/src/metrics/spectral.rs` |
 | `kempe2002connectivity` | Kempe, Kleinberg, and Kumar (2002). Connectivity and Inference Problems for Temporal Networks. *Journal of Computer and System Sciences*. | `crates/engine/src/temporal/mod.rs`, `crates/engine/src/temporal/paths.rs` |
+| `kepner2011graph` | Kepner and Gilbert (2011). Graph Algorithms in the Language of Linear Algebra. *Society for Industrial and Applied Mathematics*. | `crates/engine/src/metrics/equivalence.rs` |
 | `kepner2016mathematical` | Kepner et al. (2016). Mathematical Foundations of the GraphBLAS. *2016 IEEE High Performance Extreme Computing Conference (HPEC)*. | `docs/ARCHITECTURE.md` |
 | `kim2016measuring` | Kim and Jo (2016). Measuring Burstiness for Finite Event Sequences. *Physical Review E*. |  |
 | `kivela2014multilayer` | Kivelä et al. (2014). Multilayer Networks. *Journal of Complex Networks*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |

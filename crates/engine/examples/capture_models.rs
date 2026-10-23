@@ -14,7 +14,9 @@ use knappnet::matrix::Dense;
 use knappnet::metrics::cliques::max_cliques;
 use knappnet::metrics::community::louvain;
 use knappnet::metrics::coreperiphery::discrete::{core_periphery, CorePeripheryOptions};
-use knappnet::metrics::equivalence::{concor, ConcorOptions};
+use knappnet::metrics::equivalence::{
+    concor, structural_equivalence, ConcorOptions, EquivalenceMethod, EquivalenceOptions,
+};
 use knappnet::metrics::factions::kgroups::{factions, FactionOptions};
 use knappnet::metrics::partition::fast_greedy::fast_greedy;
 use knappnet::metrics::partition::girvan_newman::girvan_newman;
@@ -193,6 +195,25 @@ fn main() {
                 println!(
                     "concor {n} {p} {directed} t={t}: {:?} {} {}",
                     c.membership, c.unconverged, c.near_zero
+                );
+            }
+            for method in [
+                EquivalenceMethod::Euclidean,
+                EquivalenceMethod::Correlation,
+                EquivalenceMethod::Hamming,
+            ] {
+                let m = structural_equivalence(
+                    &g,
+                    EquivalenceOptions {
+                        method,
+                        weighted: false,
+                        threads: 1,
+                    },
+                )
+                .unwrap();
+                println!(
+                    "structural {n} {p} {directed} {method:?}: {}",
+                    bits(m.as_slice())
                 );
             }
             let r = regular_equivalence(&g, None, Default::default()).unwrap();
