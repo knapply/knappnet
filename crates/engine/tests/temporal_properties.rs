@@ -616,3 +616,79 @@ fn batched_sweeps_match_single_root_sweeps() {
         }
     }
 }
+
+/// Timings on a seeded stream of 5 million contacts among 50,000 nodes
+/// over 30 days of seconds: construction, a sliding series of daily
+/// windows every 6 hours, aggregation, earliest-arrival reachability from
+/// 100 roots, fastest walks with a waiting limit, and burstiness. Ignored
+/// by default; run with
+/// `cargo test --release -p knappnet --test temporal_properties -- --ignored --nocapture`.
+#[test]
+#[ignore]
+fn timings_on_five_million_contacts() {
+    use engine::metrics::degree::DegreeMode;
+    use engine::temporal::{
+        aggregate, burstiness, contacts_in_windows, regular_windows, EventScope,
+    };
+    use std::time::Instant;
+
+    let (n, m) = (50_000u64, 5_000_000usize);
+    let mut rng = Rng(42);
+    let mut src = Vec::with_capacity(m);
+    let mut tgt = Vec::with_capacity(m);
+    let mut start = Vec::with_capacity(m);
+    for _ in 0..m {
+        src.push(rng.below(n) as i64);
+        tgt.push(rng.below(n) as i64);
+        start.push(rng.below(30 * 86_400) as f64);
+    }
+    let t0 = Instant::now();
+    let net = TemporalNetwork::new(n as usize, &src, &tgt, &start, None, true).unwrap();
+    println!("construction: {:?}", t0.elapsed());
+
+    let t0 = Instant::now();
+    let (a, b) = regular_windows(0.0, 30.0 * 86_400.0, 86_400.0, 6.0 * 3_600.0).unwrap();
+    let w = contacts_in_windows(&net, &a, &b).unwrap();
+    println!(
+        "snapshots: {} windows, {} memberships, {:?}",
+        a.len(),
+        w.indices.len(),
+        t0.elapsed()
+    );
+
+    let t0 = Instant::now();
+    let agg = aggregate(&net, None).unwrap();
+    println!("aggregation: {} pairs, {:?}", agg.from.len(), t0.elapsed());
+
+    let roots: Vec<usize> = (0..100).map(|i| i * 500).collect();
+    for threads in [1, 0] {
+        let o = PathOptions {
+            threads,
+            ..Default::default()
+        };
+        let t0 = Instant::now();
+        let x =
+            temporal_paths(&net, Criterion::EarliestArrival, Direction::Out, &roots, &o).unwrap();
+        let reached = x.iter().filter(|v| v.is_finite()).count();
+        println!(
+            "earliest arrival from 100 roots, threads = {threads}: {:?} ({reached} reached)",
+            t0.elapsed()
+        );
+    }
+
+    let o = PathOptions {
+        threads: 0,
+        max_wait: 3_600.0,
+        ..Default::default()
+    };
+    let t0 = Instant::now();
+    temporal_paths(&net, Criterion::Fastest, Direction::Out, &roots, &o).unwrap();
+    println!(
+        "fastest from 100 roots, waiting at most an hour: {:?}",
+        t0.elapsed()
+    );
+
+    let t0 = Instant::now();
+    burstiness(&net, EventScope::Node(DegreeMode::All)).unwrap();
+    println!("burstiness of every node: {:?}", t0.elapsed());
+}
