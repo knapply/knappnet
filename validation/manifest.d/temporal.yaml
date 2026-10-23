@@ -9,7 +9,11 @@
 # validation/bindings/temporal.py; the oracle is
 # validation/oracles/temporal_definition_oracle.py, a brute-force search
 # over walks in the graph whose nodes are the temporal arcs, which shares
-# no code or algorithm with the engine's one-pass edge-stream sweeps.
+# no code or algorithm with the engine's one-pass edge-stream sweeps. The
+# two `instantaneous` variants below are also checked against tsna's
+# tPath() (validation/oracles/r_temporal.R); tsna models interval contacts
+# differently (a path may join one part-way through), so only instantaneous
+# contacts are compared with it.
 #
 # Non-finite results are written as markers by the runner and the oracle:
 # -1000 for an infinity (no walk) and -999 for NaN (undefined). Times,
@@ -94,6 +98,16 @@ temporal_earliest_arrival_window:
   oracles:
     definition:
       call: "earliest arrival in [1, 6] over walks waiting between 1 and 3"
+
+temporal_earliest_arrival_instantaneous:
+  engine: {fn: temporal_paths, criterion: earliest_arrival, instantaneous: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "earliest arrival over all walks, all contacts instantaneous"
+    tsna:
+      call: "start + tPath(nd, v, 'fwd', 'earliest.arrive', start, end, graph.step.time = 0)$tdist for every v"
 
 temporal_latest_departure:
   engine: {fn: temporal_paths, criterion: latest_departure}
@@ -206,6 +220,16 @@ temporal_reach_out:
   oracles:
     definition:
       call: "number of other nodes reached by some walk (set of influence; Holme 2005)"
+
+temporal_reach_out_instantaneous:
+  engine: {fn: temporal_reach, direction: out, instantaneous: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "set of influence, all contacts instantaneous"
+    tsna:
+      call: "sum(is.finite(tPath(nd, v, 'fwd', 'earliest.arrive', ...)$tdist)) - 1"
 
 temporal_reach_in:
   engine: {fn: temporal_reach, direction: in}
