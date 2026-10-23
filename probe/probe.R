@@ -1,4 +1,4 @@
-remotes::install_github("knapply/knappnet", subdir = "r", upgrade = "never", quiet = TRUE)
+install.packages("r", repos = NULL, type = "source", quiet = TRUE)
 suppressPackageStartupMessages({library(ergm); library(knappnet)})
 cat("ergm", as.character(packageVersion("ergm")), " cores", parallel::detectCores(), "\n")
 make <- function(n, deg, seed) {
