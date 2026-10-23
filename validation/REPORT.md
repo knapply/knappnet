@@ -7,83 +7,150 @@ Oracle versions: definition (direct evaluation, exact arithmetic); igraph (no go
 
 | Measure | definition | igraph | networkx | sna | ucinet |
 |---|---|---|---|---|---|
-| `degree_all` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |
-| `degree_all_noloops` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 |  |
+| `degree_all` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `degree_all_noloops` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  | 0 / 0 / 0 / 28 |  |
 | `degree_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
 | `degree_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
-| `strength_all` |  | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `betweenness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 |  |
-| `betweenness_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
-| `betweenness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `betweenness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 4 / 2 / 0 / 0 |  |  |
-| `triad_census` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
-| `constraint` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
-| `constraint_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `effective_size` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |  |
-| `effective_size_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
-| `efficiency` | 25 / 0 / 0 / 0 |  | 23 / 2 / 0 / 0 |  |  |
-| `brokerage` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `structural_equivalence_euclidean` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
-| `structural_equivalence_correlation` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
-| `structural_equivalence_hamming` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 24 |  |
-| `structural_equivalence_euclidean_weighted` | 6 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 6 |  |
-| `concor` | 25 / 0 / 0 / 0 |  |  |  |  |
-| `concor_depth2` | 23 / 0 / 0 / 0 |  |  |  |  |
-| `coreness_all` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
+| `strength_all` |  | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `betweenness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `betweenness_normalized` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 |  |  |
+| `betweenness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `betweenness_weighted_strength` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 5 / 2 / 0 / 0 |  |  |
+| `triad_census` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |
+| `reciprocity` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 | 8 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  |
+| `reciprocity_ratio` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 8 |  | 0 / 0 / 0 / 8 |  |
+| `reciprocity_dyadic` | 9 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 9 |  |
+| `reciprocity_correlation` | 9 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 7 |  |
+| `transitivity` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `transitivity_networkx` | 28 / 0 / 0 / 0 |  | 28 / 0 / 0 / 0 |  |  |
+| `clustering` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `clustering_zero` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `average_clustering` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `average_clustering_zero` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `clustering_barrat` | 5 / 0 / 0 / 0 | 0 / 0 / 0 / 5 |  |  |  |
+| `clustering_onnela` | 5 / 0 / 0 / 0 |  | 5 / 0 / 0 / 0 |  |  |
+| `average_clustering_onnela` | 5 / 0 / 0 / 0 |  | 5 / 0 / 0 / 0 |  |  |
+| `distances` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `distances_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `distances_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `distances_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `distances_weighted_strength` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 |  |  |  |
+| `mean_distance` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 0 / 0 / 0 |  |  |
+| `mean_distance_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `mean_distance_connected` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `mean_distance_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `diameter` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `diameter_connected` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `diameter_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
+| `diameter_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `eccentricity` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `eccentricity_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `eccentricity_weighted` | 7 / 0 / 0 / 0 |  | 7 / 0 / 0 / 0 |  |  |
+| `radius` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `reachability` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `reachability_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `reachability_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `cut_points` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `bridges` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 21 | 28 / 0 / 0 / 0 |  |  |
+| `constraint` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 |  |  |
+| `constraint_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `effective_size` | 28 / 0 / 0 / 0 |  | 26 / 2 / 0 / 0 |  |  |
+| `effective_size_weighted` | 7 / 0 / 0 / 0 |  | 7 / 0 / 0 / 0 |  |  |
+| `efficiency` | 28 / 0 / 0 / 0 |  | 26 / 2 / 0 / 0 |  |  |
+| `brokerage` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
+| `structural_equivalence_euclidean` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 27 |  |
+| `structural_equivalence_correlation` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 27 |  |
+| `structural_equivalence_hamming` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 27 |  |
+| `structural_equivalence_euclidean_weighted` | 7 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 7 |  |
+| `concor` | 28 / 0 / 0 / 0 |  |  |  |  |
+| `concor_depth2` | 26 / 0 / 0 / 0 |  |  |  |  |
+| `coreness_all` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 |  |  |
 | `coreness_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `coreness_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
-| `max_cliques` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
-| `max_cliques_min3` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
-| `clique_number` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
-| `modularity` | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
-| `modularity_resolution` | 23 / 2 / 0 / 0 | 0 / 0 / 0 / 25 | 23 / 2 / 0 / 0 |  |  |
-| `modularity_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `louvain_modularity` | 15 / 1 / 0 / 0 |  | 15 / 1 / 0 / 0 |  |  |
-| `louvain_modularity_weighted` | 4 / 0 / 0 / 0 |  | 4 / 0 / 0 / 0 |  |  |
-| `louvain_modularity_resolution` | 15 / 1 / 0 / 0 |  | 15 / 1 / 0 / 0 |  |  |
-| `louvain_quality` |  | 0 / 0 / 0 / 16 | 15 / 1 / 0 / 0 |  |  |
-| `louvain_quality_weighted` |  | 0 / 0 / 0 / 4 | 4 / 0 / 0 / 0 |  |  |
-| `louvain_quality_resolution` |  | 0 / 0 / 0 / 16 | 15 / 1 / 0 / 0 |  |  |
-| `degree_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `betweenness_networkx` | 25 / 0 / 0 / 0 |  | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |
-| `betweenness_networkx_weighted` |  |  | 6 / 0 / 0 / 0 |  |  |
-| `density` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 24 / 1 / 0 / 0 | 0 / 0 / 0 / 25 |  |
-| `density_loops` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
-| `density_simple` | 25 / 0 / 0 / 0 |  | 24 / 1 / 0 / 0 | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
-| `components_weak` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
-| `components_strong` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
-| `fragmentation` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `max_cliques` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `max_cliques_min3` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `clique_number` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `modularity` | 26 / 2 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 |  |  |
+| `modularity_resolution` | 26 / 2 / 0 / 0 | 0 / 0 / 0 / 28 | 26 / 2 / 0 / 0 |  |  |
+| `modularity_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `louvain_modularity` | 18 / 1 / 0 / 0 |  | 18 / 1 / 0 / 0 |  |  |
+| `louvain_modularity_weighted` | 5 / 0 / 0 / 0 |  | 5 / 0 / 0 / 0 |  |  |
+| `louvain_modularity_resolution` | 18 / 1 / 0 / 0 |  | 18 / 1 / 0 / 0 |  |  |
+| `louvain_quality` |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |  |  |
+| `louvain_quality_weighted` |  | 0 / 0 / 0 / 5 | 5 / 0 / 0 / 0 |  |  |
+| `louvain_quality_resolution` |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |  |  |
+| `degree_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
+| `betweenness_networkx` | 28 / 0 / 0 / 0 |  | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `betweenness_networkx_weighted` |  |  | 7 / 0 / 0 / 0 |  |  |
+| `density` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 27 / 1 / 0 / 0 | 0 / 0 / 0 / 28 |  |
+| `density_loops` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `density_simple` | 28 / 0 / 0 / 0 |  | 27 / 1 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 0 |
+| `components_weak` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
+| `components_strong` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  | 0 / 0 / 0 / 0 |
+| `fragmentation` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 | `fragmentation_strong` | 9 / 0 / 0 / 0 |  |  |  |  |
-| `closeness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
-| `closeness_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `closeness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `closeness_normalized` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
 | `closeness_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
 | `closeness_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
-| `closeness_wf` | 25 / 0 / 0 / 0 |  | 25 / 0 / 0 / 0 |  |  |
-| `closeness_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `closeness_wf` | 28 / 0 / 0 / 0 |  | 28 / 0 / 0 / 0 |  |  |
+| `closeness_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
+| `closeness_ucinet` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 | `closeness_ucinet_in` | 9 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
-| `closeness_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
-| `closeness_wf_weighted` | 6 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
-| `closeness_weighted_strength` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
-| `harmonic` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 | 25 / 0 / 0 / 0 |  |  |
-| `harmonic_normalized` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
+| `closeness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 |  |  |  |
+| `closeness_wf_weighted` | 7 / 0 / 0 / 0 |  | 7 / 0 / 0 / 0 |  |  |
+| `closeness_weighted_strength` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 |  |  |  |
+| `harmonic` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `harmonic_normalized` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 0 |
 | `harmonic_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
-| `harmonic_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 | 6 / 0 / 0 / 0 |  |  |
-| `eigenvector` | 24 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
-| `eigenvector_networkx` | 24 / 0 / 0 / 0 |  | 16 / 0 / 0 / 0 |  |  |
-| `eigenvector_weighted` | 6 / 0 / 0 / 0 | 0 / 0 / 0 / 6 |  |  |  |
-| `eigenvector_weighted_networkx` | 6 / 0 / 0 / 0 |  | 5 / 0 / 0 / 0 |  |  |
+| `harmonic_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |  |
+| `eigenvector` | 27 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `eigenvector_networkx` | 27 / 0 / 0 / 0 |  | 19 / 0 / 0 / 0 |  |  |
+| `eigenvector_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 |  |  |  |
+| `eigenvector_weighted_networkx` | 7 / 0 / 0 / 0 |  | 6 / 0 / 0 / 0 |  |  |
 | `eigenvector_undirected` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
-| `eigenvector_sna` | 24 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 23 |  |
-| `eigenvector_ucinet` | 24 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
-| `centralization_degree` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
+| `eigenvector_sna` | 27 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 26 |  |
+| `eigenvector_ucinet` | 27 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `centralization_degree` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
 | `centralization_degree_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |  |  |  |
-| `centralization_degree_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `centralization_degree_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
-| `centralization_betweenness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  | 0 / 0 / 0 / 25 | 0 / 0 / 0 / 0 |
-| `centralization_closeness` | 25 / 0 / 0 / 0 | 0 / 0 / 0 / 25 |  |  |  |
-| `centralization_closeness_sna` | 25 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 25 |  |
-| `centralization_closeness_ucinet` | 25 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `centralization_degree_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
+| `centralization_degree_ucinet` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `centralization_betweenness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 0 |
+| `centralization_closeness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |  |  |
+| `centralization_closeness_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
+| `centralization_closeness_ucinet` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
+| `ego_size` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_size_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_size_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_size_order2` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_alters_order2_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_alters` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_ties` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_ties_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_ties_order2` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_density` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_density_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_components` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_components_in` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_betweenness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |  |  |
+| `ego_betweenness_out` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |  |
+| `ego_betweenness_order2` | 28 / 0 / 0 / 0 |  | 28 / 0 / 0 / 0 |  |  |
+| `twomode_density` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `twomode_degree` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `twomode_degree_raw` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 |  |  |  |
+| `twomode_closeness` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `twomode_closeness_ignore` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `twomode_closeness_raw` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 |  |  |  |
+| `twomode_betweenness` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `twomode_betweenness_raw` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |  |
+| `twomode_eigenvector` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 |  |  |  |
+| `project_first` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |  |
+| `project_second` | 3 / 0 / 0 / 0 | 0 / 0 / 0 / 3 | 3 / 0 / 0 / 0 |  |  |
+| `project_first_loops` | 3 / 0 / 0 / 0 |  |  |  |  |
+| `project_first_newman` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `project_second_newman` | 3 / 0 / 0 / 0 |  | 3 / 0 / 0 / 0 |  |  |
+| `project_first_product` | 1 / 0 / 0 / 0 |  | 1 / 0 / 0 / 0 |  |  |
+| `project_second_product` | 1 / 0 / 0 / 0 |  |  |  |  |
 
 ## Documented convention differences
 

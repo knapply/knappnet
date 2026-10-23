@@ -16,7 +16,7 @@
 
 static GraphHandle *topo_graph(SEXP ptr) {
   if (TYPEOF(ptr) != EXTPTRSXP || R_ExternalPtrAddr(ptr) == NULL) {
-    Rf_error("Invalid network handle.");
+    Rf_error("invalid network handle (internal error)");
   }
   return (GraphHandle *)R_ExternalPtrAddr(ptr);
 }
@@ -29,16 +29,22 @@ static void topo_finalizer(SEXP ptr) {
   }
 }
 
-/* keep: 0 = largest weight of parallel edges, 1 = smallest. */
+/* keep: 0 = largest weight of parallel edges, 1 = smallest. As in
+ * C_graph_new, the external pointer exists before the engine allocates the
+ * graph it will own. */
 SEXP C_graph_simplify(SEXP ptr, SEXP undirected, SEXP keep) {
   GraphHandle *h = topo_graph(ptr);
+  SEXP res = PROTECT(R_MakeExternalPtr(NULL, R_NilValue, R_NilValue));
+  R_RegisterCFinalizerEx(res, topo_finalizer, TRUE);
   GraphHandle *out = NULL;
   char err[ERR_LEN] = {0};
   int status = net_graph_simplify(h, Rf_asLogical(undirected), Rf_asInteger(keep), &out,
                                   err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
-  SEXP res = PROTECT(R_MakeExternalPtr(out, R_NilValue, R_NilValue));
-  R_RegisterCFinalizerEx(res, topo_finalizer, TRUE);
+  if (status != 0) {
+    UNPROTECT(1);
+    Rf_error("%s", err);
+  }
+  R_SetExternalPtrAddr(res, out);
   UNPROTECT(1);
   return res;
 }

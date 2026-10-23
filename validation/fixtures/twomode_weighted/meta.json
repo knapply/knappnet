@@ -1,0 +1,28 @@
+{
+  "n": 15,
+  "directed": false,
+  "weighted": true,
+  "tags": [
+    "integer_weights",
+    "twomode",
+    "weighted"
+  ],
+  "source": "random bipartite graph, 9 + 6 nodes, p=0.45, seed 41",
+  "type": [
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    0
+  ]
+}

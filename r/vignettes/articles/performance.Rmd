@@ -1,0 +1,148 @@
+---
+title: "Performance"
+description: >
+  How the engine stores networks, chooses algorithms, and uses every core
+  while staying reproducible, and benchmark results against igraph, sna,
+  NetworkX, and NetworKit.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Speed matters when networks are large, when a measure is computed for
+every network in a collection, and when a permutation test repeats a
+computation thousands of times. In knappnet speed never comes at the cost
+of accuracy: every algorithm is exact unless it says otherwise, and every
+benchmark below is also a correctness check.
+
+```{r}
+library(knappnet)
+```
+
+## How the engine works
+
+All computation happens in one engine written in Rust with no third-party
+dependencies. R reaches it through a small C interface, which the planned
+Python package will share, so a result validated once is validated for
+every language. The R package carries its own copy of the engine's source
+and builds offline.
+
+### Compressed sparse rows
+
+When a measure is first computed, R passes the engine only what it needs:
+each edge's endpoints as integer positions in the node table and, if
+relevant, the weights. Attributes never leave R. The engine stores the
+network in compressed sparse row (CSR) form: each node's neighbors sit
+next to each other in one array, sorted, with a second array marking
+where each node's run begins. Directed networks also keep the reverse
+layout for in-ties. Walking a node's neighbors is then a sequential read
+of memory, which is what modern processors do fastest, and node positions
+are 32-bit integers, so the structure stays compact. The structure is
+built once per network and cached, so computing several measures does not
+rebuild it.
+
+Dense binary networks can also be held as bit matrices, where testing a
+tie or intersecting two neighborhoods handles 64 nodes per machine word.
+
+### The algorithm follows the weights
+
+Whether a network is weighted, and what its weights mean, decides the
+shortest-path algorithm, so the fastest exact method is always used:
+
+| Network | Shortest paths | Cost per source |
+|---|---|---|
+| Binary, or all weights equal | breadth-first search | O(m) |
+| Whole-number lengths up to 1024 | bucket queue (Dial 1969) | O(m + D) |
+| Any other positive lengths | Dijkstra (1959), binary heap | O(m log n) |
+
+Here m is the number of edges, n the number of nodes, and D the longest
+shortest-path length. Whole-number lengths are added in exact integer
+arithmetic. With real-valued lengths, two paths of equal length can sum to
+slightly different floating-point values, which silently drops shortest
+paths in some tools; the engine treats lengths within a relative
+10<sup>-10</sup> as equal. Betweenness follows Brandes (2001).
+
+The choice is automatic. A binary network never touches a weight array,
+and a network whose weights are all equal is computed as if it were
+binary, then scaled.
+
+### Parallel work
+
+Most measures repeat independent work for every node: one shortest-path
+search per source, one neighborhood per node. The engine spreads that work
+over all cores, using the operating system's threads rather than OpenMP,
+which is unavailable on some platforms where R packages are built. The
+`threads` argument limits it; `threads = 0`, the default, uses every core.
+
+```{r}
+karate <- as_netframe(igraph::make_graph("Zachary"))
+all.equal(betweenness(karate, threads = 1), betweenness(karate, threads = 2))
+```
+
+### Reproducibility
+
+Work is assigned to threads in a fixed pattern and partial results are
+combined in a fixed order, so a computation repeated with the same number
+of threads gives bit-for-bit the same result. Integer results (counts,
+memberships, cliques) are identical for any number of threads.
+Floating-point sums can differ in the last bits between different thread
+counts, because floating-point addition is not associative; such
+differences are far below every tolerance in the validation suite.
+
+Randomized methods (Louvain communities and QAP permutations) use a
+counter-based random number generator (Philox; Salmon et al. 2011). Every
+task draws from its own stream, computed from the seed and the task's
+number, so results depend only on the seed, not on which thread ran what
+or on the platform:
+
+```{r}
+identical(cluster_louvain(karate, seed = 42), cluster_louvain(karate, seed = 42))
+```
+
+When no seed is given, one is drawn from R's random number generator, so
+`set.seed()` works as usual.
+
+## Benchmark results
+
+The section below is reproduced from the project's README, which records
+the latest published run.
+
+```{r, echo = FALSE, results = "asis"}
+# Find the repository README by walking up from the article's directory.
+find_readme <- function(dir = getwd()) {
+  for (i in 1:6) {
+    candidate <- file.path(dir, "README.md")
+    if (file.exists(candidate) && dir.exists(file.path(dir, "crates"))) return(candidate)
+    dir <- dirname(dir)
+  }
+  stop("The repository README was not found; build the site from a full checkout.",
+       call. = FALSE)
+}
+lines <- readLines(find_readme(), encoding = "UTF-8", warn = FALSE)
+start <- grep("^## Benchmarks\\s*$", lines)
+end <- grep("^## ", lines)
+end <- end[end > start][1]
+if (length(start) != 1L || is.na(end)) {
+  stop("The README has no single Benchmarks section.", call. = FALSE)
+}
+cat(lines[(start + 1L):(end - 1L)], sep = "\n")
+```
+
+## References
+
+Brandes, U. (2001). A faster algorithm for betweenness centrality.
+*Journal of Mathematical Sociology*, 25(2), 163-177.
+https://doi.org/10.1080/0022250X.2001.9990249
+
+Dial, R. B. (1969). Algorithm 360: Shortest-path forest with topological
+ordering. *Communications of the ACM*, 12(11), 632-633.
+https://doi.org/10.1145/363269.363610
+
+Dijkstra, E. W. (1959). A note on two problems in connexion with graphs.
+*Numerische Mathematik*, 1, 269-271. https://doi.org/10.1007/BF01386390
+
+Salmon, J. K., Moraes, M. A., Dror, R. O., & Shaw, D. E. (2011). Parallel
+random numbers: As easy as 1, 2, 3. In *Proceedings of the 2011
+International Conference for High Performance Computing, Networking,
+Storage and Analysis (SC '11)*. https://doi.org/10.1145/2063384.2063405

@@ -20,7 +20,7 @@
 #' * **matrix** or sparse **Matrix**: row names become identifiers. Values
 #'   other than 0 and 1 become edge weights. Direction is inferred from
 #'   symmetry unless `directed` is given; an undirected matrix contributes
-#'   only its upper triangle.
+#'   only its upper triangle. Missing values (`NA`) are read as 0, no tie.
 #' * **data.frame**: treated as an edge list, as in [netframe()].
 #'
 #' @param x An object to convert.
@@ -130,6 +130,8 @@ as_netframe.network <- function(x, ...) {
 #' @rdname as_netframe
 #' @export
 as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
+  check_flag_or_null(directed, "directed")
+  check_flag_or_null(weighted, "weighted")
   if (nrow(x) != ncol(x)) {
     stop("An adjacency matrix must be square.", call. = FALSE)
   }
@@ -146,6 +148,8 @@ as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
 #' @export
 as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   require_pkg("Matrix")
+  check_flag_or_null(directed, "directed")
+  check_flag_or_null(weighted, "weighted")
   if (nrow(x) != ncol(x)) {
     stop("An adjacency matrix must be square.", call. = FALSE)
   }
@@ -161,7 +165,8 @@ as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
     i <- i2
     v <- c(v, v[off])
   }
-  keep <- v != 0
+  # As for dense matrices, missing values are read as 0 (no tie).
+  keep <- !is.na(v) & v != 0
   matrix_to_netframe(i[keep], j[keep], v[keep], nrow(x), rownames(x),
                      symmetric = Matrix::isSymmetric(x), directed, weighted)
 }
@@ -267,9 +272,14 @@ bipartite_count <- function(mode, src, tgt) {
 #'   matrix is symmetric and a self-loop contributes once to the diagonal.
 #' @export
 as.matrix.netframe <- function(x, attr = NULL, sparse = FALSE, ...) {
+  check_netframe(x)
+  check_flag(sparse, "sparse")
   n <- nrow(x$nodes)
   i <- x$index$src + 1L
   j <- x$index$tgt + 1L
+  if (!is.null(attr) && (!is.atomic(attr) || length(attr) != 1L || is.na(attr))) {
+    stop("`attr` must name one edge column, or be NULL.", call. = FALSE)
+  }
   if (!is.null(attr) && is.null(x$edges[[attr]])) {
     stop(sprintf("Edge column `%s` not found.", attr), call. = FALSE)
   }

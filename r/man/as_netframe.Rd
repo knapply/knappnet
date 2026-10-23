@@ -79,7 +79,8 @@ and converting back restores the bipartite structure.
 \item \strong{matrix} or sparse \strong{Matrix}: row names become
 identifiers. Values other than 0 and 1 become edge weights. Direction is
 inferred from symmetry unless \code{directed} is given; an undirected matrix
-contributes only its upper triangle.
+contributes only its upper triangle. Missing values (\code{NA}) are read as 0,
+no tie.
 \item \strong{data.frame}: treated as an edge list, as in
 \code{\link{netframe}}.
 }
