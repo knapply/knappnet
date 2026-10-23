@@ -4,33 +4,33 @@
 # whole-network measures (density, components, centralization, triads,
 # core-periphery, small worlds) are in topography.R.
 
-# Reciprocity (man/reciprocity.Rd).
-reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlation")) {
+# Reciprocity (man/net_reciprocity.Rd).
+net_reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlation")) {
   check_netframe(x)
   mode <- match.arg(mode)
   code <- switch(mode, default = 0L, ratio = 1L, dyadic = 2L, correlation = 3L)
   ptr <- engine_graph(x)
-  engine_call("reciprocity", .Call(C_reciprocity, ptr, code))
+  engine_call("net_reciprocity", .Call(C_reciprocity, ptr, code))
 }
 
-# Transitivity and clustering coefficients (man/transitivity.Rd).
-transitivity <- function(x, convention = c("igraph", "networkx"), threads = 0L) {
+# Transitivity and clustering coefficients (man/net_transitivity.Rd).
+net_transitivity <- function(x, convention = c("igraph", "networkx"), threads = 0L) {
   check_netframe(x)
   convention <- match.arg(convention)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call("transitivity",
+  engine_call("net_transitivity",
               .Call(C_transitivity, ptr, undefined_code(convention), threads))
 }
 
-# See man/transitivity.Rd.
-clustering <- function(x, weighted = FALSE, method = NULL,
+# See man/net_transitivity.Rd.
+net_clustering <- function(x, weighted = FALSE, method = NULL,
                        convention = c("igraph", "networkx"), threads = 0L) {
   clustering_common(x, FALSE, weighted, method, match.arg(convention), threads)
 }
 
-# See man/transitivity.Rd.
-average_clustering <- function(x, weighted = FALSE, method = NULL,
+# See man/net_transitivity.Rd.
+net_avg_clustering <- function(x, weighted = FALSE, method = NULL,
                                convention = c("igraph", "networkx"), threads = 0L) {
   clustering_common(x, TRUE, weighted, method, match.arg(convention), threads)
 }
@@ -47,7 +47,7 @@ clustering_common <- function(x, average, weighted, method, convention, threads)
   }
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call(if (average) "average_clustering" else "clustering",
+  engine_call(if (average) "net_avg_clustering" else "net_clustering",
               .Call(C_clustering, ptr, average, weighting, undefined_code(convention),
                     threads))
 }
@@ -55,8 +55,8 @@ clustering_common <- function(x, average, weighted, method, convention, threads)
 # The engine's code for an undefined ratio: NaN (igraph) or 0 (NetworkX).
 undefined_code <- function(convention) if (convention == "networkx") 1L else 0L
 
-# Shortest-path distances, mean distance, diameter, eccentricity, and radius (man/distances.Rd).
-distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
+# Shortest-path distances, mean distance, diameter, eccentricity, and radius (man/net_distances.Rd).
+net_distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
                       weighted = NULL, weights_as = NULL, threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -65,7 +65,7 @@ distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
   cols <- node_positions(x, to, "to")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  d <- engine_call("distances",
+  d <- engine_call("net_distances",
                    .Call(C_distances, ptr, if (is.null(rows)) NULL else rows - 1L,
                          mode_code(mode), w$weighted, w$code, threads))
   labels <- node_ids(x)
@@ -74,36 +74,36 @@ distances <- function(x, from = NULL, to = NULL, mode = c("out", "in", "all"),
   d
 }
 
-# See man/distances.Rd.
-mean_distance <- function(x, mode = c("out", "in", "all"), weighted = NULL,
+# See man/net_distances.Rd.
+net_mean_distance <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                           weights_as = NULL, unconnected = TRUE, threads = 0L) {
   path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads,
-               "mean_distance")[[6L]]
+               "net_mean_distance")[[6L]]
 }
 
-# See man/distances.Rd.
-diameter <- function(x, mode = c("out", "in", "all"), weighted = NULL,
+# See man/net_distances.Rd.
+net_diameter <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                      weights_as = NULL, unconnected = TRUE, threads = 0L) {
   path_summary(x, NULL, match.arg(mode), weighted, weights_as, unconnected, threads,
-               "diameter")[[7L]]
+               "net_diameter")[[7L]]
 }
 
-# See man/distances.Rd.
-eccentricity <- function(x, mode = c("all", "out", "in"), weighted = NULL,
+# See man/net_distances.Rd.
+net_eccentricity <- function(x, mode = c("all", "out", "in"), weighted = NULL,
                          weights_as = NULL, threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call("eccentricity",
+  engine_call("net_eccentricity",
               .Call(C_eccentricity, ptr, mode_code(mode), w$weighted, w$code, threads))
 }
 
-# See man/distances.Rd.
-radius <- function(x, mode = c("all", "out", "in"), weighted = NULL,
+# See man/net_distances.Rd.
+net_radius <- function(x, mode = c("all", "out", "in"), weighted = NULL,
                    weights_as = NULL, threads = 0L) {
-  e <- eccentricity(x, match.arg(mode), weighted, weights_as, threads)
+  e <- net_eccentricity(x, match.arg(mode), weighted, weights_as, threads)
   if (length(e) == 0L) NaN else min(e)
 }
 
@@ -119,28 +119,28 @@ path_summary <- function(x, sources, mode, weighted, weights_as, unconnected, th
                         unconnected, threads))
 }
 
-# Reachability (man/reachability.Rd).
-reachability <- function(x, mode = c("out", "in", "all"), threads = 0L) {
+# Reachability (man/net_reachability.Rd).
+net_reachability <- function(x, mode = c("out", "in", "all"), threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call("reachability", .Call(C_reachability, ptr, mode_code(mode), threads))
+  engine_call("net_reachability", .Call(C_reachability, ptr, mode_code(mode), threads))
 }
 
-# Cut points and bridges (man/cut_points.Rd).
-cut_points <- function(x) {
+# Cut points and bridges (man/net_cut_points.Rd).
+net_cut_points <- function(x) {
   check_netframe(x)
   ptr <- engine_graph(x)
-  r <- engine_call("cut_points", .Call(C_cut_structure, ptr))
+  r <- engine_call("net_cut_points", .Call(C_cut_structure, ptr))
   x$nodes[[x$roles$id]][r[[1L]]]
 }
 
-# See man/cut_points.Rd.
-bridges <- function(x) {
+# See man/net_cut_points.Rd.
+net_bridges <- function(x) {
   check_netframe(x)
   ptr <- engine_graph(x)
-  which(engine_call("bridges", .Call(C_cut_structure, ptr))[[2L]])
+  which(engine_call("net_bridges", .Call(C_cut_structure, ptr))[[2L]])
 }
 
 # Summarize a network (man/summary.netframe.Rd).
@@ -153,7 +153,7 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
   n <- nrow(x$nodes)
   ptr <- engine_graph(x)
   s <- netframe_summary(x)
-  comp <- components(x, "weak")
+  comp <- net_components(x, "weak")
   largest <- if (comp$no > 0L) which.max(comp$csize) else NA_integer_
   largest_size <- if (comp$no > 0L) comp$csize[[largest]] else 0L
   if (is.null(paths)) paths <- largest_size <= summary_path_limit
@@ -165,7 +165,7 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
     mean_dist <- p[[6L]]
     diam <- p[[7L]]
   }
-  deg <- degree(x)
+  deg <- net_degree(x)
   deg <- if (n > 0L) {
     c(mean = mean(deg), min = min(deg), max = max(deg))
   } else {
@@ -200,14 +200,14 @@ summary.netframe <- function(object, paths = NULL, weighted = NULL, threads = 0L
       density = s$density,
       components = comp$no,
       largest_component = largest_size,
-      reciprocity = if (x$directed) reciprocity(x) else NA_real_,
-      transitivity = transitivity(x, threads = threads),
+      reciprocity = if (x$directed) net_reciprocity(x) else NA_real_,
+      transitivity = net_transitivity(x, threads = threads),
       paths = paths,
       path_weighted = w$weighted,
       mean_distance = mean_dist,
       diameter = diam,
       degree = deg,
-      centralization = centralization(x, "degree", threads = threads),
+      centralization = net_centralization(x, "degree", threads = threads),
       node_columns = column_types(x$nodes),
       edge_columns = column_types(x$edges),
       missing_nodes = s$missing_nodes,

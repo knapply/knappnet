@@ -1,8 +1,8 @@
 # Reading and writing network files. Text formats and CSV are handled
 # here; GeoPackage files need sf and live in sf.R.
 
-# Read and write network files (man/read_network.Rd).
-read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
+# Read and write network files (man/net_read.Rd).
+net_read <- function(file, format = NULL, directed = NULL, nodes = NULL,
                          source = "source", target = "target", id = "id", weight = NULL,
                          weight_type = NULL, quiet = FALSE) {
   if (!is.null(weight_type)) check_choice(weight_type, c("strength", "distance"), "weight_type")
@@ -40,7 +40,7 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
   if (is.null(format) && identical(tolower(tools::file_ext(file)), "xml")) fmt <- NULL
   path <- path.expand(file)
   dir <- if (is.null(directed)) NULL else directed
-  res <- engine_call("read_network", .Call(C_read_network, path, fmt, dir))
+  res <- engine_call("net_read", .Call(C_read_network, path, fmt, dir))
   node_df <- as_frame(res$nodes)
   edge_df <- as_frame(res$edges)
   ids <- integer_ids(node_df$id, edge_df$from, edge_df$to)
@@ -78,8 +78,8 @@ pick_weight <- function(edges, weight) {
   if ("weight" %in% names(edges) && is.numeric(edges$weight)) "weight"
 }
 
-# See man/read_network.Rd.
-write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
+# See man/net_read.Rd.
+net_write <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
   check_netframe(x)
   check_path(file, "file")
   check_string(format, "format", null_ok = TRUE)
@@ -110,7 +110,7 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
   node_cols <- as.list(tables$nodes)
   edge_cols <- as.list(tables$edges)
   path <- path.expand(file)
-  engine_call("write_network", .Call(C_write_network, x$directed, tables$graph, node_cols,
+  engine_call("net_write", .Call(C_write_network, x$directed, tables$graph, node_cols,
                                      edge_cols, path, fmt, weight_col))
   invisible(file)
 }

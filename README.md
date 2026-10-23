@@ -54,15 +54,15 @@ remotes::install_github("knapply/knappnet", subdir = "r")
 library(knappnet)
 
 edges <- data.frame(
-  from = c("ana", "ana", "ben", "cy", "cy"),
-  to   = c("ben", "cy",  "cy",  "dee", "eli")
+  source = c("ana", "ana", "ben", "cy", "cy"),
+  target   = c("ben", "cy",  "cy",  "dee", "eli")
 )
-g <- netframe(edges, directed = FALSE)
+g <- net_frame(edges, directed = FALSE)
 g
 #> <netframe> undirected network with 5 nodes and 5 edges, unweighted
 
-g$nodes$degree <- degree(g)
-g$nodes$betweenness <- betweenness(g)
+g$nodes$degree <- net_degree(g)
+g$nodes$betweenness <- net_betweenness(g)
 g$nodes
 #>   name degree betweenness
 #> 1  ana      2           0
@@ -130,14 +130,14 @@ classic case: each tool treats unreachable nodes differently. Here `a`,
 `b`, and `c` form a path, and `d` and `e` are a separate pair:
 
 ```r
-split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
 data.frame(
   node     = split$nodes$name,
-  igraph   = round(closeness(split), 3),
-  networkx = round(closeness(split, convention = "networkx"), 3),
-  sna      = closeness(split, convention = "sna"),
-  ucinet   = round(closeness(split, convention = "ucinet"), 3)
+  igraph   = round(net_closeness(split), 3),
+  networkx = round(net_closeness(split, convention = "networkx"), 3),
+  sna      = net_closeness(split, convention = "sna"),
+  ucinet   = round(net_closeness(split, convention = "ucinet"), 3)
 )
 #>   node igraph networkx sna ucinet
 #> 1    a  0.333    0.333   0  0.444

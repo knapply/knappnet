@@ -61,7 +61,7 @@ edges
 # Decided constructor call (the endpoint column names are always given
 # explicitly or taken from the defaults "source" and "target"; nothing is
 # guessed from column positions).
-g <- netframe(edges, nodes, directed = FALSE,
+g <- net_frame(edges, nodes, directed = FALSE,
               source = "source", target = "target", id = "name",
               weight = "years", weight_type = "strength")
 ```
@@ -268,16 +268,16 @@ the weight as a length under `"distance"` and 1/weight under
 additive measures such as node strength (Barrat et al. 2004) use the
 weight as given either way.
 
-**In knappnet.** The `weight` role plus `weight_type`. `netframe(weight =
+**In knappnet.** The `weight` role plus `weight_type`. `net_frame(weight =
 "w")` is an error unless `weight_type` is `"strength"` or `"distance"`:
 there is no default meaning. The printed card shows the column, the
 meaning, and the range. Missing, `NaN`, and infinite weights are stored,
 reported, and refused by every measure until resolved.
 
 ```{r, eval = FALSE}
-netframe(edges, weight = "years")                           # error: say what the weights mean
-netframe(edges, weight = "years", weight_type = "strength") # years of acquaintance
-netframe(edges, weight = "minutes", weight_type = "distance")
+net_frame(edges, weight = "years")                           # error: say what the weights mean
+net_frame(edges, weight = "years", weight_type = "strength") # years of acquaintance
+net_frame(edges, weight = "minutes", weight_type = "distance")
 ```
 
 **Other tools.** [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) read an attribute called `weight` by
@@ -325,7 +325,7 @@ columns of the incidence matrix, and a network-level rule stating whether
 edges may only cross modes. A logical `type` column, [igraph](https://r.igraph.org/)'s convention,
 is accepted as input and written when converting to igraph. Two tests
 with two names are planned: one reports the declared modes (today
-`is_twomode()`), the other tests 2-colourability and returns the
+`net_is_twomode()`), the other tests 2-colourability and returns the
 colouring, stopping with a clear message when the graph is not bipartite.
 
 ```{r}
@@ -586,7 +586,7 @@ Borgatti 2005). An *egocentric* dataset is a collection of such networks,
 one per sampled ego, usually with no ties across egos (Burt 1984; Perry,
 Pescosolido, and Borgatti 2018).
 
-**In knappnet.** Extraction from a whole network (today `ego_network()`)
+**In knappnet.** Extraction from a whole network (today `net_ego()`)
 returns an ordinary netframe, with ego included by default. For
 egocentric survey data an `ego` role on nodes and edges is planned, so
 one netframe holds every ego's network and measures run per ego; the
@@ -686,8 +686,8 @@ hypergraphs are out of scope until a need appears.
 | bipartite (property) | 2-colourable, no odd cycle | [igraph](https://r.igraph.org/) R: "has a `type` attribute"; SNA: two-mode |
 | link stream, contact sequence | temporal network | Holme and Saramäki: "interval graph", which in graph theory is a different object |
 | planar (graph) | | geometry: no crossing linestrings |
-| distance weight | cost, length | igraph's `strength()`: the same column as an intensity |
-| strength weight | intensity, frequency | igraph's `distances()`: the same column as a length |
+| distance weight | cost, length | igraph's `net_strength()`: the same column as an intensity |
+| strength weight | intensity, frequency | igraph's `net_distances()`: the same column as a length |
 
 ## References
 

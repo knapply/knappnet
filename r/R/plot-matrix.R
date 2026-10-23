@@ -1,16 +1,16 @@
 # Heat maps of adjacency, incidence, and mixing matrices, drawn by
 # draw_heatmap() in utils-plot.R.
 
-# Plot an adjacency or incidence matrix (man/plot_matrix.Rd).
-plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = NULL,
+# Plot an adjacency or incidence matrix (man/net_plot_matrix.Rd).
+net_plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = NULL,
                         labels = NULL, ...) {
   values <- check_flag(values, "values")
   check_flag_or_null(key, "key")
   check_flag_or_null(labels, "labels")
   if (inherits(x, "netframe")) {
     check_netframe(x)
-    if (is_twomode(x)) {
-      m <- incidence_matrix(x, attr = attr)
+    if (net_is_twomode(x)) {
+      m <- net_incidence(x, attr = attr)
       row_lines <- col_lines <- integer()
       if (!is.null(order)) {
         g <- plot_groups(x, order, "order")
@@ -77,13 +77,13 @@ group_order <- function(g) {
   list(order = o, lines = ends[-length(ends)])
 }
 
-# Plot a mixing matrix (man/plot_mixing_matrix.Rd).
-plot_mixing_matrix <- function(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"),
+# Plot a mixing matrix (man/net_plot_mixing.Rd).
+net_plot_mixing <- function(x, dim1 = NULL, dim2 = NULL, direction = c("all", "out", "in"),
                                values = TRUE, ...) {
   values <- check_flag(values, "values")
   if (inherits(x, "netframe")) {
     if (is.null(dim1)) stop("`dim1` is needed to compute the mixing matrix.", call. = FALSE)
-    m <- mixing_matrix(x, dim1, dim2, direction = match.arg(direction))
+    m <- net_mixing(x, dim1, dim2, direction = match.arg(direction))
   } else {
     if (!is.matrix(x) || !is.numeric(x)) {
       stop("`x` must be a netframe or a numeric matrix.", call. = FALSE)

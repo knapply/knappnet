@@ -1,5 +1,5 @@
 # Plot a network (man/plot.netframe.Rd). The appearance arguments are
-# resolved by the helpers in utils-plot.R, which plot_spatial() shares.
+# resolved by the helpers in utils-plot.R, which net_plot_spatial() shares.
 plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
                           node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
                           legend = TRUE, seed = NULL) {
@@ -7,20 +7,20 @@ plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
   legend <- check_flag(legend, "legend")
   geo <- identical(layout, "geo")
   if ((is.null(layout) || geo) && has_positions(x)) {
-    return(plot_spatial(x, node_color = node_color, node_size = node_size,
+    return(net_plot_spatial(x, node_color = node_color, node_size = node_size,
                         node_label = node_label, edge_width = edge_width,
                         edge_color = edge_color, ..., legend = legend))
   }
   if (geo) {
-    stop(paste0("`layout = \"geo\"` needs node locations: give sf nodes to netframe(), or ",
-                "record coordinate columns with spatial_network()."), call. = FALSE)
+    stop(paste0("`layout = \"geo\"` needs node locations: give sf nodes to net_frame(), or ",
+                "record coordinate columns with net_spatial()."), call. = FALSE)
   }
   n <- nrow(x$nodes)
   m <- nrow(x$edges)
   xy <- plot_layout(x, layout, seed)
 
   size <- plot_node_size(x, node_size, n)
-  fill <- if (is.null(node_color) && n > 0 && is_twomode(x)) {
+  fill <- if (is.null(node_color) && n > 0 && net_is_twomode(x)) {
     twomode_fill(x)
   } else {
     plot_color(node_color, x$nodes, n, "node_color", "nodes", plot_blue)

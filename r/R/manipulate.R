@@ -4,8 +4,8 @@
 # with_tables() or induced_netframe() (utils-nodes.R), which keep the
 # roles and attributes of the input.
 
-# Combine the relations of a multiplex network (man/combine_relations.Rd).
-combine_relations <- function(x, relation = NULL,
+# Combine the relations of a multiplex network (man/net_combine_relations.Rd).
+net_combine_relations <- function(x, relation = NULL,
                               method = c("union", "intersection", "sum", "difference", "select"),
                               which = NULL) {
   check_netframe(x)
@@ -148,8 +148,8 @@ net_split_relations <- function(x, relation = NULL) {
   out
 }
 
-# Dichotomize a weighted network (man/dichotomize.Rd).
-dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="),
+# Dichotomize a weighted network (man/net_dichotomize.Rd).
+net_dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!="),
                         column = NULL) {
   check_netframe(x)
   op <- match.arg(op)
@@ -179,12 +179,12 @@ dichotomize <- function(x, threshold = 0, op = c(">", ">=", "<", "<=", "==", "!=
   with_tables(x, edges, x$nodes, weight = NULL)
 }
 
-# Symmetrize or transpose a directed network (man/symmetrize.Rd).
-symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "lower")) {
+# Symmetrize or transpose a directed network (man/net_symmetrize.Rd).
+net_symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "lower")) {
   check_netframe(x)
   method <- match.arg(method)
   if (!x$directed) {
-    stop("The network is already undirected; symmetrize() needs a directed one.",
+    stop("The network is already undirected; net_symmetrize() needs a directed one.",
          call. = FALSE)
   }
   n <- nrow(x$nodes)
@@ -244,8 +244,8 @@ symmetrize <- function(x, method = c("max", "min", "sum", "average", "upper", "l
             weight_type = weight_type, quiet = TRUE, graph = x$graph)
 }
 
-# See man/symmetrize.Rd.
-transpose_network <- function(x) {
+# See man/net_symmetrize.Rd.
+net_transpose <- function(x) {
   check_netframe(x)
   if (!x$directed) return(x)
   edges <- x$edges
@@ -255,15 +255,15 @@ transpose_network <- function(x) {
   with_tables(x, edges, x$nodes)
 }
 
-# Subnetworks: node selection, filters, isolates, pendants, components (man/subnetwork.Rd).
-subnetwork <- function(x, nodes) {
+# Subnetworks: node selection, filters, isolates, pendants, components (man/net_subnetwork.Rd).
+net_subnetwork <- function(x, nodes) {
   check_netframe(x)
   keep <- node_selection(x, nodes)
   induced_netframe(x, keep)
 }
 
-# See man/subnetwork.Rd.
-filter_nodes <- function(x, condition) {
+# See man/net_subnetwork.Rd.
+net_filter_nodes <- function(x, condition) {
   check_netframe(x)
   keep <- eval(substitute(condition), x$nodes, parent.frame())
   if (!is.logical(keep) || !(length(keep) == nrow(x$nodes) || length(keep) == 1L)) {
@@ -273,14 +273,14 @@ filter_nodes <- function(x, condition) {
   induced_netframe(x, which(keep))
 }
 
-# See man/subnetwork.Rd.
-remove_isolates <- function(x) {
+# See man/net_subnetwork.Rd.
+net_remove_isolates <- function(x) {
   check_netframe(x)
   induced_netframe(x, which(neighbor_counts(x) > 0L))
 }
 
-# See man/subnetwork.Rd.
-remove_pendants <- function(x, recursive = FALSE) {
+# See man/net_subnetwork.Rd.
+net_remove_pendants <- function(x, recursive = FALSE) {
   check_netframe(x)
   recursive <- check_flag(recursive, "recursive")
   repeat {
@@ -291,12 +291,12 @@ remove_pendants <- function(x, recursive = FALSE) {
   }
 }
 
-# See man/subnetwork.Rd.
-largest_component <- function(x, mode = c("weak", "strong")) {
+# See man/net_subnetwork.Rd.
+net_largest_component <- function(x, mode = c("weak", "strong")) {
   check_netframe(x)
   mode <- match.arg(mode)
   if (!nrow(x$nodes)) return(x)
-  cc <- components(x, mode)
+  cc <- net_components(x, mode)
   induced_netframe(x, which(cc$membership == which.max(cc$csize)))
 }
 
@@ -337,8 +337,8 @@ node_selection <- function(x, nodes) {
   sort(unique(pos))
 }
 
-# Recode and join node attributes (man/recode_attribute.Rd).
-recode_attribute <- function(x, column, map, default = NULL, table = c("nodes", "edges")) {
+# Recode and join node attributes (man/net_recode.Rd).
+net_recode <- function(x, column, map, default = NULL, table = c("nodes", "edges")) {
   check_netframe(x)
   table <- match.arg(table)
   df <- x[[table]]
@@ -377,8 +377,8 @@ recode_attribute <- function(x, column, map, default = NULL, table = c("nodes", 
   }
 }
 
-# See man/recode_attribute.Rd.
-join_attributes <- function(x, data, by = NULL) {
+# See man/net_recode.Rd.
+net_join <- function(x, data, by = NULL) {
   check_netframe(x)
   if (!is.data.frame(data)) {
     stop(sprintf("`data` must be a data frame, not %s.", describe_class(data)), call. = FALSE)

@@ -201,7 +201,7 @@ with_node_column <- function(x, values, title) {
 }
 
 # ---- Appearance arguments of network plots ---------------------------------------
-# Shared by plot.netframe() and plot_spatial(). Each appearance argument
+# Shared by plot.netframe() and net_plot_spatial(). Each appearance argument
 # can be the name of a column of the node or edge table, a vector with one
 # value per node or edge, a single value for all, or a vector wrapped in
 # I() to be used as it is.
@@ -335,7 +335,7 @@ plot_node_size <- function(x, value, n, base = plot_base_size(n)) {
   lo <- 0.6 * base
   hi <- 1.6 * base
   if (a$kind == "default") {
-    d <- if (n > 0) degree(x, loops = FALSE) else numeric()
+    d <- if (n > 0) net_degree(x, loops = FALSE) else numeric()
     return(list(cex = map_numeric(d, lo, hi, area = TRUE)$values))
   }
   if (!is.numeric(a$values)) {
@@ -424,14 +424,14 @@ plot_layout <- function(x, layout, seed) {
   methods <- c("auto", "stress", "sparse_stress", "fr", "circle", "star", "grid", "tree",
                "twomode")
   if (is.null(layout)) {
-    return(layout_network(x, seed = seed))
+    return(net_layout(x, seed = seed))
   }
   if (is.character(layout) && length(layout) == 1L) {
     if (!layout %in% methods) {
       stop(sprintf("Unknown layout method `%s`; use one of %s.", layout,
                    paste(sprintf("\"%s\"", methods), collapse = ", ")), call. = FALSE)
     }
-    return(layout_network(x, method = layout, seed = seed))
+    return(net_layout(x, method = layout, seed = seed))
   }
   if (is.character(layout) && length(layout) == 2L) {
     missing <- setdiff(layout, names(x$nodes))

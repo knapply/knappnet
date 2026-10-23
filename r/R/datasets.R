@@ -1,7 +1,7 @@
 # Example networks shipped in inst/extdata, read on demand.
 
-# Example networks (man/example_network.Rd).
-example_network <- function(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
+# Example networks (man/net_example.Rd).
+net_example <- function(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
                                      "karate", "florentine", "southern_women"),
                             relation = NULL, weighted = FALSE) {
   name <- match.arg(name)
@@ -44,8 +44,8 @@ example_network <- function(name = c("noordin", "noordin_affiliations", "jemaah_
   )
 }
 
-# See man/example_network.Rd.
-example_networks <- function() {
+# See man/net_example.Rd.
+net_examples <- function() {
   data.frame(
     name = c("noordin", "noordin_affiliations", "jemaah_islamiyah", "karate", "florentine",
              "southern_women"),

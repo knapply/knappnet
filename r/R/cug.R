@@ -1,8 +1,8 @@
 # Conditional uniform graph tests: the test, its print, summary, and plot
 # methods.
 
-# Conditional uniform graph tests (man/cug_test.Rd).
-cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
+# Conditional uniform graph tests (man/net_cug_test.Rd).
+net_cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
                      reps = 1000L, ..., seed = NULL, threads = 0L) {
   check_netframe(x)
   if (!is.function(statistic)) {
@@ -39,7 +39,7 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
   # All replicates are drawn in one engine call: replicate r uses random
   # stream (seed, r), so the null distribution for a seed is the same on
   # any number of threads.
-  lists <- engine_call("cug_test", draw(reps, seed), edge_rows = FALSE)
+  lists <- engine_call("net_cug_test", draw(reps, seed), edge_rows = FALSE)
   null <- vapply(lists, function(e) {
     g <- net_frame(data.frame(source = e[[1L]], target = e[[2L]]), nodes,
                    directed = x$directed, quiet = TRUE)
@@ -85,7 +85,7 @@ simple_dyads <- function(x) {
   }
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 print.cug_test <- function(x, ...) {
   cat("Conditional uniform graph test\n\n")
   cat(sprintf("Statistic: %s\n", x$statistic))
@@ -100,7 +100,7 @@ print.cug_test <- function(x, ...) {
   invisible(x)
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 summary.cug_test <- function(object, ...) {
   q <- if (length(object$null)) {
     stats::quantile(object$null, c(0, 0.025, 0.25, 0.5, 0.75, 0.975, 1), names = TRUE)
@@ -120,7 +120,7 @@ print.summary.cug_test <- function(x, ...) {
   invisible(x)
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 plot.cug_test <- function(x, ..., breaks = "Sturges") {
   pal <- plot_qualitative(8L)
   null <- x$null

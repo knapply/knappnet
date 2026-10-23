@@ -23,7 +23,7 @@ differences; the engine records the same table in its source
   Eigenvector scale \tab maximum 1 \tab Euclidean norm 1 \tab norm 1 \tab norm 1 \cr
   Eigenvector direction \tab in-ties (\code{directed = TRUE}) \tab in-ties \tab out-ties \tab symmetrized \cr
   Eigenvector, disconnected \tab computed \tab refused \tab computed \tab lambda-squared scores \cr
-  Centralization maxima \tab see \code{\link{centralization}} \tab none \tab see \code{\link{centralization}} \tab see \code{\link{centralization}}
+  Centralization maxima \tab see \code{\link{net_centralization}} \tab none \tab see \code{\link{net_centralization}} \tab see \code{\link{net_centralization}}
 }
 UCINET conventions are those of version 6.849, taken from its help pages and
 from the port of its routines by its authors (Borgatti, Agneessens, and
@@ -46,8 +46,8 @@ Wasserman, S., & Faust, K. (1994). \emph{Social Network Analysis: Methods and
 Applications}. Cambridge University Press. \doi{10.1017/CBO9780511815478}
 }
 \seealso{
-\code{\link{degree}}, \code{\link{betweenness}}, \code{\link{closeness}},
-\code{\link{harmonic_centrality}}, \code{\link{eigenvector_centrality}},
-\code{\link{centralization}}, \code{\link{graph_density}}
+\code{\link{net_degree}}, \code{\link{net_betweenness}}, \code{\link{net_closeness}},
+\code{\link{net_harmonic}}, \code{\link{net_eigen}},
+\code{\link{net_centralization}}, \code{\link{net_density}}
 }
 \keyword{documentation}

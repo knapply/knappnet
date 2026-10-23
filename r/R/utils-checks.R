@@ -241,7 +241,7 @@ describe_class <- function(v) {
 }
 
 # Stops unless a suggested package is installed. `what` names the feature
-# that needs it ("to_sf()", "Writing a GeoPackage").
+# that needs it ("net_to_sf()", "Writing a GeoPackage").
 require_pkg <- function(pkg, what = NULL) {
   if (!requireNamespace(pkg, quietly = TRUE)) {
     msg <- if (is.null(what)) {

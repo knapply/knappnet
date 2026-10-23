@@ -434,7 +434,7 @@ frame_diagnostics <- function(f, threads) {
     count = as.integer(v$count),
     stringsAsFactors = FALSE
   )
-  out$rows <- I(lapply(v$rows, function(r) as.integer(r) + 1L))
+  out$rows <- I(lapply(v$rows, function(r) unique(as.integer(r) + 1L)))
   attr(out, "errors") <- v$errors
   attr(out, "notes") <- v$notes
   out

@@ -98,23 +98,22 @@ reference:
     convert one from another package, read one from a file, or load an
     example.
   contents:
-  - netframe
+  - net_frame
   - summary.netframe
-  - as_netframe
-  - read_network
-  - example_network
-
+  - net_simplify
+  - net_from
+  - net_read
+  - net_example
 - title: Working with network data
   desc: >-
     Combining relations, dichotomizing and symmetrizing ties, subsets of
     nodes, and node attributes, as in UCINET's Transform and Data menus.
   contents:
-  - combine_relations
-  - dichotomize
-  - symmetrize
-  - subnetwork
-  - recode_attribute
-
+  - net_combine_relations
+  - net_dichotomize
+  - net_symmetrize
+  - net_subnetwork
+  - net_recode
 - title: Conventions
   desc: >-
     How igraph, NetworkX, sna, and UCINET differ, and the `convention`
@@ -127,169 +126,158 @@ reference:
     Node-level measures. Each returns a vector aligned with the rows of the
     node table.
   contents:
-  - degree
-  - betweenness
-  - closeness
-  - eigenvector_centrality
-  - pagerank
-  - katz_centrality
-  - power_centrality
-  - hub_score
-  - reach
-  - proximity_prestige
-  - edge_betweenness
-  - information_centrality
-  - bridging_centrality
-
+  - net_degree
+  - net_betweenness
+  - net_closeness
+  - net_eigen
+  - net_pagerank
+  - net_katz
+  - net_bonacich
+  - net_hub
+  - net_reach
+  - net_prox_prestige
+  - net_edge_betweenness
+  - net_information
+  - net_bridging
 - title: The network as a whole
   desc: >-
     Density, components, reciprocity, transitivity, distances, cut
     structure, centralization, the triad census, compactness, small worlds,
     and core-periphery structure.
   contents:
-  - graph_density
-  - average_degree
-  - components
-  - reciprocity
-  - transitivity
-  - distances
-  - reachability
-  - cut_points
-  - centralization
-  - centralize
-  - triad_census
-  - compactness
-  - small_world
-  - core_periphery
-
+  - net_density
+  - net_avg_degree
+  - net_components
+  - net_reciprocity
+  - net_transitivity
+  - net_distances
+  - net_reachability
+  - net_cut_points
+  - net_centralization
+  - net_centralize
+  - net_triad_census
+  - net_compactness
+  - net_small_world
+  - net_core_periphery
 - title: Cohesion and subgroups
   desc: >-
     Cores, cliques and their relaxations, bicomponents, lambda sets,
     modularity, community detection, factions, and hierarchical clustering.
   contents:
-  - coreness
-  - max_cliques
-  - n_cliques
-  - bicomponents
-  - lambda_sets
-  - modularity
-  - cluster_louvain
-  - cluster_girvan_newman
-  - factions
-  - cluster_hierarchical
-
+  - net_coreness
+  - net_max_cliques
+  - net_n_cliques
+  - net_bicomponents
+  - net_lambda_sets
+  - net_modularity
+  - net_louvain
+  - net_girvan_newman
+  - net_factions
+  - net_hclust
 - title: Positions and brokerage
   desc: >-
     Structural holes, brokerage roles, equivalence, and blockmodels.
   contents:
-  - constraint
-  - brokerage
-  - structural_equivalence
-  - concor
-  - regular_equivalence
-  - automorphic_equivalence
-  - blockmodel
-
+  - net_constraint
+  - net_brokerage
+  - net_struct_equiv
+  - net_concor
+  - net_regular_equiv
+  - net_auto_equiv
+  - net_blockmodel
 - title: Mixing and homophily
   desc: >-
     Whether ties form within or across groups defined by node attributes.
   contents:
-  - mixing_matrix
-  - ei_index
-  - assortativity
-  - homophily
-
+  - net_mixing
+  - net_ei_index
+  - net_assortativity
+  - net_homophily
 - title: Ego networks
   desc: >-
     Each node's neighborhood as a network of its own, and egocentric
     measures computed for every node at once.
   contents:
-  - ego_network
-  - ego_summary
-
+  - net_ego
+  - net_ego_summary
 - title: Two-mode networks
   desc: >-
     People-by-event and people-by-organization data: construction,
     projections, and two-mode centrality.
   contents:
-  - twomode
-  - project
-  - twomode_degree
-
+  - net_twomode
+  - net_project
+  - net_twomode_degree
 - title: Key players and group centrality
   desc: >-
     Which nodes, removed or targeted together, most fragment or reach a
     network, and centrality for groups of nodes.
   contents:
-  - key_players
-  - group_centrality
-  - flow_betweenness
-
+  - net_key_players
+  - net_group_centrality
+  - net_flow_betweenness
 - title: Statistical tests and random networks
   desc: >-
     Permutation and conditional uniform graph tests that respect the
     dependence among ties sharing a node, and random network models.
   contents:
-  - qap_cor
-  - mrqap
-  - cug_test
-  - random_gnp
-
+  - net_qap_cor
+  - net_mrqap
+  - net_cug_test
+  - net_random_gnp
 - title: Temporal networks
   desc: >-
     Time-stamped contacts: snapshots and windows, time-respecting paths and
     reachability, temporal closeness, measures over time, and burstiness.
   contents:
-  - temporal_network
-  - network_at
-  - snapshots
-  - aggregate_network
-  - temporal_distances
-  - temporal_reach
-  - temporal_closeness
-  - rolling
-  - burstiness
-  - plot_timeline
-  - plot_rolling
-
+  - net_temporal
+  - net_panel
+  - net_at
+  - net_snapshots
+  - net_aggregate
+  - net_temporal_distances
+  - net_temporal_reach
+  - net_temporal_closeness
+  - net_rolling
+  - net_burstiness
+  - net_plot_timeline
+  - net_plot_rolling
 - title: Geospatial networks
   desc: >-
     Networks whose nodes have locations: great-circle or planar distances,
     proximity networks, the spatial spread of groups, and sf geometries.
   contents:
-  - spatial_network
-  - proximity_network
-  - to_sf
-  - from_lines
-  - to_sfnetwork
-  - plot_spatial
-
+  - net_spatial
+  - net_proximity
+  - net_to_sf
+  - net_from_lines
+  - net_to_sfnetwork
+  - net_plot_spatial
 - title: Scaling
   desc: >-
     Multidimensional scaling of distances and dissimilarities, as in
     UCINET's MDS tools.
   contents:
-  - classical_mds
-  - mds_distances
-
+  - net_mds
+  - net_mds_distances
 - title: Layouts and plotting
   desc: >-
     Layouts computed in the engine, a default plot that needs no arguments,
     and plots of measures, matrices, distributions, and test results.
   contents:
   - plot.netframe
-  - layout_network
-  - plot_centrality
-  - plot_partition
-  - plot_coreness
-  - plot_ego
-  - plot_scores
-  - plot_matrix
-  - plot_mixing_matrix
-  - plot_degree_distribution
-  - plot_component_sizes
-  - plot_triad_census
-  - plot_robustness
+  - net_layout
+  - net_plot_centrality
+  - net_plot_partition
+  - net_plot_coreness
+  - net_plot_ego
+  - net_plot_scores
+  - net_plot_matrix
+  - net_plot_mixing
+  - net_plot_degree
+  - net_plot_components
+  - net_plot_triads
+  - net_plot_robustness
   - plot.blockmodel
   - plot.classical_mds
   - plot.qap_cor

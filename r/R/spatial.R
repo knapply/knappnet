@@ -109,8 +109,8 @@ spatial_coords <- function(x) {
        radius = p$radius, names = colnames(p$coords))
 }
 
-# See man/spatial_network.Rd.
-edge_lengths <- function(x) {
+# See man/net_spatial.Rd.
+net_edge_lengths <- function(x) {
   check_netframe(x)
   if (has_edge_geometry(x)) {
     require_pkg("sf", "A netframe with sf edge geometry")
@@ -118,11 +118,11 @@ edge_lengths <- function(x) {
   }
   p <- spatial_coords(x)
   ptr <- engine_graph(x)
-  engine_call("edge_lengths", .Call(C_edge_lengths, ptr, p$x, p$y, p$crs, p$radius))
+  engine_call("net_edge_lengths", .Call(C_edge_lengths, ptr, p$x, p$y, p$crs, p$radius))
 }
 
-# See man/spatial_network.Rd.
-distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"),
+# See man/net_spatial.Rd.
+net_distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"),
                            exponent = 2) {
   form <- match.arg(form)
   if (!is.numeric(d)) stop("`d` must be numeric.", call. = FALSE)
@@ -137,12 +137,12 @@ distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"
   )
 }
 
-# See man/spatial_network.Rd.
-group_geometry <- function(x, groups) {
+# See man/net_spatial.Rd.
+net_group_geometry <- function(x, groups) {
   p <- spatial_coords(x)
   grp <- node_groups(x, groups, "groups")
   k <- length(grp$labels)
-  m <- engine_call("group_geometry",
+  m <- engine_call("net_group_geometry",
                    .Call(C_group_geometry, p$x, p$y, grp$codes, p$crs, p$radius, k),
                    edge_rows = FALSE)
   out <- data.frame(group = grp$labels, size = as.integer(m[, 1L]), stringsAsFactors = FALSE)
@@ -153,8 +153,8 @@ group_geometry <- function(x, groups) {
   out
 }
 
-# Proximity networks from locations (man/proximity_network.Rd).
-proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
+# Proximity networks from locations (man/net_proximity.Rd).
+net_proximity <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                               radius = 6371008.7714, within = NULL, k = NULL,
                               knn = c("directed", "either", "mutual"), id = 1L,
                               threads = 0L, exact = FALSE) {
@@ -178,7 +178,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
     if (missing(id)) id <- NULL
   }
   if (!is.null(sf_nodes)) {
-    require_pkg("sf", "proximity_network() with sf nodes")
+    require_pkg("sf", "net_proximity() with sf nodes")
     return(sf_proximity_network(sf_nodes, within, k, knn, id, exact, threads))
   }
   if (exact) {
@@ -221,7 +221,7 @@ check_proximity_args <- function(within, k) {
 # The engine's neighbour search: pairs within a distance or each point's
 # k nearest neighbours, as 1-based positions with their distances.
 proximity_pairs <- function(px, py, lonlat, radius, within, k, threads) {
-  r <- engine_call("proximity_network",
+  r <- engine_call("net_proximity",
                    .Call(C_proximity, px, py, if (lonlat) 0L else 1L, as.double(radius),
                          if (is.null(within)) 0 else as.double(within),
                          if (is.null(k)) 0 else as.double(k), threads),

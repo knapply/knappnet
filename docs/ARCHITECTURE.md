@@ -152,7 +152,7 @@ are machine words. A 64-bit index option is planned for very large graphs.
 ## Weighted and binary networks
 
 Whether a network is weighted is a property of the network (`weight =` in
-`netframe()`), not something each function guesses. Measures follow it by
+`net_frame()`), not something each function guesses. Measures follow it by
 default and can be overridden per call.
 
 - **Binary networks** (an edge exists or it does not) never touch weight

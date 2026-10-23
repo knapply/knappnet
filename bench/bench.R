@@ -105,10 +105,10 @@ dir <- igraph::sample_gnm(n_mid, 5L * n_mid, directed = TRUE)
 pa <- igraph::sample_pa(n_big, m = 3L, directed = FALSE)
 small <- igraph::sample_gnm(n_small, 5L * n_small, directed = TRUE)
 
-und_nf <- as_netframe(und)
-dir_nf <- as_netframe(dir)
-pa_nf <- as_netframe(pa)
-small_nf <- as_netframe(small)
+und_nf <- net_from(und)
+dir_nf <- net_from(dir)
+pa_nf <- net_from(pa)
+small_nf <- net_from(small)
 small_m <- as.matrix(small_nf)
 invisible(lapply(list(und_nf, dir_nf, pa_nf, small_nf), degree))  # build caches
 
@@ -122,46 +122,46 @@ cat(sprintf("%-22s %-24s %-7s %9s %9s %9s %8s %8s\n", "graph", "measure", "tool"
 
 # ---- Building a network ------------------------------------------------
 e <- igraph::as_edgelist(pa, names = FALSE)
-edges <- data.frame(from = as.integer(e[, 1]), to = as.integer(e[, 2]))
+edges <- data.frame(source = as.integer(e[, 1]), target = as.integer(e[, 2]))
 nodes <- data.frame(name = seq_len(igraph::vcount(pa)))
-ours <- timing(function() degree(netframe(edges, nodes, directed = FALSE)))
+ours <- timing(function() net_degree(net_frame(edges, nodes, directed = FALSE)))
 theirs <- timing(function() igraph::degree(igraph::graph_from_data_frame(edges, FALSE, nodes)))
 record(lab_pa, "build + degree", ours, ours, "igraph", theirs,
-       same(degree(netframe(edges, nodes, directed = FALSE)),
+       same(net_degree(net_frame(edges, nodes, directed = FALSE)),
             igraph::degree(igraph::graph_from_data_frame(edges, FALSE, nodes))))
 
 # ---- Centrality --------------------------------------------------------
 for (case in list(list(lab_und, und_nf, und), list(lab_dir, dir_nf, dir))) {
-  t <- both(function(k) betweenness(case[[2]], threads = k))
+  t <- both(function(k) net_betweenness(case[[2]], threads = k))
   theirs <- timing(function() igraph::betweenness(case[[3]]))
   record(case[[1]], "betweenness", t[1], t[2], "igraph", theirs,
-         same(betweenness(case[[2]]), igraph::betweenness(case[[3]])))
+         same(net_betweenness(case[[2]]), igraph::betweenness(case[[3]])))
 }
 
-t <- both(function(k) closeness(und_nf, threads = k))
+t <- both(function(k) net_closeness(und_nf, threads = k))
 theirs <- timing(function() igraph::closeness(und))
 record(lab_und, "closeness", t[1], t[2], "igraph", theirs,
-       same(closeness(und_nf), igraph::closeness(und)))
+       same(net_closeness(und_nf), igraph::closeness(und)))
 
-t <- both(function(k) harmonic_centrality(und_nf, threads = k))
+t <- both(function(k) net_harmonic(und_nf, threads = k))
 theirs <- timing(function() igraph::harmonic_centrality(und))
 record(lab_und, "harmonic centrality", t[1], t[2], "igraph", theirs,
-       same(harmonic_centrality(und_nf), igraph::harmonic_centrality(und)))
+       same(net_harmonic(und_nf), igraph::harmonic_centrality(und)))
 
 # ---- Directed and weighted shortest paths -------------------------------
 # Directed closeness and harmonic centrality (out-distances, as igraph's
 # default), and the two weighted algorithms: whole-number weights up to
 # 1024 take Dial's bucket queue, other weights Dijkstra's algorithm.
-t <- both(function(k) closeness(dir_nf, mode = "out", normalized = FALSE, threads = k))
+t <- both(function(k) net_closeness(dir_nf, mode = "out", normalized = FALSE, threads = k))
 theirs <- timing(function() igraph::closeness(dir, mode = "out", normalized = FALSE))
 record(lab_dir, "closeness", t[1], t[2], "igraph", theirs,
-       same(closeness(dir_nf, mode = "out", normalized = FALSE),
+       same(net_closeness(dir_nf, mode = "out", normalized = FALSE),
             igraph::closeness(dir, mode = "out", normalized = FALSE)))
 
-t <- both(function(k) harmonic_centrality(dir_nf, mode = "out", threads = k))
+t <- both(function(k) net_harmonic(dir_nf, mode = "out", threads = k))
 theirs <- timing(function() igraph::harmonic_centrality(dir, mode = "out"))
 record(lab_dir, "harmonic centrality", t[1], t[2], "igraph", theirs,
-       same(harmonic_centrality(dir_nf, mode = "out"),
+       same(net_harmonic(dir_nf, mode = "out"),
             igraph::harmonic_centrality(dir, mode = "out")))
 
 n_w <- round(5000 * scale)
@@ -171,9 +171,9 @@ weighted_case <- function(directed, integer) {
   w <- if (integer) sample.int(5L, m, replace = TRUE) else round(stats::runif(m, 0.1, 3), 6)
   igraph::E(g)$weight <- w
   e <- igraph::as_edgelist(g, names = FALSE)
-  nf <- netframe(data.frame(from = e[, 1], to = e[, 2], weight = w),
-                 data.frame(name = seq_len(n_w)), directed = directed, weight = "weight")
-  invisible(degree(nf))  # build the cache
+  nf <- net_frame(data.frame(source = e[, 1], target = e[, 2], weight = w),
+                 data.frame(name = seq_len(n_w)), directed = directed, weight = "weight", weight_type = "distance")
+  invisible(net_degree(nf))  # build the cache
   label <- sprintf("%s%s weights, %d / %d", if (directed) "directed, " else "",
                    if (integer) "integer (Dial)" else "real (Dijkstra)", n_w, m)
   list(g = g, nf = nf, label = label)
@@ -183,52 +183,52 @@ for (case in list(weighted_case(FALSE, TRUE), weighted_case(FALSE, FALSE),
   g <- case$g
   nf <- case$nf
   w <- igraph::E(g)$weight
-  t <- both(function(k) betweenness(nf, weighted = TRUE, threads = k))
+  t <- both(function(k) net_betweenness(nf, weighted = TRUE, threads = k))
   theirs <- timing(function() igraph::betweenness(g, weights = w))
   record(case$label, "betweenness", t[1], t[2], "igraph", theirs,
-         same(betweenness(nf, weighted = TRUE), igraph::betweenness(g, weights = w)))
-  t <- both(function(k) closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE,
+         same(net_betweenness(nf, weighted = TRUE), igraph::betweenness(g, weights = w)))
+  t <- both(function(k) net_closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE,
                                   threads = k))
   theirs <- timing(function() igraph::closeness(g, mode = "out", weights = w))
   record(case$label, "closeness", t[1], t[2], "igraph", theirs,
-         same(closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE),
+         same(net_closeness(nf, mode = "out", weighted = TRUE, normalized = FALSE),
               igraph::closeness(g, mode = "out", weights = w)))
-  t <- both(function(k) harmonic_centrality(nf, mode = "out", weighted = TRUE, threads = k))
+  t <- both(function(k) net_harmonic(nf, mode = "out", weighted = TRUE, threads = k))
   theirs <- timing(function() igraph::harmonic_centrality(g, mode = "out", weights = w))
   record(case$label, "harmonic centrality", t[1], t[2], "igraph", theirs,
-         same(harmonic_centrality(nf, mode = "out", weighted = TRUE),
+         same(net_harmonic(nf, mode = "out", weighted = TRUE),
               igraph::harmonic_centrality(g, mode = "out", weights = w)))
 }
 
-t <- both(function(k) eigenvector_centrality(pa_nf, threads = k))
+t <- both(function(k) net_eigen(pa_nf, threads = k))
 theirs <- timing(function() igraph::eigen_centrality(pa)$vector)
 record(lab_pa, "eigenvector centrality", t[1], t[2], "igraph", theirs,
-       same(eigenvector_centrality(pa_nf), igraph::eigen_centrality(pa)$vector, 1e-6))
+       same(net_eigen(pa_nf), igraph::eigen_centrality(pa)$vector, 1e-6))
 
-t <- both(function(k) constraint(und_nf, threads = k))
+t <- both(function(k) net_constraint(und_nf, threads = k))
 theirs <- timing(function() igraph::constraint(und))
 record(lab_und, "constraint", t[1], t[2], "igraph", theirs,
-       same(constraint(und_nf), igraph::constraint(und)))
+       same(net_constraint(und_nf), igraph::constraint(und)))
 
 # ---- Cohesion and subgroups --------------------------------------------
-t <- both(function(k) coreness(pa_nf), threaded = FALSE)
+t <- both(function(k) net_coreness(pa_nf), threaded = FALSE)
 theirs <- timing(function() igraph::coreness(pa))
 record(lab_pa, "k-cores", t[1], t[2], "igraph", theirs,
-       same(coreness(pa_nf), igraph::coreness(pa)))
+       same(net_coreness(pa_nf), igraph::coreness(pa)))
 
-t <- both(function(k) components(pa_nf)$membership, threaded = FALSE)
+t <- both(function(k) net_components(pa_nf)$membership, threaded = FALSE)
 theirs <- timing(function() igraph::components(pa)$membership)
 record(lab_pa, "components", t[1], t[2], "igraph", theirs,
-       same_partition(components(pa_nf)$membership, igraph::components(pa)$membership))
+       same_partition(net_components(pa_nf)$membership, igraph::components(pa)$membership))
 
-t <- both(function(k) max_cliques(pa_nf, threads = k))
+t <- both(function(k) net_max_cliques(pa_nf, threads = k))
 theirs <- timing(function() igraph::max_cliques(pa))
 record(lab_pa, "maximal cliques", t[1], t[2], "igraph", theirs,
-       length(max_cliques(pa_nf)) == length(igraph::max_cliques(pa)))
+       length(net_max_cliques(pa_nf)) == length(igraph::max_cliques(pa)))
 
-t <- both(function(k) cluster_louvain(pa_nf, seed = 1), threaded = FALSE)
+t <- both(function(k) net_louvain(pa_nf, seed = 1), threaded = FALSE)
 theirs <- timing(function() igraph::cluster_louvain(pa))
-q_ours <- attr(cluster_louvain(pa_nf, seed = 1), "modularity")
+q_ours <- attr(net_louvain(pa_nf, seed = 1), "modularity")
 q_theirs <- igraph::modularity(igraph::cluster_louvain(pa))
 # Louvain is a randomized heuristic, so the tools find different
 # partitions. Agreement means comparable quality: this package's
@@ -238,33 +238,33 @@ record(lab_pa, "Louvain communities", t[1], t[2], "igraph", theirs,
        q_ours >= 0.98 * q_theirs,
        sprintf("modularity %.4f (knappnet) vs %.4f (igraph)", q_ours, q_theirs))
 
-t <- both(function(k) triad_census(dir_nf, threads = k))
+t <- both(function(k) net_triad_census(dir_nf, threads = k))
 theirs <- timing(function() igraph::triad_census(dir))
 record(lab_dir, "triad census", t[1], t[2], "igraph", theirs,
-       same(triad_census(dir_nf), igraph::triad_census(dir)))
+       same(net_triad_census(dir_nf), igraph::triad_census(dir)))
 
 # ---- Against sna (adjacency-matrix input) -------------------------------
-t <- both(function(k) betweenness(small_nf, threads = k))
+t <- both(function(k) net_betweenness(small_nf, threads = k))
 theirs <- timing(function() sna::betweenness(small_m))
 record(lab_small, "betweenness", t[1], t[2], "sna", theirs,
-       same(betweenness(small_nf), sna::betweenness(small_m)))
+       same(net_betweenness(small_nf), sna::betweenness(small_m)))
 
-t <- both(function(k) triad_census(small_nf, threads = k))
+t <- both(function(k) net_triad_census(small_nf, threads = k))
 theirs <- timing(function() sna::triad.census(small_m))
 record(lab_small, "triad census", t[1], t[2], "sna", theirs,
-       same(triad_census(small_nf), sna::triad.census(small_m)))
+       same(net_triad_census(small_nf), sna::triad.census(small_m)))
 
-t <- both(function(k) structural_equivalence(small_nf, threads = k))
+t <- both(function(k) net_struct_equiv(small_nf, threads = k))
 theirs <- timing(function() sna::sedist(small_m, method = "euclidean"))
 record(lab_small, "structural equivalence", t[1], t[2], "sna", theirs,
-       same(structural_equivalence(small_nf), sna::sedist(small_m, method = "euclidean")))
+       same(net_struct_equiv(small_nf), sna::sedist(small_m, method = "euclidean")))
 
 groups <- rep_len(1:4, igraph::vcount(small))
-t <- both(function(k) brokerage(small_nf, groups, threads = k))
+t <- both(function(k) net_brokerage(small_nf, groups, threads = k))
 theirs <- timing(function() sna::brokerage(small_m, groups))
 br <- sna::brokerage(small_m, groups)$raw.nli
 record(lab_small, "brokerage", t[1], t[2], "sna", theirs,
-       same(as.matrix(brokerage(small_nf, groups)[, -1]),
+       same(as.matrix(net_brokerage(small_nf, groups)[, -1]),
             br[, c("w_I", "w_O", "b_IO", "b_OI", "b_O", "t")]))
 
 # ---- QAP ----------------------------------------------------------------
@@ -275,24 +275,24 @@ x1 <- matrix(rbinom(n_qap^2, 1, 0.1), n_qap)
 x2 <- matrix(rnorm(n_qap^2), n_qap)
 lab_qap <- sprintf("%d nodes, %d draws", n_qap, reps)
 
-t <- both(function(k) qap_cor(y, x1, reps = reps, seed = 1, threads = k))
+t <- both(function(k) net_qap_cor(y, x1, reps = reps, seed = 1, threads = k))
 theirs <- timing(function() sna::qaptest(list(y, x1), sna::gcor, g1 = 1, g2 = 2, reps = reps))
 record(lab_qap, "QAP correlation", t[1], t[2], "sna", theirs,
-       same(qap_cor(y, x1, reps = 0)$statistic, sna::gcor(y, x1)))
+       same(net_qap_cor(y, x1, reps = 0)$statistic, sna::gcor(y, x1)))
 
-t <- both(function(k) mrqap(y, list(x1, x2), reps = reps, seed = 1, threads = k))
+t <- both(function(k) net_mrqap(y, list(x1, x2), reps = reps, seed = 1, threads = k))
 theirs <- timing(function() sna::netlm(y, list(x1, x2), nullhyp = "qapspp", reps = reps))
 record(lab_qap, "MRQAP (DSP)", t[1], t[2], "sna", theirs,
-       same(mrqap(y, list(x1, x2), reps = 0)$coefficients,
+       same(net_mrqap(y, list(x1, x2), reps = 0)$coefficients,
             sna::netlm(y, list(x1, x2), nullhyp = "classical")$coefficients))
 
 # ---- Files --------------------------------------------------------------
 path <- tempfile(fileext = ".graphml")
-write_network(und_nf, path)
-ours <- timing(function() read_network(path))
+net_write(und_nf, path)
+ours <- timing(function() net_read(path))
 theirs <- timing(function() igraph::read_graph(path, format = "graphml"))
 record(lab_und, "read GraphML", ours, ours, "igraph", theirs,
-       nrow(read_network(path)$edges) == igraph::ecount(igraph::read_graph(path, format = "graphml")))
+       nrow(net_read(path)$edges) == igraph::ecount(igraph::read_graph(path, format = "graphml")))
 
 # ---- Output -------------------------------------------------------------
 res <- do.call(rbind, rows)

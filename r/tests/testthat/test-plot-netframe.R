@@ -3,9 +3,9 @@
 # graphical parameters, and map columns as documented.
 
 office <- function() {
-  g <- netframe(
-    data.frame(from = c("ann", "bob", "cat", "dan", "eve", "bob", "fay", "ann"),
-               to   = c("bob", "cat", "dan", "eve", "cat", "fay", "dan", "cat"),
+  g <- net_frame(
+    data.frame(source = c("ann", "bob", "cat", "dan", "eve", "bob", "fay", "ann"),
+               target   = c("bob", "cat", "dan", "eve", "cat", "fay", "dan", "cat"),
                calls = c(1, 5, 2, 8, 3, 1, 4, 2)),
     nodes = data.frame(name = c("ann", "bob", "cat", "dan", "eve", "fay", "gus"),
                        dept = c("sales", "sales", "eng", "eng", "eng", "legal", NA),
@@ -19,8 +19,8 @@ test_that("the default plot draws and returns the layout it used", {
   g <- office()
   on_null_device({
     expect_silent(xy <- plot(g, seed = 1))
-    expect_identical(xy, layout_network(g, seed = 1))
-    undirected <- netframe(g$edges, nodes = g$nodes, directed = FALSE)
+    expect_identical(xy, net_layout(g, seed = 1))
+    undirected <- net_frame(g$edges, nodes = g$nodes, directed = FALSE)
     expect_silent(plot(undirected, seed = 1, main = "Office"))
   })
 })
@@ -79,7 +79,7 @@ test_that("layouts can be given in every documented form", {
     expect_equal(unname(plot(g, layout = fixed)), unname(fixed))
     expect_equal(unname(plot(g, layout = as.data.frame(fixed))), unname(fixed))
     expect_equal(unname(plot(g, layout = function(x) fixed)), unname(fixed))
-    expect_identical(plot(g, layout = "circle"), layout_network(g, "circle"))
+    expect_identical(plot(g, layout = "circle"), net_layout(g, "circle"))
     expect_error(plot(g, layout = "spiral"), "Unknown layout")
     expect_error(plot(g, layout = c("lx", "zz")), "not found")
     expect_error(plot(g, layout = fixed[-1, ]), "rows")
@@ -101,20 +101,20 @@ test_that("bad appearance arguments give clear errors", {
 
 test_that("weighted, empty, tiny, and larger networks plot", {
   on_null_device({
-    strong <- netframe(data.frame(from = c(1, 2, 3), to = c(2, 3, 1), w = c(1, 5, 10)),
+    strong <- net_frame(data.frame(source = c(1, 2, 3), target = c(2, 3, 1), w = c(1, 5, 10)),
                        directed = FALSE, weight = "w", weight_type = "strength")
     expect_silent(plot(strong, seed = 1))
-    far <- netframe(data.frame(from = c(1, 2), to = c(2, 3), w = c(1, 5)), weight = "w")
+    far <- net_frame(data.frame(source = c(1, 2), target = c(2, 3), w = c(1, 5)), weight = "w", weight_type = "distance")
     expect_silent(plot(far, seed = 1))
-    empty <- netframe(data.frame(from = 1:0, to = 1:0)[0, ], nodes = data.frame(id = 1:3))
+    empty <- net_frame(data.frame(source = 1:0, target = 1:0)[0, ], nodes = data.frame(id = 1:3))
     expect_silent(plot(empty, seed = 1))
-    none <- netframe(data.frame(from = character(), to = character()),
+    none <- net_frame(data.frame(source = character(), target = character()),
                      nodes = data.frame(id = character()))
     expect_identical(dim(plot(none)), c(0L, 2L))
-    one <- netframe(data.frame(from = "a", to = "a"))
+    one <- net_frame(data.frame(source = "a", target = "a"))
     expect_silent(plot(one, seed = 1))
     set.seed(1)
-    big <- netframe(data.frame(from = sample(500, 1500, TRUE), to = sample(500, 1500, TRUE)),
+    big <- net_frame(data.frame(source = sample(500, 1500, TRUE), target = sample(500, 1500, TRUE)),
                     nodes = data.frame(id = 1:500))
     expect_silent(xy <- plot(big, seed = 1))
     expect_true(all(is.finite(xy)))
@@ -138,13 +138,13 @@ test_that("column mappings follow the documented palettes and order", {
 test_that("two-mode networks are colored by mode by default", {
   attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
                          event  = c("gala", "fair", "gala", "fair"))
-  g <- twomode(attended)
+  g <- net_twomode(attended)
   fill <- twomode_fill(g)
   pal <- plot_qualitative(2)
   expect_identical(fill$col, pal[g$nodes[[g$roles$type]] + 1L])
   expect_identical(fill$legend$labels, c("first", "second"))
   nodes <- data.frame(name = c("ann", "bob", "gala"), kind = c("person", "person", "event"))
-  labelled <- twomode(data.frame(from = c("ann", "bob"), to = c("gala", "gala")), nodes,
+  labelled <- net_twomode(data.frame(source = c("ann", "bob"), target = c("gala", "gala")), nodes,
                       type = "kind", first = "person")
   expect_identical(twomode_fill(labelled)$legend$labels, c("person", "event"))
   on_null_device({
@@ -160,19 +160,19 @@ test_that("spatial networks are drawn at their locations by default", {
                       lat = c(51.5072, 48.8566, 52.5200, 40.4168),
                       region = c("north", "north", "north", "south"),
                       stringsAsFactors = FALSE)
-  edges <- data.frame(from = c("London", "Paris", "Paris"), to = c("Paris", "Berlin", "Madrid"),
+  edges <- data.frame(source = c("London", "Paris", "Paris"), target = c("Paris", "Berlin", "Madrid"),
                       stringsAsFactors = FALSE)
-  plain <- netframe(edges, nodes, directed = FALSE)
-  g <- spatial_network(plain, coords = c("lon", "lat"), radius = 6371.0088)
+  plain <- net_frame(edges, nodes, directed = FALSE)
+  g <- net_spatial(plain, coords = c("lon", "lat"), radius = 6371.0088)
   on_null_device({
-    # The default and "geo" hand over to plot_spatial(), which returns the
+    # The default and "geo" hand over to net_plot_spatial(), which returns the
     # network; a named layout method still draws an abstract layout.
     expect_silent(out <- plot(g))
     expect_identical(out, g)
     expect_silent(out <- plot(g, layout = "geo", node_color = "region", main = "Cities"))
     expect_identical(out, g)
     expect_silent(xy <- plot(g, layout = "circle"))
-    expect_identical(xy, layout_network(g, "circle"))
+    expect_identical(xy, net_layout(g, "circle"))
     expect_error(plot(plain, layout = "geo"), "node locations")
     expect_silent(xy <- plot(plain, seed = 1))
     expect_identical(dim(xy), c(4L, 2L))

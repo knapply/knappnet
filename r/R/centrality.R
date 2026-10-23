@@ -7,8 +7,8 @@
 # argument checks, resolve_threads(), engine_graph() or
 # engine_graph_simple() for the convention, then one engine_call().
 
-# Degree and strength (man/degree.Rd).
-degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
+# Degree and strength (man/net_degree.Rd).
+net_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FALSE,
                    convention = c("igraph", "networkx", "sna", "ucinet"), relation = NULL) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -16,21 +16,21 @@ degree <- function(x, mode = c("all", "out", "in"), loops = TRUE, weighted = FAL
   loops <- check_flag(loops, "loops")
   weighted <- check_flag(weighted, "weighted")
   if (weighted) require_weights(x)
-  x <- relation_subset(x, relation, if (weighted) "strength" else "degree")
+  x <- relation_subset(x, relation, if (weighted) "net_strength" else "net_degree")
   simple <- convention %in% c("sna", "ucinet")
   ptr <- if (simple) engine_graph_simple(x) else engine_graph(x)
   if (simple) loops <- FALSE
-  engine_call(if (weighted) "strength" else "degree",
+  engine_call(if (weighted) "net_strength" else "net_degree",
               .Call(C_degree, ptr, mode_code(mode), loops, weighted), edge_rows = !simple)
 }
 
-# See man/degree.Rd.
-strength <- function(x, mode = c("all", "out", "in"), loops = TRUE, relation = NULL) {
-  degree(x, mode = match.arg(mode), loops = loops, weighted = TRUE, relation = relation)
+# See man/net_degree.Rd.
+net_strength <- function(x, mode = c("all", "out", "in"), loops = TRUE, relation = NULL) {
+  net_degree(x, mode = match.arg(mode), loops = loops, weighted = TRUE, relation = relation)
 }
 
-# Betweenness centrality (man/betweenness.Rd).
-betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
+# Betweenness centrality (man/net_betweenness.Rd).
+net_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
                         weights_as = NULL,
                         convention = c("igraph", "networkx", "sna", "ucinet")) {
   check_netframe(x)
@@ -51,25 +51,25 @@ betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
     networkx = engine_graph_simple(x, keep = if (w$code == 1L) "max" else "min"),
     engine_graph_simple(x)
   )
-  engine_call("betweenness",
+  engine_call("net_betweenness",
               .Call(C_betweenness, ptr, w$weighted, w$code, normalized, threads),
               edge_rows = convention == "igraph")
 }
 
-# Closeness and harmonic centrality (man/closeness.Rd).
-closeness <- function(x, mode = NULL, weighted = NULL, normalized = NULL, threads = 0L,
+# Closeness and harmonic centrality (man/net_closeness.Rd).
+net_closeness <- function(x, mode = NULL, weighted = NULL, normalized = NULL, threads = 0L,
                       weights_as = NULL,
                       convention = c("igraph", "networkx", "sna", "ucinet")) {
   closeness_common(x, FALSE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention), "closeness")
+                   match.arg(convention), "net_closeness")
 }
 
-# See man/closeness.Rd.
-harmonic_centrality <- function(x, mode = NULL, weighted = NULL, normalized = NULL,
+# See man/net_closeness.Rd.
+net_harmonic <- function(x, mode = NULL, weighted = NULL, normalized = NULL,
                                 threads = 0L, weights_as = NULL,
                                 convention = c("igraph", "networkx", "sna", "ucinet")) {
   closeness_common(x, TRUE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention), "harmonic_centrality")
+                   match.arg(convention), "net_harmonic")
 }
 
 closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, weights_as,
@@ -95,8 +95,8 @@ closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, w
                         normalized, unreachable, threads), edge_rows = !binary)
 }
 
-# Eigenvector centrality (man/eigenvector_centrality.Rd).
-eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL,
+# Eigenvector centrality (man/net_eigen.Rd).
+net_eigen <- function(x, mode = NULL, weighted = NULL, scale = NULL,
                                    convention = c("igraph", "networkx", "sna", "ucinet"),
                                    tol = 1e-12, max_iter = 10000L, threads = 0L) {
   check_netframe(x)
@@ -118,14 +118,14 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
     engine_graph(x)
   )
   if (convention == "ucinet") {
-    csize <- components(x, "weak")$csize
+    csize <- net_components(x, "weak")$csize
     if (sum(csize > 1L) > 1L) {
       stop("More than one component has ties. UCINET then reports lambda-squared ",
            "scores computed within components, which are not implemented; use ",
            "another convention or analyse components separately.", call. = FALSE)
     }
   }
-  res <- engine_call("eigenvector_centrality",
+  res <- engine_call("net_eigen",
     .Call(C_eigenvector, ptr, mode_code(mode), weighted, if (scale == "max") 0L else 1L,
           loops, as.double(tol), as.double(max_iter), threads),
     edge_rows = convention %in% c("igraph", "networkx"))
@@ -142,8 +142,8 @@ eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL
   res[[1]]
 }
 
-# Reach centrality (man/reach.Rd).
-reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
+# Reach centrality (man/net_reach.Rd).
+net_reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
                   normalized = FALSE, threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -152,56 +152,56 @@ reach <- function(x, k = 2, mode = c("out", "in", "all"), weighted = NULL, weigh
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
   ptr <- engine_graph(x)
-  engine_call("reach", .Call(C_reach, ptr, as.double(k), mode_code(mode), w$weighted, w$code,
+  engine_call("net_reach", .Call(C_reach, ptr, as.double(k), mode_code(mode), w$weighted, w$code,
                              normalized, threads))
 }
 
-# See man/reach.Rd.
-distance_weighted_reach <- function(x, mode = c("out", "in", "all"), weighted = NULL,
+# See man/net_reach.Rd.
+net_dw_reach <- function(x, mode = c("out", "in", "all"), weighted = NULL,
                                     weights_as = NULL, threads = 0L) {
   check_netframe(x)
   mode <- match.arg(mode)
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
   ptr <- engine_graph(x)
-  engine_call("distance_weighted_reach",
+  engine_call("net_dw_reach",
               .Call(C_closeness, ptr, TRUE, mode_code(mode), w$weighted, w$code, TRUE, 0L,
                     threads))
 }
 
-# Proximity prestige (man/proximity_prestige.Rd).
-proximity_prestige <- function(x, weighted = NULL, weights_as = NULL, threads = 0L) {
+# Proximity prestige (man/net_prox_prestige.Rd).
+net_prox_prestige <- function(x, weighted = NULL, weights_as = NULL, threads = 0L) {
   check_netframe(x)
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
   ptr <- engine_graph(x)
-  engine_call("proximity_prestige",
+  engine_call("net_prox_prestige",
               .Call(C_closeness, ptr, FALSE, mode_code("in"), w$weighted, w$code, TRUE, 1L,
                     threads))
 }
 
-# Edge betweenness (man/edge_betweenness.Rd).
-edge_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
+# Edge betweenness (man/net_edge_betweenness.Rd).
+net_edge_betweenness <- function(x, weighted = NULL, normalized = FALSE, threads = 0L,
                              weights_as = NULL) {
   check_netframe(x)
   normalized <- check_flag(normalized, "normalized")
   threads <- resolve_threads(threads)
   w <- resolve_weighting(x, weighted, weights_as)
   ptr <- engine_graph(x)
-  engine_call("edge_betweenness",
+  engine_call("net_edge_betweenness",
               .Call(C_edge_betweenness, ptr, w$weighted, w$code, normalized, threads))
 }
 
-# Information centrality (man/information_centrality.Rd).
-information_centrality <- function(x, weighted = NULL, convention = c("sna", "networkx")) {
+# Information centrality (man/net_information.Rd).
+net_information <- function(x, weighted = NULL, convention = c("sna", "networkx")) {
   check_netframe(x)
   convention <- match.arg(convention)
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
-  out <- engine_call("information_centrality", .Call(C_information_centrality, ptr, weighted))
+  out <- engine_call("net_information", .Call(C_information_centrality, ptr, weighted))
   if (convention == "networkx") {
     n <- nrow(x$nodes)
-    if (n > 1L && (components(x, "weak")$no > 1L || anyNA(out))) {
+    if (n > 1L && (net_components(x, "weak")$no > 1L || anyNA(out))) {
       stop("The network is not connected; NetworkX does not compute information ",
            "centrality for such networks. Use `convention = \"sna\"`, which gives 0 to ",
            "isolates, or analyse components separately.", call. = FALSE)
@@ -211,19 +211,19 @@ information_centrality <- function(x, weighted = NULL, convention = c("sna", "ne
   out
 }
 
-# Bridging centrality (man/bridging_centrality.Rd).
-bridging_centrality <- function(x, threads = 0L) {
+# Bridging centrality (man/net_bridging.Rd).
+net_bridging <- function(x, threads = 0L) {
   check_netframe(x)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  b <- engine_call("bridging_centrality",
+  b <- engine_call("net_bridging",
                    .Call(C_betweenness, ptr, FALSE, 0L, FALSE, threads))
-  b * engine_call("bridging_centrality", .Call(C_bridging_coefficient, ptr))
+  b * engine_call("net_bridging", .Call(C_bridging_coefficient, ptr))
 }
 
-# See man/bridging_centrality.Rd.
-bridging_coefficient <- function(x) {
+# See man/net_bridging.Rd.
+net_bridging_coef <- function(x) {
   check_netframe(x)
   ptr <- engine_graph(x)
-  engine_call("bridging_coefficient", .Call(C_bridging_coefficient, ptr))
+  engine_call("net_bridging_coef", .Call(C_bridging_coefficient, ptr))
 }

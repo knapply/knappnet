@@ -3,8 +3,8 @@
 # nodes and edges are in plot-netframe.R and plot-network.R, matrices in
 # plot-matrix.R, and plot methods for result classes next to their class.
 
-# Plot the degree distribution (man/plot_degree_distribution.Rd).
-plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TRUE,
+# Plot the degree distribution (man/net_plot_degree.Rd).
+net_plot_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE,
                                      type = c("histogram", "ccdf"), log = FALSE,
                                      convention = c("igraph", "networkx", "sna", "ucinet"),
                                      ...) {
@@ -13,7 +13,7 @@ plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TR
   type <- match.arg(type)
   convention <- match.arg(convention)
   log <- check_flag(log, "log")
-  d <- degree(x, mode = mode, loops = loops, convention = convention)
+  d <- net_degree(x, mode = mode, loops = loops, convention = convention)
   n <- length(d)
   if (n == 0L) stop("The network has no nodes.", call. = FALSE)
   values <- sort(unique(d))
@@ -61,12 +61,12 @@ plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TR
   invisible(out)
 }
 
-# Plot the distribution of component sizes (man/plot_component_sizes.Rd).
-plot_component_sizes <- function(x, mode = c("weak", "strong"), log = FALSE, ...) {
+# Plot the distribution of component sizes (man/net_plot_components.Rd).
+net_plot_components <- function(x, mode = c("weak", "strong"), log = FALSE, ...) {
   check_netframe(x)
   mode <- match.arg(mode)
   log <- check_flag(log, "log")
-  comp <- components(x, mode)
+  comp <- net_components(x, mode)
   if (comp$no == 0L) stop("The network has no nodes.", call. = FALSE)
   sizes <- sort(unique(comp$csize))
   count <- as.integer(table(factor(comp$csize, levels = sizes)))
@@ -97,12 +97,12 @@ plot_component_sizes <- function(x, mode = c("weak", "strong"), log = FALSE, ...
   invisible(out)
 }
 
-# Plot the triad census (man/plot_triad_census.Rd).
-plot_triad_census <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...) {
+# Plot the triad census (man/net_plot_triads.Rd).
+net_plot_triads <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...) {
   check_netframe(x)
   expected <- check_flag(expected, "expected")
   log <- check_flag(log, "log")
-  observed <- triad_census(x, threads = threads)
+  observed <- net_triad_census(x, threads = threads)
   exp <- if (expected) expected_triad_census(x) else rep(NA_real_, 16L)
   names(exp) <- names(observed)
   types <- names(observed)
@@ -137,7 +137,7 @@ plot_triad_census <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...
 
 # Expected triad census under the U|MAN distribution (Holland and Leinhardt
 # 1976): uniform over digraphs with the dyad census of `x`. Returned in the
-# order of triad_census().
+# order of net_triad_census().
 expected_triad_census <- function(x) {
   n <- nrow(x$nodes)
   if (n < 3L) return(rep(0, 16L))
@@ -181,8 +181,8 @@ expected_triad_census <- function(x) {
   )
 }
 
-# Ranked dot plot of node scores (man/plot_scores.Rd).
-plot_scores <- function(scores, labels = NULL, top = 25, decreasing = TRUE, ...) {
+# Ranked dot plot of node scores (man/net_plot_scores.Rd).
+net_plot_scores <- function(scores, labels = NULL, top = 25, decreasing = TRUE, ...) {
   if (!is.numeric(scores)) stop("`scores` must be a numeric vector.", call. = FALSE)
   decreasing <- check_flag(decreasing, "decreasing")
   top <- check_number(top, "top", lower = 1)

@@ -6,14 +6,14 @@
 
 check_netframe <- function(x) {
   if (!inherits(x, "netframe")) {
-    stop(sprintf(paste0("`x` must be a netframe, not %s; create one with netframe() ",
-                        "or convert with as_netframe()."), describe_class(x)),
+    stop(sprintf(paste0("`x` must be a netframe, not %s; create one with net_frame() ",
+                        "or convert with net_from()."), describe_class(x)),
          call. = FALSE)
   }
   check_index(x)
 }
 
-# The edge index is computed once by netframe(); rows added to or removed
+# The edge index is computed once by net_frame(); rows added to or removed
 # from `x$nodes` or `x$edges` afterwards would silently misalign results.
 # This cheap check runs on every call; engine_graph() also checks that every
 # endpoint is still a row of `x$nodes` whenever it builds a handle.
@@ -34,7 +34,7 @@ index_error <- function() {
 require_undirected <- function(x, what) {
   if (x$directed) {
     stop(what, " needs an undirected network; rebuild it with ",
-         "netframe(..., directed = FALSE) or symmetrize() it.", call. = FALSE)
+         "net_frame(..., directed = FALSE) or net_symmetrize() it.", call. = FALSE)
   }
   invisible(TRUE)
 }
@@ -96,7 +96,7 @@ engine_graph_simple <- function(x, undirected = FALSE, keep = c("max", "min")) {
   base <- engine_graph(x)
   ptr <- x$cache[[key]]
   if (is.null(ptr) || !.Call(C_graph_alive, ptr)) {
-    ptr <- engine_call("netframe", .Call(C_graph_simplify, base, isTRUE(undirected),
+    ptr <- engine_call("net_frame", .Call(C_graph_simplify, base, isTRUE(undirected),
                                          if (keep == "max") 0L else 1L))
     assign(key, ptr, envir = x$cache)
   }
@@ -171,7 +171,7 @@ default_threads <- function() {
 require_weights <- function(x) {
   if (is.null(x$roles$weight)) {
     stop(paste0("This network has no weights; use `weighted = FALSE`, or supply ",
-                "`weight =` to netframe()."), call. = FALSE)
+                "`weight =` to net_frame()."), call. = FALSE)
   }
   invisible(TRUE)
 }

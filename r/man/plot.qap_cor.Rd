@@ -12,7 +12,7 @@ produce.
 \method{plot}{qap_cor}(x, breaks = "Sturges", ...)
 }
 \arguments{
-\item{x}{A \code{\link{qap_cor}} result.}
+\item{x}{A \code{\link{net_qap_cor}} result.}
 \item{breaks}{Passed to \code{\link[graphics]{hist}}.}
 \item{...}{Further arguments passed to \code{\link[graphics]{hist}}, such
 as \code{main}.}
@@ -29,11 +29,11 @@ p-value, together with the number of permutations.
 Krackhardt, D. (1987). QAP partialling as a test of spuriousness.
 \emph{Social Networks}, 9(2), 171-186. \doi{10.1016/0378-8733(87)90012-8}
 }
-\seealso{\code{\link{qap_cor}}, \code{\link{plot.mrqap}}.}
+\seealso{\code{\link{net_qap_cor}}, \code{\link{plot.mrqap}}.}
 \examples{
 set.seed(1)
 a <- matrix(rbinom(100, 1, 0.3), 10)
 b <- (a + matrix(rbinom(100, 1, 0.1), 10)) > 0
-q <- qap_cor(a, b, reps = 500, seed = 1, threads = 2)
+q <- net_qap_cor(a, b, reps = 500, seed = 1, threads = 2)
 plot(q)
 }

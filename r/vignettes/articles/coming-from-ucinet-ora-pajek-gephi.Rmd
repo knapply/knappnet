@@ -55,7 +55,7 @@ writeLines(c(
   "0 0 1 0 1",
   "0 0 0 1 0"
 ), dl)
-team <- read_network(dl, directed = FALSE)
+team <- net_read(dl, directed = FALSE)
 team
 team$edges
 ```
@@ -66,7 +66,7 @@ triangle. Writing works the same way:
 
 ```{r}
 out <- tempfile(fileext = ".dl")
-write_network(team, out)
+net_write(team, out)
 cat(readLines(out), sep = "\n")
 ```
 
@@ -79,17 +79,17 @@ whole meta-network is one netframe: node classes are the `class` and
 the edge table.
 
 ```{r}
-org <- netframe(
-  data.frame(from    = c("ann", "bob", "ann", "bob", "cat"),
-             to      = c("bob", "cat", "sales", "sales", "eng"),
+org <- net_frame(
+  data.frame(source    = c("ann", "bob", "ann", "bob", "cat"),
+             target      = c("bob", "cat", "sales", "sales", "eng"),
              network = c("advice", "advice", "member", "member", "member")),
   nodes = data.frame(name  = c("ann", "bob", "cat", "sales", "eng"),
                      class = c("people", "people", "people", "units", "units"),
                      type  = c("Agent", "Agent", "Agent", "Organization", "Organization"))
 )
 xml <- tempfile(fileext = ".xml")
-write_network(org, xml, format = "dynetml")
-meta <- read_network(xml)
+net_write(org, xml, format = "dynetml")
+meta <- net_read(xml)
 meta$nodes
 meta$edges
 ```
@@ -98,11 +98,11 @@ To analyze one network among one class of nodes, take the matching rows of
 the two tables:
 
 ```{r}
-advice <- netframe(meta$edges[meta$edges$network == "advice", ],
+advice <- net_frame(meta$edges[meta$edges$network == "advice", ],
                    nodes = meta$nodes[meta$nodes$class == "people", ],
                    directed = meta$directed)
 advice
-betweenness(advice)
+net_betweenness(advice)
 ```
 
 Two-mode networks, such as the people-by-units `member` network, are
@@ -124,7 +124,7 @@ writeLines(c(
   "2 3",
   "3 4"
 ), net)
-read_network(net)
+net_read(net)
 ```
 
 When every vertex has a unique label, labels become node identifiers;
@@ -136,11 +136,11 @@ Compute in R, then draw in Gephi: node columns become node attributes in
 the GEXF file, ready for sizing and coloring in [Gephi](https://gephi.org/)'s Appearance panel.
 
 ```{r}
-team$nodes$betweenness <- betweenness(team)
-team$nodes$group <- as.vector(cluster_louvain(team, seed = 1))
+team$nodes$betweenness <- net_betweenness(team)
+team$nodes$group <- as.vector(net_louvain(team, seed = 1))
 gexf <- tempfile(fileext = ".gexf")
-write_network(team, gexf)
-read_network(gexf)$nodes
+net_write(team, gexf)
+net_read(gexf)$nodes
 ```
 
 ## UCINET menus
@@ -150,22 +150,22 @@ later releases have moved a few items.
 
 | UCINET | knappnet |
 |---|---|
-| Network > Centrality > Degree | `degree(g, convention = "ucinet")`, `centralization(g, "degree", convention = "ucinet")` |
-| Network > Centrality > Closeness | `closeness(g, convention = "ucinet")`; reciprocal closeness is `harmonic_centrality(g, convention = "ucinet")` |
-| Network > Centrality > Betweenness > Nodes (Freeman betweenness) | `betweenness(g, convention = "ucinet")`, `centralization(g, "betweenness", convention = "ucinet")` |
-| Network > Centrality > Eigenvector | `eigenvector_centrality(g, convention = "ucinet")` |
+| Network > Centrality > Degree | `net_degree(g, convention = "ucinet")`, `net_centralization(g, "degree", convention = "ucinet")` |
+| Network > Centrality > Closeness | `net_closeness(g, convention = "ucinet")`; reciprocal closeness is `net_harmonic(g, convention = "ucinet")` |
+| Network > Centrality > Betweenness > Nodes (Freeman betweenness) | `net_betweenness(g, convention = "ucinet")`, `net_centralization(g, "betweenness", convention = "ucinet")` |
+| Network > Centrality > Eigenvector | `net_eigen(g, convention = "ucinet")` |
 | Network > Centrality > Multiple Measures | the functions above, one column each |
-| Network > Cohesion > Density | `graph_density(g, convention = "ucinet")` |
-| Network > Regions > Components | `components(g, mode)`, `fragmentation(g, mode)` |
-| Network > Regions > K-Core | `coreness(g)` |
-| Network > Subgroups > Cliques | `max_cliques(g, min_size)` |
-| Network > Ego Networks > Structural Holes | `constraint(g)`, `effective_size(g)`, `efficiency(g)` |
-| Network > Ego Networks > Brokerage | `brokerage(g, groups)`; UCINET's consultant is the `itinerant` column |
-| Network > Roles & Positions > Structural > Profile | `structural_equivalence(g, method)` |
-| Network > Roles & Positions > Structural > CONCOR | `concor(g, depth)` |
-| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Correlation | `qap_cor(y, x)` |
-| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Regression | `mrqap(y, x)` (double semi-partialling); `method = "y"` for Y-permutation |
-| Data > Import text file > DL | `read_network("file.dl")` |
+| Network > Cohesion > Density | `net_density(g, convention = "ucinet")` |
+| Network > Regions > Components | `net_components(g, mode)`, `net_fragmentation(g, mode)` |
+| Network > Regions > K-Core | `net_coreness(g)` |
+| Network > Subgroups > Cliques | `net_max_cliques(g, min_size)` |
+| Network > Ego Networks > Structural Holes | `net_constraint(g)`, `net_effective_size(g)`, `net_efficiency(g)` |
+| Network > Ego Networks > Brokerage | `net_brokerage(g, groups)`; UCINET's consultant is the `itinerant` column |
+| Network > Roles & Positions > Structural > Profile | `net_struct_equiv(g, method)` |
+| Network > Roles & Positions > Structural > CONCOR | `net_concor(g, depth)` |
+| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Correlation | `net_qap_cor(y, x)` |
+| Tools > Testing Hypotheses > Dyadic (QAP) > QAP Regression | `net_mrqap(y, x)` (double semi-partialling); `method = "y"` for Y-permutation |
+| Data > Import text file > DL | `net_read("file.dl")` |
 
 The E-I index, ego network measures, two-mode (affiliation) networks, and
 Bonacich power centrality are coming soon.
@@ -182,11 +182,11 @@ path, and `d` and `e` are a separate pair, so `d` and `e` cannot reach
 three of the four other nodes:
 
 ```{r}
-split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
 data.frame(node   = split$nodes$name,
-           ucinet = round(closeness(split, convention = "ucinet"), 3),
-           igraph = round(closeness(split, normalized = TRUE), 3))
+           ucinet = round(net_closeness(split, convention = "ucinet"), 3),
+           igraph = round(net_closeness(split, normalized = TRUE), 3))
 ```
 
 igraph's convention looks only at the nodes each node can reach, so `d`
@@ -198,19 +198,19 @@ percentages in some routines and proportions in others. knappnet always
 returns proportions; multiply by 100 to compare with a percentage:
 
 ```{r}
-karate <- as_netframe(igraph::make_graph("Zachary"))
+karate <- net_from(igraph::make_graph("Zachary"))
 n <- nrow(karate$nodes)
 ucinet_style <- data.frame(
   node          = karate$nodes$name,
-  degree        = degree(karate, convention = "ucinet"),
-  nDegree       = 100 * degree(karate, convention = "ucinet") / (n - 1),
-  nBetweenness  = 100 * betweenness(karate, normalized = TRUE, convention = "ucinet"),
-  nCloseness    = 100 * closeness(karate, convention = "ucinet"),
-  eigenvector   = eigenvector_centrality(karate, convention = "ucinet")
+  degree        = net_degree(karate, convention = "ucinet"),
+  nDegree       = 100 * net_degree(karate, convention = "ucinet") / (n - 1),
+  nBetweenness  = 100 * net_betweenness(karate, normalized = TRUE, convention = "ucinet"),
+  nCloseness    = 100 * net_closeness(karate, convention = "ucinet"),
+  eigenvector   = net_eigen(karate, convention = "ucinet")
 )
 head(round(ucinet_style, 3))
-100 * centralization(karate, "degree", convention = "ucinet")
-100 * centralization(karate, "betweenness", convention = "ucinet")
+100 * net_centralization(karate, "degree", convention = "ucinet")
+100 * net_centralization(karate, "betweenness", convention = "ucinet")
 ```
 
 **Centralization maxima.** UCINET's theoretical maxima for degree
@@ -218,10 +218,10 @@ centralization are those of [sna](https://cran.r-project.org/package=sna), not i
 and sna give 1, igraph 0.667:
 
 ```{r}
-star <- netframe(data.frame(from = "hub", to = c("a", "b", "c", "d", "e")),
+star <- net_frame(data.frame(source = "hub", target = c("a", "b", "c", "d", "e")),
                  directed = FALSE)
-c(igraph = centralization(star, "degree"),
-  ucinet = centralization(star, "degree", convention = "ucinet"))
+c(igraph = net_centralization(star, "degree"),
+  ucinet = net_centralization(star, "degree", convention = "ucinet"))
 ```
 
 For directed networks, UCINET 6.849 and later divide in- and out-degree
@@ -234,12 +234,12 @@ reports a different measure (scores computed within components), which is
 not implemented, so `convention = "ucinet"` stops with an explanation
 rather than returning something else.
 
-**Fragmentation.** `fragmentation()` is UCINET's fragmentation for
+**Fragmentation.** `net_fragmentation()` is UCINET's fragmentation for
 undirected data: the proportion of pairs of nodes that cannot reach each
 other.
 
 ```{r}
-fragmentation(split)
+net_fragmentation(split)
 ```
 
 These conventions come from UCINET 6's documentation and from the port of
@@ -258,13 +258,13 @@ node table.
 
 | In Pajek | knappnet |
 |---|---|
-| Degree partition (all, input, output) | `degree(g, mode = "all" / "in" / "out")` |
-| Closeness and betweenness vectors | `closeness(g, mode)`, `betweenness(g)` |
-| Weak and strong components | `components(g, mode = "weak" / "strong")$membership` |
-| k-core partition (all, input, output) | `coreness(g, mode = "all" / "in" / "out")` |
-| Louvain communities | `cluster_louvain(g, seed = 1)` |
-| Structural holes (Burt's constraint) | `constraint(g)` |
-| Triadic census | `triad_census(g)` |
+| Degree partition (all, input, output) | `net_degree(g, mode = "all" / "in" / "out")` |
+| Closeness and betweenness vectors | `net_closeness(g, mode)`, `net_betweenness(g)` |
+| Weak and strong components | `net_components(g, mode = "weak" / "strong")$membership` |
+| k-core partition (all, input, output) | `net_coreness(g, mode = "all" / "in" / "out")` |
+| Louvain communities | `net_louvain(g, seed = 1)` |
+| Structural holes (Burt's constraint) | `net_constraint(g)` |
+| Triadic census | `net_triad_census(g)` |
 
 The triad census uses the algorithm of Batagelj and Mrvar (2001), Pajek's
 own authors, and counts the sixteen types in the standard order.
@@ -274,8 +274,8 @@ own authors, and counts the sixteen types in the standard order.
 [ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s reports compute measures across a meta-network. In knappnet, select
 the network and node class you want, as in the DyNetML example above, and
 apply the functions in the [reference index](../reference/index.html):
-`degree()`, `betweenness()`, `closeness()`, `eigenvector_centrality()`,
-`constraint()`, `graph_density()`, `components()`, and the rest. ORA's
+`net_degree()`, `net_betweenness()`, `net_closeness()`, `net_eigen()`,
+`net_constraint()`, `net_density()`, `net_components()`, and the rest. ORA's
 measure definitions are not yet compared automatically, so check a
 measure's help page for its conventions before matching numbers.
 
@@ -283,17 +283,17 @@ measure's help page for its conventions before matching numbers.
 
 | [Gephi](https://gephi.org/) statistic | knappnet |
 |---|---|
-| Average Degree | `mean(degree(g))` |
-| Avg. Weighted Degree | `mean(strength(g))` |
-| Network Diameter (betweenness, closeness, harmonic closeness) | `betweenness(g)`, `closeness(g)`, `harmonic_centrality(g)` |
-| Graph Density | `graph_density(g)` |
-| Modularity | `cluster_louvain(g, resolution, seed)` and `modularity(g, membership)` |
-| Connected Components | `components(g, mode = "weak" / "strong")` |
-| Eigenvector Centrality | `eigenvector_centrality(g)` |
+| Average Degree | `mean(net_degree(g))` |
+| Avg. Weighted Degree | `mean(net_strength(g))` |
+| Network Diameter (betweenness, closeness, harmonic closeness) | `net_betweenness(g)`, `net_closeness(g)`, `net_harmonic(g)` |
+| Graph Density | `net_density(g)` |
+| Modularity | `net_louvain(g, resolution, seed)` and `net_modularity(g, membership)` |
+| Connected Components | `net_components(g, mode = "weak" / "strong")` |
+| Eigenvector Centrality | `net_eigen(g)` |
 
 PageRank, the clustering coefficient, average path length, diameter, and
 layouts are coming soon. Gephi's Modularity uses the Louvain method, as
-`cluster_louvain()` does, but both depend on the order in which nodes are
+`net_louvain()` does, but both depend on the order in which nodes are
 visited, so partitions can differ; compare their modularity rather than
 the group labels.
 

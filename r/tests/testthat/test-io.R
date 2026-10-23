@@ -5,19 +5,19 @@ rich_net <- function(directed = TRUE) {
                       member = c(TRUE, FALSE, NA, TRUE, FALSE),
                       team = c("red", "blue", "<blue>", NA, "green & gold"),
                       stringsAsFactors = FALSE)
-  edges <- data.frame(from = c("ana", "bo \"b\"", "céline", "ana"),
-                      to = c("bo \"b\"", "céline", "céline", "d&d"),
+  edges <- data.frame(source = c("ana", "bo \"b\"", "céline", "ana"),
+                      target = c("bo \"b\"", "céline", "céline", "d&d"),
                       weight = c(1, 2.5, 0.75, 3),
                       stringsAsFactors = FALSE)
-  netframe(edges, nodes, directed = directed, weight = "weight",
+  net_frame(edges, nodes, directed = directed, weight = "weight", weight_type = "distance",
            graph = list(title = "rich"))
 }
 
 round_trip <- function(g, ext, ...) {
   path <- tempfile(fileext = ext)
   on.exit(unlink(path))
-  write_network(g, path, ...)
-  read_network(path)
+  net_write(g, path, ...)
+  net_read(path)
 }
 
 test_that("attribute-rich formats round-trip exactly", {
@@ -27,7 +27,7 @@ test_that("attribute-rich formats round-trip exactly", {
       back <- round_trip(g, ext)
       expect_equal(back$directed, directed, info = ext)
       expect_equal(back$nodes$id, g$nodes$id, info = ext)
-      expect_equal(back$edges$from, g$edges$from, info = ext)
+      expect_equal(back$edges$source, g$edges$source, info = ext)
       expect_equal(back$edges$weight, g$edges$weight, info = ext)
       expect_equal(back$nodes$score, g$nodes$score, info = ext)
       expect_equal(back$nodes$team, g$nodes$team, info = ext)
@@ -41,12 +41,12 @@ test_that("attribute-rich formats round-trip exactly", {
 })
 
 test_that("structure-only formats keep structure and weights", {
-  g <- netframe(data.frame(from = c("a", "b", "c"), to = c("b", "c", "c"), w = c(2, 0.5, 1)),
-                nodes = data.frame(id = c("a", "b", "c", "lonely")), weight = "w")
+  g <- net_frame(data.frame(source = c("a", "b", "c"), target = c("b", "c", "c"), w = c(2, 0.5, 1)),
+                nodes = data.frame(id = c("a", "b", "c", "lonely")), weight = "w", weight_type = "distance")
   for (ext in c(".net", ".dl")) {
     back <- round_trip(g, ext)
     expect_equal(back$nodes$id, g$nodes$id, info = ext)
-    expect_equal(back$edges$to, g$edges$to, info = ext)
+    expect_equal(back$edges$target, g$edges$target, info = ext)
     expect_equal(back$edges$weight, g$edges$w, info = ext)
   }
 })
@@ -55,28 +55,28 @@ test_that("edge lists read and write with optional node files", {
   g <- rich_net()
   path <- tempfile(fileext = ".csv")
   nodes_path <- tempfile(fileext = ".csv")
-  write_network(g, path, nodes_file = nodes_path)
-  back <- read_network(path, nodes = nodes_path)
+  net_write(g, path, nodes_file = nodes_path)
+  back <- net_read(path, nodes = nodes_path)
   expect_equal(nrow(back$nodes), 5)
-  expect_equal(back$edges$from, g$edges$from)
+  expect_equal(back$edges$source, g$edges$source)
   expect_equal(back$roles$weight, "weight")
 })
 
 test_that("integer identifiers come back as integers", {
-  g <- netframe(data.frame(from = c(1L, 2L), to = c(2L, 3L)))
+  g <- net_frame(data.frame(source = c(1L, 2L), target = c(2L, 3L)))
   back <- round_trip(g, ".graphml")
   expect_identical(back$nodes$id, 1:3)
-  expect_identical(back$edges$to, c(2L, 3L))
+  expect_identical(back$edges$target, c(2L, 3L))
 })
 
 test_that("DOT is write-only and formats are validated", {
   g <- rich_net()
   path <- tempfile(fileext = ".dot")
-  write_network(g, path)
+  net_write(g, path)
   expect_match(readLines(path)[1], "^digraph")
-  expect_error(read_network(path), "written but not read")
-  expect_error(write_network(g, tempfile(fileext = ".xyz")), "Cannot tell the format")
-  expect_error(read_network("does-not-exist.graphml"), "does not exist")
+  expect_error(net_read(path), "written but not read")
+  expect_error(net_write(g, tempfile(fileext = ".xyz")), "Cannot tell the format")
+  expect_error(net_read("does-not-exist.graphml"), "does not exist")
 })
 
 test_that("files written here are read correctly by igraph", {
@@ -84,7 +84,7 @@ test_that("files written here are read correctly by igraph", {
   g <- rich_net()
   for (fmt in c("graphml", "gml", "pajek")) {
     path <- tempfile()
-    write_network(g, path, format = fmt)
+    net_write(g, path, format = fmt)
     # igraph keeps GML's character entities (here for an accented label)
     # verbatim and warns; the counts and weights checked below are unaffected.
     ig <- if (fmt == "gml") suppressWarnings(igraph::read_graph(path, format = fmt)) else
@@ -94,7 +94,7 @@ test_that("files written here are read correctly by igraph", {
     expect_equal(sort(igraph::E(ig)$weight), sort(g$edges$weight), info = fmt)
   }
   path <- tempfile(fileext = ".graphml")
-  write_network(g, path)
+  net_write(g, path)
   ig <- igraph::read_graph(path, format = "graphml")
   # Some libxml2 versions hand igraph `&amp;` in attributes as the
   # character reference `&#38;` without decoding it; the file itself holds
@@ -116,13 +116,13 @@ test_that("files written by igraph are read correctly here", {
     } else {
       igraph::write_graph(ig, path, format = fmt)
     }
-    g <- read_network(path, format = fmt)
+    g <- net_read(path, format = fmt)
     expect_equal(nrow(g$nodes), igraph::vcount(ig), info = fmt)
     expect_equal(nrow(g$edges), igraph::ecount(ig), info = fmt)
     expect_equal(g$edges$weight, igraph::E(ig)$weight, info = fmt)
-    expect_equal(betweenness(g, weighted = FALSE),
+    expect_equal(net_betweenness(g, weighted = FALSE),
                  unname(igraph::betweenness(ig, weights = NA)), info = fmt)
-    expect_equal(betweenness(g), unname(igraph::betweenness(ig)), info = fmt)
+    expect_equal(net_betweenness(g), unname(igraph::betweenness(ig)), info = fmt)
   }
 })
 
@@ -133,16 +133,16 @@ test_that("UCINET DL files are read the same way igraph reads them", {
   # an edge list.
   writeLines(c("dl n=4", "format = fullmatrix", "labels:", "a,b,c,d", "data:",
                "0 1 0 0", "0 0 1 0", "1 0 0 0", "0 0 0 0"), path)
-  g <- read_network(path)
+  g <- net_read(path)
   ig <- igraph::read_graph(path, format = "dl")
   expect_equal(nrow(g$edges), igraph::ecount(ig))
   expect_equal(g$nodes$id, igraph::V(ig)$name)
-  expect_equal(paste(g$edges$from, g$edges$to),
+  expect_equal(paste(g$edges$source, g$edges$target),
                apply(igraph::as_edgelist(ig), 1, paste, collapse = " "))
 
   writeLines(c("dl n=4", "format = edgelist1", "labels:", "a,b,c,d", "data:",
                "1 2 1", "2 3 2.5", "3 1 1"), path)
-  g <- read_network(path)
+  g <- net_read(path)
   ig <- igraph::read_graph(path, format = "dl")
   expect_equal(nrow(g$edges), igraph::ecount(ig))
   expect_equal(g$nodes$id, igraph::V(ig)$name)
@@ -155,35 +155,35 @@ multimode_net <- function() {
                       title = c("Ana A.", NA, "ACME & Sons", NA, "<Herat>"),
                       age = c(31, NA, NA, NA, NA),
                       stringsAsFactors = FALSE)
-  edges <- data.frame(from = c("ana", "bo", "ana", "bo", "acme"),
-                      to = c("bo", "ana", "acme", "acme", "kabul"),
+  edges <- data.frame(source = c("ana", "bo", "ana", "bo", "acme"),
+                      target = c("bo", "ana", "acme", "acme", "kabul"),
                       network = c("talks", "talks", "member", "member", "based"),
                       weight = c(2.5, 1, 1, 0.5, 1),
                       stringsAsFactors = FALSE)
-  netframe(edges, nodes, directed = TRUE, weight = "weight")
+  net_frame(edges, nodes, directed = TRUE, weight = "weight", weight_type = "distance")
 }
 
 test_that("DyNetML round-trips multimode networks", {
   g <- multimode_net()
   path <- tempfile(fileext = ".xml")
   on.exit(unlink(path))
-  write_network(g, path, format = "dynetml")
+  net_write(g, path, format = "dynetml")
   expect_match(paste(readLines(path), collapse = "\n"),
                "<nodeclass type=\"Organization\" id=\"Organization\">", fixed = TRUE)
   # A .xml file is recognized as DyNetML from its root element.
-  back <- read_network(path)
+  back <- net_read(path)
   expect_true(back$directed)
   expect_equal(back$nodes$id, g$nodes$id)
   expect_equal(back$nodes$class, g$nodes$class)
   expect_equal(back$nodes$type, g$nodes$class)
   expect_equal(back$nodes$title, g$nodes$title)
   expect_equal(back$nodes$age, g$nodes$age)
-  expect_equal(back$edges$from, g$edges$from)
-  expect_equal(back$edges$to, g$edges$to)
+  expect_equal(back$edges$source, g$edges$source)
+  expect_equal(back$edges$target, g$edges$target)
   expect_equal(back$edges$network, g$edges$network)
   expect_equal(back$edges$weight, g$edges$weight)
   expect_equal(back$roles$weight, "weight")
-  expect_identical(read_network(path, format = "ora")$edges$weight, back$edges$weight)
+  expect_identical(net_read(path, format = "ora")$edges$weight, back$edges$weight)
 })
 
 test_that("DyNetML files in ORA's layout are read", {
@@ -215,7 +215,7 @@ test_that("DyNetML files in ORA's layout are read", {
     '    </networks>',
     '  </MetaNetwork>',
     '</DynamicNetwork>'), path)
-  g <- read_network(path)
+  g <- net_read(path)
   # "Kabul" is both an agent and a location, so identifiers carry the class.
   expect_equal(g$nodes$id, c("Agent::A1", "Agent::Kabul", "Location::Kabul"))
   expect_equal(g$nodes$node_id, c("A1", "Kabul", "Kabul"))
@@ -223,23 +223,23 @@ test_that("DyNetML files in ORA's layout are read", {
   expect_equal(g$graph$name, "embassy")
   # The undirected network's link is stored in both directions.
   expect_true(g$directed)
-  expect_equal(g$edges$from, c("Agent::A1", "Agent::A1", "Location::Kabul"))
+  expect_equal(g$edges$source, c("Agent::A1", "Agent::A1", "Location::Kabul"))
   expect_equal(g$edges$directed, c(TRUE, FALSE, FALSE))
   expect_equal(g$edges$weight, c(2, 1, 1))
   bad <- tempfile(fileext = ".xml")
   on.exit(unlink(bad), add = TRUE)
   writeLines(c('<MetaNetwork>', '<nodes><nodeclass id="Agent" type="Agent">',
                '<node id="a"><port name="p"/></node></nodeclass></nodes></MetaNetwork>'), bad)
-  expect_error(read_network(bad), "line 3.*ports")
+  expect_error(net_read(bad), "line 3.*ports")
 })
 
 test_that("writing .xml stays GraphML and reading .xml still reads GraphML", {
   g <- rich_net()
   path <- tempfile(fileext = ".xml")
   on.exit(unlink(path))
-  write_network(g, path)
+  net_write(g, path)
   expect_match(paste(readLines(path), collapse = "\n"), "<graphml")
-  back <- read_network(path)
+  back <- net_read(path)
   expect_equal(back$nodes$id, g$nodes$id)
   expect_null(back$nodes$class)
 })
@@ -249,26 +249,26 @@ test_that("non-ASCII identifiers round-trip through every reader and writer", {
   # ASCII; the strings are UTF-8 on every platform.
   ids <- c("José", "Zoë", "北京", "Ελλάδα",
            "São Paulo")
-  g <- netframe(data.frame(from = ids[c(1, 2, 3, 4)], to = ids[c(2, 3, 4, 1)],
+  g <- net_frame(data.frame(source = ids[c(1, 2, 3, 4)], target = ids[c(2, 3, 4, 1)],
                            weight = c(1, 2, 3, 4), stringsAsFactors = FALSE),
                 nodes = data.frame(id = ids, place = rev(ids), stringsAsFactors = FALSE),
-                weight = "weight")
+                weight = "weight", weight_type = "distance")
   for (ext in c(".graphml", ".gexf", ".gml", ".json", ".net", ".dl")) {
     back <- round_trip(g, ext)
     expect_equal(back$nodes$id, ids, info = ext)
-    expect_equal(back$edges$from, g$edges$from, info = ext)
-    expect_equal(back$edges$to, g$edges$to, info = ext)
-    expect_equal(betweenness(back), betweenness(g), info = ext)
+    expect_equal(back$edges$source, g$edges$source, info = ext)
+    expect_equal(back$edges$target, g$edges$target, info = ext)
+    expect_equal(net_betweenness(back), net_betweenness(g), info = ext)
     if (ext %in% c(".graphml", ".gexf", ".gml", ".json")) {
       expect_equal(back$nodes$place, rev(ids), info = ext)
     }
   }
   path <- tempfile(fileext = ".xml")
   on.exit(unlink(path))
-  write_network(g, path, format = "dynetml")
-  back <- read_network(path)
+  net_write(g, path, format = "dynetml")
+  back <- net_read(path)
   expect_equal(back$nodes$id, ids)
-  expect_equal(back$edges$to, g$edges$to)
+  expect_equal(back$edges$target, g$edges$target)
 
   # Edge lists go through write.table(), which before R 4.2 on Windows (and
   # in other non-UTF-8 locales) can only write characters of the native
@@ -277,23 +277,23 @@ test_that("non-ASCII identifiers round-trip through every reader and writer", {
   csv <- tempfile(fileext = ".csv")
   nodes_csv <- tempfile(fileext = ".csv")
   on.exit(unlink(c(csv, nodes_csv)), add = TRUE)
-  write_network(g, csv, nodes_file = nodes_csv)
-  back <- read_network(csv, nodes = nodes_csv)
+  net_write(g, csv, nodes_file = nodes_csv)
+  back <- net_read(csv, nodes = nodes_csv)
   expect_equal(back$nodes$id, ids)
-  expect_equal(back$edges$from, g$edges$from)
+  expect_equal(back$edges$source, g$edges$source)
 })
 
 test_that("file paths may contain non-ASCII characters", {
   skip_if_not(isTRUE(l10n_info()[["UTF-8"]]) || .Platform$OS.type == "windows",
               "the locale cannot represent the path")
-  g <- netframe(data.frame(from = c("a", "b"), to = c("b", "c")))
+  g <- net_frame(data.frame(source = c("a", "b"), target = c("b", "c")))
   dir <- file.path(tempdir(), "réseau")
   dir.create(dir, showWarnings = FALSE)
   on.exit(unlink(dir, recursive = TRUE))
   for (ext in c(".graphml", ".csv")) {
     path <- file.path(dir, paste0("café", ext))
-    write_network(g, path)
+    net_write(g, path)
     expect_true(file.exists(path), info = ext)
-    expect_equal(read_network(path)$edges$to, c("b", "c"), info = ext)
+    expect_equal(net_read(path)$edges$target, c("b", "c"), info = ext)
   }
 })
