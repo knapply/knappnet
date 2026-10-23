@@ -12,7 +12,7 @@ combining the weights, and optionally drops self-loops.
 }
 \usage{
 net_simplify(x, combine = c("sum", "mean", "min", "max", "first", "count"),
-             remove_loops = FALSE)
+             remove_loops = FALSE, attributes = "first")
 
 net_is_simple(x)
 
@@ -27,6 +27,13 @@ edge's weight), or \code{"count"} (the number of edges collapsed, which
 becomes the weight of an unweighted network as a strength, in a column
 called \code{count}).}
 \item{remove_loops}{Whether to drop self-loops as well.}
+\item{attributes}{How the other edge columns (those with no role) of
+each group are combined: \code{"first"} (the default) keeps the first
+row's values; \code{"concat"} joins the distinct non-missing values of
+the group, as text separated by \code{"; "}; or a function that takes the
+values of one column within one group and returns a single value (for
+example \code{function(v) mean(v, na.rm = TRUE)} for numeric columns).
+List columns are kept from the first row.}
 }
 \details{
 Two edges are parallel when they have the same endpoints (as an ordered
@@ -40,8 +47,8 @@ and keeps "multiplex" for several relations and "parallel" for repeated
 pairs (Newman 2018, ch. 6, for the terms).
 
 \code{net_simplify()} keeps the first row of each group of parallel edges
-with its attributes, except for the weight column, which receives the
-combined value; the kept edges stay in their original order. The result
+with its role columns, except for the weight column, which receives the
+combined value; the other columns are combined by \code{attributes}; the kept edges stay in their original order. The result
 declares \code{multiple = FALSE} (and \code{loops = FALSE} when loops were
 removed), so the property is checked when the tables are edited.
 }
@@ -70,4 +77,15 @@ net_is_simple(g)
 s <- net_simplify(g, remove_loops = TRUE)
 s$edges
 net_is_simple(s)
+
+# The multigraph and its simplification side by side.
+op <- par(mfrow = c(1, 2))
+xy <- plot(g, main = "multigraph", seed = 1)
+plot(s, layout = xy, main = "simplified")
+par(op)
+
+# Other columns combined: distinct values joined.
+e$note <- c("met", "emailed", "self", "met", "met")
+h <- net_frame(e, directed = FALSE, weight = "w", weight_type = "strength")
+net_simplify(h, attributes = "concat")$edges
 }

@@ -110,6 +110,8 @@ reference:
     nodes, and node attributes, as in UCINET's Transform and Data menus.
   contents:
   - net_combine_relations
+  - net_as_signed
+  - net_resolve_missing
   - net_dichotomize
   - net_symmetrize
   - net_subnetwork
@@ -198,8 +200,15 @@ reference:
     Each node's neighborhood as a network of its own, and egocentric
     measures computed for every node at once.
   contents:
+  - net_ego_frame
   - net_ego
   - net_ego_summary
+- title: Multilayer networks
+  desc: >-
+    Actors in several layers, with edges within and between layers;
+    multiplex networks lifted to layer form.
+  contents:
+  - net_split_layers
 - title: Two-mode networks
   desc: >-
     People-by-event and people-by-organization data: construction,
@@ -232,6 +241,7 @@ reference:
   contents:
   - net_temporal
   - net_panel
+  - net_node_spells
   - net_at
   - net_snapshots
   - net_aggregate
@@ -266,6 +276,7 @@ reference:
     and plots of measures, matrices, distributions, and test results.
   contents:
   - plot.net_frame
+  - net_plot_panels
   - net_layout
   - net_plot_centrality
   - net_plot_partition

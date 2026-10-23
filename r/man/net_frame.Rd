@@ -1,6 +1,5 @@
 \name{net_frame}
 \alias{net_frame}
-\alias{net_frame}
 \alias{net_diagnostics}
 \alias{print.net_frame}
 \title{Create a network from node and edge data frames}
@@ -17,8 +16,16 @@ its properties and the first rows of both tables.
 \usage{
 net_frame(edges, nodes = NULL, directed = TRUE, source = "source",
           target = "target", id = "id", weight = NULL, weight_type = NULL,
-          mode = NULL, relation = NULL, sign = NULL, loops = NULL,
-          multiple = NULL, add_nodes = FALSE, quiet = FALSE, graph = list())
+          mode = NULL, between_modes_only = NULL, relation = NULL, sign = NULL,
+          start = NULL, end = NULL, wave = NULL, node_start = NULL,
+          node_end = NULL, coords = NULL, crs = NULL, source_layer = NULL,
+          target_layer = NULL, layers = NULL, layer = "layer",
+          couplings_only = NULL, ego = NULL, edge_ego = NULL,
+          egos_are_nodes = NULL, node_missing = NULL, edge_missing = NULL,
+          node_spells = NULL, node_changes = NULL, spell_start = "start",
+          spell_end = "end", change_time = "time", overlapping_spells = NULL,
+          loops = NULL, multiple = NULL, add_nodes = FALSE, quiet = FALSE,
+          graph = list())
 
 net_diagnostics(x, threads = 0L)
 
@@ -61,6 +68,73 @@ each tie: \code{-1} and \code{1}, or a logical column where \code{TRUE} is
 positive. Weights of a signed network are magnitudes and must not be
 negative. Provisional: the role is validated and stored; no measure uses it
 yet.}
+\item{between_modes_only}{Declaration for a \code{mode} column:
+\code{TRUE} states that every edge joins nodes of different modes (a
+two-mode or k-partite network) and lists the edges that do not;
+\code{FALSE} allows ties within modes; \code{NULL} leaves it undeclared.
+\code{\link{net_twomode}} sets it to \code{TRUE}.}
+\item{start, end}{Optional names of columns of \code{edges} holding when
+each edge is active: \code{start} alone makes every edge an instantaneous
+contact; \code{start} and \code{end} make it the half-open spell
+\eqn{[start, end)}. Numbers, \code{Date}, or \code{POSIXct}; every time
+column of the network has one class. See \code{\link{net_temporal}}.}
+\item{wave}{Optional name of a column of \code{edges} holding whole wave
+numbers of a panel: wave \eqn{k} is the spell \eqn{[k, k + 1)}. Excludes
+\code{start} and \code{end}. See \code{\link{net_panel}}.}
+\item{node_start, node_end}{Optional names of columns of \code{nodes}
+holding one presence spell per node; a missing value leaves the spell
+open on that side. Edges must fall within the presence of both endpoints.
+For several spells per node use \code{node_spells} instead.}
+\item{coords}{Optional names of two numeric columns of \code{nodes}:
+longitude and latitude, or x and y. See \code{\link{net_spatial}}.}
+\item{crs}{What \code{coords} hold: \code{"lonlat"} (the default when
+\code{coords} is given; latitudes must lie in [-90, 90]) or
+\code{"planar"}.}
+\item{source_layer, target_layer}{Optional names of two columns of
+\code{edges} holding the layer of each endpoint, for a multilayer network:
+equal layers make an intralayer edge, an actor joined to itself across
+layers is a coupling, and other edges across layers are interlayer edges
+(Kivela et al. 2014). Given together. See \code{\link{net_split_layers}}.}
+\item{layers}{Optional data frame with one row per layer and any layer
+attributes; every edge layer must be one of its identifiers.}
+\item{layer}{The name of the identifier column of \code{layers} (default
+\code{"layer"}).}
+\item{couplings_only}{Declaration for a multilayer network: \code{TRUE}
+states that every edge across layers is a coupling (the multiplex case)
+and lists the interlayer edges that join different actors; \code{FALSE}
+allows any; \code{NULL} leaves it undeclared.}
+\item{ego, edge_ego}{Optional names of columns of \code{nodes} and
+\code{edges} holding the ego whose network each row belongs to, for
+egocentric data held in one net_frame. Without \code{edge_ego} an edge
+belongs to its source's ego, and both endpoints must belong to the same
+ego. See \code{\link{net_ego_frame}}.}
+\item{egos_are_nodes}{Declaration for \code{ego}: \code{TRUE} requires
+every ego to be a node row (whose own \code{ego} value is itself);
+\code{FALSE} states that egos are not rows (alters only); \code{NULL}
+leaves it undeclared.}
+\item{node_missing}{Optional name of a logical column of \code{nodes}
+marking non-respondents (\code{TRUE}): nodes whose own reports were not
+collected. Their unreported ties are unobserved by rule and are not
+written out. See \code{\link{net_resolve_missing}}.}
+\item{edge_missing}{Optional name of a logical column of \code{edges}
+marking unobserved pairs (\code{TRUE}): rows whose tie status was not
+observed. They are kept in the table but are neither ties nor non-ties,
+and are left out of the graph that measures use.}
+\item{node_spells}{Optional data frame of presence spells, with columns
+\code{id} (the name given by \code{id}), \code{spell_start}, and
+\code{spell_end}; a node may have several. A node not in the table is
+present throughout. Excludes \code{node_start} and \code{node_end}. See
+\code{\link{net_node_spells}}.}
+\item{node_changes}{Optional data frame of node attribute changes, with
+columns \code{id}, \code{change_time}, and the attribute columns: a row
+sets those attributes of its node from that time on, and \code{nodes}
+holds the values before the first change. See \code{\link{net_nodes_at}}.}
+\item{spell_start, spell_end}{The names of the start and end columns of
+\code{node_spells}.}
+\item{change_time}{The name of the time column of \code{node_changes}.}
+\item{overlapping_spells}{Declaration for \code{node_spells}:
+\code{TRUE} allows the spells of one node to overlap; otherwise
+overlapping spells are an error.}
 \item{loops, multiple}{Declarations: \code{FALSE} states that the network
 has no self-loops (no parallel edges), and any violating row is an error;
 \code{TRUE} states that they are allowed; \code{NULL} (the default) leaves
@@ -92,8 +166,9 @@ and of one type, the identifier column matches it, no endpoint or
 identifier is missing or an empty string, identifiers are unique, and
 every endpoint is in the node table (the missing ones are listed).
 \item \emph{Declared properties}: a declared \code{loops = FALSE},
-\code{multiple = FALSE}, or (for \code{\link{net_twomode}}) the rule that
-edges join different modes lists the rows that violate it; contradictory
+\code{multiple = FALSE}, \code{between_modes_only = TRUE},
+\code{couplings_only = TRUE}, or \code{egos_are_nodes = TRUE} lists the
+rows that violate it; contradictory
 declarations are errors, never silent overrides.
 \item \emph{Attribute sanity}: weights are numeric and finite (positive
 when distances) and their meaning is declared; the mode and relation
@@ -180,19 +255,29 @@ and \code{target}, never from the geometry. See \code{\link{net_to_sf}}.
 }
 }
 \value{An object of class \code{net_frame}: a list with the two tables
-(\code{nodes}, \code{edges}), \code{directed}, \code{roles} (the column
-names of each role, with \code{weight_type}), \code{declared}
-(\code{loops}, \code{multiple}, and \code{between_modes_only} when
-declared), \code{graph}, and the engine's edge index. Temporal and spatial
-networks are subclasses: \code{c("temporal_net_frame", "net_frame")},
-\code{c("spatial_net_frame", "net_frame")}, and
-\code{c("spatiotemporal_net_frame", "spatial_net_frame", "temporal_net_frame",
-"net_frame")}.
+(\code{nodes}, \code{edges}), the optional long tables (\code{layers},
+\code{node_spells}, \code{node_changes}, or \code{NULL}), \code{directed},
+\code{roles} (the column names of each role, with \code{weight_type}),
+\code{declared} (the declarations that were made), \code{graph}, and the
+engine's edge index. Temporal, spatial, and multilayer networks are
+subclasses, composed in a fixed order:
+\code{c("temporal_net_frame", "net_frame")},
+\code{c("spatial_net_frame", "net_frame")},
+\code{c("spatiotemporal_net_frame", "spatial_net_frame",
+"temporal_net_frame", "net_frame")}, and
+\code{c("multilayer_net_frame", "net_frame")} (which may precede the
+others, as in \code{c("multilayer_net_frame", "temporal_net_frame",
+"net_frame")}). Modes, weights, signs, relations, egos, and missing-data
+flags add no class.
 }
 \references{
 Butts, C. T. (2008). network: A package for managing relational data in R.
 \emph{Journal of Statistical Software}, 24(2), 1-36.
 \doi{10.18637/jss.v024.i02}
+
+Kivela, M., Arenas, A., Barthelemy, M., Gleeson, J. P., Moreno, Y., &
+Porter, M. A. (2014). Multilayer networks. \emph{Journal of Complex
+Networks}, 2(3), 203-271. \doi{10.1093/comnet/cnu016}
 
 Newman, M. E. J. (2001). Scientific collaboration networks. II. Shortest
 paths, weighted networks, and centrality. \emph{Physical Review E}, 64,
@@ -210,12 +295,25 @@ and Applications}. Cambridge University Press.
 \code{\link{as_net_frame}} to convert from other packages, \code{\link{net_read}}
 for files, \code{\link{net_twomode}}, \code{\link{net_temporal}}, and
 \code{\link{net_spatial}} for the other kinds of network, and
-\code{\link{net_simplify}} for loops and parallel edges.
+\code{\link{net_simplify}} for loops and parallel edges,
+\code{\link{net_split_layers}} for multilayer networks,
+\code{\link{net_ego_frame}} for ego networks,
+\code{\link{net_resolve_missing}} for missing data,
+\code{\link{net_node_spells}} for node presence and changes, and
+\code{\link{net_as_signed}} for signed values. The articles
+\dQuote{Network types} and \dQuote{Definitions} show every configuration
+with its tables, card, and plot.
 }
 \examples{
 edges <- data.frame(source = c("a", "b", "c"), target = c("b", "c", "a"))
 g <- net_frame(edges)
 g
+
+# The same edges read as directed and as undirected.
+op <- par(mfrow = c(1, 2))
+plot(g, main = "directed", seed = 1)
+plot(net_frame(edges, directed = FALSE), main = "undirected", seed = 1)
+par(op)
 
 # Weights must say what they mean.
 w <- data.frame(source = c("a", "a", "b"), target = c("b", "c", "c"), n = c(3, 1, 2))
@@ -225,8 +323,24 @@ net_frame(w, directed = FALSE, weight = "n", weight_type = "strength")
 nodes <- data.frame(id = c("a", "b", "b"))
 try(net_frame(data.frame(source = c("a", NA), target = c("q", "b")), nodes))
 
-# Self-loops and parallel edges are kept and reported.
-h <- net_frame(data.frame(source = c("a", "a", "a"), target = c("a", "b", "b")))
+# Self-loops and parallel edges are kept, reported, and drawn.
+h <- net_frame(data.frame(source = c("a", "a", "a", "b"), target = c("a", "b", "b", "c")))
 net_diagnostics(h)
 net_is_simple(h)
+plot(h, seed = 1)
+
+# A signed network: negative ties are drawn dashed.
+s <- data.frame(source = c("a", "a", "b", "c"), target = c("b", "c", "c", "d"),
+                sign = c(1, -1, 1, -1))
+plot(net_frame(s, directed = FALSE, sign = "sign"), seed = 1)
+
+# A multiplex network: edges coloured by relation.
+krack <- net_example("krackhardt")
+krack
+plot(krack, seed = 1)
+
+# Unobserved pairs are kept in the table and drawn dotted.
+u <- data.frame(source = c("a", "a", "b"), target = c("b", "c", "c"),
+                unknown = c(FALSE, TRUE, FALSE))
+net_frame(u, directed = FALSE, edge_missing = "unknown")
 }

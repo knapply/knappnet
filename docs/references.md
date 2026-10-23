@@ -46,7 +46,7 @@ cited by author and year in an R help page or a vignette instead.
 | `borgatti1990ls` | Borgatti, Everett, and Shirey (1990). LS Sets, Lambda Sets and Other Cohesive Subsets. *Social Networks*. | `crates/engine/src/metrics/factions/lambda.rs` |
 | `borgatti1992notions` | Borgatti and Everett (1992). Notions of position in social network analysis. *Sociological Methodology*. | `crates/engine/src/metrics/regular.rs` |
 | `borgatti1993two` | Borgatti and Everett (1993). Two algorithms for computing regular equivalence. *Social Networks*. | `crates/engine/src/metrics/regular.rs` |
-| `borgatti1997network` | Borgatti and Everett (1997). Network Analysis of 2-Mode Data. *Social Networks*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and 1 more |
+| `borgatti1997network` | Borgatti and Everett (1997). Network Analysis of 2-Mode Data. *Social Networks*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and 2 more |
 | `borgatti1997structural` | Borgatti (1997). Structural Holes: Unpacking Burt's Redundancy Measures. *Connections*. | `crates/engine/src/metrics/brokerage.rs` |
 | `borgatti1999models` | Borgatti and Everett (1999). Models of Core/Periphery Structures. *Social Networks*. | `crates/engine/src/metrics/coreperiphery/continuous.rs`, `crates/engine/src/metrics/coreperiphery/discrete.rs`, `crates/engine/src/metrics/factions/kgroups.rs` |
 | `borgatti2002ucinet` | Borgatti, Everett, and Freeman (2002). UCINET for Windows: Software for Social Network Analysis. *Analytic Technologies, Harvard, MA*. | `crates/engine/src/conventions.rs`, `crates/engine/src/io/dl.rs`, `crates/engine/src/metrics/factions/kgroups.rs`, `docs/DATA_MODEL.md`, and 1 more |
@@ -234,7 +234,7 @@ cited by author and year in an R help page or a vignette instead.
 | `newman2004fast` | Newman (2004). Fast Algorithm for Detecting Community Structure in Networks. *Physical Review E*. | `crates/engine/src/metrics/partition/fast_greedy.rs` |
 | `newman2004finding` | Newman and Girvan (2004). Finding and Evaluating Community Structure in Networks. *Physical Review E*. | `crates/engine/src/metrics/community.rs`, `crates/engine/src/metrics/partition/girvan_newman.rs` |
 | `newman2006modularity` | Newman (2006). Modularity and Community Structure in Networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/community.rs`, `crates/engine/src/metrics/partition/leading_eigen.rs` |
-| `newman2018networks` | Newman (2018). Networks. *Oxford University Press*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
+| `newman2018networks` | Newman (2018). Networks. *Oxford University Press*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, and 1 more |
 | `nocedal2006numerical` | Nocedal and Wright (2006). Numerical Optimization. *Springer*. | `crates/engine/src/metrics/coreperiphery/continuous.rs` |
 | `nurmi2024pymnet` | Nurmi et al. (2024). pymnet: A Python Library for Multilayer Networks. *Journal of Open Source Software*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md` |
 | `okabe2008color` | Okabe and Ito (2008). Color Universal Design (CUD): How to Make Figures and Presentations That Are Friendly to Colorblind People. *https://jfly.uni-koeln.de/color/*. | `r/R/utils-plot.R` |
@@ -303,7 +303,7 @@ cited by author and year in an R help page or a vignette instead.
 | `vanduijn2009framework` | van Duijn, Gile, and Handcock (2009). A Framework for the Comparison of Maximum Pseudo-Likelihood and Maximum Likelihood Estimation of Exponential Family Random Graph Models. *Social Networks*. |  |
 | `wang2013exponential` | Wang et al. (2013). Exponential Random Graph Models for Multilevel Networks. *Social Networks*. |  |
 | `ward1963hierarchical` | Ward (1963). Hierarchical Grouping to Optimize an Objective Function. *Journal of the American Statistical Association*. |  |
-| `wasserman1994social` | Wasserman and Faust (1994). Social Network Analysis: Methods and Applications. *Cambridge University Press*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `crates/engine/src/metrics/blockmodel.rs`, `crates/engine/src/metrics/closeness.rs`, and 8 more |
+| `wasserman1994social` | Wasserman and Faust (1994). Social Network Analysis: Methods and Applications. *Cambridge University Press*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `crates/engine/src/metrics/blockmodel.rs`, `crates/engine/src/metrics/closeness.rs`, and 9 more |
 | `wasserman1996logit` | Wasserman and Pattison (1996). Logit Models and Logistic Regressions for Social Networks: I. An Introduction to Markov Graphs and p^*. *Psychometrika*. |  |
 | `watts1998collective` | Watts and Strogatz (1998). Collective Dynamics of `Small-World' Networks. *Nature*. | `crates/engine/src/generate.rs`, `crates/engine/src/metrics/coreperiphery/small_world.rs`, `crates/engine/src/metrics/descriptive.rs` |
 | `white1976social` | White, Boorman, and Breiger (1976). Social structure from multiple networks. I. Blockmodels of roles and positions. *American Journal of Sociology*. | `crates/engine/src/metrics/blockmodel.rs` |

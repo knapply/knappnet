@@ -10,8 +10,8 @@ from columns of \code{x$nodes} and \code{x$edges}.
 }
 \usage{
 \method{plot}{net_frame}(x, layout = NULL, node_size = NULL, node_color = NULL,
-     node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
-     legend = TRUE, seed = NULL)
+     node_label = NULL, edge_width = NULL, edge_color = NULL,
+     edge_linetype = NULL, curved = NULL, ..., legend = TRUE, seed = NULL)
 }
 \arguments{
 \item{x}{A \code{\link{net_frame}}.}
@@ -32,6 +32,16 @@ vector in \code{\link{I}()} to use its values as they are (sizes as
 \code{cex} multipliers, widths as \code{lwd}, colors as R colors).
 \code{NULL} uses the defaults (see Details). \code{node_label = TRUE}
 labels nodes with their identifiers and \code{FALSE} draws no labels.}
+\item{edge_linetype}{Line types of edges: the name of a column of
+\code{x$edges} or a vector with one value per edge (at most six
+categories, mapped to solid, dashed, dotted, dot-dash, long dash, and
+two-dash, with a legend), a single line type for all, or a vector wrapped
+in \code{\link{I}()} of R line types. \code{NULL} draws negative ties of
+a signed network dashed and everything else solid.}
+\item{curved}{Whether edges are drawn as arcs: \code{NULL} (the default)
+curves only edges that share a pair of nodes (parallel edges, and the two
+directions of a reciprocated tie), so that each stays visible;
+\code{TRUE} curves every edge; \code{FALSE} draws straight lines.}
 \item{...}{Further arguments passed to \code{\link[graphics]{title}}, such
 as \code{main}.}
 \item{legend}{Whether to draw legends for mapped columns and vectors.}
@@ -43,12 +53,18 @@ Defaults:
 \itemize{
   \item Node size grows with degree (as area), and nodes are smaller in
     larger networks.
-  \item Nodes are a single blue with a white border, except in two-mode
-    networks (\code{\link{net_twomode}}), where each mode has its own color.
+  \item Nodes are a single blue with a white border, except in networks
+    with modes, where each mode has its own color; two-mode networks
+    (\code{\link{net_twomode}}) are laid out in two rows, one per mode.
   \item Nodes are labelled with their identifiers in networks of at most
     40 nodes.
-  \item Edges are gray and more transparent the more edges there are. In
-    directed networks, arrows end at the border of the target node.
+  \item Edges are gray and more transparent the more edges there are,
+    except that edges are coloured by relation in a multiplex network and
+    by layer in a multilayer network (with edges between layers in gray).
+    In directed networks, arrows end at the border of the target node.
+  \item Negative ties of a signed network are dashed, and unobserved
+    pairs (\code{edge_missing} in \code{\link{net_frame}}) are dotted and
+    light gray, whatever else is mapped.
   \item Edge width is constant, except in networks whose weights are
     strengths (\code{weight_type = "strength"} in \code{\link{net_frame}}),
     where it grows with the weight. Distance weights do not change the
@@ -71,8 +87,10 @@ or at the smallest size or width. Sizes and widths must be numeric.
 
 Legends are drawn in the right margin. Coordinates keep their aspect
 ratio, so distances in the plot are proportional to distances in the
-layout. Self-loops are not drawn, and parallel edges are drawn on top of
-each other.
+layout. Self-loops are drawn as small circles beside their node, and
+parallel edges as arcs (see \code{curved}). For one panel per layer,
+time window, or ego, see \code{\link{net_plot_layers}},
+\code{\link{net_plot_snapshots}}, and \code{\link{net_plot_egos}}.
 
 The plot is reproducible for a given \code{seed} (or after
 \code{\link{set.seed}}).
@@ -116,5 +134,16 @@ plot(g, layout = xy, node_size = I(c(3, 1, 1, 1, 1)))
 
 attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
                        event  = c("gala", "fair", "gala", "fair"))
-plot(net_twomode(attended), layout = "twomode")
+# Two modes in two rows.
+plot(net_twomode(attended, source = "person", target = "event"))
+
+# Line types from a column; parallel edges as arcs and a self-loop.
+m <- net_frame(data.frame(source = c("a", "a", "a", "b", "c"),
+                          target = c("b", "b", "a", "c", "a"),
+                          kind = c("call", "visit", "call", "call", "visit")))
+plot(m, edge_linetype = "kind", seed = 1)
+
+# Edges coloured by relation in a multiplex network.
+plot(net_example("noordin", relation = c("classmates", "kinship")), node_label = FALSE,
+     seed = 1)
 }

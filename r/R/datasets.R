@@ -7,7 +7,11 @@ example_names <- c("noordin", "noordin_affiliations", "jemaah_islamiyah", "karat
                    "workplace_contacts")
 
 # Example networks (man/net_example.Rd).
-net_example <- function(name = example_names, relation = NULL, weighted = FALSE) {
+net_example <- function(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
+                                 "karate", "florentine", "southern_women", "krackhardt",
+                                 "sampson", "highland_tribes", "les_miserables", "miles",
+                                 "country_borders", "workplace_contacts"),
+                        relation = NULL, weighted = FALSE) {
   name <- match.arg(name)
   weighted <- check_flag(weighted, "weighted")
   if (!is.null(relation) && !name %in% c("noordin", "krackhardt", "sampson")) {

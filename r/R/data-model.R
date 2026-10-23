@@ -233,6 +233,12 @@ net_ego_frame <- function(x, egos = NULL, order = 1L, mode = c("all", "out", "in
   edges <- do.call(rbind, edge_parts)
   rownames(nodes) <- NULL
   rownames(edges) <- NULL
+  # Egos are matched to node identifiers by value, so the ego column takes
+  # the type of the (now usually text) identifier column.
+  if (is.character(nodes[[x$roles$id]])) {
+    nodes[[ego_col]] <- as.character(nodes[[ego_col]])
+    edges[[ego_col]] <- as.character(edges[[ego_col]])
+  }
   if (anyDuplicated(nodes[[x$roles$id]])) {
     stop(sprintf(paste0("Combining ego and alter identifiers with `sep = \"%s\"` gives ",
                         "repeated identifiers; choose another `sep`."), sep), call. = FALSE)
