@@ -15,7 +15,7 @@ an organization, or with one choice changed, and get a record of exactly
 what was done. This guide maps the menus you know to knappnet functions
 and shows how to bring your files along. You do not have to leave those
 programs behind: read their files, compute in R, and write the results
-back for drawing in NetDraw, Pajek, or Gephi.
+back for drawing in NetDraw, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), or [Gephi](https://gephi.org/).
 
 If you are new to R, the [getting started vignette](knappnet.html)
 explains the basic idea: a network is two data frames, one row per node
@@ -29,11 +29,11 @@ library(knappnet)
 
 | Program | Format | Read | Write | Notes |
 |---|---|---|---|---|
-| UCINET | DL (`.dl`) | yes | yes | Full matrix, `edgelist1`, and `nodelist1` layouts, with labels. Two-mode and multi-matrix DL files are not yet supported. Export UCINET's own binary datasets (`.##h`) as DL first. |
-| ORA | DyNetML (`.xml`) | yes | yes | Meta-networks with node classes and several networks, and one meta-network per time period. |
-| Pajek | `.net` | yes | yes | `*Vertices`, `*Arcs`, `*Edges`, the list forms, and `*Matrix`; two-mode files get a `mode` column. |
-| Gephi | GEXF (`.gexf`), GraphML | yes | yes | Node and edge attributes keep their types. |
-| NetDraw, Cytoscape, yEd | GraphML, GML | yes | yes | |
+| [UCINET](https://sites.google.com/site/ucinetsoftware/home) | DL (`.dl`) | yes | yes | Full matrix, `edgelist1`, and `nodelist1` layouts, with labels. Two-mode and multi-matrix DL files are not yet supported. Export UCINET's own binary datasets (`.##h`) as DL first. |
+| [ORA](https://www.casos.cs.cmu.edu/projects/ora/) | DyNetML (`.xml`) | yes | yes | Meta-networks with node classes and several networks, and one meta-network per time period. |
+| [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) | `.net` | yes | yes | `*Vertices`, `*Arcs`, `*Edges`, the list forms, and `*Matrix`; two-mode files get a `mode` column. |
+| [Gephi](https://gephi.org/) | GEXF (`.gexf`), GraphML | yes | yes | Node and edge attributes keep their types. |
+| NetDraw, [Cytoscape](https://cytoscape.org/), [yEd](https://www.yworks.com/products/yed) | GraphML, GML | yes | yes | |
 
 The format comes from the file extension; `format =` overrides it.
 
@@ -72,7 +72,7 @@ cat(readLines(out), sep = "\n")
 
 ### ORA's DyNetML
 
-ORA's meta-networks hold several classes of nodes (agents, organizations,
+[ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s meta-networks hold several classes of nodes (agents, organizations,
 tasks, resources, ...) and several networks among them. In knappnet the
 whole meta-network is one netframe: node classes are the `class` and
 `type` columns of the node table, and networks are the `network` column of
@@ -133,7 +133,7 @@ otherwise vertex numbers are used. A file with `*Arcs` is directed.
 ### Gephi
 
 Compute in R, then draw in Gephi: node columns become node attributes in
-the GEXF file, ready for sizing and coloring in Gephi's Appearance panel.
+the GEXF file, ready for sizing and coloring in [Gephi](https://gephi.org/)'s Appearance panel.
 
 ```{r}
 team$nodes$betweenness <- betweenness(team)
@@ -145,7 +145,7 @@ read_network(gexf)$nodes
 
 ## UCINET menus
 
-Menu paths are those of UCINET 6 as given by Hanneman and Riddle (2005);
+Menu paths are those of [UCINET](https://sites.google.com/site/ucinetsoftware/home) 6 as given by Hanneman and Riddle (2005);
 later releases have moved a few items.
 
 | UCINET | knappnet |
@@ -172,9 +172,9 @@ Bonacich power centrality are coming soon.
 
 ## Reproducing UCINET's numbers
 
-UCINET reads every network as an adjacency matrix and makes its own
+[UCINET](https://sites.google.com/site/ucinetsoftware/home) reads every network as an adjacency matrix and makes its own
 choices about normalization and unreachable nodes. `convention = "ucinet"`
-applies those choices; without it, results follow igraph.
+applies those choices; without it, results follow [igraph](https://r.igraph.org/).
 
 **Closeness.** By default UCINET counts a missing distance as one more
 than the longest observed one. In this network `a`, `b`, and `c` form a
@@ -214,7 +214,7 @@ head(round(ucinet_style, 3))
 ```
 
 **Centralization maxima.** UCINET's theoretical maxima for degree
-centralization are those of sna, not igraph's default. On a star, UCINET
+centralization are those of [sna](https://cran.r-project.org/package=sna), not igraph's default. On a star, UCINET
 and sna give 1, igraph 0.667:
 
 ```{r}
@@ -252,7 +252,7 @@ files produced by UCINET will be added. The full table is in the
 
 ## Pajek
 
-Pajek organizes results as partitions (a class for each node) and vectors
+[Pajek](http://mrvar.fdv.uni-lj.si/pajek/) organizes results as partitions (a class for each node) and vectors
 (a number for each node). In knappnet both are vectors aligned with the
 node table.
 
@@ -271,7 +271,7 @@ own authors, and counts the sixteen types in the standard order.
 
 ## ORA
 
-ORA's reports compute measures across a meta-network. In knappnet, select
+[ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s reports compute measures across a meta-network. In knappnet, select
 the network and node class you want, as in the DyNetML example above, and
 apply the functions in the [reference index](../reference/index.html):
 `degree()`, `betweenness()`, `closeness()`, `eigenvector_centrality()`,
@@ -281,7 +281,7 @@ measure's help page for its conventions before matching numbers.
 
 ## Gephi
 
-| Gephi statistic | knappnet |
+| [Gephi](https://gephi.org/) statistic | knappnet |
 |---|---|
 | Average Degree | `mean(degree(g))` |
 | Avg. Weighted Degree | `mean(strength(g))` |

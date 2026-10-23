@@ -9,7 +9,7 @@ description: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-If you use igraph, you already know most of knappnet. Defaults follow
+If you use [igraph](https://r.igraph.org/), you already know most of knappnet. Defaults follow
 igraph wherever tools disagree, results agree with igraph's to within
 floating-point rounding (the [validation suite](validation.html) checks
 this on every change), and networks convert in both directions without
@@ -31,7 +31,7 @@ library(knappnet)
 
 ## Converting
 
-`as_netframe()` reads an igraph object (or a tidygraph `tbl_graph`), and
+`as_netframe()` reads an [igraph](https://r.igraph.org/) object (or a [tidygraph](https://tidygraph.data-imaginist.com/) `tbl_graph`), and
 `to_igraph()` converts back. Vertex names become node identifiers, other
 vertex and edge attributes become columns, and an edge attribute called
 `weight` becomes the network's weight column, read as distances for
@@ -48,14 +48,14 @@ head(karate$edges)
 
 ## Function map
 
-| igraph | knappnet | Notes |
+| [igraph](https://r.igraph.org/) | knappnet | Notes |
 |---|---|---|
 | `graph_from_data_frame(d, directed, vertices)` | `netframe(edges, nodes, directed)` | Both default to directed. Isolates need a row in `nodes`. |
 | `graph_from_adjacency_matrix()` | `as_netframe(m)` | Direction is inferred from symmetry unless `directed` is given; values other than 0 and 1 become weights. |
 | `as_adjacency_matrix(g, attr, sparse)` | `as.matrix(g, attr, sparse)` | knappnet returns a dense matrix unless `sparse = TRUE`. |
 | `vcount(g)`, `ecount(g)`, `is_directed(g)` | `nrow(g$nodes)`, `nrow(g$edges)`, `g$directed` | |
 | `V(g)$x`, `E(g)$x` | `g$nodes$x`, `g$edges$x` | |
-| `read_graph()`, `write_graph()` | `read_network()`, `write_network()` | GraphML, GEXF, GML, Pajek, UCINET DL, JSON, DyNetML, CSV; DOT for writing. |
+| `read_graph()`, `write_graph()` | `read_network()`, `write_network()` | GraphML, GEXF, GML, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, JSON, DyNetML, CSV; DOT for writing. |
 | `degree(g, mode, loops)` | `degree(g, mode, loops)` | Same conventions. For `normalized = TRUE`, divide by `nrow(g$nodes) - 1`. |
 | `strength(g, mode, loops)` | `strength(g, mode, loops)` | |
 | `betweenness(g, weights, normalized)` | `betweenness(g, weighted, normalized)` | `weights = NA` is `weighted = FALSE`. igraph returns `NaN` when normalizing with fewer than three nodes; knappnet returns 0. |
@@ -82,7 +82,7 @@ networks, two-mode networks, and layouts are coming soon.
 
 ### Weights
 
-As in igraph, a weighted network uses its weights by default and reads
+As in [igraph](https://r.igraph.org/), a weighted network uses its weights by default and reads
 them as distances in path-based measures; `weighted = FALSE` ignores them
 (igraph's `weights = NA`). Unlike igraph, the meaning of the weights is a
 property of the network: declare `weight_type = "strength"` in
@@ -91,14 +91,14 @@ where igraph needs `weights = 1 / E(g)$weight` in every call.
 
 ### The `convention` argument
 
-Without it, results follow igraph. `convention = "networkx"`, `"sna"`, or
+Without it, results follow [igraph](https://r.igraph.org/). `convention = "networkx"`, `"sna"`, or
 `"ucinet"` reproduces those tools instead, on degree, betweenness,
 closeness, harmonic and eigenvector centrality, density, and
 centralization. See the [conventions guide](conventions.html).
 
 ## A worked example
 
-Here is a typical igraph analysis of Zachary's karate club:
+Here is a typical [igraph](https://r.igraph.org/) analysis of Zachary's karate club:
 
 ```{r}
 ig_scores <- data.frame(

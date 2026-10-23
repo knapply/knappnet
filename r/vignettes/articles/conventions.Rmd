@@ -41,7 +41,7 @@ library(knappnet)
 n is the number of nodes, r the number of other nodes a node reaches, and
 S the sum of its shortest-path lengths to them.
 
-| | igraph (default) | NetworkX | sna | UCINET |
+| | [igraph](https://r.igraph.org/) (default) | [NetworkX](https://networkx.org/) | [sna](https://cran.r-project.org/package=sna) | [UCINET](https://sites.google.com/site/ucinetsoftware/home) |
 |---|---|---|---|---|
 | Ties | every edge | every edge | adjacency matrix: parallel edges collapse, diagonal ignored | as sna |
 | Parallel edges on shortest paths | distinct paths | one path (the shortest edge) | one path | one path |
@@ -66,9 +66,9 @@ The rest of this article shows each row on a small network.
 
 ## Ties: edges or an adjacency matrix
 
-sna and UCINET store a network as an adjacency matrix. Two recorded ties
+[sna](https://cran.r-project.org/package=sna) and [UCINET](https://sites.google.com/site/ucinetsoftware/home) store a network as an adjacency matrix. Two recorded ties
 between the same people become one cell, and a self-loop is a diagonal
-cell they ignore. igraph and NetworkX count every edge:
+cell they ignore. [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) count every edge:
 
 ```{r}
 multi <- netframe(data.frame(from = c("a", "a", "b", "c"),
@@ -97,18 +97,18 @@ data.frame(node     = paths$nodes$name,
            sna      = round(betweenness(paths, convention = "sna"), 3))
 ```
 
-igraph counts each parallel edge as a separate shortest path, so of the
-three shortest paths from `a` to `c`, two pass through `b`. NetworkX, sna,
-and UCINET see one tie between `a` and `b`, so the two routes count
+[igraph](https://r.igraph.org/) counts each parallel edge as a separate shortest path, so of the
+three shortest paths from `a` to `c`, two pass through `b`. [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna),
+and [UCINET](https://sites.google.com/site/ucinetsoftware/home) see one tie between `a` and `b`, so the two routes count
 equally. With weights, NetworkX keeps the shortest of the parallel edges;
 sna and UCINET do not use weights for betweenness.
 
 ## Normalization
 
 Normalized scores divide by the largest value possible in a network of
-the same size. igraph, NetworkX, and UCINET agree on the divisors for
+the same size. [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) agree on the divisors for
 degree and betweenness; UCINET reports some of them as percentages, which
-knappnet never does, so multiply by 100 to compare. sna has no
+knappnet never does, so multiply by 100 to compare. [sna](https://cran.r-project.org/package=sna) has no
 normalization for these measures (its `rescale` divides by the sum
 instead).
 
@@ -140,13 +140,13 @@ data.frame(
 )
 ```
 
-- **igraph** counts only the nodes each node can reach, so `d` and `e`,
+- **[igraph](https://r.igraph.org/)** counts only the nodes each node can reach, so `d` and `e`,
   one step from everyone they can reach, look perfectly central.
-- **NetworkX** multiplies by the share of the network reached, r / (n - 1)
+- **[NetworkX](https://networkx.org/)** multiplies by the share of the network reached, r / (n - 1)
   (Wasserman and Faust 1994, p. 201), which pulls `d` and `e` down.
-- **sna** gives 0 to any node that cannot reach every other, which here is
+- **[sna](https://cran.r-project.org/package=sna)** gives 0 to any node that cannot reach every other, which here is
   everyone.
-- **UCINET** replaces each missing distance with one more than the longest
+- **[UCINET](https://sites.google.com/site/ucinetsoftware/home)** replaces each missing distance with one more than the longest
   observed distance, by default.
 
 None is wrong; they answer slightly different questions. Harmonic
@@ -166,7 +166,7 @@ others distances *from* it; `mode` overrides the convention's choice.
 
 ## Eigenvector centrality: scale and direction
 
-igraph scales scores so the largest is 1; NetworkX, sna, and UCINET scale
+[igraph](https://r.igraph.org/) scales scores so the largest is 1; [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) scale
 them to unit length. In directed networks, igraph (with `directed = TRUE`)
 and NetworkX score a node by who points to it, sna by whom it points to,
 and UCINET symmetrizes the network first:
@@ -198,8 +198,8 @@ eigenvector_centrality(split, convention = "networkx")
 
 Freeman centralization divides the spread of scores by the largest spread
 possible in a network of the same size, which a star attains. For degree,
-igraph's theoretical maximum by default allows for self-loops, so even a
-perfect star without loops scores below 1; sna's and UCINET's do not:
+[igraph](https://r.igraph.org/)'s theoretical maximum by default allows for self-loops, so even a
+perfect star without loops scores below 1; [sna](https://cran.r-project.org/package=sna)'s and [UCINET](https://sites.google.com/site/ucinetsoftware/home)'s do not:
 
 ```{r}
 star <- netframe(data.frame(from = "hub", to = c("a", "b", "c", "d", "e")),
@@ -210,13 +210,13 @@ c(igraph          = centralization(star, "degree"),
   ucinet          = centralization(star, "degree", convention = "ucinet"))
 ```
 
-`?centralization` lists every maximum. NetworkX has no centralization
+`?centralization` lists every maximum. [NetworkX](https://networkx.org/) has no centralization
 index, so `convention = "networkx"` is an error there.
 
 ## Density
 
 With every edge counted, parallel edges and loops can push density above
-1, as in igraph and NetworkX. sna and UCINET count each pair once:
+1, as in [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/). [sna](https://cran.r-project.org/package=sna) and [UCINET](https://sites.google.com/site/ucinetsoftware/home) count each pair once:
 
 ```{r}
 c(igraph = graph_density(multi), sna = graph_density(multi, convention = "sna"))
@@ -227,7 +227,7 @@ c(igraph = graph_density(multi), sna = graph_density(multi, convention = "sna"))
 Measures where tools agree, or where knappnet follows one tool and the
 others are not comparable, take no `convention` argument. Their help pages
 state every choice: for example, `coreness()` counts parallel edges and
-loops as igraph does (NetworkX refuses multigraphs), `constraint()` ignores
+loops as [igraph](https://r.igraph.org/) does ([NetworkX](https://networkx.org/) refuses multigraphs), `constraint()` ignores
 self-loops (NetworkX counts them), and `triad_census()` counts parallel
 edges once (igraph's census does not support them). The validation
 manifest records each of these differences with its reason; see

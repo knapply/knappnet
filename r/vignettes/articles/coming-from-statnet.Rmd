@@ -10,11 +10,11 @@ description: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-sna works on adjacency matrices (or `network` objects, which it turns into
+[sna](https://cran.r-project.org/package=sna) works on adjacency matrices (or `network` objects, which it turns into
 matrices), and its results follow from that: parallel edges collapse into
 one tie, the diagonal is ignored by default, and a node's score is the
 row of a matrix computation. knappnet works on a node table and an edge
-table, and by default follows igraph's conventions, which differ from
+table, and by default follows [igraph](https://r.igraph.org/)'s conventions, which differ from
 sna's in a few places. One argument, `convention = "sna"`, reproduces
 sna's choices exactly, and the QAP functions follow sna's conventions for
 dyads, missing values, and p-values.
@@ -63,7 +63,7 @@ the Pucci family has no marriage ties in the data and is an isolate.
 
 ## Function map
 
-`gmode = "graph"` in sna corresponds to `directed = FALSE` on the
+`gmode = "graph"` in [sna](https://cran.r-project.org/package=sna) corresponds to `directed = FALSE` on the
 netframe; the network itself says whether it is directed, so knappnet
 functions have no `gmode`.
 
@@ -81,7 +81,7 @@ functions have no `gmode`.
 | `closeness(m, cmode = "suminvdir" / "suminvundir")` | `harmonic_centrality(g, convention = "sna")` | Divided by n - 1. |
 | `evcent(m, gmode)` | `eigenvector_centrality(g, convention = "sna")` | Unit Euclidean norm; out-ties in directed networks. |
 | `gden(m, diag = FALSE)` | `graph_density(g, convention = "sna")` | |
-| `centralization(m, degree)`, `betweenness`, `closeness` | `centralization(g, measure, convention = "sna")` | sna's theoretical maxima, which differ from igraph's for degree. |
+| `centralization(m, degree)`, `betweenness`, `closeness` | `centralization(g, measure, convention = "sna")` | sna's theoretical maxima, which differ from [igraph](https://r.igraph.org/)'s for degree. |
 | `components(m, connected)`, `component.dist()` | `components(g, mode)`, `fragmentation(g, mode)` | sna defaults to strong components (`connected = "strong"`); knappnet to weak. |
 | `kcores(m)` | `coreness(g)` | |
 | `clique.census(m)` | `max_cliques(g)`, `clique_number(g)` | knappnet lists the maximal cliques themselves. |
@@ -105,9 +105,9 @@ On a simple network (no loops, no parallel edges) that is connected,
 most measures agree whichever convention is used. They part ways in three
 situations.
 
-**Loops and parallel edges.** sna reads an adjacency matrix, so two
+**Loops and parallel edges.** [sna](https://cran.r-project.org/package=sna) reads an adjacency matrix, so two
 recorded ties between the same pair are one tie, and a self-loop is a
-diagonal cell it ignores. igraph, NetworkX, and knappnet's default count
+diagonal cell it ignores. [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), and knappnet's default count
 every edge:
 
 ```{r}
@@ -166,7 +166,7 @@ sapply(names(sna_scores), function(v) {
 })
 ```
 
-Brokerage counts match sna's `raw.nli`, column for column. Here the
+Brokerage counts match [sna](https://cran.r-project.org/package=sna)'s `raw.nli`, column for column. Here the
 families are split into two arbitrary groups:
 
 ```{r}
@@ -211,7 +211,7 @@ X <- as.matrix(friends)
 ```
 
 `qap_cor()` and `mrqap()` accept netframes, matrices, or a mix. The
-statistics themselves are identical to sna's:
+statistics themselves are identical to [sna](https://cran.r-project.org/package=sna)'s:
 
 ```{r}
 test <- qap_cor(advice, friends, exact = TRUE)

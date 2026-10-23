@@ -17,10 +17,10 @@ conventions, and the validation suite described here. Until then, this
 guide is for Python users working in R, and a preview of what the Python
 package will look like.
 
-NetworkX is one of the reference tools every knappnet measure is checked
+[NetworkX](https://networkx.org/) is one of the reference tools every knappnet measure is checked
 against (see [validation](validation.html)), and `convention = "networkx"`
 reproduces its choices where they differ from the default, which follows
-igraph.
+[igraph](https://r.igraph.org/).
 
 ```{r}
 library(knappnet)
@@ -28,7 +28,7 @@ library(knappnet)
 
 ## The data model
 
-In NetworkX a graph is a dictionary of dictionaries, and attributes live on
+In [NetworkX](https://networkx.org/) a graph is a dictionary of dictionaries, and attributes live on
 nodes and edges as key-value pairs. In knappnet a network is two data
 frames, which is what `nx.from_pandas_edgelist()` and
 `nx.to_pandas_edgelist()` already move between:
@@ -67,7 +67,7 @@ Two more differences matter:
 
 ## Function map
 
-| NetworkX | knappnet | Notes |
+| [NetworkX](https://networkx.org/) | knappnet | Notes |
 |---|---|---|
 | `nx.Graph()`, `nx.DiGraph()`, `nx.MultiGraph()` | `netframe(edges, nodes, directed)` | |
 | `nx.from_pandas_edgelist(df)` | `netframe(df)` | Endpoints are the first two columns unless `from`, `to` name others. |
@@ -86,7 +86,7 @@ Two more differences matter:
 | `nx.density(G)` | `graph_density(g, convention = "networkx")` | Differs from the default only for a single node. |
 | `nx.connected_components(G)` | `components(g)$membership` | A membership vector instead of a list of sets. |
 | `nx.weakly_connected_components()`, `strongly_connected_components()` | `components(g, mode = "weak" / "strong")` | |
-| `nx.core_number(G)` | `coreness(g)` | NetworkX rejects loops and multigraphs; knappnet counts them as igraph does. |
+| `nx.core_number(G)` | `coreness(g)` | NetworkX rejects loops and multigraphs; knappnet counts them as [igraph](https://r.igraph.org/) does. |
 | `nx.find_cliques(G)` | `max_cliques(g)` | |
 | `max(len(c) for c in nx.find_cliques(G))` | `clique_number(g)` | |
 | `nx.community.louvain_communities(G, seed=)` | `cluster_louvain(g, seed = )` | A membership vector with a `modularity` attribute. Partitions differ between implementations; modularity is comparable. |
@@ -103,7 +103,7 @@ PageRank, Katz centrality, assortativity, ego networks, bipartite
 
 ## Reproducing NetworkX's numbers
 
-**Closeness on disconnected networks.** NetworkX scales closeness by the
+**Closeness on disconnected networks.** [NetworkX](https://networkx.org/) scales closeness by the
 share of the network a node reaches (Wasserman and Faust 1994, p. 201), so
 a node in a small component is not mistaken for a central one:
 
@@ -116,7 +116,7 @@ data.frame(node     = split$nodes$name,
 ```
 
 **Parallel edges in betweenness.** NetworkX walks neighbor sets, so two
-parallel edges are one route; igraph and knappnet's default count each
+parallel edges are one route; [igraph](https://r.igraph.org/) and knappnet's default count each
 edge as a distinct shortest path. In this network `a` and `b` are joined
 twice:
 
