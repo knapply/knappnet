@@ -1,84 +1,4 @@
-#' Create a network from node and edge data frames
-#'
-#' A network is a pair of data frames: `nodes`, with one row per node, and
-#' `edges`, with one row per edge. Any other columns are attributes and are
-#' carried along untouched. Column roles say which columns hold node
-#' identifiers, edge endpoints, and (optionally) edge weights.
-#'
-#' @param edges A data frame of edges.
-#' @param nodes A data frame of nodes, or `NULL` to derive the node set from
-#'   the edge endpoints in order of first appearance.
-#' @param directed Whether edges are directed: `TRUE` or `FALSE`.
-#' @param from,to Columns of `edges` holding the endpoints, by name or
-#'   position.
-#' @param id Column of `nodes` holding node identifiers, by name or position.
-#' @param weight Optional column of `edges` holding edge weights. Without
-#'   one, the network is binary: an edge either exists or it does not, and
-#'   algorithms use their faster unweighted forms.
-#' @param weight_type What the weights mean. `"distance"` (the default, and
-#'   the convention of igraph and NetworkX) means larger weights keep nodes
-#'   farther apart, as with travel time, cost, or latency. `"strength"` means
-#'   larger weights bring nodes closer, as with contact frequency or tie
-#'   intensity; path-based measures then use 1/weight as the length (Newman
-#'   2001; Opsahl, Agneessens, and Skvoretz 2010). Measures that add up
-#'   weights, such as strength, use them as given either way.
-#' @param graph A named list of network-level attributes (for example a
-#'   title or data source), carried through conversions and file formats
-#'   that support them.
-#'
-#' @section Missing values and invalid input:
-#' * Edge endpoints and node identifiers must not be missing (`NA`) or empty
-#'   strings; the error names the rows. Identifiers may be character,
-#'   factor (matched by their labels), integer, double, or logical, or a
-#'   classed vector such as `Date`; `integer64` identifiers (bit64) are
-#'   matched as text. Without `nodes`, classed `from` and `to` columns must
-#'   have the same class.
-#' * Node identifiers must be unique, and every endpoint must appear in
-#'   `nodes`.
-#' * Networks without edges, and isolated nodes, are allowed.
-#' * Self-loops and parallel edges are allowed and kept, and `print()`
-#'   reports how many there are. Each measure documents how it counts them;
-#'   `convention` selects the treatment of other tools.
-#' * Weights must be numeric. Missing, `NaN`, and infinite weights are
-#'   accepted here, so the data can still be stored, converted, and
-#'   written to files, and `print()` reports them; but every measure stops
-#'   with an error naming the rows, even measures that ignore weights,
-#'   until they are removed or replaced. Zero and negative weights are
-#'   accepted and checked by each measure that uses weights: path-based
-#'   measures (betweenness, closeness, harmonic centrality) and structural
-#'   holes need them strictly positive; modularity, Louvain, and
-#'   eigenvector centrality need them non-negative; strength, structural
-#'   equivalence, and CONCOR take any finite value. Errors name the row of
-#'   `x$edges` that holds the offending weight.
-#' * Arguments are checked before any computation: `x` must be a netframe,
-#'   logical options `TRUE` or `FALSE`, `threads` a non-negative whole
-#'   number, and choices one of the listed values. Errors name the argument.
-#' * The edge index is computed once, here. Add columns to `x$nodes` and
-#'   `x$edges` freely, but to add, remove, or reorder rows build a new
-#'   netframe. Measures stop when the number of edges has changed or an
-#'   edge points past the last node; other changes to rows, such as
-#'   reordering, cannot be detected and would misalign results.
-#'
-#' @section Spatial tables:
-#' `nodes` and `edges` may be sf data frames (simple features). Their
-#' geometry columns stay in place and are recorded in `x$roles`
-#' (`node_geometry`, `edge_geometry`, `crs`); both tables must then have
-#' the same coordinate reference system. Connectivity still comes from
-#' `from` and `to`, never from the geometry. See [to_sf()] for what the
-#' geometries are used for.
-#'
-#' @section Threads:
-#' Measures that run in parallel take `threads`. `0` (the default) uses all
-#' available cores, except that only 2 are used when the environment
-#' variable `_R_CHECK_LIMIT_CORES_` is set (as it is by
-#' `R CMD check --as-cran`), and at most `OMP_THREAD_LIMIT` when that is
-#' set. Results are reproducible for a given number of threads: integer
-#' results never depend on it, and floating-point results can differ in
-#' the last bits between thread counts. Computations run in compiled code
-#' and cannot be interrupted until they return.
-#'
-#' @return An object of class `netframe`.
-#' @export
+# Create a network from node and edge data frames (man/netframe.Rd).
 netframe <- function(edges, nodes = NULL, directed = TRUE,
                      from = 1L, to = 2L, id = 1L, weight = NULL,
                      weight_type = c("distance", "strength"), graph = list()) {
@@ -167,7 +87,7 @@ netframe <- function(edges, nodes = NULL, directed = TRUE,
   record_geometry(out)
 }
 
-#' @export
+# See man/netframe.Rd.
 print.netframe <- function(x, ...) {
   cat(sprintf(
     "<netframe> %s network with %d nodes and %d edges%s\n",

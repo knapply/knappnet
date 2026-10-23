@@ -1,40 +1,4 @@
-#' Timeline of contacts in a temporal network
-#'
-#' Draws when each pair of nodes (or each node) is in contact: one row per
-#' pair, with a tick for every instantaneous contact and a bar for every
-#' interval contact, the raw-data view of a contact sequence (Holme and
-#' Saramäki 2012, Fig. 1).
-#'
-#' @param x A temporal network ([temporal_network()]).
-#' @param by `"pair"` for one row per pair of nodes (ordered pairs in a
-#'   directed network) or `"node"` for one row per node, on which every
-#'   contact of the node appears.
-#' @param max_rows How many rows to draw at most: the pairs or nodes with
-#'   the most contacts are kept and the rest are counted in the subtitle.
-#' @param ... Further arguments passed to [graphics::plot()], such as
-#'   `main` or `xlab`.
-#'
-#' @details
-#' Rows are sorted by number of contacts, the most active at the top. The
-#' time axis is labelled in the type of the network's times (numbers,
-#' dates, or date-times). Interval contacts are drawn from their start to
-#' their end; an instantaneous contact is a tick at its time.
-#'
-#' @references
-#' Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
-#' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
-#'
-#' @return A data frame of the rows drawn, from the top, invisibly: `row`
-#'   (the pair or node label) and `contacts`.
-#' @seealso [temporal_network()], [plot_rolling()], [burstiness()].
-#' @examples
-#' calls <- data.frame(from = c("a", "a", "b", "c", "a", "b"),
-#'                     to   = c("b", "c", "c", "d", "b", "c"),
-#'                     time = c(1, 2, 2, 5, 7, 9), end = c(3, 2, 4, 6, 7, 10))
-#' g <- temporal_network(calls, end = "end", directed = FALSE)
-#' plot_timeline(g)
-#' plot_timeline(g, by = "node", main = "Contacts per node")
-#' @export
+# Timeline of contacts in a temporal network (man/plot_timeline.Rd).
 plot_timeline <- function(x, by = c("pair", "node"), max_rows = 50, ...) {
   check_temporal(x)
   by <- match.arg(by)
@@ -109,36 +73,7 @@ time_axis <- function(x, rng) {
   graphics::axis(1, at = at, labels = labels, cex.axis = 0.8)
 }
 
-#' Plot a measure over time
-#'
-#' Draws the result of [rolling()], a measure computed on every window of a
-#' temporal network, as lines over time: one line for a network-level
-#' measure, or one per node for a node-level measure.
-#'
-#' @param x A data frame from [rolling()], with columns `start`, `end`,
-#'   `node`, and `value`.
-#' @param nodes For node-level results, the identifiers of the nodes to
-#'   draw. `NULL` draws the `top` nodes by mean value.
-#' @param top How many nodes to draw when `nodes` is `NULL`.
-#' @param ... Further arguments passed to [graphics::plot()], such as
-#'   `main` or `ylab`.
-#'
-#' @details
-#' Each value is drawn at the start of its window. Windows where a node's
-#' value is undefined (`NaN`) leave a gap in its line. The time axis uses
-#' the type of the window times (numbers, dates, or date-times).
-#'
-#' @return `x`, invisibly.
-#' @seealso [rolling()], [snapshots()], [plot_timeline()].
-#' @examples
-#' logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3", "u1"),
-#'                      host = c("h1", "h1", "h2", "h2", "h3", "h1", "h1"),
-#'                      time = c(0, 1, 5, 6, 12, 13, 14))
-#' g <- temporal_network(logins)
-#' plot_rolling(rolling(g, degree, width = 5, step = 2), main = "Degree over time")
-#' plot_rolling(rolling(g, function(w) nrow(w$edges), width = 5, step = 2),
-#'              ylab = "contacts in window")
-#' @export
+# Plot a measure over time (man/plot_rolling.Rd).
 plot_rolling <- function(x, nodes = NULL, top = 8, ...) {
   if (!is.data.frame(x) || !all(c("start", "end", "node", "value") %in% names(x))) {
     stop("`x` must be the data frame returned by rolling().", call. = FALSE)

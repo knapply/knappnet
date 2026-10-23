@@ -1,92 +1,4 @@
-#' Two-mode networks
-#'
-#' A two-mode (bipartite, affiliation) network has two sets of nodes, such
-#' as people and the events they attend, or people and the organizations
-#' they belong to, with ties only between the sets. `twomode()` creates
-#' one from data frames, `as_twomode()` converts a netframe, an igraph or
-#' network object, an incidence matrix, or a network read from a file, and
-#' `is_twomode()` tests for one. `incidence_matrix()` returns the
-#' rectangular matrix with one row per node of the first mode and one
-#' column per node of the second.
-#'
-#' A two-mode network is a [netframe()] whose node table has a logical
-#' column, recorded as the node type role (`x$roles$type`): `FALSE` for the
-#' first mode and `TRUE` for the second, igraph's convention. Every edge
-#' must join the two modes; edges within a mode are an error.
-#'
-#' The type may be given as a logical column, or as a column with exactly
-#' two distinct values (for example `"person"` and `"event"`, the two node
-#' classes of a DyNetML file, or the 1 and 2 of a bipartite network from
-#' the network package). `first` names the value of the first mode; by
-#' default it is the first factor level, or the smallest value (text is
-#' compared byte by byte, so the choice does not depend on the locale). A logical
-#' column is then added: it is called `type` (so that [to_igraph()] gives
-#' igraph's bipartite functions the `type` attribute they look for) unless
-#' the node table already has a column with that name, in which case it is
-#' called `is_` followed by the second mode's value. The original column
-#' is kept, and the two values are recorded in `x$roles$type_labels`.
-#'
-#' Without a node table, `twomode()` takes the first mode from the `from`
-#' column of the edges and the second from the `to` column, so a list of
-#' (person, event) pairs is all it needs. A value appearing in both
-#' columns is an error.
-#'
-#' `as_twomode()` finds the type column itself when `type` is `NULL`: a
-#' logical `type` column, else a `class` column with exactly two values (as
-#' [read_network()] gives for a DyNetML file with two node classes), else a
-#' two-valued `type` or `mode` column. A matrix (or sparse `Matrix`) is read
-#' as an incidence matrix: rows are the first mode and columns the second,
-#' with identifiers from the row and column names (`r1`, `r2`, ... and
-#' `c1`, `c2`, ... if there are none); values other than 0 and 1 become
-#' edge weights unless `weighted = FALSE`. A data frame is passed to
-#' `twomode()`.
-#'
-#' Two-mode measures ([project()], [twomode_degree()] and its relatives)
-#' read the network as an affiliation matrix and ignore the direction of
-#' edges, so `twomode()` creates undirected networks by default.
-#'
-#' @inheritParams netframe
-#' @param type For `twomode()` and `as_twomode()`, the node column holding
-#'   the type, by name. When `twomode()` builds the node table itself, this
-#'   is the name of the logical column it creates.
-#' @param first The value of `type` that marks the first mode; see Details.
-#' @param x For `as_twomode()`, the object to convert; for the other
-#'   functions, a two-mode [netframe()].
-#' @param weighted For matrices, whether values are edge weights. `NULL`
-#'   treats any value other than 0 and 1 as a weight.
-#' @param attr For `incidence_matrix()`, an edge column whose values fill
-#'   the matrix; `NULL` counts edges.
-#' @param sparse For `incidence_matrix()`, whether to return a sparse
-#'   `Matrix`.
-#'
-#' @references
-#' Breiger, R. L. (1974). The duality of persons and groups. *Social
-#' Forces*, 53(2), 181-190. \doi{10.2307/2576011}
-#'
-#' Borgatti, S. P., & Everett, M. G. (1997). Network analysis of 2-mode
-#' data. *Social Networks*, 19(3), 243-269.
-#' \doi{10.1016/S0378-8733(96)00301-2}
-#'
-#' Borgatti, S. P., & Halgin, D. S. (2011). Analyzing affiliation networks.
-#' In J. Scott & P. J. Carrington (Eds.), *The SAGE Handbook of Social
-#' Network Analysis* (pp. 417-433). SAGE. \doi{10.4135/9781446294413.n28}
-#'
-#' @return `twomode()` and `as_twomode()` return a [netframe()] with a node
-#'   type role. `is_twomode()` returns `TRUE` or `FALSE`.
-#'   `incidence_matrix()` returns a matrix with first-mode nodes as rows and
-#'   second-mode nodes as columns; parallel edges add up.
-#'
-#' @examples
-#' attended <- data.frame(
-#'   person = c("ann", "ann", "bob", "bob", "cat", "dan"),
-#'   event  = c("gala", "fair", "gala", "show", "show", "fair")
-#' )
-#' g <- twomode(attended)
-#' g
-#' g$nodes
-#' incidence_matrix(g)
-#' is_twomode(g)
-#' @export
+# Two-mode networks (man/twomode.Rd).
 twomode <- function(edges, nodes = NULL, type = "type", first = NULL, directed = FALSE,
                     from = 1L, to = 2L, id = 1L, weight = NULL,
                     weight_type = c("distance", "strength"), graph = list()) {
@@ -127,8 +39,7 @@ twomode <- function(edges, nodes = NULL, type = "type", first = NULL, directed =
   set_twomode(x, type, first)
 }
 
-#' @rdname twomode
-#' @export
+# See man/twomode.Rd.
 as_twomode <- function(x, type = NULL, first = NULL, weighted = NULL) {
   if (is.matrix(x) || (isS4(x) && methods::is(x, "Matrix"))) {
     return(incidence_to_twomode(x, weighted))
@@ -144,16 +55,14 @@ as_twomode <- function(x, type = NULL, first = NULL, weighted = NULL) {
   set_twomode(x, type, first)
 }
 
-#' @rdname twomode
-#' @export
+# See man/twomode.Rd.
 is_twomode <- function(x) {
   if (!inherits(x, "netframe") || is.null(x$roles$type)) return(FALSE)
   v <- x$nodes[[x$roles$type]]
   is.logical(v) && !anyNA(v)
 }
 
-#' @rdname twomode
-#' @export
+# See man/twomode.Rd.
 incidence_matrix <- function(x, attr = NULL, sparse = FALSE) {
   check_twomode(x)
   second <- x$nodes[[x$roles$type]]
@@ -169,76 +78,7 @@ incidence_matrix <- function(x, attr = NULL, sparse = FALSE) {
   }
 }
 
-#' One-mode projections of a two-mode network
-#'
-#' Joins two nodes of the same mode when they share a partner in the other
-#' mode: two people who attended the same event, or two events with a
-#' common participant (Breiger 1974). `which = "both"` returns both
-#' projections, the dual-projection view of Everett and Borgatti (2013).
-#'
-#' Tie weights, chosen by `method`, are
-#' \describe{
-#'   \item{`"count"`}{the number of shared partners, the off-diagonal of
-#'     \eqn{BB^T} for the binary incidence matrix \eqn{B}. This is igraph's
-#'     `bipartite_projection(multiplicity = TRUE)` and NetworkX's
-#'     `weighted_projected_graph()`.}
-#'   \item{`"newman"`}{Newman's (2001) collaboration weight
-#'     \eqn{\sum_e 1/(d_e - 1)} over shared partners \eqn{e}, where
-#'     \eqn{d_e} is the number of partners of \eqn{e}, so that a large event
-#'     ties each pair of its participants more weakly. This is NetworkX's
-#'     `collaboration_weighted_projected_graph()`.}
-#'   \item{`"product"`}{\eqn{\sum_e w_{ie} w_{je}} over shared partners,
-#'     the off-diagonal of \eqn{WW^T} for the valued incidence matrix
-#'     \eqn{W} (see [incidence_matrix()]). It needs edge weights, which are
-#'     used as given whatever the network's `weight_type`.}
-#' }
-#' For `"count"` and `"newman"` parallel edges count once (shared partners
-#' are distinct partners); for `"product"` their weights add up, as in
-#' [incidence_matrix()]. Direction is ignored.
-#'
-#' With `loops = TRUE` the diagonal is kept as self-loops: each node's
-#' number of partners for `"count"` and its sum of squared weights for
-#' `"product"`, so the projection holds all of \eqn{BB^T}, as the dual
-#' projection approach uses. Newman's weights have no diagonal.
-#'
-#' The projection is computed with a sparse accumulator for each node, in
-#' parallel, in time proportional to the number of two-step paths.
-#'
-#' @param x A two-mode [netframe()] (see [twomode()]).
-#' @param which `"first"`, `"second"`, or `"both"` modes.
-#' @param weighted Whether the result has a `weight` column. Weights are
-#'   tie strengths (`weight_type = "strength"`), since sharing more
-#'   partners brings two nodes closer.
-#' @param method How ties are weighted; see Details.
-#' @param loops Whether to keep the diagonal as self-loops.
-#' @param threads Number of threads; `0` uses all available cores.
-#'
-#' @references
-#' Breiger, R. L. (1974). The duality of persons and groups. *Social
-#' Forces*, 53(2), 181-190. \doi{10.2307/2576011}
-#'
-#' Newman, M. E. J. (2001). Scientific collaboration networks. II.
-#' Shortest paths, weighted networks, and centrality. *Physical Review E*,
-#' 64(1), 016132. \doi{10.1103/PhysRevE.64.016132}
-#'
-#' Everett, M. G., & Borgatti, S. P. (2013). The dual-projection approach
-#' for two-mode networks. *Social Networks*, 35(2), 204-210.
-#' \doi{10.1016/j.socnet.2012.05.004}
-#'
-#' @return An undirected [netframe()] whose nodes are the rows of `x$nodes`
-#'   in the chosen mode (all columns kept) and whose edges join each pair of
-#'   nodes with a shared partner once, ordered by node position. For
-#'   `which = "both"`, a list with elements `first` and `second`.
-#'
-#' @examples
-#' attended <- data.frame(
-#'   person = c("ann", "ann", "bob", "bob", "cat", "dan"),
-#'   event  = c("gala", "fair", "gala", "show", "show", "fair")
-#' )
-#' g <- twomode(attended)
-#' project(g)$edges
-#' project(g, "second", method = "newman")$edges
-#' @export
+# One-mode projections of a two-mode network (man/project.Rd).
 project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
                     method = c("count", "newman", "product"), loops = FALSE, threads = 0L) {
   check_twomode(x)
@@ -270,106 +110,12 @@ project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
            graph = x$graph)
 }
 
-#' Centrality and density of two-mode networks
-#'
-#' Degree, closeness, betweenness, and eigenvector centrality of the nodes
-#' of a two-mode network, normalized as Borgatti and Everett (1997) and
-#' Borgatti and Halgin (2011) describe, and two-mode density.
-#'
-#' The scores are those of the bipartite graph; only the normalization
-#' differs from the one-mode case, because a node can be tied only to the
-#' other mode. For a node whose own mode has \eqn{n_o} nodes, with
-#' \eqn{n_i} nodes in the other mode:
-#' \describe{
-#'   \item{degree}{\eqn{d / n_i}.}
-#'   \item{closeness}{\eqn{(n_i + 2(n_o - 1)) / S}, where \eqn{S} is the sum
-#'     of the node's distances to the others; the numerator is the smallest
-#'     possible sum (distance 1 to every node of the other mode, 2 to every
-#'     other node of its own).}
-#'   \item{betweenness}{\eqn{b / b_{max}} with
-#'     \eqn{b_{max} = \frac{1}{2}[n_i^2 (s+1)^2 + n_i (s+1)(2t - s - 1) - t(2s - t + 3)]},
-#'     \eqn{s = (n_o - 1) \mathrm{div}\ n_i} and
-#'     \eqn{t = (n_o - 1) \bmod n_i}, the largest betweenness a node can
-#'     have given the sizes of the two modes (Borgatti and Everett 1997).
-#'     The raw betweenness counts each unordered pair once.}
-#'   \item{eigenvector}{the principal eigenvector of the bipartite graph,
-#'     which is the pair of leading singular vectors of the incidence
-#'     matrix (Borgatti and Everett 1997; Borgatti and Halgin 2011). The
-#'     two modes' halves of the unit eigenvector have the same length, so
-#'     Borgatti and Everett's normalization (dividing by
-#'     \eqn{\sqrt{1/2}}) gives each mode Euclidean length 1, which is what
-#'     is returned. Their further two-mode normalization of eigenvector
-#'     scores has no closed form and is not provided.}
-#'   \item{density}{the number of ties divided by \eqn{n_1 n_2}, the number
-#'     of possible ties between the modes.}
-#' }
-#' With `normalized = FALSE` degree, betweenness, and closeness are the raw
-#' scores \eqn{d}, \eqn{b}, and \eqn{1/S}.
-#'
-#' Ties are binary and undirected: weights are ignored, parallel edges
-#' count once, and direction does not matter. When the network is not
-#' connected, \eqn{S} sums the distances to the nodes a node reaches. With
-#' `unreachable = "wasserman_faust"` (the default) closeness is then
-#' multiplied by \eqn{r/(n-1)}, the share of the other nodes it reaches,
-#' and a node that reaches no other scores 0; with `"ignore"` it is not
-#' rescaled and a node that reaches no other gets `NaN`. Eigenvector scores
-#' are then unique only within the component with the largest eigenvalue
-#' (a warning is given); every score is `NaN` in a network without ties.
-#' Normalizations that divide by zero (an empty mode, or \eqn{b_{max} = 0}
-#' when the other mode has one node) give `NaN`.
-#'
-#' Degree, closeness, and betweenness match NetworkX's
-#' `bipartite.degree_centrality()`, `bipartite.closeness_centrality()`
-#' (`normalized = TRUE` for the Wasserman-Faust rule, `FALSE` for
-#' `"ignore"`), and `bipartite.betweenness_centrality()`, and density
-#' matches `bipartite.density()`. Raw scores match igraph's `degree()`,
-#' `closeness()`, and `betweenness()` on the simplified network, and
-#' eigenvector scores match igraph's `eigen_centrality()` rescaled within
-#' each mode. UCINET reports the same normalized scores as percentages.
-#'
-#' @param x A two-mode [netframe()] (see [twomode()]).
-#' @param normalized Whether to apply the two-mode normalization.
-#' @param unreachable How closeness treats nodes that cannot be reached:
-#'   `"wasserman_faust"` or `"ignore"`; see Details.
-#' @param tol Convergence tolerance for eigenvector scores: iteration stops
-#'   when no score (scaled so the largest is 1) changes by more than `tol`.
-#' @param max_iter Iteration cap. Not converging within it is an error.
-#' @param threads Number of threads; `0` uses all available cores.
-#'
-#' @references
-#' Borgatti, S. P., & Everett, M. G. (1997). Network analysis of 2-mode
-#' data. *Social Networks*, 19(3), 243-269.
-#' \doi{10.1016/S0378-8733(96)00301-2}
-#'
-#' Borgatti, S. P., & Halgin, D. S. (2011). Analyzing affiliation networks.
-#' In J. Scott & P. J. Carrington (Eds.), *The SAGE Handbook of Social
-#' Network Analysis* (pp. 417-433). SAGE. \doi{10.4135/9781446294413.n28}
-#'
-#' Wasserman, S., & Faust, K. (1994). *Social Network Analysis: Methods and
-#' Applications*. Cambridge University Press.
-#' \doi{10.1017/CBO9780511815478}
-#'
-#' @return `twomode_density()` returns a number; the others return a
-#'   numeric vector aligned with the rows of `x$nodes`.
-#'
-#' @examples
-#' attended <- data.frame(
-#'   person = c("ann", "ann", "bob", "bob", "cat", "dan"),
-#'   event  = c("gala", "fair", "gala", "show", "show", "fair")
-#' )
-#' g <- twomode(attended)
-#' data.frame(g$nodes,
-#'            degree = twomode_degree(g),
-#'            closeness = twomode_closeness(g),
-#'            betweenness = twomode_betweenness(g))
-#' twomode_density(g)
-#' @export
+# Centrality and density of two-mode networks (man/twomode_degree.Rd).
 twomode_degree <- function(x, normalized = TRUE) {
   twomode_centrality(x, 0L, normalized, 0L, 1L)
 }
 
-#' @rdname twomode_degree
-#' @export
+# See man/twomode_degree.Rd.
 twomode_closeness <- function(x, normalized = TRUE,
                               unreachable = c("wasserman_faust", "ignore"), threads = 0L) {
   unreachable <- match.arg(unreachable)
@@ -380,14 +126,12 @@ twomode_closeness <- function(x, normalized = TRUE,
   twomode_centrality(x, 1L, normalized, if (unreachable == "ignore") 0L else 1L, threads)
 }
 
-#' @rdname twomode_degree
-#' @export
+# See man/twomode_degree.Rd.
 twomode_betweenness <- function(x, normalized = TRUE, threads = 0L) {
   twomode_centrality(x, 2L, normalized, 0L, threads)
 }
 
-#' @rdname twomode_degree
-#' @export
+# See man/twomode_degree.Rd.
 twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L) {
   check_twomode(x)
   if (!is.numeric(tol) || length(tol) != 1L || !isTRUE(tol > 0)) {
@@ -405,8 +149,7 @@ twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L)
   res[[1]]
 }
 
-#' @rdname twomode_degree
-#' @export
+# See man/twomode_degree.Rd.
 twomode_density <- function(x) {
   check_twomode(x)
   .Call(C_twomode_density, engine_graph(x), twomode_types(x))

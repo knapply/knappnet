@@ -1,47 +1,4 @@
-#' Plot the degree distribution
-#'
-#' Draws how many nodes have each degree, as a bar chart of counts or as
-#' the complementary cumulative distribution \eqn{P(D \ge d)}{P(D >= d)},
-#' which on logarithmic axes is the usual display for judging heavy tails
-#' (Newman 2003; Clauset, Shalizi, and Newman 2009).
-#'
-#' @param x A [netframe()].
-#' @param mode,loops,convention As in [degree()].
-#' @param type `"histogram"` for counts per degree, or `"ccdf"` for the
-#'   share of nodes with at least each degree.
-#' @param log Whether to use logarithmic axes. Nodes of degree 0 cannot be
-#'   shown on a logarithmic degree axis and are left out, with a note in
-#'   the subtitle.
-#' @param ... Further arguments passed to [graphics::barplot()] (histogram
-#'   on linear axes) or [graphics::plot()] (otherwise), such as `main`.
-#'
-#' @details
-#' Degrees are counted by [degree()], so parallel edges each count and a
-#' self-loop adds 2 in an undirected network, unless `loops = FALSE`. The
-#' histogram has one bar per degree value from 0 to the largest (not binned
-#' intervals); with more than 60 distinct values, or with `log = TRUE`, it
-#' is drawn as points instead. The CCDF is a step function over the
-#' observed degrees; a straight line on logarithmic axes suggests a power
-#' law, but a fitted model and a goodness-of-fit test (Clauset et al. 2009)
-#' are needed to claim one.
-#'
-#' @references
-#' Newman, M. E. J. (2003). The structure and function of complex networks.
-#' *SIAM Review*, 45(2), 167-256. \doi{10.1137/S003614450342480}
-#'
-#' Clauset, A., Shalizi, C. R., & Newman, M. E. J. (2009). Power-law
-#' distributions in empirical data. *SIAM Review*, 51(4), 661-703.
-#' \doi{10.1137/070710111}
-#'
-#' @return A data frame with one row per observed degree, invisibly:
-#'   `degree`, `count`, and `ccdf` (the share of nodes with at least that
-#'   degree).
-#' @seealso [degree()], [plot_scores()].
-#' @examples
-#' g <- example_network("karate")
-#' plot_degree_distribution(g)
-#' plot_degree_distribution(g, type = "ccdf", log = TRUE)
-#' @export
+# Plot the degree distribution (man/plot_degree_distribution.Rd).
 plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TRUE,
                                      type = c("histogram", "ccdf"), log = FALSE,
                                      convention = c("igraph", "networkx", "sna", "ucinet"),
@@ -99,26 +56,7 @@ plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TR
   invisible(out)
 }
 
-#' Plot the distribution of component sizes
-#'
-#' Draws how many components of each size the network has, with the
-#' largest component, which most measures of connectivity are about,
-#' marked.
-#'
-#' @param x A [netframe()].
-#' @param mode `"weak"` or `"strong"`, as in [components()].
-#' @param log Whether to use logarithmic axes (sizes and counts).
-#' @param ... Further arguments passed to [graphics::barplot()] (or
-#'   [graphics::plot()] with `log = TRUE`), such as `main`.
-#'
-#' @return A data frame with one row per distinct size, invisibly:
-#'   `size` and `count` (the number of components of that size).
-#' @seealso [components()], [fragmentation()].
-#' @examples
-#' g <- example_network("noordin", relation = "friendship")
-#' components(g)$no
-#' plot_component_sizes(g)
-#' @export
+# Plot the distribution of component sizes (man/plot_component_sizes.Rd).
 plot_component_sizes <- function(x, mode = c("weak", "strong"), log = FALSE, ...) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -154,62 +92,7 @@ plot_component_sizes <- function(x, mode = c("weak", "strong"), log = FALSE, ...
   invisible(out)
 }
 
-#' Plot the triad census
-#'
-#' Draws the [triad_census()] as a bar chart and, by default, the counts
-#' expected under the U|MAN null model of Holland and Leinhardt (1976),
-#' which conditions on the dyad census: all networks with the same numbers
-#' of mutual, asymmetric, and null dyads are equally likely. Comparing the
-#' two shows which triadic structures (transitive triads, cycles, closed
-#' triangles) are over- or under-represented beyond what the density and
-#' reciprocity of the network already imply.
-#'
-#' @param x A [netframe()].
-#' @param expected Whether to draw the expected counts under U|MAN beside
-#'   the observed ones.
-#' @param log Whether to use a logarithmic count axis (counts of 0 are
-#'   drawn at the bottom).
-#' @param threads Number of threads for the census; `0` uses all available
-#'   cores.
-#' @param ... Further arguments passed to [graphics::barplot()], such as
-#'   `main`.
-#'
-#' @details
-#' With \eqn{M}, \eqn{A}, and \eqn{N} mutual, asymmetric, and null dyads
-#' among the \eqn{D = n(n-1)/2} dyads, the three dyads of a random triad
-#' under U|MAN have \eqn{m} mutual, \eqn{a} asymmetric, and \eqn{k} null
-#' dyads with probability
-#' \deqn{{M \choose m} {A \choose a} {N \choose k} / {D \choose 3},}{choose(M, m) choose(A, a) choose(N, k) / choose(D, 3),}
-#' and each orientation of the asymmetric dyads is equally likely, so the
-#' expected count of a triad type is \eqn{{n \choose 3}}{choose(n, 3)} times
-#' that probability times the share of orientations giving the type
-#' (1/4, 1/4, 1/2 for 021D, 021U, 021C; 1/2, 1/2 for 111D, 111U; 3/4, 1/4
-#' for 030T, 030C; 1/4, 1/4, 1/2 for 120D, 120U, 120C; 1 otherwise). These
-#' are the expected values of Holland and Leinhardt (1976; Wasserman and
-#' Faust 1994, ch. 14) and were checked against the average census over
-#' every digraph on five nodes. The dyad census reads the network as
-#' [triad_census()] does: self-loops ignored, parallel edges counted once,
-#' and every edge of an undirected network mutual, so only the four
-#' undirected types (003, 102, 201, 300) are drawn for undirected networks.
-#'
-#' @references
-#' Holland, P. W., & Leinhardt, S. (1976). Local structure in social
-#' networks. *Sociological Methodology*, 7, 1-45. \doi{10.2307/270703}
-#'
-#' Wasserman, S., & Faust, K. (1994). *Social Network Analysis: Methods and
-#' Applications*. Cambridge University Press.
-#' \doi{10.1017/CBO9780511815478}
-#'
-#' @return A data frame with one row per triad type drawn, invisibly:
-#'   `type`, `observed`, and `expected` (`NA` when `expected = FALSE`).
-#' @seealso [triad_census()], [transitivity()], [reciprocity()].
-#' @examples
-#' g <- netframe(data.frame(from = c(1, 2, 3, 3, 4, 5, 5, 6, 1),
-#'                          to   = c(2, 3, 1, 4, 5, 3, 6, 4, 6)))
-#' triad_census(g)
-#' plot_triad_census(g, threads = 2)
-#' plot_triad_census(example_network("karate"), log = TRUE, threads = 2)
-#' @export
+# Plot the triad census (man/plot_triad_census.Rd).
 plot_triad_census <- function(x, expected = TRUE, log = FALSE, threads = 0L, ...) {
   check_netframe(x)
   expected <- check_flag(expected, "expected")
@@ -293,36 +176,7 @@ expected_triad_census <- function(x) {
   )
 }
 
-#' Ranked dot plot of node scores
-#'
-#' Draws scores such as centralities as a dot plot sorted from the highest
-#' down, labelled with node identifiers: the quickest way to read off who
-#' leads on a measure and by how much.
-#'
-#' @param scores A numeric vector of scores, one per node, as returned by
-#'   [degree()], [betweenness()], and the other centrality functions.
-#' @param labels Labels for the scores: a [netframe()] whose nodes the
-#'   scores are aligned with (its identifiers are used), a character
-#'   vector of the same length, or `NULL` for `names(scores)` or, failing
-#'   that, positions.
-#' @param top How many of the highest scores to show; `Inf` shows all.
-#' @param decreasing Whether the highest score is at the top. `FALSE` ranks
-#'   from the lowest instead.
-#' @param ... Further arguments passed to [graphics::dotchart()], such as
-#'   `main` or `xlab`.
-#'
-#' @details
-#' Missing and `NaN` scores (undefined values) are left out and counted in
-#' the subtitle. Ties keep the order of `scores`.
-#'
-#' @return A data frame of the scores drawn, in the order drawn from the
-#'   top, invisibly: `label` and `score`.
-#' @seealso [plot_centrality()] to draw the scores on the network.
-#' @examples
-#' g <- example_network("florentine")
-#' plot_scores(betweenness(g), g, main = "Betweenness")
-#' plot_scores(closeness(g), g, top = 5, xlab = "closeness")
-#' @export
+# Ranked dot plot of node scores (man/plot_scores.Rd).
 plot_scores <- function(scores, labels = NULL, top = 25, decreasing = TRUE, ...) {
   if (!is.numeric(scores)) stop("`scores` must be a numeric vector.", call. = FALSE)
   decreasing <- check_flag(decreasing, "decreasing")

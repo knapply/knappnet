@@ -1,36 +1,4 @@
-#' Plot a QAP correlation test
-#'
-#' Draws the permutation (reference) distribution of the correlation as a
-#' histogram, marks the observed correlation, and reports the p-values, so
-#' that the test can be read the way Krackhardt (1987) presents it: where
-#' the observed value falls among the correlations the relabelled networks
-#' produce.
-#'
-#' @param x A [qap_cor()] result.
-#' @param breaks Passed to [graphics::hist()].
-#' @param ... Further arguments passed to [graphics::hist()], such as
-#'   `main`.
-#'
-#' @details
-#' The histogram shows the finite correlations among the draws (`x$dist`);
-#' draws whose correlation is undefined are left out and counted in the
-#' subtitle. The vertical line is the observed correlation `x$statistic`
-#' and the subtitle gives `Pr(>=|r|)`, the two-sided p-value, together
-#' with the number of permutations.
-#'
-#' @references
-#' Krackhardt, D. (1987). QAP partialling as a test of spuriousness.
-#' *Social Networks*, 9(2), 171-186. \doi{10.1016/0378-8733(87)90012-8}
-#'
-#' @return `x`, invisibly.
-#' @seealso [qap_cor()], [plot.mrqap()].
-#' @examples
-#' set.seed(1)
-#' a <- matrix(rbinom(100, 1, 0.3), 10)
-#' b <- (a + matrix(rbinom(100, 1, 0.1), 10)) > 0
-#' q <- qap_cor(a, b, reps = 500, seed = 1, threads = 2)
-#' plot(q)
-#' @export
+# Plot a QAP correlation test (man/plot.qap_cor.Rd).
 plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   d <- x$dist[is.finite(x$dist)]
   if (!length(d)) {
@@ -66,53 +34,7 @@ plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   invisible(x)
 }
 
-#' Plot a multiple regression QAP
-#'
-#' Draws either a coefficient plot, each observed statistic against the
-#' interval of its permutation distribution, or the permutation
-#' distribution of every coefficient as a histogram with the observed
-#' statistic marked, as in the diagnostics Dekker, Krackhardt, and
-#' Snijders (2007) use to compare QAP variants.
-#'
-#' @param x An [mrqap()] result.
-#' @param which `"coefficients"` for the coefficient plot or
-#'   `"distributions"` for the histograms.
-#' @param level Coverage of the permutation intervals in the coefficient
-#'   plot, between 0 and 1.
-#' @param intercept Whether to include the intercept, whose scale is often
-#'   very different from the slopes.
-#' @param breaks For `"distributions"`, passed to [graphics::hist()].
-#' @param ... Further arguments passed to [graphics::plot()] (coefficient
-#'   plot) or [graphics::hist()] (distributions), such as `main`.
-#'
-#' @details
-#' The statistics shown are the ones the permutation test uses
-#' (`x$statistic`): t-statistics (the default of [mrqap()], recommended by
-#' Dekker et al. 2007) or raw coefficients. In the coefficient plot each
-#' row has a horizontal segment from the `(1 - level) / 2` to the
-#' `1 - (1 - level) / 2` quantile of the permutation distribution (under the
-#' null hypothesis) and a point at the observed statistic; a point outside
-#' its segment is significant at level `1 - level` in the two-sided test,
-#' whose p-value `Pr(>=|b|)` is written beside it. Under double
-#' semi-partialling the permutation distributions are centred near 0 for
-#' every coefficient; under Y-permutation they need not be.
-#'
-#' @references
-#' Dekker, D., Krackhardt, D., & Snijders, T. A. B. (2007). Sensitivity of
-#' MRQAP tests to collinearity and autocorrelation conditions.
-#' *Psychometrika*, 72(4), 563-581. \doi{10.1007/s11336-007-9016-1}
-#'
-#' @return `x`, invisibly.
-#' @seealso [mrqap()], [plot.qap_cor()].
-#' @examples
-#' set.seed(2)
-#' x1 <- matrix(rnorm(144), 12)
-#' x2 <- matrix(rnorm(144), 12)
-#' y <- 0.8 * x1 + matrix(rnorm(144), 12)
-#' fit <- mrqap(y, list(same = x1, other = x2), reps = 300, seed = 1, threads = 2)
-#' plot(fit)
-#' plot(fit, which = "distributions")
-#' @export
+# Plot a multiple regression QAP (man/plot.mrqap.Rd).
 plot.mrqap <- function(x, which = c("coefficients", "distributions"), level = 0.95,
                        intercept = FALSE, breaks = "Sturges", ...) {
   which <- match.arg(which)

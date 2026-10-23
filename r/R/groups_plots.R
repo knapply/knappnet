@@ -14,9 +14,7 @@ groups_palette <- function(k) {
   grDevices::hcl.colors(k, "Dark 3")
 }
 
-#' @rdname cug_test
-#' @param breaks Breakpoints for the histogram, as in [graphics::hist()].
-#' @export
+# See man/cug_test.Rd.
 plot.cug_test <- function(x, ..., breaks = "Sturges") {
   pal <- groups_palette(8L)
   null <- x$null
@@ -39,7 +37,7 @@ plot.cug_test <- function(x, ..., breaks = "Sturges") {
   invisible(x)
 }
 
-#' @export
+# See man/core_periphery.Rd.
 plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL) {
   if (is.null(what)) what <- if (x$method == "discrete") "matrix" else "network"
   what <- check_choice(what, c("matrix", "network"), "what")
@@ -102,7 +100,7 @@ plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL)
   invisible(x)
 }
 
-#' @export
+# See man/small_world.Rd.
 plot.small_world <- function(x, ...) {
   pal <- groups_palette(8L)
   dots <- list(...)
@@ -127,7 +125,7 @@ plot.small_world <- function(x, ...) {
   invisible(x)
 }
 
-#' @export
+# See man/lambda_sets.Rd.
 plot.lambda_sets <- function(x, ...) {
   m <- x$connectivity
   n <- nrow(m)

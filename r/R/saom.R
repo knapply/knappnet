@@ -1,68 +1,4 @@
-#' Network panel data for stochastic actor-oriented models
-#'
-#' Collects two or more observations of a directed network on the same
-#' actors, with actor and dyadic covariates, into the data object that
-#' [saom_fit()] estimates stochastic actor-oriented models from (Snijders
-#' 2001; Snijders, van de Bunt, and Steglich 2010).
-#'
-#' @param networks A list of at least two directed [netframe()]s observed at
-#'   successive moments (for example the output of [snapshots()]), all on
-#'   the same node identifiers. Nodes are matched by identifier and ordered
-#'   as in the first network. Each network is read as a binary adjacency
-#'   matrix: parallel edges collapse to one tie, self-loops are dropped,
-#'   and weights are ignored.
-#' @param covariates Actor covariates: `NULL`, a character vector naming
-#'   columns of the node tables (a column whose values are the same in every
-#'   wave is a constant covariate; one that changes is a changing covariate
-#'   whose value during a period is its value at the start of that period),
-#'   or a named list of numeric vectors (one value per actor, in the order
-#'   of the first network's nodes) and matrices with one row per actor and
-#'   one column per period (one fewer than the waves; a column for the last
-#'   wave may be given and is ignored, as in RSiena). Changing covariates
-#'   need at least three waves. Values must not be missing.
-#' @param dyadic Dyadic covariates: `NULL` or a named list of square
-#'   numeric matrices (rows and columns in the order of the first
-#'   network's nodes; the diagonal is ignored) or netframes on the same
-#'   nodes, read as adjacency matrices of their weights (or of ties when
-#'   unweighted).
-#'
-#' @details
-#' Covariates are centered as RSiena centers them (Ripley et al. 2026,
-#' section 5.3.2): actor covariates by their mean over all actors and all
-#' periods, dyadic covariates by the mean of their off-diagonal cells, and
-#' the similarity scores of `simX` by their mean over all ordered pairs of
-#' distinct actors and periods. `sameX` is not centered. For changing
-#' covariates RSiena computes the similarity mean differently (its
-#' definition is not documented), so `simX` of a changing covariate can
-#' differ slightly from RSiena's.
-#'
-#' Missing tie or covariate values, structural zeros and ones, and changes
-#' of composition (actors joining or leaving) are not supported; see
-#' "Not implemented" in [saom_fit()].
-#'
-#' @return An object of class `saom_data`: a list with `n` (actors),
-#'   `waves` (a list of logical adjacency matrices), `nodes` (the node table
-#'   of the first network), `covariates`, and `dyadic`.
-#' @seealso [saom_fit()], [saom_simulate()], [snapshots()].
-#' @references
-#' Snijders, T. A. B. (2001). The statistical evaluation of social network
-#' dynamics. *Sociological Methodology*, 31(1), 361-395.
-#' \doi{10.1111/0081-1750.00099}
-#'
-#' Snijders, T. A. B., van de Bunt, G. G., and Steglich, C. E. G. (2010).
-#' Introduction to stochastic actor-based models for network dynamics.
-#' *Social Networks*, 32(1), 44-60. \doi{10.1016/j.socnet.2009.02.004}
-#'
-#' Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026).
-#' *Manual for RSiena*. University of Oxford, Department of Statistics and
-#' Nuffield College; University of Groningen, Department of Sociology.
-#' @examples
-#' w1 <- netframe(data.frame(from = c("a", "a", "b", "c"), to = c("b", "c", "c", "a")),
-#'                nodes = data.frame(name = c("a", "b", "c", "d"), smoke = c(1, 0, 1, 0)))
-#' w2 <- netframe(data.frame(from = c("a", "b", "c", "d"), to = c("b", "c", "a", "a")),
-#'                nodes = w1$nodes)
-#' saom_data(list(w1, w2), covariates = "smoke")
-#' @export
+# Network panel data for stochastic actor-oriented models (man/saom_data.Rd).
 saom_data <- function(networks, covariates = NULL, dyadic = NULL) {
   if (!is.list(networks) || length(networks) < 2L ||
       !all(vapply(networks, inherits, TRUE, "netframe"))) {
@@ -198,7 +134,7 @@ saom_dyadic_covariates <- function(dyadic, ids, n) {
   out
 }
 
-#' @export
+# See man/saom_data.Rd.
 print.saom_data <- function(x, ...) {
   cat(sprintf("<saom_data> %d waves of a directed network on %d actors\n", length(x$waves), x$n))
   ties <- vapply(x$waves, function(a) as.double(sum(a)), 0)
@@ -253,74 +189,7 @@ SAOM_EFFECTS <- data.frame(
   stringsAsFactors = FALSE
 )
 
-#' Effects of a stochastic actor-oriented model
-#'
-#' Turns a model formula into the table of effects [saom_fit()] estimates,
-#' and lists the effects available. Effects carry the short names of RSiena
-#' (Ripley et al. 2026, chapter 13), and their definitions match RSiena's
-#' exactly; see Details.
-#'
-#' @param formula A one-sided formula whose terms are effect names, for
-#'   example `~ density + recip + transTrip + simX("smoke")`. Structural
-#'   effects are bare names; covariate effects are calls with the covariate
-#'   name as a string or symbol; the GWESP effects accept an internal
-#'   parameter, `gwespFF(parameter = 69)` (the default, giving
-#'   \eqn{\alpha = 0.69 = \log 2}). A character vector of structural effect
-#'   names is also accepted.
-#' @param data Optional [saom_data()] whose covariates the formula may use;
-#'   covariate names are then checked.
-#'
-#' @details
-#' With \eqn{x_{ij} = 1} for a tie from i to j, \eqn{x_{i+}} the out-degree,
-#' \eqn{x_{+i}} the in-degree, \eqn{v_i} a centered actor covariate and
-#' \eqn{w_{ij}} a centered dyadic covariate, the evaluation function of
-#' actor i is \eqn{f_i(x) = \sum_k \beta_k s_{ik}(x)} with these statistics:
-#' \tabular{lll}{
-#'   \code{density} \tab out-degree \tab \eqn{x_{i+}} \cr
-#'   \code{recip} \tab reciprocity \tab \eqn{\sum_j x_{ij} x_{ji}} \cr
-#'   \code{transTrip} \tab transitive triplets \tab \eqn{\sum_{j,h} x_{ij} x_{ih} x_{hj}} \cr
-#'   \code{transTies} \tab transitive ties \tab \eqn{\sum_j x_{ij} \max_h x_{ih} x_{hj}} \cr
-#'   \code{transRecTrip} \tab transitive reciprocated triplets \tab \eqn{\sum_{j,h} x_{ij} x_{ji} x_{ih} x_{hj}} \cr
-#'   \code{cycle3} \tab 3-cycles \tab \eqn{\sum_{j,h} x_{ij} x_{jh} x_{hi}} \cr
-#'   \code{gwespFF} etc. \tab geometrically weighted edgewise shared partners \tab
-#'     \eqn{\sum_j x_{ij} e^\alpha \{1 - (1 - e^{-\alpha})^{esp_{ij}}\}} \cr
-#'   \code{inPop}, \code{inPopSqrt} \tab in-degree popularity \tab \eqn{\sum_j x_{ij} x_{+j}}, \eqn{\sum_j x_{ij} \sqrt{x_{+j}}} \cr
-#'   \code{outPop}, \code{outPopSqrt} \tab out-degree popularity \tab \eqn{\sum_j x_{ij} x_{j+}}, \eqn{\sum_j x_{ij} \sqrt{x_{j+}}} \cr
-#'   \code{inAct}, \code{inActSqrt} \tab in-degree activity \tab \eqn{x_{i+} x_{+i}}, \eqn{x_{i+} \sqrt{x_{+i}}} \cr
-#'   \code{outAct}, \code{outActSqrt} \tab out-degree activity \tab \eqn{x_{i+}^2}, \eqn{x_{i+}^{1.5}} \cr
-#'   \code{egoX} \tab covariate ego \tab \eqn{v_i x_{i+}} \cr
-#'   \code{altX} \tab covariate alter \tab \eqn{\sum_j x_{ij} v_j} \cr
-#'   \code{simX} \tab covariate similarity \tab \eqn{\sum_j x_{ij} (sim_{ij} - \widehat{sim})} \cr
-#'   \code{sameX} \tab same covariate \tab \eqn{\sum_j x_{ij} I\{v_i = v_j\}} \cr
-#'   \code{egoXaltX} \tab covariate ego x alter \tab \eqn{v_i \sum_j x_{ij} v_j} \cr
-#'   \code{X} \tab dyadic covariate \tab \eqn{\sum_j x_{ij} w_{ij}}
-#' }
-#' For the GWESP effects \eqn{esp_{ij}} counts the actors h with
-#' \eqn{i \to h \to j} (`gwespFF`), \eqn{i \to h \leftarrow j} (`gwespFB`),
-#' \eqn{i \leftarrow h \to j} (`gwespBF`), or \eqn{i \leftarrow h \leftarrow j}
-#' (`gwespBB`), and \eqn{\alpha} is `parameter / 100` (Hunter 2007; Ripley
-#' et al. 2026). As in RSiena these are elementary effects: the change
-#' statistic of a tie is its own weight, not the change in the sum. The
-#' similarity is \eqn{sim_{ij} = 1 - |v_i - v_j| / range} with the range
-#' over all actors and waves, centered by its mean over all ordered pairs of
-#' distinct actors (and waves).
-#'
-#' @return `saom_effects()`: a data frame with one row per effect: `effect`
-#'   (short name), `covariate`, `parameter`, `label`, and `name` (the
-#'   coefficient name). `saom_effect_names()`: the short names of all
-#'   available effects.
-#' @references
-#' Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026).
-#' *Manual for RSiena*. University of Oxford, Department of Statistics and
-#' Nuffield College; University of Groningen, Department of Sociology.
-#'
-#' Hunter, D. R. (2007). Curved exponential family models for social
-#' networks. *Social Networks*, 29(2), 216-230.
-#' \doi{10.1016/j.socnet.2006.08.005}
-#' @examples
-#' saom_effects(~ density + recip + transTrip + gwespFF(parameter = 69) + simX("smoke"))
-#' saom_effect_names()
-#' @export
+# Effects of a stochastic actor-oriented model (man/saom_effects.Rd).
 saom_effects <- function(formula, data = NULL) {
   if (is.character(formula)) {
     terms <- lapply(formula, as.name)
@@ -340,8 +209,7 @@ saom_effects <- function(formula, data = NULL) {
   saom_check_effects(eff, data)
 }
 
-#' @rdname saom_effects
-#' @export
+# See man/saom_effects.Rd.
 saom_effect_names <- function() SAOM_EFFECTS$effect
 
 split_terms <- function(expr) {
@@ -495,40 +363,7 @@ saom_contributions <- function(data, effects, actor, wave = 1L, period = 1L) {
 
 # ---- Estimation ----------------------------------------------------------------
 
-#' Settings of the SAOM estimation algorithm
-#'
-#' @param conditional Whether to estimate conditionally on the observed
-#'   number of changes per period (the default, as in RSiena): each period's
-#'   simulation runs until as many tie variables differ from the start of
-#'   the period as were observed to differ, and the rate parameters are
-#'   estimated afterwards from the simulated period lengths. `FALSE`
-#'   simulates one time unit per period and estimates the rates as
-#'   parameters of the Robbins-Monro iteration.
-#' @param nsub Number of subphases in phase 2.
-#' @param n3 Number of simulations in phase 3, which give the standard
-#'   errors, convergence diagnostics, and goodness-of-fit statistics.
-#'   1000 is adequate for exploration; use more for publication.
-#' @param n1 Number of phase 1 simulations; `NULL` for \eqn{7 + 3p}.
-#' @param firstg Initial gain of the Robbins-Monro steps.
-#' @param reduceg Factor by which the gain shrinks after each subphase.
-#' @param diagonalize Weight in \eqn{[0, 1]} of the diagonal of the
-#'   derivative matrix in the step matrix (RSiena's default 0.2; 1 uses
-#'   only the diagonal).
-#' @param truncation Phase 2 deviations larger than this many standard
-#'   deviations (estimated in phase 1) are truncated.
-#' @param theta_bound Estimation stops with an error when a parameter
-#'   exceeds this in absolute value, a sign of divergence.
-#' @param seed Seed for the simulations, a whole number in \[0, 2^53).
-#'   `NULL` draws one from R's random number generator, so [set.seed()]
-#'   makes results reproducible.
-#' @param threads Number of threads for phases 1 and 3; `0` uses all
-#'   available cores (see "Threads" in [netframe()]). Results do not depend
-#'   on the thread count except in the last bits of floating-point sums.
-#' @param keep_simulations Whether to keep the auxiliary statistics of every
-#'   phase 3 simulation for [saom_gof()] (\eqn{n_3 (3n + 16)} numbers).
-#' @return A list of class `saom_control`.
-#' @seealso [saom_fit()]
-#' @export
+# Settings of the SAOM estimation algorithm (man/saom_control.Rd).
 saom_control <- function(conditional = TRUE, nsub = 4, n3 = 1000, n1 = NULL, firstg = 0.2,
                          reduceg = 0.5, diagonalize = 0.2, truncation = 5, theta_bound = 50,
                          seed = NULL, threads = 0L, keep_simulations = TRUE) {
@@ -566,132 +401,7 @@ saom_control <- function(conditional = TRUE, nsub = 4, n3 = 1000, n1 = NULL, fir
             class = "saom_control")
 }
 
-#' Fit a stochastic actor-oriented model
-#'
-#' Estimates a stochastic actor-oriented model (SAOM; Snijders 2001;
-#' Snijders, van de Bunt, and Steglich 2010; Snijders 2017) of the changes
-#' between the waves of a network panel by the method of moments, using the
-#' three-phase Robbins-Monro stochastic approximation algorithm of RSiena.
-#'
-#' @param data An [saom_data()] object.
-#' @param effects The effects of the evaluation function: a one-sided
-#'   formula such as `~ density + recip + transTrip + simX("smoke")`, a
-#'   character vector of structural effects, or the data frame returned by
-#'   [saom_effects()], which documents every effect and its definition.
-#' @param control Algorithm settings from [saom_control()].
-#' @param initial Initial parameter values: `NULL` for the standard initial
-#'   values, or a numeric vector with one value per effect (rates first,
-#'   one per period, when `control$conditional` is `FALSE`); `NA` keeps the
-#'   standard value for that parameter.
-#'
-#' @details
-#' The model is a continuous-time Markov chain of *ministeps* (Snijders
-#' 2001): actor \eqn{i} gets opportunities to change at rate \eqn{\rho_m}
-#' during period \eqn{m}, and at each opportunity adds or drops one
-#' outgoing tie, or changes nothing, choosing the resulting network
-#' \eqn{x'} with probability proportional to \eqn{\exp f_i(x')}, where the
-#' evaluation function \eqn{f_i(x) = \sum_k \beta_k s_{ik}(x)} is a weighted
-#' sum of the effects in [saom_effects()]. The method of moments chooses
-#' \eqn{\beta} so that the statistics \eqn{\sum_m \sum_i s_{ik}} of networks
-#' simulated from each wave to the next equal, on average, the observed
-#' statistics of the next wave (with changing covariates at their values at
-#' the start of each period).
-#'
-#' Estimation follows RSiena's algorithm (Ripley et al. 2026, chapter 7 and
-#' the document *Siena algorithms*): phase 1 estimates the derivative of
-#' the expected statistics with respect to the parameters by the
-#' score-function method (Schweinberger and Snijders 2007) from
-#' \eqn{7 + 3p} simulations; phase 2 runs `nsub` subphases of
-#' Robbins-Monro steps \eqn{\theta \leftarrow \theta - a D^{-1} (S - s)},
-#' each subphase ending when the deviations have crossed zero and setting
-#' \eqn{\theta} to its average, with the gain halved between subphases;
-#' phase 3 simulates `n3` times at the final \eqn{\theta} to obtain the
-#' convergence t-ratios \eqn{(\bar S_k - s_k) / sd(S_k)} (which should be
-#' below 0.1 in absolute value), the overall maximum convergence ratio
-#' \eqn{\sqrt{(\bar S - s)' \Sigma^{-1} (\bar S - s)}} (which should be below
-#' 0.25), and the standard errors by the delta method,
-#' \eqn{cov(\hat\theta) = D^{-1} \Sigma D^{-T}}. Conditional estimation (the
-#' default) simulates each period until the observed number of tie changes
-#' is reached and estimates the rate of each period as the mean simulated
-#' period length in phase 3, reporting the standard deviation of those
-#' lengths as its standard error (Snijders 2001, section 4.2; RSiena may
-#' compute the latter differently).
-#'
-#' Standard initial values follow Snijders (2005, equation 11.41): the
-#' out-degree parameter starts at \eqn{\log(c^+ d / (c^- (1 - d))) / 2},
-#' with \eqn{c^+} ties created, \eqn{c^-} ties dissolved, and \eqn{d} the
-#' mean density; other effects start at 0 and rates at twice the observed
-#' changes per actor. The simulations use the seeded, counter-based
-#' generator of the engine, so a seed reproduces the estimate exactly for
-#' any number of threads.
-#'
-#' @section Not implemented:
-#' Behavior dynamics and co-evolution, several dependent networks,
-#' non-directed networks, creation and endowment effects, rate effects
-#' beyond a constant rate per period, missing data, structural zeros and
-#' ones, composition change, maximum likelihood and Bayesian estimation,
-#' score-type tests, and time heterogeneity tests. For these, see RSiena.
-#'
-#' @return An object of class `saom_fit` with `coefficients`, `se`, `vcov`,
-#'   `tconv` (convergence t-ratios), `tconv_max`, `rates` (a data frame
-#'   with the rate parameter and standard error of each period), `effects`,
-#'   `targets`, `means` (phase 3 means of the statistics), `deviations`
-#'   (phase 3 deviations, one row per simulation), `trajectory` (phase 2
-#'   parameter values by iteration), `times` (phase 3 simulated period
-#'   lengths), `aux` (auxiliary statistics for [saom_gof()]), `iterations`,
-#'   `seed`, `control`, and `call`. Methods: `print`, `summary`, `coef`,
-#'   `vcov`, `plot`.
-#' @seealso [saom_data()], [saom_effects()], [saom_control()],
-#'   [saom_gof()], [saom_simulate()], [plot.saom_fit()].
-#' @references
-#' Snijders, T. A. B. (2001). The statistical evaluation of social network
-#' dynamics. *Sociological Methodology*, 31(1), 361-395.
-#' \doi{10.1111/0081-1750.00099}
-#'
-#' Snijders, T. A. B. (2005). Models for longitudinal network data. In
-#' P. J. Carrington, J. Scott, and S. Wasserman (Eds.), *Models and Methods
-#' in Social Network Analysis* (pp. 215-247). Cambridge University Press.
-#' \doi{10.1017/CBO9780511811395.011}
-#'
-#' Snijders, T. A. B., van de Bunt, G. G., and Steglich, C. E. G. (2010).
-#' Introduction to stochastic actor-based models for network dynamics.
-#' *Social Networks*, 32(1), 44-60. \doi{10.1016/j.socnet.2009.02.004}
-#'
-#' Snijders, T. A. B. (2017). Stochastic actor-oriented models for network
-#' dynamics. *Annual Review of Statistics and Its Application*, 4, 343-363.
-#' \doi{10.1146/annurev-statistics-060116-054035}
-#'
-#' Schweinberger, M., and Snijders, T. A. B. (2007). Markov models for
-#' digraph panel data: Monte Carlo-based derivative estimation.
-#' *Computational Statistics & Data Analysis*, 51(9), 4465-4483.
-#' \doi{10.1016/j.csda.2006.07.014}
-#'
-#' Robbins, H., and Monro, S. (1951). A stochastic approximation method.
-#' *The Annals of Mathematical Statistics*, 22(3), 400-407.
-#' \doi{10.1214/aoms/1177729586}
-#'
-#' Ripley, R. M., Snijders, T. A. B., Boda, Z., and Voros, A. (2026).
-#' *Manual for RSiena*. University of Oxford, Department of Statistics and
-#' Nuffield College; University of Groningen, Department of Sociology.
-#' @examples
-#' # A small panel simulated from known parameters, then re-estimated.
-#' set.seed(1)
-#' start <- netframe(data.frame(from = sample(20, 40, TRUE), to = sample(20, 40, TRUE)),
-#'                   nodes = data.frame(id = 1:20, smoke = rep(0:1, 10)))
-#' panel <- saom_simulate(saom_data(list(start, start), covariates = "smoke"),
-#'                        ~ density + recip + simX("smoke"), theta = c(-2, 1.5, 0.5),
-#'                        rates = 4, seed = 1)[[1]]
-#' data <- saom_data(c(list(start), panel), covariates = "smoke")
-#' fit <- saom_fit(data, ~ density + recip + simX("smoke"),
-#'                 control = saom_control(n3 = 200, nsub = 2, seed = 2, threads = 2))
-#' fit
-#' summary(fit)
-#' coef(fit)
-#' # Unconditional estimation treats the rates as ordinary parameters.
-#' saom_fit(data, ~ density + recip,
-#'          control = saom_control(conditional = FALSE, n3 = 200, nsub = 2, seed = 3,
-#'                                 threads = 2))
-#' @export
+# Fit a stochastic actor-oriented model (man/saom_fit.Rd).
 saom_fit <- function(data, effects, control = saom_control(), initial = NULL) {
   if (!inherits(data, "saom_data")) stop("`data` must be created by saom_data().", call. = FALSE)
   if (!inherits(control, "saom_control")) {
@@ -769,10 +479,10 @@ saom_fit <- function(data, effects, control = saom_control(), initial = NULL) {
   ), class = "saom_fit")
 }
 
-#' @export
+# See man/saom_fit.Rd.
 coef.saom_fit <- function(object, ...) object$coefficients
 
-#' @export
+# See man/saom_fit.Rd.
 vcov.saom_fit <- function(object, ...) object$vcov
 
 saom_table <- function(x) {
@@ -784,7 +494,7 @@ saom_table <- function(x) {
   tab
 }
 
-#' @export
+# See man/saom_fit.Rd.
 print.saom_fit <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat(sprintf("\nStochastic actor-oriented model (method of moments, %s estimation)\n",
               if (x$conditional) "conditional" else "unconditional"))
@@ -801,14 +511,14 @@ print.saom_fit <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-#' @export
+# See man/saom_fit.Rd.
 summary.saom_fit <- function(object, ...) {
   converged <- is.finite(object$tconv_max) && object$tconv_max < 0.25 &&
     all(abs(object$tconv) < 0.1)
   structure(c(object, list(converged = converged)), class = c("summary.saom_fit", "saom_fit"))
 }
 
-#' @export
+# See man/saom_fit.Rd.
 print.summary.saom_fit <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   print.saom_fit(x, digits = digits)
   cat(if (x$converged) "Convergence is adequate (all |t| < 0.1 and ratio < 0.25).\n" else
@@ -828,30 +538,7 @@ print.summary.saom_fit <- function(x, digits = max(3L, getOption("digits") - 3L)
   invisible(x)
 }
 
-#' Plot estimation diagnostics of a SAOM fit
-#'
-#' `which = "trajectory"` draws the parameter values after every phase 2
-#' iteration, with the subphases separated by dashed lines and the final
-#' estimate as a horizontal line: a well-behaved estimation settles down
-#' within each subphase. `which = "deviations"` draws boxplots of the
-#' phase 3 deviations of the simulated statistics from their targets,
-#' divided by their standard deviations; they should be centered on 0.
-#'
-#' @param x An [saom_fit()].
-#' @param which `"trajectory"` or `"deviations"`.
-#' @param ... Passed to the plotting functions.
-#' @return `x`, invisibly.
-#' @examples
-#' set.seed(2)
-#' start <- netframe(data.frame(from = sample(15, 30, TRUE), to = sample(15, 30, TRUE)),
-#'                   nodes = data.frame(id = 1:15))
-#' panel <- saom_simulate(saom_data(list(start, start)), ~ density + recip,
-#'                        theta = c(-1.5, 1), rates = 3, seed = 1)[[1]]
-#' fit <- saom_fit(saom_data(c(list(start), panel)), ~ density + recip,
-#'                 control = saom_control(n3 = 100, nsub = 2, seed = 2, threads = 2))
-#' plot(fit)
-#' plot(fit, which = "deviations")
-#' @export
+# Plot estimation diagnostics of a SAOM fit (man/plot.saom_fit.Rd).
 plot.saom_fit <- function(x, which = c("trajectory", "deviations"), ...) {
   which <- match.arg(which)
   if (which == "trajectory") {
@@ -884,35 +571,7 @@ plot.saom_fit <- function(x, which = c("trajectory", "deviations"), ...) {
 
 # ---- Simulation ----------------------------------------------------------------
 
-#' Simulate network panels from a stochastic actor-oriented model
-#'
-#' Simulates the change from each wave of `data` to the next under given
-#' parameters, as [saom_fit()] does internally: conditional on the observed
-#' number of changes (`rates = NULL`) or for one time unit per period with
-#' the given rates.
-#'
-#' @inheritParams saom_fit
-#' @param theta Effect parameters, one per effect, in the order of
-#'   `saom_effects(effects)`.
-#' @param rates Rate parameters, one per period (or one value recycled), or
-#'   `NULL` to simulate until the observed number of changes is reached.
-#' @param n Number of panels to simulate.
-#' @param seed Seed, a whole number in \[0, 2^53); `NULL` draws one from
-#'   R's random number generator.
-#' @return A list of `n` simulated panels. Each panel is a list with one
-#'   [netframe()] per period, the network at the end of the period, on the
-#'   nodes of `data`; the attribute `"statistics"` holds the effect
-#'   statistics of each period's network and `"times"` the simulated period
-#'   lengths.
-#' @seealso [saom_fit()], [saom_gof()]
-#' @examples
-#' w1 <- netframe(data.frame(from = c("a", "b", "c"), to = c("b", "c", "a")),
-#'                nodes = data.frame(name = c("a", "b", "c", "d")))
-#' sims <- saom_simulate(saom_data(list(w1, w1)), ~ density + recip, theta = c(-1, 1),
-#'                       rates = 2, n = 2, seed = 7)
-#' sims[[1]][[1]]
-#' attr(sims[[1]], "statistics")
-#' @export
+# Simulate network panels from a stochastic actor-oriented model (man/saom_simulate.Rd).
 saom_simulate <- function(data, effects, theta, rates = NULL, n = 1, seed = NULL) {
   if (!inherits(data, "saom_data")) stop("`data` must be created by saom_data().", call. = FALSE)
   eff <- saom_effects(effects, data)
@@ -957,51 +616,7 @@ saom_simulate <- function(data, effects, theta, rates = NULL, n = 1, seed = NULL
 
 # ---- Goodness of fit -----------------------------------------------------------
 
-#' Goodness of fit of a SAOM by auxiliary statistics
-#'
-#' Compares a statistic of the observed networks (summed over the waves
-#' after the first) with its distribution over the networks simulated in
-#' phase 3 of the estimation, as proposed by Lospinoso and Snijders (2019)
-#' and implemented in RSiena's `sienaGOF()`. The discrepancy is the
-#' Mahalanobis distance of the observed statistic from the mean of the
-#' simulated ones, using a generalized inverse of their covariance matrix,
-#' and the p-value is the proportion of simulations whose own distance is
-#' at least as large.
-#'
-#' @param fit An [saom_fit()] estimated with `keep_simulations = TRUE`.
-#' @param statistic Which auxiliary statistic: the in-degree or out-degree
-#'   distribution, the triad census (Holland and Leinhardt 1976), or the
-#'   distribution of geodesic distances between ordered pairs of actors.
-#' @param levels For the degree distributions, the degrees to report
-#'   (default 0 to 8); for geodesics, the distances (default 1 to 5 and
-#'   `Inf` for unreachable pairs). Ignored for the triad census.
-#' @param cumulative Whether degree and geodesic counts are cumulative
-#'   (actors with degree at most k; pairs at distance at most d), as in
-#'   RSiena.
-#' @return An object of class `saom_gof` with `observed`, `simulated` (one
-#'   row per simulation), `p` (the Monte Carlo p-value), `distance`
-#'   (the observed Mahalanobis distance), and `distances` (one per
-#'   simulation). Methods: `print`, `plot`.
-#' @references
-#' Lospinoso, J., and Snijders, T. A. B. (2019). Goodness of fit for
-#' stochastic actor-oriented models. *Methodological Innovations*, 12(3).
-#' \doi{10.1177/2059799119884282}
-#'
-#' Holland, P. W., and Leinhardt, S. (1976). Local structure in social
-#' networks. *Sociological Methodology*, 7, 1-45. \doi{10.2307/270703}
-#' @examples
-#' set.seed(3)
-#' start <- netframe(data.frame(from = sample(15, 30, TRUE), to = sample(15, 30, TRUE)),
-#'                   nodes = data.frame(id = 1:15))
-#' panel <- saom_simulate(saom_data(list(start, start)), ~ density + recip,
-#'                        theta = c(-1.5, 1), rates = 3, seed = 1)[[1]]
-#' fit <- saom_fit(saom_data(c(list(start), panel)), ~ density + recip,
-#'                 control = saom_control(n3 = 100, nsub = 2, seed = 2, threads = 2))
-#' gof <- saom_gof(fit, "indegree")
-#' gof
-#' plot(gof)
-#' plot(saom_gof(fit, "triad_census"))
-#' @export
+# Goodness of fit of a SAOM by auxiliary statistics (man/saom_gof.Rd).
 saom_gof <- function(fit, statistic = c("indegree", "outdegree", "triad_census", "geodesic"),
                      levels = NULL, cumulative = TRUE) {
   if (!inherits(fit, "saom_fit")) stop("`fit` must be an saom_fit.", call. = FALSE)
@@ -1084,7 +699,7 @@ generalized_inverse <- function(m, tol = sqrt(.Machine$double.eps)) {
   s$v[, keep, drop = FALSE] %*% (t(s$u[, keep, drop = FALSE]) / s$d[keep])
 }
 
-#' @export
+# See man/saom_gof.Rd.
 print.saom_gof <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   what <- switch(x$statistic, indegree = "in-degree distribution",
                  outdegree = "out-degree distribution", triad_census = "triad census",
@@ -1100,12 +715,7 @@ print.saom_gof <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-#' @rdname saom_gof
-#' @param x An `saom_gof` object.
-#' @param violin Whether to draw the simulated distributions as violins
-#'   (kernel densities) rather than boxplots.
-#' @param ... Passed to the plotting functions.
-#' @export
+# See man/saom_gof.Rd.
 plot.saom_gof <- function(x, violin = TRUE, ...) {
   violin <- check_flag(violin, "violin")
   k <- ncol(x$simulated)

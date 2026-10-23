@@ -1,20 +1,4 @@
-#' Coreness (k-cores)
-#'
-#' The coreness of a node is the largest k such that the node belongs to
-#' the k-core, the largest subgraph in which every node has degree at least
-#' k (Seidman 1983). Computed with the O(m) algorithm of Batagelj and
-#' Zaversnik (2003).
-#'
-#' Parallel edges each count. A self-loop adds 2 to its node's degree in an
-#' undirected network, and 1 to out-degree and 1 to in-degree in a directed
-#' one. Weights are ignored. These match igraph's `coreness()`.
-#'
-#' @inheritParams degree
-#' @param mode For directed networks, `"all"` (in-degree plus out-degree),
-#'   `"out"`, or `"in"`. Ignored for undirected networks.
-#'
-#' @return A numeric vector aligned with the rows of `x$nodes`.
-#' @export
+# Coreness (k-cores) (man/coreness.Rd).
 coreness <- function(x, mode = c("all", "out", "in")) {
   check_netframe(x)
   mode <- match.arg(mode)
@@ -23,18 +7,7 @@ coreness <- function(x, mode = c("all", "out", "in")) {
   engine_call("coreness", .Call(C_coreness, ptr, code))
 }
 
-#' Maximal cliques and the clique number
-#'
-#' Lists the maximal cliques of the undirected simple graph underlying the
-#' network, using the Bron-Kerbosch algorithm with pivoting over a
-#' degeneracy ordering.
-#'
-#' @inheritParams betweenness
-#' @param min_size Smallest clique size to return.
-#'
-#' @return `max_cliques()`: a list of vectors of node identifiers (values
-#'   of `x$nodes[[id]]`). `clique_number()`: a single integer.
-#' @export
+# Maximal cliques and the clique number (man/max_cliques.Rd).
 max_cliques <- function(x, min_size = 1L, threads = 0L) {
   check_netframe(x)
   min_size <- check_count(min_size, "min_size")
@@ -45,8 +18,7 @@ max_cliques <- function(x, min_size = 1L, threads = 0L) {
   lapply(idx, function(i) ids[i])
 }
 
-#' @rdname max_cliques
-#' @export
+# See man/max_cliques.Rd.
 clique_number <- function(x, threads = 0L) {
   check_netframe(x)
   threads <- resolve_threads(threads)
@@ -54,19 +26,7 @@ clique_number <- function(x, threads = 0L) {
   engine_call("clique_number", .Call(C_clique_number, ptr, threads))
 }
 
-#' Modularity of a partition
-#'
-#' Newman-Girvan modularity, with weights, a resolution parameter, and the
-#' directed form of Leicht and Newman (2008).
-#'
-#' @inheritParams betweenness
-#' @param membership Group of each node, aligned with the rows of
-#'   `x$nodes`. Any atomic vector (integer, character, factor); only
-#'   equality of values matters. Missing values are not allowed.
-#' @param resolution Resolution parameter (non-negative).
-#'
-#' @return A single number; `NaN` for a network without edges.
-#' @export
+# Modularity of a partition (man/modularity.Rd).
 modularity <- function(x, membership, resolution = 1, weighted = NULL) {
   check_netframe(x)
   if (length(membership) != nrow(x$nodes)) {
@@ -83,20 +43,7 @@ modularity <- function(x, membership, resolution = 1, weighted = NULL) {
   engine_call("modularity", .Call(C_modularity, ptr, labels, resolution, weighted))
 }
 
-#' Louvain community detection
-#'
-#' Finds groups by greedy modularity optimization with the method of
-#' Blondel et al. (2008).
-#'
-#' @inheritParams modularity
-#' @param seed Seed for the random node order: a whole number between 0
-#'   and 2^53. `NULL` draws one from R's random number generator, so
-#'   [set.seed()] makes results reproducible.
-#'
-#' @return An integer vector of group labels aligned with the rows of
-#'   `x$nodes`, numbered 1, 2, ... in order of first appearance, with the
-#'   partition's modularity in attribute `"modularity"`.
-#' @export
+# Louvain community detection (man/cluster_louvain.Rd).
 cluster_louvain <- function(x, resolution = 1, weighted = NULL, seed = NULL) {
   check_netframe(x)
   if (x$directed) {

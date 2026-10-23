@@ -9,139 +9,7 @@
 # sfnetworks. sf, sfnetworks, and spdep are suggested packages: every use is
 # guarded by requireNamespace() and the package works without them.
 
-#' Spatial networks with sf
-#'
-#' A spatial network is a [netframe()] whose node table, edge table, or
-#' both are simple-feature data frames from the sf package (Pebesma 2018).
-#' Nodes and edges may carry any geometry type (POINT, LINESTRING,
-#' POLYGON, their MULTI forms, or GEOMETRYCOLLECTION) and a coordinate
-#' reference system; edges may also have no geometry at all, or geometry
-#' for only some rows (empty geometries for the rest). Connectivity always
-#' comes from the `from` and `to` columns, never from the geometry, so a
-#' line that happens to cross a node does not join it. Geometry is handled
-#' entirely by sf (GEOS and s2); the engine only ever sees numbers derived
-#' from it, such as edge lengths and representative points.
-#'
-#' [netframe()] and [as_netframe()] notice sf tables on their own and
-#' record the geometry columns and CRS in `x$roles` (`node_geometry`,
-#' `edge_geometry`, and `crs`, which then holds an sf `crs` object). Nodes
-#' and edges that both have geometry must share a CRS; use
-#' [sf::st_transform()] or [sf::st_set_crs()] on one table first if they
-#' do not. The functions here read those roles:
-#'
-#' * `to_sf()` returns the node or edge table as an sf data frame with all
-#'   its attributes. Nodes recorded with coordinate columns by
-#'   [spatial_network()] become POINT features (WGS 84 for longitude and
-#'   latitude, no CRS for planar coordinates). Edges without geometry
-#'   become straight LINESTRINGs between the representative points of
-#'   their endpoints when `implicit = TRUE` (sfnetworks calls these
-#'   spatially implicit edges); with `implicit = FALSE` the edge table is
-#'   returned as it is, and an error is raised if it has no geometry.
-#'   [sf::st_as_sf()] on a netframe does the same.
-#' * `check_geometry()` is the optional consistency check between edge
-#'   geometries and node geometries. It is never required: a network is
-#'   valid however its geometries lie. For each edge with geometry it
-#'   reports whether the geometry starts within `tolerance` of the `from`
-#'   node's geometry and ends within `tolerance` of the `to` node's
-#'   geometry (in either orientation for undirected networks), `NA` for
-#'   edges without geometry. Distances are [sf::st_distance()], so a line
-#'   ending anywhere inside a polygon node is at distance 0 from it.
-#' * `transform_network()` applies [sf::st_transform()] to both tables at
-#'   once and updates the recorded CRS. Columns computed earlier from the
-#'   geometry, such as lengths, are not recomputed.
-#' * `spatial_filter()` keeps the nodes whose geometry satisfies
-#'   `predicate` with any feature of `y` (any sf or sfc object, a bbox, or
-#'   another spatial netframe) and returns the induced subnetwork: those
-#'   nodes and every edge between two of them, with all columns and roles,
-#'   as [ego_network()] does.
-#' * `spatial_join()` attaches the attributes of the feature of `y` that
-#'   each node's geometry matches under `join` (an [sf::st_join()] with
-#'   `left = TRUE`). The node table keeps one row per node: a node that
-#'   matches several features keeps the first and a warning says how many
-#'   nodes had more; a node that matches none gets `NA`. Columns of `y`
-#'   whose names clash with node columns get the suffix `_y`.
-#'
-#' @section Representative points:
-#' Every point-based function of [spatial_network()] (`edge_lengths()` for
-#' edges without geometry, [group_geometry()], [proximity_network()], the
-#' map drawn by [plot_spatial()]) reduces each node geometry to one
-#' point. POINT geometries are used as they are. Other geometries are
-#' reduced by [sf::st_point_on_surface()] by default, which always lies on
-#' the geometry (a crescent's centroid does not), or by
-#' [sf::st_centroid()] when `spatial_network(x, representative =
-#' "centroid")` has been called. For longitude and latitude, point on
-#' surface is computed on the planar coordinates (sf warns of this; the
-#' warning is silenced here because the point still lies on the geometry),
-#' while centroids are computed on the sphere by s2. A node whose geometry
-#' is empty has no representative point and those functions stop with an
-#' error naming the row.
-#'
-#' @section Edge lengths:
-#' When the edge table has geometry, [edge_lengths()] returns
-#' [sf::st_length()] of each edge geometry: a geodesic length for
-#' longitude and latitude (computed on the sphere by s2 when
-#' [sf::sf_use_s2()] is on, otherwise on the ellipsoid), and a planar
-#' length in the units of the CRS otherwise. Edges with empty geometry get
-#' the distance between the representative points of their endpoints
-#' ([sf::st_distance()], in the same units). The result is a plain numeric
-#' vector with the unit recorded in `attr(, "unit")` (for example `"m"`),
-#' empty when the CRS is unknown. Without edge geometry, [edge_lengths()]
-#' uses the representative points and the haversine formula on a sphere
-#' of radius `x$roles$radius`, as documented in [spatial_network()]; the
-#' two differ by the small difference between s2's Earth radius and the
-#' GRS 80 mean radius, and by the ellipsoid when s2 is off.
-#'
-#' @param x A [netframe()] with sf nodes or edges; for `to_sf(what =
-#'   "nodes")` also one with coordinate columns from [spatial_network()].
-#' @param what Which table to return: `"nodes"` or `"edges"`.
-#' @param implicit For `what = "edges"`, whether edges without geometry get
-#'   straight-line geometries between their endpoints.
-#' @param tolerance Largest distance, in the units of the CRS (metres for
-#'   longitude and latitude), at which an edge geometry's end still counts
-#'   as touching its node.
-#' @param crs Target coordinate reference system, as accepted by
-#'   [sf::st_transform()] (an EPSG code, a string, or an sf `crs`).
-#' @param y Features to filter or join by: an sf or sfc object, an sf
-#'   `bbox`, or a spatial netframe (its node geometries are used).
-#' @param predicate,join A geometric binary predicate from sf, such as
-#'   [sf::st_intersects()] (the default), [sf::st_within()], or
-#'   [sf::st_is_within_distance()], called as `predicate(nodes, y, ...)`.
-#' @param ... Further arguments passed to `predicate` or `join`, such as
-#'   `dist` for [sf::st_is_within_distance()].
-#'
-#' @return `to_sf()` returns an sf data frame. `check_geometry()` returns a
-#'   logical vector aligned with the rows of `x$edges`. The other functions
-#'   return a netframe: `transform_network()` and `spatial_join()` with the
-#'   same nodes and edges, `spatial_filter()` the induced subnetwork.
-#'
-#' @references
-#' Pebesma, E. (2018). Simple features for R: Standardized support for
-#' spatial vector data. *The R Journal*, 10(1), 439-446.
-#' \doi{10.32614/RJ-2018-009}
-#'
-#' Barthelemy, M. (2011). Spatial networks. *Physics Reports*, 499(1-3),
-#' 1-101. \doi{10.1016/j.physrep.2010.11.002}
-#'
-#' @seealso [from_lines()] and [from_polygons()] to build spatial networks
-#'   from sf data, [to_sfnetwork()] for sfnetworks, [read_network()] for
-#'   GeoPackage files, [spatial_network()] and [proximity_network()] for
-#'   the point-based functions.
-#' @examples
-#' if (requireNamespace("sf", quietly = TRUE)) {
-#'   pts <- sf::st_as_sf(data.frame(name = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
-#'                       coords = c("x", "y"), crs = 32633)  # UTM zone 33N, metres
-#'   g <- netframe(data.frame(from = c("a", "b", "c"), to = c("b", "c", "a")), pts,
-#'                 directed = FALSE)
-#'   g
-#'   edge_lengths(g)
-#'   to_sf(g, "edges")
-#'   h <- netframe(to_sf(g, "edges"), pts, directed = FALSE)  # explicit edge geometry
-#'   check_geometry(h)
-#'   transform_network(g, 4326)$roles$crs$epsg
-#'   box <- sf::st_bbox(c(xmin = -0.5, ymin = -0.5, xmax = 0.5, ymax = 0.5), crs = 32633)
-#'   spatial_filter(g, box)
-#' }
-#' @export
+# Spatial networks with sf (man/to_sf.Rd).
 to_sf <- function(x, what = c("nodes", "edges"), implicit = TRUE) {
   check_netframe(x)
   what <- match.arg(what)
@@ -206,8 +74,7 @@ straight_lines <- function(x, rows) {
   sf::st_sfc(lines, crs = sf::st_crs(pts))
 }
 
-#' @rdname to_sf
-#' @export
+# See man/to_sf.Rd.
 check_geometry <- function(x, tolerance = 0) {
   check_netframe(x)
   require_sf("check_geometry()")
@@ -244,8 +111,7 @@ check_tolerance <- function(tolerance) {
   invisible(tolerance)
 }
 
-#' @rdname to_sf
-#' @export
+# See man/to_sf.Rd.
 transform_network <- function(x, crs) {
   check_netframe(x)
   require_sf("transform_network()")
@@ -258,8 +124,7 @@ transform_network <- function(x, crs) {
   x
 }
 
-#' @rdname to_sf
-#' @export
+# See man/to_sf.Rd.
 spatial_filter <- function(x, y, predicate = sf::st_intersects, ...) {
   check_netframe(x)
   require_sf("spatial_filter()")
@@ -287,8 +152,7 @@ filter_geometry <- function(y) {
                describe_class(y)), call. = FALSE)
 }
 
-#' @rdname to_sf
-#' @export
+# See man/to_sf.Rd.
 spatial_join <- function(x, y, join = sf::st_intersects, ...) {
   check_netframe(x)
   require_sf("spatial_join()")
@@ -574,122 +438,7 @@ spatial_summary <- function(x) {
 
 # --- Builders -------------------------------------------------------------
 
-#' Spatial networks from lines and polygons
-#'
-#' `from_lines()` builds a network from LINESTRING features such as roads,
-#' rivers, or pipelines: each line becomes an edge, and its two endpoints
-#' become nodes, shared with every other line that ends at the same place.
-#' `from_polygons()` builds the contiguity network of regions: each
-#' polygon becomes a node, and two polygons are joined when they share a
-#' boundary. Both are standard constructions in spatial analysis (Barthelemy
-#' 2011; Bivand, Pebesma, and Gomez-Rubio 2013).
-#'
-#' @section Snapping rule of `from_lines()`:
-#' The first and last vertex of every line are collected, in the order of
-#' the lines (start, then end). With `tolerance = 0`, two endpoints are the
-#' same node exactly when their coordinates are equal, as in
-#' `sfnetworks::as_sfnetwork()`. With a positive `tolerance`, endpoints at
-#' most `tolerance` apart ([sf::st_is_within_distance()], in the units of
-#' the CRS: metres for longitude and latitude) are the same node, and so,
-#' transitively, are endpoints linked through others (single linkage, the
-#' connected components of the within-tolerance relation). A tolerance
-#' that is small next to the shortest line keeps chains from merging
-#' distinct junctions. Each node is placed at the first endpoint that
-#' formed it and numbered by first appearance; line geometries are kept as
-#' they are, so with a positive tolerance an edge can end up to
-#' `tolerance` from its node, which `check_geometry()` with the same
-#' tolerance accepts.
-#'
-#' Nodes get an integer `id` and POINT geometry. Edges keep every column
-#' of `lines` (columns called `from`, `to`, or `length` are renamed
-#' `from_attr`, `to_attr`, and `length_attr`), gain `from` and `to`, and a
-#' `length` column from [sf::st_length()] (see the Edge lengths section
-#' of [to_sf()]) that is the network's weight column, as distances, so
-#' path-based measures use travel distance along the lines. A line that
-#' starts and ends at the same node (a ring road) is a self-loop and is
-#' kept. The network is undirected unless `directed = TRUE`, in which case
-#' each edge runs from a line's first vertex to its last.
-#'
-#' @section Contiguity rule of `from_polygons()`:
-#' Two polygons are neighbours under `"queen"` contiguity when their
-#' boundaries share at least one point, and under `"rook"` contiguity
-#' when they share a boundary line, not just corners, as a rook and a
-#' queen move on a chessboard (Anselin 1988). The relations are evaluated
-#' exactly by [sf::st_relate()] with the DE-9IM patterns `F***T****`
-#' (queen) and `F***1****` (rook) of Egenhofer and Franzosa (1991) and
-#' Clementini, Di Felice, and van Oosterom (1993): interiors disjoint,
-#' boundaries intersecting in anything (queen) or in a line (rook).
-#' `spdep::poly2nb()` compares vertices within `snap` instead (one shared
-#' vertex for queen, more than one for rook); the rules agree when shared
-#' boundaries have shared vertices and differ at T-junctions and for
-#' boundaries drawn with slightly different coordinates. Such polygons do
-#' not touch here, and should be snapped first ([sf::st_snap()], or rounding with
-#' [sf::st_set_precision()]). Overlapping polygons, whose interiors
-#' intersect, are not neighbours under either rule. Coordinates are
-#' treated as planar, also for longitude and latitude (as sf and spdep
-#' do). The network is undirected, each pair listed once with the polygon
-#' that comes first in `polygons` first, and a polygon with no neighbours
-#' is an isolate. The edges have no geometry; `edge_lengths()` then
-#' measures between representative points (see [to_sf()]).
-#'
-#' @param lines An sf data frame or sfc of LINESTRING geometries (cast
-#'   MULTILINESTRINGs with [sf::st_cast()] first).
-#' @param tolerance Distance within which line endpoints are the same
-#'   node; see the snapping rule.
-#' @param directed Whether edges run from each line's first vertex to its
-#'   last (`TRUE`) or are undirected (`FALSE`, the default).
-#' @param polygons An sf data frame or sfc of POLYGON or MULTIPOLYGON
-#'   geometries.
-#' @param contiguity `"queen"` (shared boundary point) or `"rook"` (shared
-#'   boundary line).
-#' @param id Column of `polygons` holding region identifiers, by name or
-#'   position, or `NULL` to number the regions 1, 2, ... in a new first
-#'   column `id` (an existing `id` column is renamed `id_attr`).
-#'
-#' @return A netframe whose node table is an sf data frame; see
-#'   [to_sf()].
-#'
-#' @references
-#' Anselin, L. (1988). *Spatial Econometrics: Methods and Models*. Kluwer.
-#' \doi{10.1007/978-94-015-7799-1}
-#'
-#' Egenhofer, M. J., & Franzosa, R. D. (1991). Point-set topological
-#' spatial relations. *International Journal of Geographical Information
-#' Systems*, 5(2), 161-174. \doi{10.1080/02693799108927841}
-#'
-#' Clementini, E., Di Felice, P., & van Oosterom, P. (1993). A small set
-#' of formal topological relationships suitable for end-user interaction.
-#' In *Advances in Spatial Databases* (pp. 277-295). Springer.
-#' \doi{10.1007/3-540-56869-7_16}
-#'
-#' Bivand, R. S., Pebesma, E., & Gomez-Rubio, V. (2013). *Applied Spatial
-#' Data Analysis with R* (2nd ed.). Springer.
-#' \doi{10.1007/978-1-4614-7618-4}
-#'
-#' Barthelemy, M. (2011). Spatial networks. *Physics Reports*, 499(1-3),
-#' 1-101. \doi{10.1016/j.physrep.2010.11.002}
-#'
-#' @seealso [to_sf()], [proximity_network()], [to_sfnetwork()].
-#' @examples
-#' if (requireNamespace("sf", quietly = TRUE)) {
-#'   # A small road grid: two streets crossing two avenues.
-#'   seg <- function(x0, y0, x1, y1) sf::st_linestring(rbind(c(x0, y0), c(x1, y1)))
-#'   roads <- sf::st_sf(name = c("1st", "2nd", "A", "B"),
-#'                      geometry = sf::st_sfc(seg(0, 0, 2, 0), seg(0, 1, 2, 1),
-#'                                            seg(0, 0, 0, 1), seg(2, 0, 2, 1)))
-#'   g <- from_lines(roads)
-#'   g$nodes
-#'   g$edges
-#'   edge_lengths(g)
-#'
-#'   # Four square regions in a row, each touching the next.
-#'   sq <- function(x) sf::st_polygon(list(rbind(c(x, 0), c(x + 1, 0), c(x + 1, 1),
-#'                                               c(x, 1), c(x, 0))))
-#'   regions <- sf::st_sf(region = c("w", "x", "y", "z"),
-#'                        geometry = sf::st_sfc(sq(0), sq(1), sq(2), sq(3)))
-#'   from_polygons(regions, id = "region")$edges
-#' }
-#' @export
+# Spatial networks from lines and polygons (man/from_lines.Rd).
 from_lines <- function(lines, tolerance = 0, directed = FALSE) {
   require_sf("from_lines()")
   check_tolerance(tolerance)
@@ -775,8 +524,7 @@ as_sf_table <- function(obj, name) {
   obj
 }
 
-#' @rdname from_lines
-#' @export
+# See man/from_lines.Rd.
 from_polygons <- function(polygons, contiguity = c("queen", "rook"), id = NULL) {
   require_sf("from_polygons()")
   contiguity <- match.arg(contiguity)
@@ -881,52 +629,7 @@ exact_proximity <- function(geom, within, k) {
 
 # --- sfnetworks -------------------------------------------------------------
 
-#' Convert to and from sfnetworks
-#'
-#' `to_sfnetwork()` turns a spatial netframe into an `sfnetwork` object of
-#' the sfnetworks package (van der Meer et al. 2026); `as_netframe()` on an
-#' `sfnetwork` converts back, and so does `sfnetworks::as_sfnetwork()` on
-#' a netframe. Node, edge, and network-level attributes are carried across.
-#'
-#' sfnetworks represents nodes as POINT features, so node geometries of
-#' other types are replaced by their representative points (see
-#' [to_sf()]) with a message. Node identifiers become the `name` node
-#' column that tidygraph and igraph use (an existing `name` attribute is
-#' renamed `name_attr`), and come back from it. Edge geometries are passed
-#' on when the edge table has them; edges without geometry get straight
-#' lines when `edges_as_lines = TRUE`, and remain spatially implicit by
-#' default. `sfnetworks::sfnetwork()` checks that every edge line starts
-#' and ends at its nodes' points and stops otherwise; pass `force = TRUE`
-#' through `...` to skip that check for networks whose geometries do not
-#' meet it (knappnet does not require it; see [check_geometry()]). Columns
-#' of class `units`, such as sfnetworks' `weight`, are converted to plain
-#' numbers on the way back.
-#'
-#' @param x A [netframe()] with node geometry or coordinate columns, or an
-#'   `sfnetwork`.
-#' @param edges_as_lines Whether edges without geometry should get
-#'   straight-line geometries; `NULL` keeps the edge table as it is.
-#' @param ... Further arguments to `sfnetworks::sfnetwork()`, such as
-#'   `force = TRUE`.
-#'
-#' @return `to_sfnetwork()` returns an `sfnetwork`;
-#'   `as_netframe()` a netframe whose node table (and edge table, when
-#'   edges are spatially explicit) is an sf data frame.
-#' @references
-#' van der Meer, L., Abad, L., Gilardi, A., & Lovelace, R. (2026).
-#' sfnetworks: Tidy geospatial networks. R package.
-#' \doi{10.32614/CRAN.package.sfnetworks}
-#' @seealso [to_sf()], [as_netframe()].
-#' @examples
-#' if (requireNamespace("sfnetworks", quietly = TRUE)) {
-#'   pts <- sf::st_as_sf(data.frame(name = c("a", "b", "c"), x = c(0, 1, 1), y = c(0, 0, 1)),
-#'                       coords = c("x", "y"), crs = 32633)
-#'   g <- netframe(data.frame(from = c("a", "b"), to = c("b", "c")), pts, directed = FALSE)
-#'   net <- to_sfnetwork(g, edges_as_lines = TRUE)
-#'   net
-#'   as_netframe(net)
-#' }
-#' @export
+# Convert to and from sfnetworks (man/to_sfnetwork.Rd).
 to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
   check_netframe(x)
   require_pkg("sfnetworks")
@@ -975,8 +678,7 @@ to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
   net
 }
 
-#' @rdname as_netframe
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.sfnetwork <- function(x, ...) {
   require_pkg("sfnetworks")
   require_sf("as_netframe() for sfnetwork objects")
@@ -1022,12 +724,7 @@ strip_unit_columns <- function(df) {
   df
 }
 
-#' @rdname as_netframe
-#' @param nodes For sf edge tables, the node table (a data frame or sf
-#'   data frame), as in [netframe()].
-#' @param edges For sf node tables, the edge table: when given, `x` is
-#'   taken as the node table instead.
-#' @export
+# See man/as_netframe.Rd.
 as_netframe.sf <- function(x, nodes = NULL, ..., edges = NULL) {
   if (!is.null(edges)) return(netframe(edges, nodes = x, ...))
   netframe(x, nodes = nodes, ...)

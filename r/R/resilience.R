@@ -1,27 +1,4 @@
-#' Key players
-#'
-#' Finds the set of `k` nodes that, removed, most fragment the network
-#' (KPP-Neg) or that reach most of it (KPP-Pos), following Borgatti (2006).
-#' `key_player_score()` evaluates the same criteria for a given set. See
-#' the help page for definitions and conventions.
-#'
-#' @param x A [netframe()].
-#' @param k Number of key players.
-#' @param set Node identifiers of the set to score.
-#' @param measure `"fragmentation"`, `"distance_fragmentation"`, `"m_reach"`,
-#'   or `"distance_reach"`.
-#' @param m Distance limit for m-reach.
-#' @param mode Direction of paths in directed networks.
-#' @param weighted,weights_as Whether and how edge weights are used as path
-#'   lengths.
-#' @param method `"greedy"` or `"exact"`.
-#' @param restarts Number of greedy restarts.
-#' @param seed Seed of the random starting sets.
-#' @param threads Number of threads.
-#'
-#' @return `key_players()`: a list with `set`, `index`, `score`, `measure`,
-#'   and `evaluations`. `key_player_score()`: a number.
-#' @export
+# Key players (man/key_players.Rd).
 key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentation",
                                           "m_reach", "distance_reach"),
                         m = 1, mode = c("out", "in", "all"), weighted = NULL,
@@ -53,8 +30,7 @@ key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentati
        measure = measure, evaluations = res[[3]])
 }
 
-#' @rdname key_players
-#' @export
+# See man/key_players.Rd.
 key_player_score <- function(x, set, measure = c("fragmentation", "distance_fragmentation",
                                                  "m_reach", "distance_reach"),
                              m = 1, mode = c("out", "in", "all"), weighted = NULL,
@@ -70,21 +46,7 @@ key_player_score <- function(x, set, measure = c("fragmentation", "distance_frag
           mode_code(mode), w$weighted, w$code))
 }
 
-#' Group centrality
-#'
-#' Degree, closeness, and betweenness of a group of nodes taken together
-#' (Everett and Borgatti 1999). See the help page for definitions and
-#' conventions.
-#'
-#' @inheritParams key_players
-#' @param group Node identifiers of the group's members.
-#' @param measure `"degree"`, `"closeness"`, or `"betweenness"`.
-#' @param mode For directed networks: which ties (degree) or the direction
-#'   of paths (closeness). Ignored by betweenness.
-#' @param normalized Whether to normalize.
-#'
-#' @return A number.
-#' @export
+# Group centrality (man/group_centrality.Rd).
 group_centrality <- function(x, group, measure = c("degree", "closeness", "betweenness"),
                              mode = c("out", "in", "all"), normalized = TRUE,
                              weighted = NULL, weights_as = NULL, threads = 0L) {
@@ -108,19 +70,7 @@ group_centrality <- function(x, group, measure = c("degree", "closeness", "betwe
           w$weighted, w$code, normalized, threads))
 }
 
-#' Flow betweenness
-#'
-#' The part of the maximum flow between every pair of other nodes that must
-#' pass through each node (Freeman, Borgatti, and White 1991). See the help
-#' page for definitions and conventions.
-#'
-#' @inheritParams key_players
-#' @param scale `"raw"`, `"normalized"`, or `"fractional"`.
-#' @param capacity Whether edge weights are capacities. `NULL` uses them
-#'   when the network's weights are strengths.
-#'
-#' @return A numeric vector aligned with the rows of `x$nodes`.
-#' @export
+# Flow betweenness (man/flow_betweenness.Rd).
 flow_betweenness <- function(x, scale = c("raw", "normalized", "fractional"),
                              capacity = NULL, threads = 0L) {
   check_netframe(x)

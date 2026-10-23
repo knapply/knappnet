@@ -1,93 +1,4 @@
-#' Temporal networks
-#'
-#' `temporal_network()` creates a network whose edges are timed contacts:
-#' each edge has a start time and, optionally, an end time or a duration,
-#' and nodes may have presence intervals. The result is an ordinary
-#' [netframe()] with extra column roles, so every static measure still
-#' works on it (treating each contact as an edge), and the temporal
-#' functions listed below use the times. `is_temporal()` tells whether a
-#' netframe has times.
-#'
-#' @param edges A data frame of contacts, one row per contact, or a
-#'   [netframe()] whose edge table holds the times; its nodes, endpoints,
-#'   weights, and other roles are kept.
-#' @param nodes A data frame of nodes, or `NULL`; see [netframe()]. Must be
-#'   `NULL` when `edges` is a netframe.
-#' @param start Column of `edges` holding each contact's start time, by
-#'   name or position. Times may be numbers (in any unit), `Date`, or
-#'   `POSIXct` date-times. By default the column named `"time"`, or, if
-#'   there is none, the column named `"start"`; a netframe that already
-#'   has times keeps them.
-#' @param end Optional column of end times, of the same type as `start`.
-#' @param duration Optional column of durations, an alternative to `end`:
-#'   numbers in the unit of the times (seconds for date-times, days for
-#'   dates) or a `difftime`. Without `end` or `duration`, every contact is
-#'   instantaneous.
-#' @param directed Whether contacts are directed. Ignored when `edges` is a
-#'   netframe, which keeps its own direction.
-#' @param from,to,id,weight,weight_type,graph As in [netframe()].
-#' @param node_start,node_end Optional columns of `nodes` holding when each
-#'   node is present, of the same type as `start`. A missing value means
-#'   present from the beginning (start) or until the end (end).
-#' @param x Any object.
-#'
-#' @details
-#' **Times.** Times are stored as given in `x$edges` and `x$nodes`; the
-#' column roles are recorded in `x$roles` (`start`, `end` or `duration`,
-#' `node_start`, `node_end`, and the time type). Internally dates and
-#' date-times are converted to seconds since 1970-01-01 UTC, so a date is
-#' its midnight in UTC. Arguments that are times (such as `from` and `to`
-#' of [network_window()]) take the type of the data: numbers for numeric
-#' times, and dates or date-times for dates and date-times. Arguments that
-#' are lengths of time (window widths, waiting times) take a `difftime`, or
-#' a number in the unit of the data: seconds for date-times, days for
-#' dates. Results that are lengths of time use the same unit.
-#'
-#' **When a contact is active.** Intervals are half-open, as the spells of
-#' networkDynamic (Butts et al. 2026): a contact from \eqn{s} to \eqn{e > s}
-#' is active at times \eqn{s \le t < e}{s <= t < e}, and an instantaneous
-#' contact (\eqn{e = s}) only at \eqn{t = s}. A contact is active in a
-#' window \eqn{[a, b)} when it is active at some time in it: \eqn{s < b} and
-#' \eqn{e > a} for an interval, \eqn{a \le s < b}{a <= s < b} for an
-#' instantaneous contact. So back-to-back contacts \eqn{[1, 2)} and
-#' \eqn{[2, 3)} never overlap, consecutive windows of a tumbling series never
-#' share an instantaneous contact, and an interval belongs to every window it
-#' overlaps. Node presence intervals follow the same rule.
-#'
-#' **Contacts and edges.** Self-loops and repeated contacts between the same
-#' nodes are allowed and kept; each contact is one edge of the netframe.
-#' Static measures applied directly to a temporal network see every contact
-#' as an edge (a multigraph); use [aggregate_network()] for one weighted edge
-#' per pair of nodes, or [network_window()] and [snapshots()] for the
-#' contacts of a period.
-#'
-#' **Log data.** Tables of events such as authentication logs or network
-#' flows (one row per event, with source, destination, and time) are
-#' contact sequences: pass them, or a netframe built from them, straight to
-#' `temporal_network()`. Millions of contacts are fine; slicing
-#' and paths run in compiled code after a single sort by time.
-#'
-#' @section Missing values and invalid input:
-#' Start times must not be missing and, with `end` or `duration`, neither
-#' may end times or durations; ends must not precede starts. Errors name the
-#' rows of `edges`. Start and end columns must have the same type. Everything
-#' else is checked as in [netframe()].
-#'
-#' @references
-#' Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
-#' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
-#'
-#' Butts, C. T., Leslie-Cook, A., Krivitsky, P. N., & Bender-deMoll, S.
-#' (2026). networkDynamic: Dynamic extensions for network objects. R
-#' package version 0.12.0. \doi{10.32614/CRAN.package.networkDynamic}
-#'
-#' @seealso [network_at()], [network_window()], [snapshots()],
-#'   [aggregate_network()], [temporal_distances()], [temporal_reach()],
-#'   [temporal_closeness()], [rolling()], [burstiness()].
-#'
-#' @return `temporal_network()` returns a [netframe()] with time roles;
-#'   `is_temporal()` returns `TRUE` or `FALSE`.
-#' @export
+# Temporal networks (man/temporal_network.Rd).
 temporal_network <- function(edges, nodes = NULL, start = "time", end = NULL,
                              duration = NULL, directed = TRUE, from = 1L, to = 2L, id = 1L,
                              node_start = NULL, node_end = NULL, weight = NULL,
@@ -169,36 +80,10 @@ temporal_network <- function(edges, nodes = NULL, start = "time", end = NULL,
   x
 }
 
-#' @rdname temporal_network
-#' @export
+# See man/temporal_network.Rd.
 is_temporal <- function(x) inherits(x, "netframe") && !is.null(x$roles$start)
 
-#' A temporal network at a time or in a window
-#'
-#' `network_at()` keeps the contacts active at one time and
-#' `network_window()` those active at some time in the window
-#' \eqn{[from, to)}, following the half-open rule of [temporal_network()].
-#' Both return a temporal network with all columns and roles, contacts in
-#' their original order, and contacts unchanged (not clipped to the
-#' window).
-#'
-#' @param x A temporal network ([temporal_network()]).
-#' @param time A time, of the type of the network's times.
-#' @param from,to Start (included) and end (excluded) of the window.
-#' @param nodes Which nodes to keep: `"all"` (the default) keeps every node,
-#'   so results of measures stay aligned across times; `"present"` keeps the
-#'   nodes present according to the network's node presence intervals (every
-#'   node if it has none); `"active"` keeps only nodes with a contact in the
-#'   result. Endpoints of the contacts kept are always kept.
-#'
-#' @return A temporal network ([netframe()]).
-#' @examples
-#' calls <- data.frame(from = c("a", "a", "b", "c"), to = c("b", "c", "c", "d"),
-#'                     time = c(1, 2, 2, 5), end = c(3, 2, 4, 6))
-#' g <- temporal_network(calls, end = "end", directed = FALSE)
-#' network_at(g, 2)$edges
-#' network_window(g, 3, 5, nodes = "active")$edges
-#' @export
+# A temporal network at a time or in a window (man/network_at.Rd).
 network_at <- function(x, time, nodes = c("all", "present", "active")) {
   check_temporal(x)
   nodes <- match.arg(nodes)
@@ -209,8 +94,7 @@ network_at <- function(x, time, nodes = c("all", "present", "active")) {
   slice_netframe(x, idx, nodes, present)
 }
 
-#' @rdname network_at
-#' @export
+# See man/network_at.Rd.
 network_window <- function(x, from, to, nodes = c("all", "present", "active")) {
   check_temporal(x)
   nodes <- match.arg(nodes)
@@ -223,42 +107,7 @@ network_window <- function(x, from, to, nodes = c("all", "present", "active")) {
   slice_netframe(x, w[[2L]] + 1, nodes, present)
 }
 
-#' Snapshots of a temporal network
-#'
-#' Splits a temporal network into a series of windows, sliding (`step`
-#' smaller than `width`), tumbling (`step` equal to `width`, the default),
-#' or with gaps (`step` larger), or between given `breaks`. Each window
-#' \eqn{[a, b)} holds the contacts active in it, as in [network_window()].
-#'
-#' Contacts are sorted by time once and the whole series is computed in one
-#' pass, with a heap of active contacts, in \eqn{O(m \log m)}{O(m log m)}
-#' time plus the size of the output, so series over millions of contacts
-#' are fast. An interval contact appears in every window it overlaps.
-#'
-#' @inheritParams network_at
-#' @param width Window length: a number in the unit of the times (seconds
-#'   for date-times, days for dates) or a `difftime`.
-#' @param step Distance between window starts, as `width`.
-#' @param breaks Alternatively to `width`, increasing times: windows are
-#'   \eqn{[breaks_k, breaks_{k+1})}.
-#' @param from,to With `width`: the first window starts at `from` (default:
-#'   the earliest start time), and windows start up to and including `to`
-#'   (default: the latest end time), so with `step <= width` every contact
-#'   falls in some window.
-#'
-#' @return A list of temporal networks, one per window, with attribute
-#'   `"windows"`, a data frame of window `start` and `end` times.
-#' @examples
-#' logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2"),
-#'                      host = c("h1", "h1", "h2", "h2", "h3"),
-#'                      time = c(0, 1, 5, 6, 12))
-#' g <- temporal_network(logins)
-#' s <- snapshots(g, width = 5)
-#' attr(s, "windows")
-#' vapply(s, function(w) nrow(w$edges), numeric(1))
-#' # Sliding windows of width 6 every 3 time units.
-#' vapply(snapshots(g, width = 6, step = 3), function(w) nrow(w$edges), numeric(1))
-#' @export
+# Snapshots of a temporal network (man/snapshots.Rd).
 snapshots <- function(x, width = NULL, step = width, breaks = NULL, from = NULL, to = NULL,
                       nodes = c("all", "present", "active")) {
   check_temporal(x)
@@ -278,36 +127,7 @@ snapshots <- function(x, width = NULL, step = width, breaks = NULL, from = NULL,
   out
 }
 
-#' Aggregate a temporal network into a weighted network
-#'
-#' Collapses the contacts between each pair of nodes (ordered pairs in
-#' directed networks, unordered otherwise) into one edge carrying the
-#' number of contacts, their total duration, and the first and last times.
-#' With `from` and `to`, only contacts active in \eqn{[from, to)} count and
-#' durations are clipped to the window, so an instantaneous contact adds to
-#' the count but not to the duration.
-#'
-#' Self-loops are kept as edges from a node to itself. Edges appear in the
-#' order of each pair's first contact; in undirected networks the endpoints
-#' are given in the order of that first contact. The original weights, if
-#' any, are not used. All nodes are kept, with their columns.
-#'
-#' @inheritParams network_at
-#' @param weight Which column becomes the weight: `"count"` or
-#'   `"duration"`. Either is a tie strength (`weight_type = "strength"`), so
-#'   path-based measures use 1/weight as the length.
-#' @param from,to Optional window; both or neither.
-#'
-#' @return A static [netframe()] whose edges have columns for the
-#'   endpoints, `count`, `duration` (in the unit of the times), `first`
-#'   (earliest start), and `last` (latest end).
-#' @examples
-#' calls <- data.frame(from = c("a", "b", "a", "c"), to = c("b", "a", "c", "a"),
-#'                     time = c(0, 10, 20, 25), end = c(5, 12, 20, 40))
-#' g <- temporal_network(calls, end = "end", directed = FALSE)
-#' aggregate_network(g)$edges
-#' aggregate_network(g, weight = "duration", from = 0, to = 30)$edges
-#' @export
+# Aggregate a temporal network into a weighted network (man/aggregate_network.Rd).
 aggregate_network <- function(x, weight = c("count", "duration"), from = NULL, to = NULL) {
   check_temporal(x)
   weight <- match.arg(weight)
@@ -334,123 +154,7 @@ aggregate_network <- function(x, weight = c("count", "duration"), from = NULL, t
            weight = weight, weight_type = "strength", graph = x$graph)
 }
 
-#' Time-respecting paths
-#'
-#' Optimal time-respecting walks between nodes of a temporal network:
-#' earliest arrival, latest departure, fastest, and shortest (fewest
-#' contacts), or Pan and Saramäki's (2011) average temporal distance.
-#'
-#' @inheritParams network_at
-#' @param type `"earliest_arrival"`, `"latest_departure"`, `"fastest"`,
-#'   `"shortest"`, or `"average"`; see Details.
-#' @param from,to Identifiers of the origins (rows) and destinations
-#'   (columns); `NULL` uses every node.
-#' @param start,end The window: walks leave at or after `start` and arrive
-#'   at or before `end`. `NULL` uses the earliest start time and the latest
-#'   arrival of any contact.
-#' @param min_wait,max_wait Waiting times allowed at each intermediate node,
-#'   from arriving to leaving again (a number in the unit of the times, or a
-#'   `difftime`). `max_wait = Inf` sets no limit.
-#' @param strict If `TRUE`, waiting times must be strictly greater than
-#'   `min_wait`; with `min_wait = 0`, consecutive contacts must have strictly
-#'   increasing times, so contacts at the same time never chain.
-#' @param traversal Time to traverse a contact: a number (or `difftime`),
-#'   `0` by default, or `"duration"` for each contact's own duration (its end
-#'   minus its start), as for a flight or a phone call that must finish
-#'   before the information moves on.
-#' @param threads Number of threads; `0` uses all available cores (see
-#'   "Threads" in [netframe()]).
-#'
-#' @details
-#' **Walks.** Following Wu et al. (2014), each contact from \eqn{u} to
-#' \eqn{v} starting at \eqn{t} is a *temporal arc* that leaves \eqn{u} at
-#' \eqn{t} and arrives at \eqn{v} at \eqn{t + \lambda}, where \eqn{\lambda}
-#' is the traversal time. A time-respecting walk is a sequence of arcs, each
-#' leaving the node where the previous one arrived, such that the waiting
-#' time \eqn{w} between arriving and leaving satisfies
-#' \eqn{w \ge} `min_wait` (or \eqn{w >} `min_wait` with `strict = TRUE`) and
-#' \eqn{w \le} `max_wait`. The default, non-decreasing times
-#' (`min_wait = 0`, `strict = FALSE`), is the definition of Kempe,
-#' Kleinberg, and Kumar (2002) and of Holme and Saramäki (2012), under which
-#' contacts at the same time can chain (\eqn{a \to b}{a -> b} and
-#' \eqn{b \to c}{b -> c} at the same time let \eqn{a} reach \eqn{c}). With
-#' `strict = TRUE` times strictly increase, as in Pan and Saramäki (2011),
-#' who also require each contact to start after the previous one ends
-#' (`strict = TRUE, traversal = "duration"`). The walk may leave its origin
-#' at any time in the window; waiting rules apply only at intermediate
-#' nodes. Undirected contacts can be traversed either way; self-loops never
-#' help. Interval contacts are traversed from their start time; to let walks
-#' join a long contact part-way, split it into shorter contacts. Node
-#' presence intervals and weights are not used.
-#'
-#' **Values** for walks from \eqn{i} to \eqn{j} (row \eqn{i}, column
-#' \eqn{j}):
-#' \describe{
-#'   \item{`"earliest_arrival"`}{the earliest arrival time at \eqn{j}
-#'     (Wu et al. 2014); `start` (the window start) on the diagonal.}
-#'   \item{`"latest_departure"`}{the latest time to leave \eqn{i} and still
-#'     reach \eqn{j} by `end`; `end` on the diagonal, `-Inf` without a
-#'     walk.}
-#'   \item{`"fastest"`}{the smallest elapsed time from leaving \eqn{i} to
-#'     arriving at \eqn{j}.}
-#'   \item{`"shortest"`}{the fewest contacts.}
-#'   \item{`"average"`}{Pan and Saramäki's (2011, Eq. 1) average temporal
-#'     distance: the time from a starting time \eqn{t} to the earliest
-#'     arrival at \eqn{j}, averaged over all \eqn{t} in the window, where a
-#'     start after the last walk waits for the first walk of the window
-#'     repeated after its end (their periodic boundary condition). It needs a
-#'     window of positive length (otherwise `NaN`).}
-#' }
-#' Unreachable pairs get `Inf` (`-Inf` for latest departure). Times are
-#' numbers on the scale of the data: as given for numeric times, seconds
-#' since 1970-01-01 UTC for date-times, and days since then for dates.
-#' Lengths of time are in the unit of the times. Without `max_wait`, an
-#' optimal walk never needs to repeat a node, so the values are those of
-#' time-respecting paths; with `max_wait`, waiting can only be cut short by
-#' moving on, and the optimum is taken over walks.
-#'
-#' **Algorithms.** Contacts are sorted once by time into an edge stream and
-#' each origin costs one pass over it (Wu et al. 2014): latest departure is
-#' earliest arrival in reversed time, fastest walks keep the latest
-#' departure that reaches each arrival, and fewest contacts the smallest
-#' count. Waiting limits use a heap of pending arrivals and a monotone queue
-#' of usable ones. Earliest arrival without `max_wait` runs 64 origins per
-#' pass. Origins run in parallel. Latest departure costs one pass per
-#' destination, and `"average"` one pass per node of the network. Results
-#' are checked against a brute-force search over all walks.
-#'
-#' @references
-#' Kempe, D., Kleinberg, J., & Kumar, A. (2002). Connectivity and inference
-#' problems for temporal networks. *Journal of Computer and System
-#' Sciences*, 64(4), 820-842. \doi{10.1006/jcss.2002.1829}
-#'
-#' Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
-#' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
-#'
-#' Pan, R. K., & Saramäki, J. (2011). Path lengths, correlations, and
-#' centrality in temporal networks. *Physical Review E*, 84(1), 016105.
-#' \doi{10.1103/PhysRevE.84.016105}
-#'
-#' Wu, H., Cheng, J., Huang, S., Ke, Y., Lu, Y., & Xu, Y. (2014). Path
-#' problems in temporal graphs. *Proceedings of the VLDB Endowment*, 7(9),
-#' 721-732. \doi{10.14778/2732939.2732945}
-#'
-#' @return A numeric matrix with one row per origin and one column per
-#'   destination, named by node identifiers.
-#' @examples
-#' # b passes a message from a to c only if it hears it first.
-#' msgs <- data.frame(from = c("a", "b", "b", "a"), to = c("b", "c", "c", "c"),
-#'                    time = c(1, 1, 3, 6))
-#' g <- temporal_network(msgs)
-#' temporal_distances(g)
-#' # Non-decreasing times (Kempe et al. 2002; Holme and Saramaki 2012): the
-#' # contacts a -> b and b -> c at time 1 chain, so a reaches c at time 1.
-#' temporal_distances(g, from = "a", strict = FALSE)
-#' # Strictly increasing times (Pan and Saramaki 2011): a reaches c at 3.
-#' temporal_distances(g, from = "a", strict = TRUE)
-#' temporal_distances(g, "fastest")
-#' temporal_distances(g, "shortest", max_wait = 1)
-#' @export
+# Time-respecting paths (man/temporal_distances.Rd).
 temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure", "fastest",
                                            "shortest", "average"),
                                from = NULL, to = NULL, start = NULL, end = NULL,
@@ -485,45 +189,7 @@ temporal_distances <- function(x, type = c("earliest_arrival", "latest_departure
   m
 }
 
-#' Temporal reachability
-#'
-#' `temporal_reach()` counts, for every node, the other nodes it can reach
-#' by time-respecting walks (`mode = "out"`: the size of its *set of
-#' influence*) or that can reach it (`mode = "in"`: its *source set*), after
-#' Holme (2005). `reachability_ratio()` is the share of ordered pairs of
-#' distinct nodes joined by a time-respecting walk (Holme 2005), which is 1
-#' in a network where everyone can eventually reach everyone in time order.
-#'
-#' Walks follow the rules described in [temporal_distances()], including
-#' the window and waiting times. Each node costs one pass over the
-#' contacts (64 nodes per pass without `max_wait`), in parallel.
-#'
-#' @inheritParams temporal_distances
-#' @param mode `"out"` or `"in"`.
-#'
-#' @references
-#' Holme, P. (2005). Network reachability of real-world contact sequences.
-#' *Physical Review E*, 71(4), 046119. \doi{10.1103/PhysRevE.71.046119}
-#'
-#' Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
-#' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
-#'
-#' @return `temporal_reach()` returns a numeric vector aligned with the rows
-#'   of `x$nodes`; `reachability_ratio()` a number (`NaN` with fewer than two
-#'   nodes).
-#' @examples
-#' msgs <- data.frame(from = c("a", "b", "c"), to = c("b", "c", "d"), time = c(1, 2, 1))
-#' g <- temporal_network(msgs)
-#' temporal_reach(g)
-#' temporal_reach(g, mode = "in")
-#' reachability_ratio(g)
-#' # Simultaneous contacts: a -> b and b -> c both at time 1.
-#' same <- temporal_network(data.frame(from = c("a", "b"), to = c("b", "c"), time = c(1, 1)))
-#' # Non-decreasing times (Kempe et al. 2002; Holme and Saramaki 2012): a reaches c.
-#' temporal_reach(same, strict = FALSE)
-#' # Strictly increasing times (Pan and Saramaki 2011): a reaches only b.
-#' temporal_reach(same, strict = TRUE)
-#' @export
+# Temporal reachability (man/temporal_reach.Rd).
 temporal_reach <- function(x, mode = c("out", "in"), start = NULL, end = NULL, min_wait = 0,
                            max_wait = Inf, strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
@@ -533,8 +199,7 @@ temporal_reach <- function(x, mode = c("out", "in"), start = NULL, end = NULL, m
                                       if (mode == "out") 1L else 2L, opts))
 }
 
-#' @rdname temporal_reach
-#' @export
+# See man/temporal_reach.Rd.
 reachability_ratio <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
                                strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
@@ -545,48 +210,7 @@ reachability_ratio <- function(x, start = NULL, end = NULL, min_wait = 0, max_wa
   sum(r) / (n * (n - 1))
 }
 
-#' Temporal closeness
-#'
-#' Pan and Saramäki's (2011) temporal closeness centrality
-#' \deqn{C_i = \frac{1}{n - 1} \sum_{j \ne i} \frac{1}{\tau_{ij}}}{C_i = (1 / (n - 1)) sum_{j != i} 1 / tau_ij}
-#' where \eqn{\tau_{ij}} is the average temporal distance from \eqn{i} to
-#' \eqn{j} over all starting times in the window (their Eq. 1; see
-#' `type = "average"` in [temporal_distances()]). Nodes that cannot reach
-#' \eqn{j} at all contribute 0, as in harmonic centrality. High values mean
-#' that information leaving the node at a random time reaches the others
-#' quickly.
-#'
-#' The average temporal distance is computed exactly from each pair's
-#' fastest-path profile (the walks that leave latest for each arrival), with
-#' one pass over the contacts per node, in parallel. Values are in reciprocal
-#' units of time (per second for date-times, per day for dates).
-#'
-#' @inheritParams temporal_distances
-#' @param strict,traversal Path rules, as in [temporal_distances()]. Pan and
-#'   Saramäki's own rule is `strict = TRUE, traversal = "duration"`: each
-#'   contact starts strictly after the previous one ends. The defaults allow
-#'   simultaneous contacts to chain, as in Holme and Saramäki (2012).
-#'
-#' @references
-#' Pan, R. K., & Saramäki, J. (2011). Path lengths, correlations, and
-#' centrality in temporal networks. *Physical Review E*, 84(1), 016105.
-#' \doi{10.1103/PhysRevE.84.016105}
-#'
-#' Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
-#' 519(3), 97-125. \doi{10.1016/j.physrep.2012.03.001}
-#'
-#' @return A numeric vector aligned with the rows of `x$nodes`; `NaN` for
-#'   every node when there are fewer than two nodes or the window has no
-#'   length.
-#' @examples
-#' msgs <- data.frame(from = c("a", "b", "b", "a"), to = c("b", "c", "c", "c"),
-#'                    time = c(1, 1, 3, 6))
-#' g <- temporal_network(msgs)
-#' # Simultaneous contacts chain (Holme and Saramaki 2012).
-#' temporal_closeness(g, start = 0, end = 10)
-#' # Strictly increasing times (Pan and Saramaki 2011).
-#' temporal_closeness(g, start = 0, end = 10, strict = TRUE)
-#' @export
+# Temporal closeness (man/temporal_closeness.Rd).
 temporal_closeness <- function(x, start = NULL, end = NULL, min_wait = 0, max_wait = Inf,
                                strict = FALSE, traversal = 0, threads = 0L) {
   check_temporal(x)
@@ -596,35 +220,7 @@ temporal_closeness <- function(x, start = NULL, end = NULL, min_wait = 0, max_wa
   r[[1L]] * time_scale(x)
 }
 
-#' Apply a measure over a series of windows
-#'
-#' Computes a node-level (or network-level) measure on every snapshot of a
-#' temporal network ([snapshots()]) and returns the results as one tidy
-#' data frame, ready for plotting or modelling change over time.
-#'
-#' Snapshots keep every node by default, so node-level results line up
-#' across windows. `fun` receives each snapshot (a temporal network holding
-#' the contacts active in the window) and must return either one value per
-#' node of the snapshot or a single value; any knappnet measure works, for
-#' example [degree()], [betweenness()], or [graph_density()]. Static
-#' measures see each contact as an edge; aggregate inside `fun` (as in the
-#' examples) to count each pair of nodes once.
-#'
-#' @inheritParams snapshots
-#' @param fun A function, or the name of one, taking a netframe as its
-#'   first argument.
-#' @param ... Further arguments to `fun`.
-#'
-#' @return A data frame with columns `start` and `end` (of each window),
-#'   `node` (the node identifier, or `NA` for single values), and `value`.
-#' @examples
-#' logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3"),
-#'                      host = c("h1", "h1", "h2", "h2", "h3", "h1"),
-#'                      time = c(0, 1, 5, 6, 12, 13))
-#' g <- temporal_network(logins)
-#' rolling(g, degree, width = 5)
-#' rolling(g, function(s) graph_density(aggregate_network(s)), width = 10, step = 5)
-#' @export
+# Apply a measure over a series of windows (man/rolling.Rd).
 rolling <- function(x, fun, width = NULL, step = width, ..., breaks = NULL, from = NULL,
                     to = NULL, nodes = c("all", "present", "active")) {
   check_temporal(x)
@@ -664,65 +260,7 @@ rolling <- function(x, fun, width = NULL, step = width, ..., breaks = NULL, from
              stringsAsFactors = FALSE)
 }
 
-#' Inter-event times and burstiness
-#'
-#' `inter_event_times()` lists the times between consecutive events of each
-#' node or pair of nodes; `burstiness()` summarizes them with Goh and
-#' Barabási's (2008) burstiness and memory coefficients.
-#'
-#' The events of a node are the start times of its contacts: all of them
-#' (`mode = "all"`), or in directed networks those it sends (`"out"`) or
-#' receives (`"in"`); a self-loop is one event. The events of a pair are the
-#' start times of the contacts between the two nodes (ordered pairs in
-#' directed networks). Simultaneous events give inter-event times of 0.
-#'
-#' With inter-event times \eqn{\tau_1, \dots, \tau_k} of mean \eqn{\mu} and
-#' standard deviation \eqn{\sigma}, the burstiness is
-#' \deqn{B = \frac{\sigma - \mu}{\sigma + \mu},}{B = (sigma - mu) / (sigma + mu),}
-#' which is -1 for perfectly regular events, about 0 for a Poisson process,
-#' and approaches 1 for very bursty activity (Goh and Barabási 2008, Eq. 1).
-#' The memory coefficient is the correlation of consecutive inter-event
-#' times (their Eq. 4),
-#' \deqn{M = \frac{1}{k - 1} \sum_{i=1}^{k-1} \frac{(\tau_i - \mu_1)(\tau_{i+1} - \mu_2)}{\sigma_1 \sigma_2},}{M = (1 / (k - 1)) sum_i (tau_i - mu_1)(tau_{i+1} - mu_2) / (sigma_1 sigma_2),}
-#' where \eqn{\mu_1, \sigma_1} (\eqn{\mu_2, \sigma_2}) are the mean and
-#' standard deviation of \eqn{\tau_1, \dots, \tau_{k-1}}
-#' (\eqn{\tau_2, \dots, \tau_k}). Standard deviations divide by the number
-#' of values (the standard deviation of the observed distribution), so
-#' \eqn{M} is exactly the Pearson correlation; `sd()` divides by one less,
-#' which gives a slightly different \eqn{B}. \eqn{B} is `NaN` with fewer than
-#' two inter-event times or when all are 0, and \eqn{M} with fewer than
-#' three or when either sequence is constant. Neither coefficient corrects
-#' for the number of events (Kim and Jo 2016 discuss finite-size effects),
-#' so compare nodes with similar activity.
-#'
-#' @inheritParams network_at
-#' @param by `"node"` or `"pair"`.
-#' @param mode For nodes of directed networks: `"all"`, `"out"`, or `"in"`.
-#'
-#' @references
-#' Goh, K.-I., & Barabási, A.-L. (2008). Burstiness and memory in complex
-#' systems. *EPL (Europhysics Letters)*, 81(4), 48002.
-#' \doi{10.1209/0295-5075/81/48002}
-#'
-#' Kim, E.-K., & Jo, H.-H. (2016). Measuring burstiness for finite event
-#' sequences. *Physical Review E*, 94(3), 032311.
-#' \doi{10.1103/PhysRevE.94.032311}
-#'
-#' @return `inter_event_times()` returns a data frame with the node (or the
-#'   pair, as `from` and `to`) and `gap`, the inter-event time in the unit
-#'   of the times, ordered by node (or pair) and then time.
-#'   `burstiness()` returns a data frame with one row per node (aligned with
-#'   `x$nodes`) or per pair (in order of first contact), with `events`,
-#'   `burstiness`, and `memory`.
-#' @examples
-#' ev <- data.frame(from = c("a", "a", "a", "a", "b", "b", "b"),
-#'                  to = c("b", "b", "c", "c", "c", "c", "c"),
-#'                  time = c(0, 1, 2, 10, 0, 5, 10))
-#' g <- temporal_network(ev, directed = FALSE)
-#' inter_event_times(g)
-#' burstiness(g)
-#' burstiness(g, by = "pair")
-#' @export
+# Inter-event times and burstiness (man/burstiness.Rd).
 burstiness <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
   check_temporal(x)
   by <- match.arg(by)
@@ -737,8 +275,7 @@ burstiness <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) 
   out
 }
 
-#' @rdname burstiness
-#' @export
+# See man/burstiness.Rd.
 inter_event_times <- function(x, by = c("node", "pair"), mode = c("all", "out", "in")) {
   check_temporal(x)
   by <- match.arg(by)

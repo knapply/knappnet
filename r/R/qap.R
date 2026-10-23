@@ -1,27 +1,4 @@
-#' QAP correlation test
-#'
-#' Tests the correlation between two networks, or any two n-by-n matrices
-#' of dyadic data, with the quadratic assignment procedure (Hubert 1987;
-#' Krackhardt 1987).
-#'
-#' @param y,x Square matrices of the same size, or [netframe()]s (see
-#'   `attr`).
-#' @param reps Number of random permutations.
-#' @param seed Seed for the permutations, a whole number in
-#'   \[0, 2^53). `NULL` draws one from R's random number generator, so
-#'   [set.seed()] makes results reproducible.
-#' @param diag Whether to use the diagonal (self-dyads).
-#' @param mode `"digraph"` uses every ordered pair; `"graph"` uses each
-#'   unordered pair once, read from the lower triangle, for undirected or
-#'   symmetric data.
-#' @param exact Whether to evaluate all n! permutations instead of `reps`
-#'   random ones (n <= 10).
-#' @param attr For netframe inputs, the edge column that fills the matrix.
-#'   `NULL` uses the network's weight column if it has one and counts edges
-#'   otherwise.
-#' @param threads Number of threads; `0` uses all available cores (see
-#'   "Threads" in [netframe()]).
-#' @export
+# QAP correlation test (man/qap_cor.Rd).
 qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
                     mode = c("digraph", "graph"), exact = FALSE, attr = NULL,
                     threads = 0L) {
@@ -57,7 +34,7 @@ qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
   ), class = "qap_cor")
 }
 
-#' @export
+# See man/qap_cor.Rd.
 print.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nQAP correlation test\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -69,14 +46,14 @@ print.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-#' @export
+# See man/qap_cor.Rd.
 summary.qap_cor <- function(object, ...) {
   q <- stats::quantile(object$dist, c(0, 0.025, 0.25, 0.5, 0.75, 0.975, 1),
                        na.rm = TRUE, names = TRUE)
   structure(c(object, list(quantiles = q)), class = c("summary.qap_cor", "qap_cor"))
 }
 
-#' @export
+# See man/qap_cor.Rd.
 print.summary.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   print.qap_cor(x, digits = digits)
   cat("\nReference distribution of r:\n")
@@ -84,24 +61,7 @@ print.summary.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L),
   invisible(x)
 }
 
-#' Multiple regression QAP
-#'
-#' Regresses one network (or n-by-n matrix of dyadic data) on others by
-#' ordinary least squares, with p-values from the quadratic assignment
-#' procedure: double semi-partialling (Dekker, Krackhardt, and Snijders
-#' 2007) or permutation of the response (Krackhardt 1988).
-#'
-#' @inheritParams qap_cor
-#' @param y The response: a square matrix or a [netframe()].
-#' @param x The predictors: a matrix or netframe, or a list of them (names
-#'   become coefficient names).
-#' @param method `"dsp"` (double semi-partialling) or `"y"`
-#'   (Y-permutation).
-#' @param intercept Whether to include an intercept.
-#' @param statistic The statistic the permutation test uses: `"t"` (the
-#'   default, recommended by Dekker et al. 2007) or `"beta"`.
-#' @param tol Tolerance for detecting a rank-deficient design.
-#' @export
+# Multiple regression QAP (man/mrqap.Rd).
 mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
                   intercept = TRUE, mode = c("digraph", "graph"), diag = FALSE,
                   statistic = c("t", "beta"), exact = FALSE, attr = NULL,
@@ -171,7 +131,7 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   ), class = "mrqap")
 }
 
-#' @export
+# See man/mrqap.Rd.
 print.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nMultiple regression QAP\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -181,14 +141,14 @@ print.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-#' @export
+# See man/mrqap.Rd.
 summary.mrqap <- function(object, ...) {
   tab <- cbind(Estimate = object$coefficients, `Std. Error` = object$std.error,
                `t value` = object$t, object$p.value)
   structure(c(object, list(table = tab)), class = c("summary.mrqap", "mrqap"))
 }
 
-#' @export
+# See man/mrqap.Rd.
 print.summary.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nMultiple regression QAP\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")

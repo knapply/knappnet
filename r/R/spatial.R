@@ -1,97 +1,4 @@
-#' Geospatial networks
-#'
-#' A spatial network is a netframe whose nodes have coordinates:
-#' longitude and latitude in degrees, or planar x and y. `spatial_network()`
-#' records which node columns hold them; the other functions here use that
-#' record. Networks whose node table is an sf data frame (see [to_sf()])
-#' need no such record: their geometries, of any type, are reduced to
-#' representative points, and `spatial_network(x, representative = )`
-#' chooses how. Spatial networks in general are reviewed by Barthelemy
-#' (2011).
-#'
-#' @param x A [netframe()]; for every function but `spatial_network()` and
-#'   `proximity_network()`, one returned by `spatial_network()` or one
-#'   with sf node geometry.
-#' @param coords The two columns of `x$nodes` (or of `nodes`) holding the
-#'   coordinates, by name or position: longitude then latitude for
-#'   `crs = "lonlat"`, x then y for `"planar"`. Not used, and an error if
-#'   given, when `x$nodes` carries sf geometry.
-#' @param representative For sf node geometries other than points, how
-#'   each is reduced to one point: [sf::st_point_on_surface()] (the
-#'   default; always on the geometry) or [sf::st_centroid()]. See
-#'   [to_sf()].
-#' @param crs `"lonlat"` for longitude and latitude in degrees on a sphere
-#'   (distances are great-circle distances in the units of `radius`), or
-#'   `"planar"` for Euclidean distances in the units of the coordinates.
-#' @param radius Radius of the sphere for `crs = "lonlat"`. The default is
-#'   the mean Earth radius of the Geodetic Reference System 1980,
-#'   6371008.7714 m (Moritz 2000), so distances are in metres; use
-#'   6371.0088 for kilometres.
-#'
-#' @details
-#' Great-circle distances use the haversine formula (Sinnott 1984), which
-#' is accurate to well under a millimetre on the Earth except between
-#' nearly antipodal points, where it loses about half its digits (an error
-#' of up to about 0.2 m). A sphere is an approximation: distances on it
-#' differ from ellipsoidal geodesics by up to about 0.5%. Coordinates must
-#' be finite and latitudes within \[-90, 90\].
-#'
-#' `edge_lengths()` gives the distance between the endpoints of every
-#' edge (0 for a self-loop); `summary()` or `hist()` of it describe the
-#' edge-length distribution, and the lengths can serve as distance weights
-#' in a new netframe. `distance_decay()` turns lengths into tie weights
-#' that fall with distance, as in gravity models of spatial interaction:
-#' `"exponential"` gives \eqn{\exp(-d / s)}, `"gaussian"`
-#' \eqn{\exp(-(d / s)^2)}, and `"power"` \eqn{(1 + d / s)^{-e}}, with
-#' `scale` \eqn{s} and `exponent` \eqn{e}; each is 1 at distance 0.
-#'
-#' `group_geometry()` gives, for each group of nodes, its size, its
-#' centroid, the mean distance of its members from the centroid, and the
-#' standard distance (the root mean squared distance from the centroid;
-#' Bachi 1963). The centroid of planar points is the mean of their
-#' coordinates; for longitude and latitude it is the geographic midpoint,
-#' the normalized mean of the members' unit vectors converted back to
-#' longitude and latitude, which is undefined (`NaN`) when that mean
-#' vanishes, as for two antipodal points.
-#'
-#' @references
-#' Barthelemy, M. (2011). Spatial networks. *Physics Reports*, 499(1-3),
-#' 1-101. \doi{10.1016/j.physrep.2010.11.002}
-#'
-#' Sinnott, R. W. (1984). Virtues of the haversine. *Sky and Telescope*,
-#' 68(2), 159.
-#'
-#' Moritz, H. (2000). Geodetic Reference System 1980. *Journal of Geodesy*,
-#' 74(1), 128-133. \doi{10.1007/s001900050278}
-#'
-#' Bachi, R. (1963). Standard distance measures and related methods for
-#' spatial analysis. *Papers of the Regional Science Association*, 10(1),
-#' 83-132. \doi{10.1007/BF01934680}
-#'
-#' @return `spatial_network()` returns `x` with the coordinate columns and
-#'   coordinate system recorded in `x$roles` (`x`, `y`, `crs`, `radius`;
-#'   for sf nodes `representative` and `radius` only, since `crs` then
-#'   holds the sf CRS). `edge_lengths()` returns a numeric vector aligned
-#'   with the rows of `x$edges` (from the edge geometries when the edge
-#'   table has them, with the unit in `attr(, "unit")`; see [to_sf()]);
-#'   `distance_decay()` a numeric vector the length of `d`.
-#'   `group_geometry()` returns a data frame with one row per group:
-#'   `group`, `size`, the centroid coordinates (named after the coordinate
-#'   columns), `mean_distance`, and `standard_distance`.
-#' @seealso [proximity_network()] to build a network from locations.
-#' @examples
-#' nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
-#'                     lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
-#'                     lat = c(51.5072, 48.8566, 52.5200, 40.4168),
-#'                     region = c("north", "north", "north", "south"))
-#' edges <- data.frame(from = c("London", "Paris", "Paris"),
-#'                     to = c("Paris", "Berlin", "Madrid"))
-#' g <- spatial_network(netframe(edges, nodes, directed = FALSE),
-#'                      coords = c("lon", "lat"), radius = 6371.0088)  # kilometres
-#' edge_lengths(g)
-#' distance_decay(edge_lengths(g), scale = 500)
-#' group_geometry(g, "region")
-#' @export
+# Geospatial networks (man/spatial_network.Rd).
 spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                             radius = 6371008.7714,
                             representative = c("point_on_surface", "centroid")) {
@@ -186,8 +93,7 @@ spatial_coords <- function(x) {
        radius = p$radius, names = colnames(p$coords))
 }
 
-#' @rdname spatial_network
-#' @export
+# See man/spatial_network.Rd.
 edge_lengths <- function(x) {
   check_netframe(x)
   if (has_edge_geometry(x)) {
@@ -199,13 +105,7 @@ edge_lengths <- function(x) {
   engine_call("edge_lengths", .Call(C_edge_lengths, ptr, p$x, p$y, p$crs, p$radius))
 }
 
-#' @rdname spatial_network
-#' @param d Distances, such as the result of `edge_lengths()`.
-#' @param scale The distance at which the weight has fallen to \eqn{e^{-1}}
-#'   (exponential and gaussian) or \eqn{2^{-e}} (power).
-#' @param form The decay function; see Details.
-#' @param exponent The exponent \eqn{e} of the `"power"` form.
-#' @export
+# See man/spatial_network.Rd.
 distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"),
                            exponent = 2) {
   form <- match.arg(form)
@@ -225,10 +125,7 @@ distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"
   )
 }
 
-#' @rdname spatial_network
-#' @param groups The group of each node: a vector aligned with the rows of
-#'   `x$nodes`, or the name of a column of `x$nodes`.
-#' @export
+# See man/spatial_network.Rd.
 group_geometry <- function(x, groups) {
   p <- spatial_coords(x)
   grp <- node_groups(x, groups, "groups")
@@ -244,74 +141,7 @@ group_geometry <- function(x, groups) {
   out
 }
 
-#' Proximity networks from locations
-#'
-#' Builds a network that joins located points to the points near them:
-#' every pair within a distance (a fixed-radius or disk network), or each
-#' point to its `k` nearest neighbours. Neighbours are found with a k-d
-#' tree (Bentley 1975; Friedman, Bentley, and Finkel 1977), so networks of
-#' 100,000 points take seconds, and every candidate's distance is then
-#' computed exactly, so the tree changes the speed but never the result.
-#'
-#' @inheritParams spatial_network
-#' @param nodes A data frame of points, a spatial netframe (its nodes and
-#'   coordinate record are used), or an sf data frame of any geometry type
-#'   (see Details).
-#' @param within Join every pair of distinct points at most this far apart
-#'   (in the units of the distances). Give `within` or `k`, not both.
-#' @param k Join each point to its `k` nearest other points.
-#' @param knn For `k` nearest neighbours: `"directed"` keeps an arc from
-#'   each point to each of its neighbours; `"either"` makes an undirected
-#'   edge wherever at least one of the two points lists the other;
-#'   `"mutual"` only where both do.
-#' @param id Column of `nodes` holding node identifiers, as in
-#'   [netframe()]. For sf nodes, the default is the first column other
-#'   than the geometry; a table with no other column gets a new column
-#'   `id` numbering the features.
-#' @param threads Number of threads; see [netframe()].
-#' @param exact For sf nodes only: whether to measure distances between
-#'   the geometries themselves with [sf::st_distance()] (so two polygons
-#'   that touch are at distance 0) rather than between their
-#'   representative points. Exact distances with `k` compute every pair,
-#'   so they are limited to 5000 features.
-#'
-#' @details
-#' Within-distance networks are undirected, contain one edge per pair at
-#' distance at most `within` (so coincident points are joined), and list
-#' each edge with the point that comes first in `nodes` first. Nearest
-#' neighbours are listed in order of increasing distance, ties broken by
-#' position in `nodes`, so the result is reproducible; a point with fewer
-#' than `k` other points gets them all. The edges carry a `distance`
-#' column, which is the network's weight column (as distances), so
-#' path-based measures use spatial lengths unless asked not to.
-#'
-#' For an sf node table (or a netframe with sf node geometry), when
-#' `coords` is not given, the geometries are reduced to representative
-#' points (see [to_sf()]), longitude and latitude are recognized from the
-#' CRS (with the default Earth radius, so distances are in metres), and
-#' planar coordinates give distances in the units of the CRS. The result
-#' keeps the sf node table and its geometry roles. With `exact = TRUE`
-#' the distances are those between the geometries themselves.
-#'
-#' @references
-#' Bentley, J. L. (1975). Multidimensional binary search trees used for
-#' associative searching. *Communications of the ACM*, 18(9), 509-517.
-#' \doi{10.1145/361002.361007}
-#'
-#' Friedman, J. H., Bentley, J. L., & Finkel, R. A. (1977). An algorithm
-#' for finding best matches in logarithmic expected time. *ACM Transactions
-#' on Mathematical Software*, 3(3), 209-226. \doi{10.1145/355744.355745}
-#'
-#' @return A spatial netframe (see [spatial_network()]) with edge columns
-#'   `from`, `to`, and `distance`.
-#' @examples
-#' set.seed(1)
-#' pts <- data.frame(id = 1:50, x = runif(50), y = runif(50))
-#' g <- proximity_network(pts, coords = c("x", "y"), crs = "planar", within = 0.2)
-#' g
-#' h <- proximity_network(pts, coords = c("x", "y"), crs = "planar", k = 3, knn = "mutual")
-#' summary(edge_lengths(h))
-#' @export
+# Proximity networks from locations (man/proximity_network.Rd).
 proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                               radius = 6371008.7714, within = NULL, k = NULL,
                               knn = c("directed", "either", "mutual"), id = 1L,
@@ -412,67 +242,7 @@ symmetrize_knn <- function(r, k, knn) {
   list(from = a[keep], to = b[keep], distance = r$distance[keep], directed = FALSE)
 }
 
-#' Plot a spatial network on its map
-#'
-#' Draws a spatial network with base graphics at its true locations: nodes
-#' and edges at their geometries when the tables are sf (see [to_sf()]),
-#' and at the representative points otherwise. Polygons are filled with
-#' the node color, lines drawn in it, points drawn as points, and any other
-#' geometry as sf draws it; edges follow their own geometry when they have
-#' one and are straight segments between representative points otherwise,
-#' with arrowheads at the end of directed edges. Planar coordinates keep an
-#' aspect ratio of 1; longitude and latitude get 1 / cos(mean latitude), so
-#' shapes are not stretched. Networks without sf geometry (coordinates
-#' recorded by [spatial_network()]) need no sf.
-#'
-#' `plot_edge_lengths()` draws the distribution of [edge_lengths()] as a
-#' histogram, in the unit of the lengths, and, when `scale` is given, the
-#' [distance_decay()] curve with that scale on a second axis, so the choice
-#' of scale can be judged against the lengths it will weight.
-#'
-#' Colors come from palettes that are safe for color-blind readers: the
-#' Okabe-Ito palette for categories (eight colors; more categories recycle
-#' them, with a warning) and viridis for numbers.
-#'
-#' @param x A spatial [netframe()]: one with sf node geometry, or one
-#'   returned by [spatial_network()] or [proximity_network()].
-#' @param node_color,edge_color Colors: the name of a column of `x$nodes`
-#'   or `x$edges` (categories or numbers, mapped to a palette with a
-#'   legend), a vector with one value per node or edge, or a single color.
-#' @param node_size Node sizes for point nodes: a numeric column of
-#'   `x$nodes`, a vector with one value per node, or a single `cex`; the
-#'   default grows with degree.
-#' @param node_label Labels: `NULL` labels networks of at most 40 nodes
-#'   with their identifiers, `TRUE` always, `FALSE` never, or a column of
-#'   `x$nodes` or a vector with one label per node.
-#' @param edge_width Line widths for edges: a numeric column of `x$edges`, a
-#'   vector with one value per edge, or a single `lwd`.
-#' @param legend Whether to draw a legend for a mapped `node_color`.
-#' @param ... Further arguments to [graphics::title()], such as `main`; for
-#'   `plot_edge_lengths()`, to [graphics::hist()].
-#' @param scale,form,exponent For `plot_edge_lengths()`, the
-#'   [distance_decay()] curve to overlay; `NULL` draws none.
-#' @return `x`, invisibly.
-#' @seealso [plot.netframe()] for abstract layouts, [to_sf()],
-#'   [spatial_network()].
-#' @examples
-#' nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
-#'                     lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
-#'                     lat = c(51.5072, 48.8566, 52.5200, 40.4168),
-#'                     region = c("north", "north", "north", "south"))
-#' edges <- data.frame(from = c("London", "Paris", "Paris"),
-#'                     to = c("Paris", "Berlin", "Madrid"))
-#' g <- spatial_network(netframe(edges, nodes, directed = FALSE), radius = 6371.0088)
-#' plot_spatial(g, node_color = "region", main = "Four cities")
-#' plot_edge_lengths(g, scale = 500)
-#' if (requireNamespace("sf", quietly = TRUE)) {
-#'   sq <- function(x, y) sf::st_polygon(list(rbind(c(x, y), c(x + 1, y), c(x + 1, y + 1),
-#'                                                  c(x, y + 1), c(x, y))))
-#'   regions <- sf::st_sf(region = c("sw", "se", "nw", "ne"), pop = c(10, 40, 20, 30),
-#'                        geometry = sf::st_sfc(sq(0, 0), sq(1, 0), sq(0, 1), sq(1, 1)))
-#'   plot_spatial(from_polygons(regions, id = "region"), node_color = "pop")
-#' }
-#' @export
+# Plot a spatial network on its map (man/plot_spatial.Rd).
 plot_spatial <- function(x, node_color = NULL, node_size = NULL, node_label = NULL,
                          edge_width = NULL, edge_color = NULL, ..., legend = TRUE) {
   check_netframe(x)
@@ -707,8 +477,7 @@ spatial_labels <- function(value, x, n) {
   labels
 }
 
-#' @rdname plot_spatial
-#' @export
+# See man/plot_spatial.Rd.
 plot_edge_lengths <- function(x, scale = NULL, form = c("exponential", "gaussian", "power"),
                               exponent = 2, ...) {
   form <- match.arg(form)

@@ -1,52 +1,4 @@
-#' Goodness of fit of an exponential random graph model
-#'
-#' Simulates networks from a fitted model and compares the distributions of
-#' structural statistics that need not be in the model with the observed
-#' network (Hunter, Goodreau, and Handcock 2008): the degree distribution
-#' (in- and out-degree for directed networks), edgewise and dyadwise shared
-#' partners, geodesic distances, the triad census (directed networks), and
-#' the model's own statistics.
-#'
-#' @param object A fitted model from [ergm_fit()].
-#' @param nsim Number of networks to simulate.
-#' @param seed Seed for the simulation, a whole number in \[0, 2^53); `NULL`
-#'   draws one from R's random number generator.
-#' @param stats Which statistics to compare: any of `"degree"` (in- and
-#'   out-degree for directed networks), `"esp"`, `"dsp"`, `"distance"`,
-#'   `"triad"` (directed only), and `"model"`.
-#' @param burnin,interval,threads Sampler settings, as in
-#'   [simulate.ergm_fit()].
-#' @param x An `ergm_gof` object.
-#' @param which Which statistics to plot; default all.
-#' @param ask Whether to prompt before each page when several statistics
-#'   are plotted on one device.
-#' @param ... Further arguments passed to [graphics::boxplot()].
-#'
-#' @details
-#' For each statistic the table reports the observed value, the minimum,
-#' mean, and maximum over the simulated networks, and a Monte Carlo
-#' p-value: twice the smaller of the proportions of simulated values at or
-#' below and at or above the observed one, capped at 1, as `ergm`'s `gof()`
-#' reports. Shared partners of directed ties are outgoing two-path partners
-#' (`type = "OTP"`), dyadwise statistics count ordered pairs in directed
-#' networks, and geodesic distances count unordered pairs of nodes in
-#' undirected and ordered pairs in directed networks, with unreachable
-#' pairs in the `Inf` cell.
-#'
-#' @return An object of class `"ergm_gof"`: a list with one element per
-#'   statistic, each holding `observed`, `simulated` (an nsim-by-k matrix),
-#'   and `summary` (a data frame with columns `obs`, `min`, `mean`, `max`,
-#'   and `p`), plus `nsim` and `seed`. `plot()` draws one panel per
-#'   statistic: box plots of the simulated values with the observed values
-#'   as a line, like `ergm`'s `plot.gof()`.
-#'
-#' @references
-#' Hunter, D. R., Goodreau, S. M., & Handcock, M. S. (2008). Goodness of
-#' fit of social network models. *Journal of the American Statistical
-#' Association*, 103(481), 248-258. \doi{10.1198/016214507000000446}
-#'
-#' @seealso [ergm_fit()], [mcmc_diagnostics()]
-#' @export
+# Goodness of fit of an exponential random graph model (man/ergm_gof.Rd).
 ergm_gof <- function(object, nsim = 100, seed = NULL,
                      stats = c("degree", "esp", "dsp", "distance", "triad", "model"),
                      burnin = object$control$burnin, interval = object$control$interval,
@@ -124,8 +76,7 @@ gof_title <- function(name) {
     model = "Model statistics", name)
 }
 
-#' @rdname ergm_gof
-#' @export
+# See man/ergm_gof.Rd.
 print.ergm_gof <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat(sprintf("\nGoodness of fit: %d simulated networks (seed %s)\n", as.integer(x$nsim),
               format(x$seed, scientific = FALSE)))
@@ -138,8 +89,7 @@ print.ergm_gof <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-#' @rdname ergm_gof
-#' @export
+# See man/ergm_gof.Rd.
 plot.ergm_gof <- function(x, which = NULL, ask = NULL, ...) {
   names <- gof_stat_names(x)
   if (!is.null(which)) {
@@ -173,51 +123,7 @@ plot.ergm_gof <- function(x, which = NULL, ask = NULL, ...) {
   invisible(x)
 }
 
-#' Markov chain diagnostics for a Monte Carlo fit
-#'
-#' Summarizes the final Monte Carlo sample of an [ergm_fit()] with
-#' `estimate = "MCMLE"`: for each model statistic, the sampled values minus
-#' the observed value (which should be centered on zero at the estimate),
-#' Geweke's (1992) convergence diagnostic comparing the first 10 percent
-#' and the last 50 percent of each chain, the effective sample size, and
-#' autocorrelations. `plot()` draws trace plots, density plots, and
-#' autocorrelation plots with base graphics.
-#'
-#' @param object A fitted model from [ergm_fit()] with a Monte Carlo sample.
-#' @param lags Lags (in samples) at which to report autocorrelation.
-#' @param x An `ergm_mcmc` object.
-#' @param which Statistics to plot (names or positions); default all.
-#' @param ask Whether to prompt before each page.
-#' @param ... Not used.
-#'
-#' @details
-#' The sample holds `chains` chains of `nsim` draws each, as set in
-#' [ergm_control()]. Geweke's z-statistic is the difference of the two
-#' window means divided by the square root of the sum of their variances,
-#' with each variance estimated by batch means (Geyer 1992) rather than the
-#' spectral density estimate of the original; it is approximately standard
-#' normal for a chain in equilibrium, and the p-value is two-sided. The
-#' effective sample size is the number of draws divided by the integrated
-#' autocorrelation time estimated from the batch means. Both are computed
-#' per chain and pooled.
-#'
-#' @return An object of class `"ergm_mcmc"`: a list with `summary` (a data
-#'   frame with one row per statistic: `mean`, `sd` of the centered
-#'   sample, `geweke_z`, `geweke_p`, `ess`), `autocorrelation` (a lags-by-
-#'   statistics matrix), `sample` (the centered draws), `chains`, and
-#'   `nsim`.
-#'
-#' @references
-#' Geweke, J. (1992). Evaluating the accuracy of sampling-based approaches
-#' to the calculation of posterior moments. In J. M. Bernardo, J. O.
-#' Berger, A. P. Dawid, & A. F. M. Smith (Eds.), *Bayesian Statistics 4*
-#' (pp. 169-193). Oxford University Press.
-#'
-#' Geyer, C. J. (1992). Practical Markov chain Monte Carlo. *Statistical
-#' Science*, 7(4), 473-483. \doi{10.1214/ss/1177011137}
-#'
-#' @seealso [ergm_fit()], [ergm_gof()]
-#' @export
+# Markov chain diagnostics for a Monte Carlo fit (man/mcmc_diagnostics.Rd).
 mcmc_diagnostics <- function(object, lags = c(1, 2, 5, 10, 20)) {
   if (!inherits(object, "ergm_fit")) stop("`object` must come from ergm_fit().", call. = FALSE)
   if (is.null(object$sample)) {
@@ -294,8 +200,7 @@ mcmc_effective_size <- function(v) {
   min(n, s2 / vm)
 }
 
-#' @rdname mcmc_diagnostics
-#' @export
+# See man/mcmc_diagnostics.Rd.
 print.ergm_mcmc <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat(sprintf("\nMarkov chain diagnostics: %d chain%s of %d samples\n\n", x$chains,
               if (x$chains == 1L) "" else "s", x$nsim))
@@ -306,8 +211,7 @@ print.ergm_mcmc <- function(x, digits = max(3L, getOption("digits") - 3L), ...) 
   invisible(x)
 }
 
-#' @rdname mcmc_diagnostics
-#' @export
+# See man/mcmc_diagnostics.Rd.
 plot.ergm_mcmc <- function(x, which = NULL, ask = NULL, ...) {
   stats <- colnames(x$sample)
   if (!is.null(which)) stats <- if (is.numeric(which)) stats[which] else intersect(which, stats)
