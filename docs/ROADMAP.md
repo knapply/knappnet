@@ -389,3 +389,29 @@ for simulation-based and amortized neural inference.
 Not planned: neural networks or automatic differentiation inside the
 engine, GPU kernels before batched CPU code, full Bayesian ERGMs as the
 default estimator, rejection ABC, and hypergraph ERGMs.
+
+## Priorities from user research (October 2026)
+
+A survey of researcher and analyst pain points moves these items up.
+Where they appear earlier in this file with a later tier, this section
+takes precedence.
+
+1. Uncertainty on every measure: bootstrap and stability intervals for
+   node and graph statistics, seeds recorded with the result.
+2. Robustness to sampling and missing data: NA-aware measures, a
+   robustness report under node and tie sampling, and imputation.
+3. Reporting from the result object: a methods paragraph, a descriptive
+   table, BibTeX for every method used, and sweeps over analytic choices.
+4. Egocentric survey import from wide Qualtrics and REDCap exports in one
+   call.
+5. Seeded, deterministic layouts including ForceAtlas2 (Jacomy et al.
+   2014), warm starts across periods, and publication-quality static
+   plots.
+6. A convention comparator that explains why a value differs from igraph,
+   NetworkX, sna, or UCINET, and lossless conversion to and from them.
+7. A validation report published with every release (oracles, cases,
+   tolerances, results) and a run manifest recorded with each analysis
+   (version, inputs digest, options, seeds, threads).
+8. A DuckDB extension, then Arrow-based connectors for data warehouses.
+9. Temporal analysis with node-aligned window measures.
+10. Python package with notebooks.
