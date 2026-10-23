@@ -3,7 +3,7 @@
 definitions.
 
 Every fixture is read as a contact sequence with the times of
-validation/temporal_fixtures.py. A time-respecting walk is a path in the
+validation/derived/temporal.py. A time-respecting walk is a path in the
 *arc graph*: its nodes are the temporal arcs (one per directed contact,
 two per undirected contact, none for self-loops), and arc b may follow arc
 a when b leaves the node where a arrives and the waiting time
@@ -31,12 +31,11 @@ from collections import deque
 from fractions import Fraction
 from pathlib import Path
 
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, MANIFEST_DIR, applies, fixture_names, load_fixture  # noqa: E402
-from common import write_values  # noqa: E402
-from temporal_fixtures import contact_times  # noqa: E402
+from common import (DEFINITION_VERSION, applies, fixture_names, load_area,
+                    load_fixture, write_values, write_version)  # noqa: E402
+from derived.temporal import contact_times  # noqa: E402
 
 ORACLE = "definition"
 UNREACHABLE = -1000.0
@@ -44,7 +43,7 @@ UNDEFINED = -999.0
 
 
 def manifest() -> dict:
-    return yaml.safe_load((MANIFEST_DIR / "temporal.yaml").read_text())
+    return load_area("temporal")
 
 
 def mark(v) -> float:
@@ -378,9 +377,7 @@ def main() -> None:
                 continue
             write_values(ORACLE, name, variant, compute(fx, v["engine"]))
             count += 1
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(
-        "definition (direct evaluation, exact arithmetic)\n", newline="")
+    write_version(ORACLE, DEFINITION_VERSION)
     print(f"definition (temporal): wrote {count} golden files")
 
 

@@ -17,18 +17,17 @@ from pathlib import Path
 
 import networkx as nx
 from networkx.algorithms import bipartite
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import (FIXTURES, GOLDEN, MANIFEST_DIR, applies, fixture_names,  # noqa: E402
-                    load_fixture, write_values)
+from common import (FIXTURES, applies, fixture_names, load_area, load_fixture,
+                    write_values, write_version)  # noqa: E402
 
 ORACLE = "networkx"
 UNDEFINED = -1.0
 
 
 def manifest() -> dict:
-    return yaml.safe_load((MANIFEST_DIR / "twomode.yaml").read_text())
+    return load_area("twomode")
 
 
 def node_types(fx):
@@ -162,8 +161,7 @@ def main() -> None:
                 continue
             write_values(ORACLE, name, variant, values)
             count += 1
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n", newline="")
+    write_version(ORACLE, f"networkx {nx.__version__}")
     print(f"networkx {nx.__version__} (two-mode and ego): wrote {count} golden files")
 
 

@@ -1,0 +1,6 @@
+# Python packages for validation/ and bench/bench.py (the engine itself
+# needs none). Install with: python -m pip install -r validation/requirements.txt
+networkx>=3.2
+numpy
+scipy
+pyyaml

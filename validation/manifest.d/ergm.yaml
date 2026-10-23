@@ -1,6 +1,6 @@
 # Exponential random graph models: statistics, pseudolikelihood, exact
-# enumeration, and Monte Carlo maximum likelihood. Format as in
-# ../manifest.yaml.
+# enumeration, and Monte Carlo maximum likelihood. Format: see
+# ../README.md.
 #
 # Node attributes are derived from the 0-based node index i, identically
 # in the engine runner (validation/bindings/ergm.py), the definition oracle,

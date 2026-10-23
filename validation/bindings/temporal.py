@@ -1,7 +1,7 @@
 """Engine runners for temporal networks (validation/manifest.d/temporal.yaml).
 
 Each fixture's edges are read as contacts with the times of
-validation/temporal_fixtures.py. Infinities (no walk) are reported as
+validation/derived/temporal.py. Infinities (no walk) are reported as
 UNREACHABLE = -1000 and NaN (undefined) as UNDEFINED = -999, as the oracle
 does.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 from engine import ERR_LEN, EngineError, load, register
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from temporal_fixtures import contact_times  # noqa: E402
+from derived.temporal import contact_times  # noqa: E402
 
 UNREACHABLE = -1000.0
 UNDEFINED = -999.0

@@ -3,7 +3,7 @@
 directly from the definitions of the effects.
 
 Every directed fixture is read as the three-wave panel of
-validation/saom_fixtures.py. Each effect's actor statistic s_i(x) is
+validation/derived/saom.py. Each effect's actor statistic s_i(x) is
 written out as the formula in chapter 13 of the RSiena manual (Ripley et
 al. 2026), with plain loops over actors and no incremental bookkeeping:
 transitive triplets as sum_{j,h} x_ij x_ih x_hj, GWESP as the sum over
@@ -32,18 +32,17 @@ import sys
 from fractions import Fraction
 from pathlib import Path
 
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, MANIFEST_DIR, applies, fixture_names, load_fixture  # noqa: E402
-from common import write_values  # noqa: E402
-import saom_fixtures as sf  # noqa: E402
+from common import (GOLDEN, applies, fixture_names, load_area, load_fixture,
+                    write_values)  # noqa: E402
+import derived.saom as sf  # noqa: E402
 
 ORACLE = "definition"
 
 
 def manifest() -> dict:
-    return yaml.safe_load((MANIFEST_DIR / "saom.yaml").read_text())
+    return load_area("saom")
 
 
 # ---- Covariates ---------------------------------------------------------------

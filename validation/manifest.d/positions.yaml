@@ -1,6 +1,6 @@
 # Brokerage and positions: Burt's structural holes, Gould-Fernandez
-# brokerage, structural equivalence, and CONCOR. Same format as
-# validation/manifest.yaml.
+# brokerage, structural equivalence, and CONCOR. Format: see
+# ../README.md.
 #
 # Undefined values (NaN, such as the constraint of an isolate) are written
 # to golden files as empty lines, so undefined only matches undefined.

@@ -1,8 +1,8 @@
 # Stochastic actor-oriented models: the deterministic parts of the model,
 # checked on every directed fixture turned into a three-wave panel by
-# validation/saom_fixtures.py (wave 1 is the fixture read as an adjacency
+# validation/derived/saom.py (wave 1 is the fixture read as an adjacency
 # matrix; waves 2 and 3 toggle fixed sets of tie variables; four covariates
-# are derived from the actor indices). Format as in ../manifest.yaml.
+# are derived from the actor indices). Format: see ../README.md.
 #
 # Engine runners are in validation/bindings/saom.py. The definition oracle
 # (validation/oracles/saom_definition_oracle.py) evaluates each effect's

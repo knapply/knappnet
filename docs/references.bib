@@ -1,263 +1,88 @@
-% References for algorithms, conventions, and software that informed this
-% project. Every algorithm implementation cites its entry here in a source
-% comment, and docs/references.md explains how each one is used.
+% References for the algorithms, conventions, datasets, file formats, and
+% software behind this project. Every implementation cites its sources by
+% key in a comment at the top of its module, and every R help page lists
+% its key references with \doi{}. Entries are sorted by key; a comment
+% directly above an entry (for example on a missing DOI) belongs to it.
+% Check and sort with `python3 tools/check_bib.py --update`, which also
+% regenerates docs/references.md. Verify every new entry against Crossref
+% (https://api.crossref.org/works/<DOI>) or the publisher.
 
-% ---------------------------------------------------------------------------
-% Algorithms and measures
-% ---------------------------------------------------------------------------
-
-@article{freeman1977set,
-  author  = {Freeman, Linton C.},
-  title   = {A Set of Measures of Centrality Based on Betweenness},
-  journal = {Sociometry},
-  year    = {1977},
-  volume  = {40},
-  number  = {1},
-  pages   = {35--41},
-  doi     = {10.2307/3033543}
-}
-
-@article{freeman1978centrality,
-  author  = {Freeman, Linton C.},
-  title   = {Centrality in Social Networks: Conceptual Clarification},
-  journal = {Social Networks},
-  year    = {1978},
-  volume  = {1},
-  number  = {3},
-  pages   = {215--239},
-  doi     = {10.1016/0378-8733(78)90021-7}
-}
-
-@article{brandes2001faster,
-  author  = {Brandes, Ulrik},
-  title   = {A Faster Algorithm for Betweenness Centrality},
+@article{alba1973graph,
+  author  = {Alba, Richard D.},
+  title   = {A Graph-Theoretic Definition of a Sociometric Clique},
   journal = {Journal of Mathematical Sociology},
-  year    = {2001},
-  volume  = {25},
-  number  = {2},
-  pages   = {163--177},
-  doi     = {10.1080/0022250X.2001.9990249}
-}
-
-@article{brandes2008variants,
-  author  = {Brandes, Ulrik},
-  title   = {On Variants of Shortest-Path Betweenness Centrality and Their Generic Computation},
-  journal = {Social Networks},
-  year    = {2008},
-  volume  = {30},
-  number  = {2},
-  pages   = {136--145},
-  doi     = {10.1016/j.socnet.2007.11.001}
-}
-
-@article{holland1976local,
-  author  = {Holland, Paul W. and Leinhardt, Samuel},
-  title   = {Local Structure in Social Networks},
-  journal = {Sociological Methodology},
-  year    = {1976},
-  volume  = {7},
-  pages   = {1--45},
-  doi     = {10.2307/270703}
-}
-
-@article{batagelj2001subquadratic,
-  author  = {Batagelj, Vladimir and Mrvar, Andrej},
-  title   = {A Subquadratic Triad Census Algorithm for Large Sparse Networks with Small Maximum Degree},
-  journal = {Social Networks},
-  year    = {2001},
-  volume  = {23},
-  number  = {3},
-  pages   = {237--243},
-  doi     = {10.1016/S0378-8733(01)00035-1}
-}
-
-@inproceedings{beamer2012direction,
-  author    = {Beamer, Scott and Asanovi{\'c}, Krste and Patterson, David},
-  title     = {Direction-Optimizing Breadth-First Search},
-  booktitle = {Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis (SC '12)},
-  year      = {2012},
-  doi       = {10.1109/SC.2012.50}
-}
-
-@inproceedings{kepner2016mathematical,
-  author    = {Kepner, Jeremy and Aaltonen, Peter and Bader, David and Bulu{\c{c}}, Ayd{\i}n and Franchetti, Franz and Gilbert, John and Hutchison, Dylan and Kumar, Manoj and Lumsdaine, Andrew and Meyerhenke, Henning and McMillan, Scott and Moreira, Jose and Owens, John D. and Yang, Carl and Zalewski, Marcin and Mattson, Timothy},
-  title     = {Mathematical Foundations of the {GraphBLAS}},
-  booktitle = {2016 IEEE High Performance Extreme Computing Conference (HPEC)},
-  year      = {2016},
-  doi       = {10.1109/HPEC.2016.7761646}
-}
-
-@article{davis2019algorithm,
-  author  = {Davis, Timothy A.},
-  title   = {Algorithm 1000: {SuiteSparse:GraphBLAS}: Graph Algorithms in the Language of Sparse Linear Algebra},
-  journal = {ACM Transactions on Mathematical Software},
-  year    = {2019},
-  volume  = {45},
-  number  = {4},
-  pages   = {44:1--44:25},
-  doi     = {10.1145/3322125}
-}
-
-@article{krackhardt1988predicting,
-  author  = {Krackhardt, David},
-  title   = {Predicting with Networks: Nonparametric Multiple Regression Analysis of Dyadic Data},
-  journal = {Social Networks},
-  year    = {1988},
-  volume  = {10},
-  number  = {4},
-  pages   = {359--381},
-  doi     = {10.1016/0378-8733(88)90004-4}
-}
-
-@article{dekker2007sensitivity,
-  author  = {Dekker, David and Krackhardt, David and Snijders, Tom A. B.},
-  title   = {Sensitivity of {MRQAP} Tests to Collinearity and Autocorrelation Conditions},
-  journal = {Psychometrika},
-  year    = {2007},
-  volume  = {72},
-  number  = {4},
-  pages   = {563--581},
-  doi     = {10.1007/s11336-007-9016-1}
-}
-
-@article{snijders2006new,
-  author  = {Snijders, Tom A. B. and Pattison, Philippa E. and Robins, Garry L. and Handcock, Mark S.},
-  title   = {New Specifications for Exponential Random Graph Models},
-  journal = {Sociological Methodology},
-  year    = {2006},
-  volume  = {36},
+  year    = {1973},
+  volume  = {3},
   number  = {1},
-  pages   = {99--153},
-  doi     = {10.1111/j.1467-9531.2006.00176.x}
+  pages   = {113--126},
+  doi     = {10.1080/0022250X.1973.9989826}
 }
 
-@article{snijders2001statistical,
-  author  = {Snijders, Tom A. B.},
-  title   = {The Statistical Evaluation of Social Network Dynamics},
-  journal = {Sociological Methodology},
-  year    = {2001},
-  volume  = {31},
-  number  = {1},
-  pages   = {361--395},
-  doi     = {10.1111/0081-1750.00099}
+@article{albert2000error,
+  author  = {Albert, R{\'e}ka and Jeong, Hawoong and Barab{\'a}si, Albert-L{\'a}szl{\'o}},
+  title   = {Error and Attack Tolerance of Complex Networks},
+  journal = {Nature},
+  year    = {2000},
+  volume  = {406},
+  number  = {6794},
+  pages   = {378--382},
+  doi     = {10.1038/35019019}
 }
 
-% ---------------------------------------------------------------------------
-% Reference software (used as validation oracles or design influences)
-% ---------------------------------------------------------------------------
-
-@article{csardi2006igraph,
-  author  = {Csardi, Gabor and Nepusz, Tamas},
-  title   = {The igraph Software Package for Complex Network Research},
-  journal = {InterJournal, Complex Systems},
-  year    = {2006},
-  pages   = {1695}
+% Title page of the DTIC copy (accession AD1122772), dated July 23, 2020.
+% No DOI found.
+@techreport{altman2020ora,
+  author      = {Altman, Neal and Carley, Kathleen M. and Reminga, Jeffrey},
+  title       = {{ORA} User's Guide 2020},
+  institution = {Carnegie Mellon University, Institute for Software Research},
+  type        = {Technical Report},
+  number      = {CMU-ISR-20-110},
+  address     = {Pittsburgh, PA},
+  year        = {2020},
+  url         = {https://apps.dtic.mil/sti/pdfs/AD1122772.pdf}
 }
 
-@article{butts2008sna,
-  author  = {Butts, Carter T.},
-  title   = {Social Network Analysis with {sna}},
-  journal = {Journal of Statistical Software},
-  year    = {2008},
-  volume  = {24},
-  number  = {6},
-  pages   = {1--51},
-  doi     = {10.18637/jss.v024.i06}
-}
-
-@article{butts2008network,
-  author  = {Butts, Carter T.},
-  title   = {network: A Package for Managing Relational Data in {R}},
-  journal = {Journal of Statistical Software},
-  year    = {2008},
-  volume  = {24},
-  number  = {2},
-  pages   = {1--36},
-  doi     = {10.18637/jss.v024.i02}
-}
-
-@inproceedings{hagberg2008exploring,
-  author    = {Hagberg, Aric A. and Schult, Daniel A. and Swart, Pieter J.},
-  title     = {Exploring Network Structure, Dynamics, and Function using {NetworkX}},
-  booktitle = {Proceedings of the 7th Python in Science Conference (SciPy 2008)},
-  year      = {2008},
-  pages     = {11--15}
-}
-
-@article{hunter2008ergm,
-  author  = {Hunter, David R. and Handcock, Mark S. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
-  title   = {{ergm}: A Package to Fit, Simulate and Diagnose Exponential-Family Models for Networks},
-  journal = {Journal of Statistical Software},
-  year    = {2008},
-  volume  = {24},
-  number  = {3},
-  pages   = {1--29},
-  doi     = {10.18637/jss.v024.i03}
-}
-
-@article{handcock2008statnet,
-  author  = {Handcock, Mark S. and Hunter, David R. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
-  title   = {{statnet}: Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data},
-  journal = {Journal of Statistical Software},
-  year    = {2008},
-  volume  = {24},
-  number  = {1},
-  pages   = {1--11},
-  doi     = {10.18637/jss.v024.i01}
-}
-
-@article{batagelj1998pajek,
-  author  = {Batagelj, Vladimir and Mrvar, Andrej},
-  title   = {Pajek: Program for Large Network Analysis},
-  journal = {Connections},
-  year    = {1998},
-  volume  = {21},
-  number  = {2},
-  pages   = {47--57}
-}
-
-@misc{borgatti2002ucinet,
-  author       = {Borgatti, Stephen P. and Everett, Martin G. and Freeman, Linton C.},
-  title        = {{UCINET} for Windows: Software for Social Network Analysis},
-  howpublished = {Analytic Technologies, Harvard, MA},
-  year         = {2002}
-}
-
-@inproceedings{bastian2009gephi,
-  author    = {Bastian, Mathieu and Heymann, Sebastien and Jacomy, Mathieu},
-  title     = {Gephi: An Open Source Software for Exploring and Manipulating Networks},
-  booktitle = {Proceedings of the International AAAI Conference on Web and Social Media},
-  year      = {2009},
-  volume    = {3},
-  number    = {1},
-  pages     = {361--362},
-  doi       = {10.1609/icwsm.v3i1.13937}
-}
-
-@misc{peixoto2014graphtool,
-  author       = {Peixoto, Tiago P.},
-  title        = {The graph-tool python library},
-  howpublished = {figshare},
-  year         = {2014},
-  doi          = {10.6084/m9.figshare.1164194}
-}
-
-@article{staudt2016networkit,
-  author  = {Staudt, Christian L. and Sazonovs, Aleksejs and Meyerhenke, Henning},
-  title   = {{NetworKit}: A Tool Suite for Large-Scale Complex Network Analysis},
-  journal = {Network Science},
+@article{an2016keyplayer,
+  author  = {An, Weihua and Liu, Yu-Hsin},
+  title   = {keyplayer: An {R} Package for Locating Key Players in Social Networks},
+  journal = {The R Journal},
   year    = {2016},
-  volume  = {4},
-  number  = {4},
-  pages   = {508--530},
-  doi     = {10.1017/nws.2016.20}
+  volume  = {8},
+  number  = {1},
+  pages   = {257--268},
+  doi     = {10.32614/RJ-2016-018}
 }
 
-@misc{ooms_hellorust,
-  author       = {Ooms, Jeroen},
-  title        = {hellorust: Minimal Example of Calling Rust from {R}},
-  howpublished = {\url{https://github.com/r-rust/hellorust}},
-  note         = {Pattern for linking a Rust static library into an R package through C}
+@article{anderson1999interaction,
+  author  = {Anderson, Brigham S. and Butts, Carter and Carley, Kathleen},
+  title   = {The Interaction of Size and Density with Graph-Level Indices},
+  journal = {Social Networks},
+  year    = {1999},
+  volume  = {21},
+  number  = {3},
+  pages   = {239--267},
+  doi     = {10.1016/S0378-8733(99)00011-8}
+}
+
+@book{anselin1988spatial,
+  author    = {Anselin, Luc},
+  title     = {Spatial Econometrics: Methods and Models},
+  publisher = {Springer Netherlands},
+  address   = {Dordrecht},
+  series    = {Studies in Operational Regional Science},
+  year      = {1988},
+  doi       = {10.1007/978-94-015-7799-1}
+}
+
+@article{arabie1978constructing,
+  author  = {Arabie, Phipps and Boorman, Scott A. and Levitt, Paul R.},
+  title   = {Constructing blockmodels: How and why},
+  journal = {Journal of Mathematical Psychology},
+  year    = {1978},
+  volume  = {17},
+  number  = {1},
+  pages   = {21--63},
+  doi     = {10.1016/0022-2496(78)90034-2}
 }
 
 @misc{arrow_c_data_interface,
@@ -266,186 +91,37 @@
   howpublished = {\url{https://arrow.apache.org/docs/format/CDataInterface.html}}
 }
 
-@inproceedings{steele2014fast,
-  author    = {Steele, Guy L., Jr. and Lea, Doug and Flood, Christine H.},
-  title     = {Fast Splittable Pseudorandom Number Generators},
-  booktitle = {Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages \& Applications (OOPSLA '14)},
-  year      = {2014},
-  pages     = {453--472},
-  doi       = {10.1145/2660193.2660195}
+@article{bachi1963standard,
+  author  = {Bachi, Roberto},
+  title   = {Standard distance measures and related methods for spatial analysis},
+  journal = {Papers of the Regional Science Association},
+  year    = {1963},
+  volume  = {10},
+  number  = {1},
+  pages   = {83--132},
+  doi     = {10.1007/BF01934680}
 }
 
-% ---------------------------------------------------------------------------
-% Datasets used as validation fixtures
-% ---------------------------------------------------------------------------
-
-@article{zachary1977information,
-  author  = {Zachary, Wayne W.},
-  title   = {An Information Flow Model for Conflict and Fission in Small Groups},
-  journal = {Journal of Anthropological Research},
-  year    = {1977},
-  volume  = {33},
-  number  = {4},
-  pages   = {452--473},
-  doi     = {10.1086/jar.33.4.3629752}
+@article{barabasi1999emergence,
+  author  = {Barab{\'a}si, Albert-L{\'a}szl{\'o} and Albert, R{\'e}ka},
+  title   = {Emergence of Scaling in Random Networks},
+  journal = {Science},
+  year    = {1999},
+  volume  = {286},
+  number  = {5439},
+  pages   = {509--512},
+  doi     = {10.1126/science.286.5439.509}
 }
 
-@article{breiger1986cumulated,
-  author  = {Breiger, Ronald L. and Pattison, Philippa E.},
-  title   = {Cumulated Social Roles: The Duality of Persons and Their Algebras},
-  journal = {Social Networks},
+@article{barnes1986hierarchical,
+  author  = {Barnes, Josh and Hut, Piet},
+  title   = {A Hierarchical {$O(N \log N)$} Force-Calculation Algorithm},
+  journal = {Nature},
   year    = {1986},
-  volume  = {8},
-  number  = {3},
-  pages   = {215--256},
-  doi     = {10.1016/0378-8733(86)90006-7}
-}
-
-@article{padgett1993robust,
-  author  = {Padgett, John F. and Ansell, Christopher K.},
-  title   = {Robust Action and the Rise of the {Medici}, 1400--1434},
-  journal = {American Journal of Sociology},
-  year    = {1993},
-  volume  = {98},
-  number  = {6},
-  pages   = {1259--1319},
-  doi     = {10.1086/230190}
-}
-
-@book{davis1941deep,
-  author    = {Davis, Allison and Gardner, Burleigh B. and Gardner, Mary R.},
-  title     = {Deep South: A Social Anthropological Study of Caste and Class},
-  publisher = {University of Chicago Press},
-  address   = {Chicago},
-  year      = {1941}
-}
-
-@article{krackhardt1990assessing,
-  author  = {Krackhardt, David},
-  title   = {Assessing the Political Landscape: Structure, Cognition, and Power in Organizations},
-  journal = {Administrative Science Quarterly},
-  year    = {1990},
-  volume  = {35},
-  number  = {2},
-  pages   = {342--369},
-  doi     = {10.2307/2393394}
-}
-
-@book{knuth1993stanford,
-  author    = {Knuth, Donald E.},
-  title     = {The {Stanford GraphBase}: A Platform for Combinatorial Computing},
-  publisher = {Addison-Wesley},
-  address   = {Reading, MA},
-  year      = {1993}
-}
-
-% ---------------------------------------------------------------------------
-% File formats
-% ---------------------------------------------------------------------------
-
-@inproceedings{brandes2002graphml,
-  author    = {Brandes, Ulrik and Eiglsperger, Markus and Herman, Ivan and Himsolt, Michael and Marshall, M. Scott},
-  title     = {{GraphML} Progress Report: Structural Layer Proposal},
-  booktitle = {Graph Drawing (GD 2001)},
-  series    = {Lecture Notes in Computer Science},
-  volume    = {2265},
-  pages     = {501--512},
-  publisher = {Springer},
-  year      = {2002},
-  doi       = {10.1007/3-540-45848-4_59}
-}
-
-@techreport{himsolt1997gml,
-  author      = {Himsolt, Michael},
-  title       = {{GML}: A Portable Graph File Format},
-  institution = {Universit{\"a}t Passau},
-  year        = {1997}
-}
-
-@misc{gexf2009,
-  author       = {{GEXF Working Group}},
-  title        = {{GEXF} File Format},
-  howpublished = {\url{https://gexf.net}},
-  year         = {2009}
-}
-
-@book{denooy2018exploratory,
-  author    = {de Nooy, Wouter and Mrvar, Andrej and Batagelj, Vladimir},
-  title     = {Exploratory Social Network Analysis with {Pajek}},
-  edition   = {3},
-  publisher = {Cambridge University Press},
-  year      = {2018},
-  doi       = {10.1017/9781108565691}
-}
-
-@article{bostock2011d3,
-  author  = {Bostock, Michael and Ogievetsky, Vadim and Heer, Jeffrey},
-  title   = {{D3}: Data-Driven Documents},
-  journal = {IEEE Transactions on Visualization and Computer Graphics},
-  year    = {2011},
-  volume  = {17},
-  number  = {12},
-  pages   = {2301--2309},
-  doi     = {10.1109/TVCG.2011.185}
-}
-
-@article{gansner2000open,
-  author  = {Gansner, Emden R. and North, Stephen C.},
-  title   = {An Open Graph Visualization System and Its Applications to Software Engineering},
-  journal = {Software: Practice and Experience},
-  year    = {2000},
-  volume  = {30},
-  number  = {11},
-  pages   = {1203--1233},
-  doi     = {10.1002/1097-024X(200009)30:11<1203::AID-SPE338>3.0.CO;2-N}
-}
-
-% ---------------------------------------------------------------------------
-% Weighted networks and shortest paths
-% ---------------------------------------------------------------------------
-
-@article{dijkstra1959note,
-  author  = {Dijkstra, Edsger W.},
-  title   = {A Note on Two Problems in Connexion with Graphs},
-  journal = {Numerische Mathematik},
-  year    = {1959},
-  volume  = {1},
-  number  = {1},
-  pages   = {269--271},
-  doi     = {10.1007/BF01386390}
-}
-
-@article{dial1969algorithm,
-  author  = {Dial, Robert B.},
-  title   = {Algorithm 360: Shortest-Path Forest with Topological Ordering},
-  journal = {Communications of the ACM},
-  year    = {1969},
-  volume  = {12},
-  number  = {11},
-  pages   = {632--633},
-  doi     = {10.1145/363269.363610}
-}
-
-@article{newman2001scientific,
-  author  = {Newman, M. E. J.},
-  title   = {Scientific Collaboration Networks. {II}. Shortest Paths, Weighted Networks, and Centrality},
-  journal = {Physical Review E},
-  year    = {2001},
-  volume  = {64},
-  number  = {1},
-  pages   = {016132},
-  doi     = {10.1103/PhysRevE.64.016132}
-}
-
-@article{opsahl2010node,
-  author  = {Opsahl, Tore and Agneessens, Filip and Skvoretz, John},
-  title   = {Node Centrality in Weighted Networks: Generalizing Degree and Shortest Paths},
-  journal = {Social Networks},
-  year    = {2010},
-  volume  = {32},
-  number  = {3},
-  pages   = {245--251},
-  doi     = {10.1016/j.socnet.2010.03.006}
+  volume  = {324},
+  number  = {6096},
+  pages   = {446--449},
+  doi     = {10.1038/324446a0}
 }
 
 @article{barrat2004architecture,
@@ -459,72 +135,47 @@
   doi     = {10.1073/pnas.0400087101}
 }
 
-% ---------------------------------------------------------------------------
-% Randomization
-% ---------------------------------------------------------------------------
-
-@inproceedings{salmon2011parallel,
-  author    = {Salmon, John K. and Moraes, Mark A. and Dror, Ron O. and Shaw, David E.},
-  title     = {Parallel Random Numbers: As Easy as 1, 2, 3},
-  booktitle = {Proceedings of the 2011 International Conference for High Performance Computing, Networking, Storage and Analysis (SC '11)},
-  year      = {2011},
-  doi       = {10.1145/2063384.2063405}
+@article{barthelemy2011spatial,
+  author  = {Barth{\'e}lemy, Marc},
+  title   = {Spatial networks},
+  journal = {Physics Reports},
+  year    = {2011},
+  volume  = {499},
+  number  = {1-3},
+  pages   = {1--101},
+  doi     = {10.1016/j.physrep.2010.11.002}
 }
 
-@article{durstenfeld1964algorithm,
-  author  = {Durstenfeld, Richard},
-  title   = {Algorithm 235: Random Permutation},
-  journal = {Communications of the ACM},
-  year    = {1964},
-  volume  = {7},
-  number  = {7},
-  pages   = {420},
-  doi     = {10.1145/364520.364540}
+@inproceedings{bastian2009gephi,
+  author    = {Bastian, Mathieu and Heymann, Sebastien and Jacomy, Mathieu},
+  title     = {Gephi: An Open Source Software for Exploring and Manipulating Networks},
+  booktitle = {Proceedings of the International AAAI Conference on Web and Social Media},
+  year      = {2009},
+  volume    = {3},
+  number    = {1},
+  pages     = {361--362},
+  doi       = {10.1609/icwsm.v3i1.13937}
 }
 
-% ---------------------------------------------------------------------------
-% File formats: ORA DyNetML
-% ---------------------------------------------------------------------------
-
-@techreport{tsvetovat2004dynetml,
-  author      = {Tsvetovat, Maksim and Reminga, Jeff and Carley, Kathleen M.},
-  title       = {{DyNetML}: Interchange Format for Rich Social Network Data},
-  institution = {Carnegie Mellon University, School of Computer Science},
-  type        = {Technical Report},
-  number      = {CMU-ISRI-04-105},
-  address     = {Pittsburgh, PA},
-  month       = feb,
-  year        = {2004},
-  doi         = {10.1184/R1/6622022.v1}
+@article{batagelj1998pajek,
+  author  = {Batagelj, Vladimir and Mrvar, Andrej},
+  title   = {Pajek: Program for Large Network Analysis},
+  journal = {Connections},
+  year    = {1998},
+  volume  = {21},
+  number  = {2},
+  pages   = {47--57}
 }
 
-% Title page of the DTIC copy (accession AD1122772), dated July 23, 2020.
-% No DOI found.
-
-@techreport{altman2020ora,
-  author      = {Altman, Neal and Carley, Kathleen M. and Reminga, Jeffrey},
-  title       = {{ORA} User's Guide 2020},
-  institution = {Carnegie Mellon University, Institute for Software Research},
-  type        = {Technical Report},
-  number      = {CMU-ISR-20-110},
-  address     = {Pittsburgh, PA},
-  year        = {2020},
-  url         = {https://apps.dtic.mil/sti/pdfs/AD1122772.pdf}
-}
-
-% ---------------------------------------------------------------------------
-% Cohesive subgroups and communities
-% ---------------------------------------------------------------------------
-
-@article{seidman1983network,
-  author  = {Seidman, Stephen B.},
-  title   = {Network Structure and Minimum Degree},
+@article{batagelj2001subquadratic,
+  author  = {Batagelj, Vladimir and Mrvar, Andrej},
+  title   = {A Subquadratic Triad Census Algorithm for Large Sparse Networks with Small Maximum Degree},
   journal = {Social Networks},
-  year    = {1983},
-  volume  = {5},
+  year    = {2001},
+  volume  = {23},
   number  = {3},
-  pages   = {269--287},
-  doi     = {10.1016/0378-8733(83)90028-X}
+  pages   = {237--243},
+  doi     = {10.1016/S0378-8733(01)00035-1}
 }
 
 @misc{batagelj2003algorithm,
@@ -537,104 +188,66 @@
   doi           = {10.48550/arXiv.cs/0310049}
 }
 
-@article{matula1983smallest,
-  author  = {Matula, David W. and Beck, Leland L.},
-  title   = {Smallest-Last Ordering and Clustering and Graph Coloring Algorithms},
-  journal = {Journal of the ACM},
-  year    = {1983},
-  volume  = {30},
+@article{batagelj2005efficient,
+  author  = {Batagelj, Vladimir and Brandes, Ulrik},
+  title   = {Efficient Generation of Large Random Networks},
+  journal = {Physical Review E},
+  year    = {2005},
+  volume  = {71},
   number  = {3},
-  pages   = {417--427},
-  doi     = {10.1145/2402.322385}
+  pages   = {036113},
+  doi     = {10.1103/PhysRevE.71.036113}
 }
 
-@article{bron1973algorithm,
-  author  = {Bron, Coen and Kerbosch, Joep},
-  title   = {Algorithm 457: Finding All Cliques of an Undirected Graph},
+@inproceedings{beamer2012direction,
+  author    = {Beamer, Scott and Asanovi{\'c}, Krste and Patterson, David},
+  title     = {Direction-Optimizing Breadth-First Search},
+  booktitle = {Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis (SC '12)},
+  year      = {2012},
+  doi       = {10.1109/SC.2012.50}
+}
+
+@article{bentley1975multidimensional,
+  author  = {Bentley, Jon Louis},
+  title   = {Multidimensional binary search trees used for associative searching},
   journal = {Communications of the ACM},
-  year    = {1973},
-  volume  = {16},
+  year    = {1975},
+  volume  = {18},
   number  = {9},
-  pages   = {575--577},
-  doi     = {10.1145/362342.362367}
+  pages   = {509--517},
+  doi     = {10.1145/361002.361007}
 }
 
-@article{tomita2006worst,
-  author  = {Tomita, Etsuji and Tanaka, Akira and Takahashi, Haruhisa},
-  title   = {The Worst-Case Time Complexity for Generating All Maximal Cliques and Computational Experiments},
-  journal = {Theoretical Computer Science},
-  year    = {2006},
-  volume  = {363},
-  number  = {1},
-  pages   = {28--42},
-  doi     = {10.1016/j.tcs.2006.06.015}
+@article{bentley1987sample,
+  author  = {Bentley, Jon and Floyd, Bob},
+  title   = {Programming Pearls: A Sample of Brilliance},
+  journal = {Communications of the ACM},
+  year    = {1987},
+  volume  = {30},
+  number  = {9},
+  pages   = {754--757},
+  doi     = {10.1145/30401.315746}
 }
 
-@inproceedings{eppstein2010listing,
-  author    = {Eppstein, David and L{\"o}ffler, Maarten and Strash, Darren},
-  title     = {Listing All Maximal Cliques in Sparse Graphs in Near-Optimal Time},
-  booktitle = {Algorithms and Computation (ISAAC 2010)},
-  series    = {Lecture Notes in Computer Science},
-  volume    = {6506},
-  pages     = {403--414},
+@book{bivand2013applied,
+  author    = {Bivand, Roger S. and Pebesma, Edzer and G{\'o}mez-Rubio, Virgilio},
+  title     = {Applied Spatial Data Analysis with {R}},
+  edition   = {2},
   publisher = {Springer},
-  year      = {2010},
-  doi       = {10.1007/978-3-642-17517-6_36}
+  address   = {New York},
+  year      = {2013},
+  doi       = {10.1007/978-1-4614-7618-4}
 }
 
-@article{newman2004finding,
-  author  = {Newman, M. E. J. and Girvan, M.},
-  title   = {Finding and Evaluating Community Structure in Networks},
-  journal = {Physical Review E},
-  year    = {2004},
-  volume  = {69},
-  number  = {2},
-  pages   = {026113},
-  doi     = {10.1103/PhysRevE.69.026113}
-}
-
-@article{newman2004analysis,
-  author  = {Newman, M. E. J.},
-  title   = {Analysis of Weighted Networks},
-  journal = {Physical Review E},
-  year    = {2004},
-  volume  = {70},
-  number  = {5},
-  pages   = {056131},
-  doi     = {10.1103/PhysRevE.70.056131}
-}
-
-@article{newman2006modularity,
-  author  = {Newman, M. E. J.},
-  title   = {Modularity and Community Structure in Networks},
-  journal = {Proceedings of the National Academy of Sciences},
-  year    = {2006},
-  volume  = {103},
-  number  = {23},
-  pages   = {8577--8582},
-  doi     = {10.1073/pnas.0601602103}
-}
-
-@article{reichardt2006statistical,
-  author  = {Reichardt, J{\"o}rg and Bornholdt, Stefan},
-  title   = {Statistical Mechanics of Community Detection},
-  journal = {Physical Review E},
-  year    = {2006},
-  volume  = {74},
-  number  = {1},
-  pages   = {016110},
-  doi     = {10.1103/PhysRevE.74.016110}
-}
-
-@article{leicht2008community,
-  author  = {Leicht, E. A. and Newman, M. E. J.},
-  title   = {Community Structure in Directed Networks},
-  journal = {Physical Review Letters},
-  year    = {2008},
-  volume  = {100},
-  number  = {11},
-  pages   = {118703},
-  doi     = {10.1103/PhysRevLett.100.118703}
+@article{bivand2018comparing,
+  author  = {Bivand, Roger S. and Wong, David W. S.},
+  title   = {Comparing Implementations of Global and Local Indicators of Spatial Association},
+  journal = {TEST},
+  year    = {2018},
+  volume  = {27},
+  number  = {3},
+  pages   = {716--748},
+  doi     = {10.1007/s11749-018-0599-x}
 }
 
 @article{blondel2008fast,
@@ -648,206 +261,14 @@
   doi     = {10.1088/1742-5468/2008/10/P10008}
 }
 
-% ---------------------------------------------------------------------------
-% Structural holes, brokerage, and positions
-% ---------------------------------------------------------------------------
-
-@book{burt1992structural,
-  author    = {Burt, Ronald S.},
-  title     = {Structural Holes: The Social Structure of Competition},
-  publisher = {Harvard University Press},
-  address   = {Cambridge, MA},
-  year      = {1992},
-  doi       = {10.4159/9780674029095}
-}
-
-@article{burt2004structural,
-  author  = {Burt, Ronald S.},
-  title   = {Structural Holes and Good Ideas},
-  journal = {American Journal of Sociology},
-  year    = {2004},
-  volume  = {110},
-  number  = {2},
-  pages   = {349--399},
-  doi     = {10.1086/421787}
-}
-
-@article{borgatti1997structural,
-  author  = {Borgatti, Stephen P.},
-  title   = {Structural Holes: Unpacking {Burt}'s Redundancy Measures},
-  journal = {Connections},
-  year    = {1997},
-  volume  = {20},
-  number  = {1},
-  pages   = {35--38},
-  url     = {http://www.analytictech.com/connections/v20(1)/holes.htm}
-}
-
-@article{gould1989structures,
-  author  = {Gould, Roger V. and Fernandez, Roberto M.},
-  title   = {Structures of Mediation: A Formal Approach to Brokerage in Transaction Networks},
-  journal = {Sociological Methodology},
-  year    = {1989},
-  volume  = {19},
-  pages   = {89--126},
-  doi     = {10.2307/270949}
-}
-
-@article{lorrain1971structural,
-  author  = {Lorrain, Fran{\c{c}}ois and White, Harrison C.},
-  title   = {Structural Equivalence of Individuals in Social Networks},
-  journal = {Journal of Mathematical Sociology},
-  year    = {1971},
-  volume  = {1},
-  number  = {1},
-  pages   = {49--80},
-  doi     = {10.1080/0022250X.1971.9989788}
-}
-
-@article{burt1976positions,
-  author  = {Burt, Ronald S.},
-  title   = {Positions in Networks},
-  journal = {Social Forces},
-  year    = {1976},
-  volume  = {55},
-  number  = {1},
-  pages   = {93--122},
-  doi     = {10.2307/2577097}
-}
-
-@book{wasserman1994social,
-  author    = {Wasserman, Stanley and Faust, Katherine},
-  title     = {Social Network Analysis: Methods and Applications},
-  publisher = {Cambridge University Press},
-  address   = {Cambridge},
-  year      = {1994},
-  doi       = {10.1017/CBO9780511815478}
-}
-
-@article{breiger1975algorithm,
-  author  = {Breiger, Ronald L. and Boorman, Scott A. and Arabie, Phipps},
-  title   = {An Algorithm for Clustering Relational Data with Applications to Social Network Analysis and Comparison with Multidimensional Scaling},
-  journal = {Journal of Mathematical Psychology},
-  year    = {1975},
-  volume  = {12},
-  number  = {3},
-  pages   = {328--383},
-  doi     = {10.1016/0022-2496(75)90028-0}
-}
-
-% ---------------------------------------------------------------------------
-% Dyadic regression (QAP)
-% ---------------------------------------------------------------------------
-
-@article{hubert1976quadratic,
-  author  = {Hubert, Lawrence and Schultz, James},
-  title   = {Quadratic Assignment as a General Data Analysis Strategy},
-  journal = {British Journal of Mathematical and Statistical Psychology},
-  year    = {1976},
-  volume  = {29},
-  number  = {2},
-  pages   = {190--241},
-  doi     = {10.1111/j.2044-8317.1976.tb00714.x}
-}
-
-@book{hubert1987assignment,
-  author    = {Hubert, Lawrence J.},
-  title     = {Assignment Methods in Combinatorial Data Analysis},
-  series    = {Statistics: Textbooks and Monographs},
-  volume    = {73},
-  publisher = {Marcel Dekker},
-  address   = {New York},
-  year      = {1987},
-  isbn      = {0-8247-7617-8}
-}
-
-@article{krackhardt1987qap,
-  author  = {Krackhardt, David},
-  title   = {{QAP} Partialling as a Test of Spuriousness},
-  journal = {Social Networks},
-  year    = {1987},
-  volume  = {9},
-  number  = {2},
-  pages   = {171--186},
-  doi     = {10.1016/0378-8733(87)90012-8}
-}
-
-@article{phipson2010permutation,
-  author  = {Phipson, Belinda and Smyth, Gordon K.},
-  title   = {Permutation {P}-values Should Never Be Zero: Calculating Exact {P}-values When Permutations Are Randomly Drawn},
-  journal = {Statistical Applications in Genetics and Molecular Biology},
-  year    = {2010},
-  volume  = {9},
-  number  = {1},
-  pages   = {Article 39},
-  doi     = {10.2202/1544-6115.1585}
-}
-% References for density, components, fragmentation, centralization,
-% closeness, harmonic centrality, eigenvector centrality, and the
-% conventions of reference tools (crates/engine/src/metrics/topography.rs,
-% closeness.rs, eigenvector.rs, and crates/engine/src/conventions.rs).
-% Freeman (1978, freeman1978centrality), Dijkstra (1959), Dial (1969), and
-% the reference software are already in docs/references.bib.
-%
-% Journal articles were checked against Crossref (api.crossref.org) or the
-% publisher; the conference abstract and web pages against the records
-% named in each entry's note.
-
-% ---------------------------------------------------------------------------
-% Measures and algorithms
-% ---------------------------------------------------------------------------
-
-@article{sabidussi1966centrality,
-  author  = {Sabidussi, Gert},
-  title   = {The Centrality Index of a Graph},
-  journal = {Psychometrika},
-  year    = {1966},
-  volume  = {31},
-  number  = {4},
-  pages   = {581--603},
-  doi     = {10.1007/BF02289527}
-}
-
-@article{tarjan1972depth,
-  author  = {Tarjan, Robert},
-  title   = {Depth-First Search and Linear Graph Algorithms},
-  journal = {SIAM Journal on Computing},
-  year    = {1972},
-  volume  = {1},
-  number  = {2},
-  pages   = {146--160},
-  doi     = {10.1137/0201010}
-}
-
-@article{borgatti2006identifying,
-  author  = {Borgatti, Stephen P.},
-  title   = {Identifying Sets of Key Players in a Social Network},
-  journal = {Computational and Mathematical Organization Theory},
-  year    = {2006},
-  volume  = {12},
-  number  = {1},
-  pages   = {21--34},
-  doi     = {10.1007/s10588-006-7084-x}
-}
-
-@article{marchiori2000harmony,
-  author  = {Marchiori, Massimo and Latora, Vito},
-  title   = {Harmony in the Small-World},
-  journal = {Physica A: Statistical Mechanics and its Applications},
-  year    = {2000},
-  volume  = {285},
-  number  = {3--4},
-  pages   = {539--546},
-  doi     = {10.1016/S0378-4371(00)00311-3}
-}
-
-@inproceedings{rochat2009closeness,
-  author    = {Rochat, Yannick},
-  title     = {Closeness Centrality Extended to Unconnected Graphs: The Harmonic Centrality Index},
-  booktitle = {6th Conference on Applications of Social Network Analysis (ASNA 2009)},
-  address   = {Zurich, Switzerland},
-  year      = {2009},
-  note      = {Abstract. Records: EPFL Infoscience 200525 (https://infoscience.epfl.ch/record/200525) and University of Lausanne Serval BIB_4638B6B2DEBA. No DOI.}
+@article{boeing2017osmnx,
+  author  = {Boeing, Geoff},
+  title   = {{OSMnx}: New Methods for Acquiring, Constructing, Analyzing, and Visualizing Complex Street Networks},
+  journal = {Computers, Environment and Urban Systems},
+  year    = {2017},
+  volume  = {65},
+  pages   = {126--139},
+  doi     = {10.1016/j.compenvurbsys.2017.05.004}
 }
 
 @article{boldi2014axioms,
@@ -859,6 +280,17 @@
   number  = {3--4},
   pages   = {222--262},
   doi     = {10.1080/15427951.2013.865686}
+}
+
+@article{bollobas1980probabilistic,
+  author  = {Bollob{\'a}s, B{\'e}la},
+  title   = {A Probabilistic Proof of an Asymptotic Formula for the Number of Labelled Regular Graphs},
+  journal = {European Journal of Combinatorics},
+  year    = {1980},
+  volume  = {1},
+  number  = {4},
+  pages   = {311--316},
+  doi     = {10.1016/S0195-6698(80)80030-8}
 }
 
 @article{bonacich1972factoring,
@@ -883,185 +315,57 @@
   doi     = {10.1086/228631}
 }
 
-@article{mises1929praktische,
-  author  = {von Mises, R. and Pollaczek-Geiringer, H.},
-  title   = {Praktische Verfahren der Gleichungsaufl{\"o}sung},
-  journal = {ZAMM -- Zeitschrift f{\"u}r Angewandte Mathematik und Mechanik},
-  year    = {1929},
-  volume  = {9},
-  number  = {2},
-  pages   = {152--164},
-  doi     = {10.1002/zamm.19290090206}
-}
-
-@article{collatz1942einschliessungssatz,
-  author  = {Collatz, L.},
-  title   = {Einschlie{\ss}ungssatz f{\"u}r die charakteristischen Zahlen von Matrizen},
-  journal = {Mathematische Zeitschrift},
-  year    = {1942},
-  volume  = {48},
-  number  = {1},
-  pages   = {221--226},
-  doi     = {10.1007/BF01180013}
-}
-
-% ---------------------------------------------------------------------------
-% UCINET conventions
-% ---------------------------------------------------------------------------
-
-@misc{ucinet_help_closeness,
-  author       = {{Analytic Technologies}},
-  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Closeness},
-  howpublished = {\url{http://www.analytictech.com/ucinet/help/oeky47.htm}},
-  note         = {Accessed 22 October 2026}
-}
-
-@misc{ucinet_help_betweenness,
-  author       = {{Analytic Technologies}},
-  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Betweenness -> Nodes},
-  howpublished = {\url{http://www.analytictech.com/ucinet/help/pvn0n9.htm}},
-  note         = {Accessed 22 October 2026}
-}
-
-@misc{ucinet_help_eigenvector,
-  author       = {{Analytic Technologies}},
-  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Eigenvector},
-  howpublished = {\url{http://www.analytictech.com/ucinet/help/24d9zjj.htm}},
-  note         = {Accessed 22 October 2026}
-}
-
-@misc{ucinet_help_multiple,
-  author       = {{Analytic Technologies}},
-  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Multiple Measures},
-  howpublished = {\url{http://www.analytictech.com/ucinet/help/hs4214.htm}},
-  note         = {Accessed 22 October 2026}
-}
-
-@misc{borgatti2026xucinet,
-  author       = {Borgatti, Stephen P. and Agneessens, Filip and Everett, Martin G.},
-  title        = {xucinet: {UCINET}-Style Social Network Analysis in {R}},
-  howpublished = {\url{https://github.com/StephenBorgatti/xucinet}},
-  year         = {2026},
-  note         = {Version 2.0.0.9000, commit 3f39661c291d08a89ce15840bbfa267c14d0662f (20 October 2026). Ports UCINET's routines from its Delphi sources and tests them against UCINET 6.849 output; consulted for UCINET's normalizations, centralization maxima, and handling of unreachable pairs.}
-}
-
-@article{traag2019louvain,
-  author  = {Traag, V. A. and Waltman, L. and van Eck, N. J.},
-  title   = {From {Louvain} to {Leiden}: Guaranteeing Well-Connected Communities},
-  journal = {Scientific Reports},
-  year    = {2019},
-  volume  = {9},
-  pages   = {5233},
-  doi     = {10.1038/s41598-019-41695-z}
-}
-
-@article{tarjan1975efficiency,
-  author  = {Tarjan, Robert Endre},
-  title   = {Efficiency of a Good But Not Linear Set Union Algorithm},
-  journal = {Journal of the ACM},
-  year    = {1975},
-  volume  = {22},
-  number  = {2},
-  pages   = {215--225}
-}
-
-@article{newman2002email,
-  author  = {Newman, M. E. J. and Forrest, Stephanie and Balthrop, Justin},
-  title   = {Email Networks and the Spread of Computer Viruses},
-  journal = {Physical Review E},
-  year    = {2002},
-  volume  = {66},
-  number  = {3},
-  pages   = {035101},
-  doi     = {10.1103/PhysRevE.66.035101}
-}
-
-@article{garlaschelli2004patterns,
-  author  = {Garlaschelli, Diego and Loffredo, Maria I.},
-  title   = {Patterns of Link Reciprocity in Directed Networks},
-  journal = {Physical Review Letters},
-  year    = {2004},
-  volume  = {93},
-  number  = {26},
-  pages   = {268701},
-  doi     = {10.1103/PhysRevLett.93.268701}
-}
-
-@article{newman2003structure,
-  author  = {Newman, M. E. J.},
-  title   = {The Structure and Function of Complex Networks},
-  journal = {SIAM Review},
-  year    = {2003},
-  volume  = {45},
-  number  = {2},
-  pages   = {167--256},
-  doi     = {10.1137/S003614450342480}
-}
-
-@article{watts1998collective,
-  author  = {Watts, Duncan J. and Strogatz, Steven H.},
-  title   = {Collective Dynamics of `Small-World' Networks},
-  journal = {Nature},
-  year    = {1998},
-  volume  = {393},
-  number  = {6684},
-  pages   = {440--442},
-  doi     = {10.1038/30918}
-}
-
-@article{kaiser2008mean,
-  author  = {Kaiser, Marcus},
-  title   = {Mean Clustering Coefficients: The Role of Isolated Nodes and Leafs on Clustering Measures for Small-World Networks},
-  journal = {New Journal of Physics},
-  year    = {2008},
-  volume  = {10},
-  number  = {8},
-  pages   = {083042},
-  doi     = {10.1088/1367-2630/10/8/083042}
-}
-
-@article{onnela2005intensity,
-  author  = {Onnela, Jukka-Pekka and Saram{\"a}ki, Jari and Kert{\'e}sz, J{\'a}nos and Kaski, Kimmo},
-  title   = {Intensity and Coherence of Motifs in Weighted Complex Networks},
-  journal = {Physical Review E},
-  year    = {2005},
-  volume  = {71},
-  number  = {6},
-  pages   = {065103},
-  doi     = {10.1103/PhysRevE.71.065103}
-}
-
-@article{chiba1985arboricity,
-  author  = {Chiba, Norishige and Nishizeki, Takao},
-  title   = {Arboricity and Subgraph Listing Algorithms},
-  journal = {SIAM Journal on Computing},
-  year    = {1985},
-  volume  = {14},
-  number  = {1},
-  pages   = {210--223},
-  doi     = {10.1137/0214017}
-}
-
-@article{hage1995eccentricity,
-  author  = {Hage, Per and Harary, Frank},
-  title   = {Eccentricity and Centrality in Networks},
+@article{bonacich2001eigenvector,
+  author  = {Bonacich, Phillip and Lloyd, Paulette},
+  title   = {Eigenvector-Like Measures of Centrality for Asymmetric Relations},
   journal = {Social Networks},
-  year    = {1995},
-  volume  = {17},
-  number  = {1},
-  pages   = {57--63},
-  doi     = {10.1016/0378-8733(94)00248-9}
+  year    = {2001},
+  volume  = {23},
+  number  = {3},
+  pages   = {191--201},
+  doi     = {10.1016/S0378-8733(01)00038-7}
 }
 
-@article{hopcroft1973algorithm,
-  author  = {Hopcroft, John and Tarjan, Robert},
-  title   = {Algorithm 447: Efficient Algorithms for Graph Manipulation},
-  journal = {Communications of the ACM},
-  year    = {1973},
-  volume  = {16},
-  number  = {6},
-  pages   = {372--378},
-  doi     = {10.1145/362248.362272}
+@book{borg2005modern,
+  author    = {Borg, Ingwer and Groenen, Patrick J. F.},
+  title     = {Modern Multidimensional Scaling: Theory and Applications},
+  edition   = {2},
+  publisher = {Springer},
+  address   = {New York},
+  year      = {2005},
+  doi       = {10.1007/0-387-28981-X}
+}
+
+@article{borgatti1990ls,
+  author  = {Borgatti, Stephen P. and Everett, Martin G. and Shirey, Paul R.},
+  title   = {{LS} Sets, Lambda Sets and Other Cohesive Subsets},
+  journal = {Social Networks},
+  year    = {1990},
+  volume  = {12},
+  number  = {4},
+  pages   = {337--357},
+  doi     = {10.1016/0378-8733(90)90014-Z}
+}
+
+@article{borgatti1992notions,
+  author  = {Borgatti, Stephen P. and Everett, Martin G.},
+  title   = {Notions of position in social network analysis},
+  journal = {Sociological Methodology},
+  year    = {1992},
+  volume  = {22},
+  pages   = {1--35},
+  doi     = {10.2307/270991}
+}
+
+@article{borgatti1993two,
+  author  = {Borgatti, Stephen P. and Everett, Martin G.},
+  title   = {Two algorithms for computing regular equivalence},
+  journal = {Social Networks},
+  year    = {1993},
+  volume  = {15},
+  number  = {4},
+  pages   = {361--376},
+  doi     = {10.1016/0378-8733(93)90012-A}
 }
 
 @article{borgatti1997network,
@@ -1073,6 +377,47 @@
   number  = {3},
   pages   = {243--269},
   doi     = {10.1016/S0378-8733(96)00301-2}
+}
+
+@article{borgatti1997structural,
+  author  = {Borgatti, Stephen P.},
+  title   = {Structural Holes: Unpacking {Burt}'s Redundancy Measures},
+  journal = {Connections},
+  year    = {1997},
+  volume  = {20},
+  number  = {1},
+  pages   = {35--38},
+  url     = {http://www.analytictech.com/connections/v20(1)/holes.htm}
+}
+
+@article{borgatti1999models,
+  author  = {Borgatti, Stephen P. and Everett, Martin G.},
+  title   = {Models of Core/Periphery Structures},
+  journal = {Social Networks},
+  year    = {1999},
+  volume  = {21},
+  number  = {4},
+  pages   = {375--395},
+  doi     = {10.1016/S0378-8733(99)00019-2},
+  note    = {Issue dated October 1999; Crossref records the print publication as 2000}
+}
+
+@misc{borgatti2002ucinet,
+  author       = {Borgatti, Stephen P. and Everett, Martin G. and Freeman, Linton C.},
+  title        = {{UCINET} for Windows: Software for Social Network Analysis},
+  howpublished = {Analytic Technologies, Harvard, MA},
+  year         = {2002}
+}
+
+@article{borgatti2006identifying,
+  author  = {Borgatti, Stephen P.},
+  title   = {Identifying Sets of Key Players in a Social Network},
+  journal = {Computational and Mathematical Organization Theory},
+  year    = {2006},
+  volume  = {12},
+  number  = {1},
+  pages   = {21--34},
+  doi     = {10.1007/s10588-006-7084-x}
 }
 
 @incollection{borgatti2011analyzing,
@@ -1088,272 +433,81 @@
   note      = {Crossref dates the online edition 2014}
 }
 
-@article{breiger1974duality,
-  author  = {Breiger, Ronald L.},
-  title   = {The Duality of Persons and Groups},
-  journal = {Social Forces},
-  year    = {1974},
-  volume  = {53},
-  number  = {2},
-  pages   = {181--190},
-  doi     = {10.2307/2576011}
+@misc{borgatti2026xucinet,
+  author       = {Borgatti, Stephen P. and Agneessens, Filip and Everett, Martin G.},
+  title        = {xucinet: {UCINET}-Style Social Network Analysis in {R}},
+  howpublished = {\url{https://github.com/StephenBorgatti/xucinet}},
+  year         = {2026},
+  note         = {Version 2.0.0.9000, commit 3f39661c291d08a89ce15840bbfa267c14d0662f (20 October 2026). Ports UCINET's routines from its Delphi sources and tests them against UCINET 6.849 output; consulted for UCINET's normalizations, centralization maxima, and handling of unreachable pairs.}
 }
 
-@article{everett2013dual,
-  author  = {Everett, M. G. and Borgatti, S. P.},
-  title   = {The Dual-Projection Approach for Two-Mode Networks},
-  journal = {Social Networks},
-  year    = {2013},
-  volume  = {35},
-  number  = {2},
-  pages   = {204--210},
-  doi     = {10.1016/j.socnet.2012.05.004}
+@article{bostock2011d3,
+  author  = {Bostock, Michael and Ogievetsky, Vadim and Heer, Jeffrey},
+  title   = {{D3}: Data-Driven Documents},
+  journal = {IEEE Transactions on Visualization and Computer Graphics},
+  year    = {2011},
+  volume  = {17},
+  number  = {12},
+  pages   = {2301--2309},
+  doi     = {10.1109/TVCG.2011.185}
 }
 
-@article{everett2005ego,
-  author  = {Everett, Martin and Borgatti, Stephen P.},
-  title   = {Ego Network Betweenness},
-  journal = {Social Networks},
-  year    = {2005},
-  volume  = {27},
-  number  = {1},
-  pages   = {31--38},
-  doi     = {10.1016/j.socnet.2004.11.007}
-}
-
-@article{marsden2002egocentric,
-  author  = {Marsden, Peter V.},
-  title   = {Egocentric and Sociocentric Measures of Network Centrality},
-  journal = {Social Networks},
-  year    = {2002},
-  volume  = {24},
+@article{bowdler1968ql,
+  author  = {Bowdler, Hilary and Martin, R. S. and Reinsch, C. and Wilkinson, J. H.},
+  title   = {The {QR} and {QL} Algorithms for Symmetric Matrices},
+  journal = {Numerische Mathematik},
+  year    = {1968},
+  volume  = {11},
   number  = {4},
-  pages   = {407--422},
-  doi     = {10.1016/S0378-8733(02)00016-3}
+  pages   = {293--306},
+  doi     = {10.1007/BF02166681}
 }
 
-@book{perry2018egocentric,
-  author    = {Perry, Brea L. and Pescosolido, Bernice A. and Borgatti, Stephen P.},
-  title     = {Egocentric Network Analysis: Foundations, Methods, and Models},
-  publisher = {Cambridge University Press},
-  address   = {Cambridge},
-  year      = {2018},
-  doi       = {10.1017/9781316443255}
-}
-
-@article{brin1998anatomy,
-  author  = {Brin, Sergey and Page, Lawrence},
-  title   = {The Anatomy of a Large-Scale Hypertextual {Web} Search Engine},
-  journal = {Computer Networks and ISDN Systems},
-  year    = {1998},
-  volume  = {30},
-  number  = {1-7},
-  pages   = {107--117},
-  doi     = {10.1016/S0169-7552(98)00110-X}
-}
-
-@article{langville2004deeper,
-  author  = {Langville, Amy N. and Meyer, Carl D.},
-  title   = {Deeper Inside {PageRank}},
-  journal = {Internet Mathematics},
-  year    = {2004},
-  volume  = {1},
-  number  = {3},
-  pages   = {335--380},
-  doi     = {10.1080/15427951.2004.10129091}
-}
-
-@article{katz1953new,
-  author  = {Katz, Leo},
-  title   = {A New Status Index Derived from Sociometric Analysis},
-  journal = {Psychometrika},
-  year    = {1953},
-  volume  = {18},
-  number  = {1},
-  pages   = {39--43},
-  doi     = {10.1007/BF02289026}
-}
-
-@article{bonacich2001eigenvector,
-  author  = {Bonacich, Phillip and Lloyd, Paulette},
-  title   = {Eigenvector-Like Measures of Centrality for Asymmetric Relations},
+@article{boyd2010computing,
+  author  = {Boyd, John P. and Fitzgerald, William J. and Mahutga, Matthew C. and Smith, David A.},
+  title   = {Computing Continuous Core/Periphery Structures for Social Relations Data with {MINRES/SVD}},
   journal = {Social Networks},
+  year    = {2010},
+  volume  = {32},
+  number  = {2},
+  pages   = {125--137},
+  doi     = {10.1016/j.socnet.2009.09.003}
+}
+
+@article{brandes2001faster,
+  author  = {Brandes, Ulrik},
+  title   = {A Faster Algorithm for Betweenness Centrality},
+  journal = {Journal of Mathematical Sociology},
   year    = {2001},
-  volume  = {23},
-  number  = {3},
-  pages   = {191--201},
-  doi     = {10.1016/S0378-8733(01)00038-7}
-}
-
-@article{kleinberg1999authoritative,
-  author  = {Kleinberg, Jon M.},
-  title   = {Authoritative Sources in a Hyperlinked Environment},
-  journal = {Journal of the ACM},
-  year    = {1999},
-  volume  = {46},
-  number  = {5},
-  pages   = {604--632},
-  doi     = {10.1145/324133.324140}
-}
-
-% ---------------------------------------------------------------------------
-% Mixing patterns
-% ---------------------------------------------------------------------------
-
-@article{newman2002assortative,
-  author  = {Newman, M. E. J.},
-  title   = {Assortative Mixing in Networks},
-  journal = {Physical Review Letters},
-  year    = {2002},
-  volume  = {89},
-  number  = {20},
-  pages   = {208701},
-  doi     = {10.1103/PhysRevLett.89.208701}
-}
-
-@article{newman2003mixing,
-  author  = {Newman, M. E. J.},
-  title   = {Mixing Patterns in Networks},
-  journal = {Physical Review E},
-  year    = {2003},
-  volume  = {67},
+  volume  = {25},
   number  = {2},
-  pages   = {026126},
-  doi     = {10.1103/PhysRevE.67.026126}
+  pages   = {163--177},
+  doi     = {10.1080/0022250X.2001.9990249}
 }
 
-@article{krackhardt1988informal,
-  author  = {Krackhardt, David and Stern, Robert N.},
-  title   = {Informal Networks and Organizational Crises: An Experimental Simulation},
-  journal = {Social Psychology Quarterly},
-  year    = {1988},
-  volume  = {51},
-  number  = {2},
-  pages   = {123--140},
-  doi     = {10.2307/2786835}
-}
-
-@article{mcpherson2001birds,
-  author  = {McPherson, Miller and Smith-Lovin, Lynn and Cook, James M.},
-  title   = {Birds of a Feather: Homophily in Social Networks},
-  journal = {Annual Review of Sociology},
-  year    = {2001},
-  volume  = {27},
-  number  = {1},
-  pages   = {415--444},
-  doi     = {10.1146/annurev.soc.27.1.415}
-}
-
-@misc{knapp2019homophily,
-  author       = {Knapp, Brendan G.},
-  title        = {homophily: Measuring Network Homophily},
-  howpublished = {\url{https://github.com/knapply/homophily}},
-  year         = {2019},
-  note         = {R package version 0.0.0.9000. Its mixing matrices, E-I index, and assortativity functions are reproduced by knappnet's `convention = "homophily"` options.}
-}
-
-@article{koschade2006social,
-  author  = {Koschade, Stuart},
-  title   = {A Social Network Analysis of {Jemaah Islamiyah}: The Applications to Counterterrorism and Intelligence},
-  journal = {Studies in Conflict \& Terrorism},
-  year    = {2006},
-  volume  = {29},
-  number  = {6},
-  pages   = {559--575},
-  doi     = {10.1080/10576100600798418}
-}
-
-% ---------------------------------------------------------------------------
-% Eigensolvers and dense linear algebra
-% ---------------------------------------------------------------------------
-
-@article{lanczos1950iteration,
-  author  = {Lanczos, Cornelius},
-  title   = {An Iteration Method for the Solution of the Eigenvalue Problem of Linear Differential and Integral Operators},
-  journal = {Journal of Research of the National Bureau of Standards},
-  year    = {1950},
-  volume  = {45},
-  number  = {4},
-  pages   = {255--282},
-  doi     = {10.6028/jres.045.026}
-}
-
-@article{wu2000thick,
-  author  = {Wu, Kesheng and Simon, Horst},
-  title   = {Thick-Restart {Lanczos} Method for Large Symmetric Eigenvalue Problems},
-  journal = {SIAM Journal on Matrix Analysis and Applications},
-  year    = {2000},
-  volume  = {22},
-  number  = {2},
-  pages   = {602--616},
-  doi     = {10.1137/S0895479898334605}
-}
-
-@article{stewart2002krylov,
-  author  = {Stewart, G. W.},
-  title   = {A {Krylov}--{Schur} Algorithm for Large Eigenproblems},
-  journal = {SIAM Journal on Matrix Analysis and Applications},
-  year    = {2002},
-  volume  = {23},
-  number  = {3},
-  pages   = {601--614},
-  doi     = {10.1137/S0895479800371529}
-}
-
-@article{daniel1976reorthogonalization,
-  author  = {Daniel, J. W. and Gragg, W. B. and Kaufman, L. and Stewart, G. W.},
-  title   = {Reorthogonalization and Stable Algorithms for Updating the {Gram}-{Schmidt} {QR} Factorization},
-  journal = {Mathematics of Computation},
-  year    = {1976},
-  volume  = {30},
-  number  = {136},
-  pages   = {772--795},
-  doi     = {10.1090/S0025-5718-1976-0431641-8}
-}
-
-@article{jacobi1846leichtes,
-  author  = {Jacobi, C. G. J.},
-  title   = {{\"U}ber ein leichtes {V}erfahren die in der {T}heorie der {S}{\"a}cularst{\"o}rungen vorkommenden {G}leichungen numerisch aufzul{\"o}sen},
-  journal = {Journal f{\"u}r die reine und angewandte Mathematik},
-  year    = {1846},
-  volume  = {30},
-  pages   = {51--94},
-  doi     = {10.1515/crll.1846.30.51}
-}
-
-@book{golub2013matrix,
-  author    = {Golub, Gene H. and Van Loan, Charles F.},
-  title     = {Matrix Computations},
-  edition   = {4th},
-  publisher = {Johns Hopkins University Press},
-  address   = {Baltimore},
-  year      = {2013},
-  isbn      = {9781421407944}
-}
-
-@inproceedings{gansner2005graph,
-  author    = {Gansner, Emden R. and Koren, Yehuda and North, Stephen},
-  title     = {Graph Drawing by Stress Majorization},
-  booktitle = {Graph Drawing (GD 2004)},
-  editor    = {Pach, J{\'a}nos},
+@inproceedings{brandes2002graphml,
+  author    = {Brandes, Ulrik and Eiglsperger, Markus and Herman, Ivan and Himsolt, Michael and Marshall, M. Scott},
+  title     = {{GraphML} Progress Report: Structural Layer Proposal},
+  booktitle = {Graph Drawing (GD 2001)},
   series    = {Lecture Notes in Computer Science},
-  volume    = {3383},
+  volume    = {2265},
+  pages     = {501--512},
+  publisher = {Springer},
+  year      = {2002},
+  doi       = {10.1007/3-540-45848-4_59}
+}
+
+@incollection{brandes2005centrality,
+  author    = {Brandes, Ulrik and Fleischer, Daniel},
+  title     = {Centrality measures based on current flow},
+  booktitle = {STACS 2005},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {3404},
   publisher = {Springer},
   address   = {Berlin, Heidelberg},
   year      = {2005},
-  pages     = {239--250},
-  doi       = {10.1007/978-3-540-31843-9_25}
-}
-
-@article{kamada1989algorithm,
-  author  = {Kamada, Tomihisa and Kawai, Satoru},
-  title   = {An Algorithm for Drawing General Undirected Graphs},
-  journal = {Information Processing Letters},
-  year    = {1989},
-  volume  = {31},
-  number  = {1},
-  pages   = {7--15},
-  doi     = {10.1016/0020-0190(89)90102-6}
+  pages     = {533--544},
+  doi       = {10.1007/978-3-540-31856-9_44}
 }
 
 @inproceedings{brandes2007eigensolver,
@@ -1370,6 +524,17 @@
   doi       = {10.1007/978-3-540-70904-6_6}
 }
 
+@article{brandes2008variants,
+  author  = {Brandes, Ulrik},
+  title   = {On Variants of Shortest-Path Betweenness Centrality and Their Generic Computation},
+  journal = {Social Networks},
+  year    = {2008},
+  volume  = {30},
+  number  = {2},
+  pages   = {136--145},
+  doi     = {10.1016/j.socnet.2007.11.001}
+}
+
 @inproceedings{brandes2009experimental,
   author    = {Brandes, Ulrik and Pich, Christian},
   title     = {An Experimental Study on Distance-Based Graph Drawing},
@@ -1384,59 +549,167 @@
   doi       = {10.1007/978-3-642-00219-9_21}
 }
 
-@article{ortmann2017sparse,
-  author  = {Ortmann, Mark and Klimenta, Mirza and Brandes, Ulrik},
-  title   = {A Sparse Stress Model},
-  journal = {Journal of Graph Algorithms and Applications},
-  year    = {2017},
-  volume  = {21},
-  number  = {5},
-  pages   = {791--821},
-  doi     = {10.7155/jgaa.00440}
+@article{breiger1974duality,
+  author  = {Breiger, Ronald L.},
+  title   = {The Duality of Persons and Groups},
+  journal = {Social Forces},
+  year    = {1974},
+  volume  = {53},
+  number  = {2},
+  pages   = {181--190},
+  doi     = {10.2307/2576011}
 }
 
-@article{fruchterman1991graph,
-  author  = {Fruchterman, Thomas M. J. and Reingold, Edward M.},
-  title   = {Graph Drawing by Force-Directed Placement},
-  journal = {Software: Practice and Experience},
-  year    = {1991},
-  volume  = {21},
-  number  = {11},
-  pages   = {1129--1164},
-  doi     = {10.1002/spe.4380211102}
+@article{breiger1975algorithm,
+  author  = {Breiger, Ronald L. and Boorman, Scott A. and Arabie, Phipps},
+  title   = {An Algorithm for Clustering Relational Data with Applications to Social Network Analysis and Comparison with Multidimensional Scaling},
+  journal = {Journal of Mathematical Psychology},
+  year    = {1975},
+  volume  = {12},
+  number  = {3},
+  pages   = {328--383},
+  doi     = {10.1016/0022-2496(75)90028-0}
 }
 
-@article{barnes1986hierarchical,
-  author  = {Barnes, Josh and Hut, Piet},
-  title   = {A Hierarchical {$O(N \log N)$} Force-Calculation Algorithm},
-  journal = {Nature},
+@article{breiger1986cumulated,
+  author  = {Breiger, Ronald L. and Pattison, Philippa E.},
+  title   = {Cumulated Social Roles: The Duality of Persons and Their Algebras},
+  journal = {Social Networks},
   year    = {1986},
-  volume  = {324},
-  number  = {6096},
-  pages   = {446--449},
-  doi     = {10.1038/324446a0}
+  volume  = {8},
+  number  = {3},
+  pages   = {215--256},
+  doi     = {10.1016/0378-8733(86)90006-7}
 }
 
-@article{reingold1981tidier,
-  author  = {Reingold, Edward M. and Tilford, John S.},
-  title   = {Tidier Drawings of Trees},
-  journal = {IEEE Transactions on Software Engineering},
-  year    = {1981},
-  volume  = {SE-7},
-  number  = {2},
-  pages   = {223--228},
-  doi     = {10.1109/TSE.1981.234519}
+@article{brin1998anatomy,
+  author  = {Brin, Sergey and Page, Lawrence},
+  title   = {The Anatomy of a Large-Scale Hypertextual {Web} Search Engine},
+  journal = {Computer Networks and ISDN Systems},
+  year    = {1998},
+  volume  = {30},
+  number  = {1-7},
+  pages   = {107--117},
+  doi     = {10.1016/S0169-7552(98)00110-X}
 }
 
-@article{sugiyama1981methods,
-  author  = {Sugiyama, Kozo and Tagawa, Shojiro and Toda, Mitsuhiko},
-  title   = {Methods for Visual Understanding of Hierarchical System Structures},
-  journal = {IEEE Transactions on Systems, Man, and Cybernetics},
-  year    = {1981},
-  volume  = {11},
+@article{bron1973algorithm,
+  author  = {Bron, Coen and Kerbosch, Joep},
+  title   = {Algorithm 457: Finding All Cliques of an Undirected Graph},
+  journal = {Communications of the ACM},
+  year    = {1973},
+  volume  = {16},
+  number  = {9},
+  pages   = {575--577},
+  doi     = {10.1145/362342.362367}
+}
+
+@article{burt1976positions,
+  author  = {Burt, Ronald S.},
+  title   = {Positions in Networks},
+  journal = {Social Forces},
+  year    = {1976},
+  volume  = {55},
+  number  = {1},
+  pages   = {93--122},
+  doi     = {10.2307/2577097}
+}
+
+@book{burt1992structural,
+  author    = {Burt, Ronald S.},
+  title     = {Structural Holes: The Social Structure of Competition},
+  publisher = {Harvard University Press},
+  address   = {Cambridge, MA},
+  year      = {1992},
+  doi       = {10.4159/9780674029095}
+}
+
+@article{burt2004structural,
+  author  = {Burt, Ronald S.},
+  title   = {Structural Holes and Good Ideas},
+  journal = {American Journal of Sociology},
+  year    = {2004},
+  volume  = {110},
   number  = {2},
-  pages   = {109--125},
-  doi     = {10.1109/TSMC.1981.4308636}
+  pages   = {349--399},
+  doi     = {10.1086/421787}
+}
+
+@article{butts2008network,
+  author  = {Butts, Carter T.},
+  title   = {network: A Package for Managing Relational Data in {R}},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {2},
+  pages   = {1--36},
+  doi     = {10.18637/jss.v024.i02}
+}
+
+@article{butts2008sna,
+  author  = {Butts, Carter T.},
+  title   = {Social Network Analysis with {sna}},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {6},
+  pages   = {1--51},
+  doi     = {10.18637/jss.v024.i06}
+}
+
+@manual{butts2026networkdynamic,
+  author = {Butts, Carter T. and Leslie-Cook, Ayn and Krivitsky, Pavel N. and Bender-deMoll, Skye},
+  title  = {{networkDynamic}: Dynamic Extensions for Network Objects},
+  year   = {2026},
+  note   = {R package version 0.12.0},
+  url    = {https://CRAN.R-project.org/package=networkDynamic},
+  doi    = {10.32614/CRAN.package.networkDynamic}
+}
+
+@article{chiba1985arboricity,
+  author  = {Chiba, Norishige and Nishizeki, Takao},
+  title   = {Arboricity and Subgraph Listing Algorithms},
+  journal = {SIAM Journal on Computing},
+  year    = {1985},
+  volume  = {14},
+  number  = {1},
+  pages   = {210--223},
+  doi     = {10.1137/0214017}
+}
+
+@article{clauset2004finding,
+  author  = {Clauset, Aaron and Newman, M. E. J. and Moore, Cristopher},
+  title   = {Finding Community Structure in Very Large Networks},
+  journal = {Physical Review E},
+  year    = {2004},
+  volume  = {70},
+  number  = {6},
+  pages   = {066111},
+  doi     = {10.1103/PhysRevE.70.066111}
+}
+
+@article{clauset2009powerlaw,
+  author  = {Clauset, Aaron and Shalizi, Cosma Rohilla and Newman, M. E. J.},
+  title   = {Power-Law Distributions in Empirical Data},
+  journal = {SIAM Review},
+  year    = {2009},
+  volume  = {51},
+  number  = {4},
+  pages   = {661--703},
+  doi     = {10.1137/070710111}
+}
+
+@incollection{clementini1993smallset,
+  author    = {Clementini, Eliseo and Di Felice, Paolino and van Oosterom, Peter},
+  title     = {A Small Set of Formal Topological Relationships Suitable for End-User Interaction},
+  booktitle = {Advances in Spatial Databases},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {692},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {1993},
+  pages     = {277--295},
+  doi       = {10.1007/3-540-56869-7_16}
 }
 
 @article{coffman1980performance,
@@ -1450,13 +723,219 @@
   doi     = {10.1137/0209062}
 }
 
-@book{everton2012disrupting,
-  author    = {Everton, Sean F.},
-  title     = {Disrupting Dark Networks},
+@article{collatz1942einschliessungssatz,
+  author  = {Collatz, L.},
+  title   = {Einschlie{\ss}ungssatz f{\"u}r die charakteristischen Zahlen von Matrizen},
+  journal = {Mathematische Zeitschrift},
+  year    = {1942},
+  volume  = {48},
+  number  = {1},
+  pages   = {221--226},
+  doi     = {10.1007/BF01180013}
+}
+
+@article{comrey1962minimum,
+  author  = {Comrey, Andrew L.},
+  title   = {The Minimum Residual Method of Factor Analysis},
+  journal = {Psychological Reports},
+  year    = {1962},
+  volume  = {11},
+  number  = {1},
+  pages   = {15--18},
+  doi     = {10.2466/pr0.1962.11.1.15}
+}
+
+@article{csardi2006igraph,
+  author  = {Csardi, Gabor and Nepusz, Tamas},
+  title   = {The igraph Software Package for Complex Network Research},
+  journal = {InterJournal, Complex Systems},
+  year    = {2006},
+  pages   = {1695}
+}
+
+@article{daniel1976reorthogonalization,
+  author  = {Daniel, J. W. and Gragg, W. B. and Kaufman, L. and Stewart, G. W.},
+  title   = {Reorthogonalization and Stable Algorithms for Updating the {Gram}-{Schmidt} {QR} Factorization},
+  journal = {Mathematics of Computation},
+  year    = {1976},
+  volume  = {30},
+  number  = {136},
+  pages   = {772--795},
+  doi     = {10.1090/S0025-5718-1976-0431641-8}
+}
+
+@book{davis1941deep,
+  author    = {Davis, Allison and Gardner, Burleigh B. and Gardner, Mary R.},
+  title     = {Deep South: A Social Anthropological Study of Caste and Class},
+  publisher = {University of Chicago Press},
+  address   = {Chicago},
+  year      = {1941}
+}
+
+@article{davis2019algorithm,
+  author  = {Davis, Timothy A.},
+  title   = {Algorithm 1000: {SuiteSparse:GraphBLAS}: Graph Algorithms in the Language of Sparse Linear Algebra},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {2019},
+  volume  = {45},
+  number  = {4},
+  pages   = {44:1--44:25},
+  doi     = {10.1145/3322125}
+}
+
+@article{dekker2007sensitivity,
+  author  = {Dekker, David and Krackhardt, David and Snijders, Tom A. B.},
+  title   = {Sensitivity of {MRQAP} Tests to Collinearity and Autocorrelation Conditions},
+  journal = {Psychometrika},
+  year    = {2007},
+  volume  = {72},
+  number  = {4},
+  pages   = {563--581},
+  doi     = {10.1007/s11336-007-9016-1}
+}
+
+@book{denooy2018exploratory,
+  author    = {de Nooy, Wouter and Mrvar, Andrej and Batagelj, Vladimir},
+  title     = {Exploratory Social Network Analysis with {Pajek}},
+  edition   = {3},
   publisher = {Cambridge University Press},
-  year      = {2012},
-  isbn      = {9781107022591},
-  doi       = {10.1017/CBO9781139136877}
+  year      = {2018},
+  doi       = {10.1017/9781108565691}
+}
+
+@article{desmarais2012statistical,
+  author  = {Desmarais, Bruce A. and Cranmer, Skyler J.},
+  title   = {Statistical Mechanics of Networks: Estimation and Uncertainty},
+  journal = {Physica A: Statistical Mechanics and its Applications},
+  year    = {2012},
+  volume  = {391},
+  number  = {4},
+  pages   = {1865--1876},
+  doi     = {10.1016/j.physa.2011.10.018}
+}
+
+@article{dial1969algorithm,
+  author  = {Dial, Robert B.},
+  title   = {Algorithm 360: Shortest-Path Forest with Topological Ordering},
+  journal = {Communications of the ACM},
+  year    = {1969},
+  volume  = {12},
+  number  = {11},
+  pages   = {632--633},
+  doi     = {10.1145/363269.363610}
+}
+
+@article{dijkstra1959note,
+  author  = {Dijkstra, Edsger W.},
+  title   = {A Note on Two Problems in Connexion with Graphs},
+  journal = {Numerische Mathematik},
+  year    = {1959},
+  volume  = {1},
+  number  = {1},
+  pages   = {269--271},
+  doi     = {10.1007/BF01386390}
+}
+
+% No DOI. Title, volume, and pages of the Russian original from Math-Net.Ru
+% (Dokl. Akad. Nauk SSSR 194(4), 754-757); the translation's volume and
+% pages as commonly cited.
+@article{dinic1970algorithm,
+  author  = {Dinic, E. A.},
+  title   = {Algorithm for Solution of a Problem of Maximum Flow in a Network with Power Estimation},
+  journal = {Soviet Mathematics Doklady},
+  year    = {1970},
+  volume  = {11},
+  pages   = {1277--1280},
+  note    = {Translated from Doklady Akademii Nauk SSSR 194(4), 754--757}
+}
+
+@book{doreian2005generalized,
+  author    = {Doreian, Patrick and Batagelj, Vladimir and Ferligoj, Anu{\v{s}}ka},
+  title     = {Generalized Blockmodeling},
+  publisher = {Cambridge University Press},
+  address   = {Cambridge},
+  year      = {2005},
+  series    = {Structural Analysis in the Social Sciences},
+  doi       = {10.1017/CBO9780511584176},
+  note      = {Crossref records the print edition as 2004; the book carries a 2005 copyright and is cited as 2005}
+}
+
+@article{durstenfeld1964algorithm,
+  author  = {Durstenfeld, Richard},
+  title   = {Algorithm 235: Random Permutation},
+  journal = {Communications of the ACM},
+  year    = {1964},
+  volume  = {7},
+  number  = {7},
+  pages   = {420},
+  doi     = {10.1145/364520.364540}
+}
+
+@article{edmonds1972theoretical,
+  author  = {Edmonds, Jack and Karp, Richard M.},
+  title   = {Theoretical Improvements in Algorithmic Efficiency for Network Flow Problems},
+  journal = {Journal of the ACM},
+  year    = {1972},
+  volume  = {19},
+  number  = {2},
+  pages   = {248--264},
+  doi     = {10.1145/321694.321699}
+}
+
+@article{egenhofer1991pointset,
+  author  = {Egenhofer, Max J. and Franzosa, Robert D.},
+  title   = {Point-Set Topological Spatial Relations},
+  journal = {International Journal of Geographical Information Systems},
+  year    = {1991},
+  volume  = {5},
+  number  = {2},
+  pages   = {161--174},
+  doi     = {10.1080/02693799108927841}
+}
+
+@inproceedings{eppstein2010listing,
+  author    = {Eppstein, David and L{\"o}ffler, Maarten and Strash, Darren},
+  title     = {Listing All Maximal Cliques in Sparse Graphs in Near-Optimal Time},
+  booktitle = {Algorithms and Computation (ISAAC 2010)},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {6506},
+  pages     = {403--414},
+  publisher = {Springer},
+  year      = {2010},
+  doi       = {10.1007/978-3-642-17517-6_36}
+}
+
+@article{erdos1959random,
+  author    = {Erd{\H{o}}s, Paul and R{\'e}nyi, Alfr{\'e}d},
+  title     = {On Random Graphs {I}},
+  journal   = {Publicationes Mathematicae Debrecen},
+  volume    = {6},
+  number    = {3--4},
+  pages     = {290--297},
+  year      = {1959},
+  doi       = {10.5486/PMD.1959.6.3-4.12}
+}
+
+@article{everett1985role,
+  author  = {Everett, Martin G.},
+  title   = {Role similarity and complexity in social networks},
+  journal = {Social Networks},
+  year    = {1985},
+  volume  = {7},
+  number  = {4},
+  pages   = {353--359},
+  doi     = {10.1016/0378-8733(85)90013-9}
+}
+
+@article{everett1994regular,
+  author  = {Everett, Martin G. and Borgatti, Stephen P.},
+  title   = {Regular equivalence: General theory},
+  journal = {The Journal of Mathematical Sociology},
+  year    = {1994},
+  volume  = {19},
+  number  = {1},
+  pages   = {29--52},
+  doi     = {10.1080/0022250X.1994.9990134}
 }
 
 @article{everett1999centrality,
@@ -1470,6 +949,80 @@
   doi     = {10.1080/0022250X.1999.9990219}
 }
 
+@article{everett2005ego,
+  author  = {Everett, Martin and Borgatti, Stephen P.},
+  title   = {Ego Network Betweenness},
+  journal = {Social Networks},
+  year    = {2005},
+  volume  = {27},
+  number  = {1},
+  pages   = {31--38},
+  doi     = {10.1016/j.socnet.2004.11.007}
+}
+
+@article{everett2013dual,
+  author  = {Everett, M. G. and Borgatti, S. P.},
+  title   = {The Dual-Projection Approach for Two-Mode Networks},
+  journal = {Social Networks},
+  year    = {2013},
+  volume  = {35},
+  number  = {2},
+  pages   = {204--210},
+  doi     = {10.1016/j.socnet.2012.05.004}
+}
+
+@book{everton2012disrupting,
+  author    = {Everton, Sean F.},
+  title     = {Disrupting Dark Networks},
+  publisher = {Cambridge University Press},
+  year      = {2012},
+  isbn      = {9781107022591},
+  doi       = {10.1017/CBO9781139136877}
+}
+
+@article{ford1956maximal,
+  author  = {Ford, Jr., L. R. and Fulkerson, D. R.},
+  title   = {Maximal Flow Through a Network},
+  journal = {Canadian Journal of Mathematics},
+  year    = {1956},
+  volume  = {8},
+  pages   = {399--404},
+  doi     = {10.4153/CJM-1956-045-5}
+}
+
+@article{frank1986markov,
+  author  = {Frank, Ove and Strauss, David},
+  title   = {Markov Graphs},
+  journal = {Journal of the American Statistical Association},
+  year    = {1986},
+  volume  = {81},
+  number  = {395},
+  pages   = {832--842},
+  doi     = {10.1080/01621459.1986.10478342}
+}
+
+@article{freeman1977set,
+  author  = {Freeman, Linton C.},
+  title   = {A Set of Measures of Centrality Based on Betweenness},
+  journal = {Sociometry},
+  year    = {1977},
+  volume  = {40},
+  number  = {1},
+  pages   = {35--41},
+  doi     = {10.2307/3033543}
+}
+
+@article{freeman1978centrality,
+  author  = {Freeman, Linton C.},
+  title   = {Centrality in Social Networks: Conceptual Clarification},
+  journal = {Social Networks},
+  year    = {1978},
+  volume  = {1},
+  number  = {3},
+  pages   = {215--239},
+  doi     = {10.1016/0378-8733(78)90021-7}
+}
+
 @article{freeman1991centrality,
   author  = {Freeman, Linton C. and Borgatti, Stephen P. and White, Douglas R.},
   title   = {Centrality in Valued Graphs: A Measure of Betweenness Based on Network Flow},
@@ -1479,6 +1032,607 @@
   number  = {2},
   pages   = {141--154},
   doi     = {10.1016/0378-8733(91)90017-N}
+}
+
+@article{friedman1977algorithm,
+  author  = {Friedman, Jerome H. and Bentley, Jon Louis and Finkel, Raphael Ari},
+  title   = {An algorithm for finding best matches in logarithmic expected time},
+  journal = {ACM Transactions on Mathematical Software},
+  year    = {1977},
+  volume  = {3},
+  number  = {3},
+  pages   = {209--226},
+  doi     = {10.1145/355744.355745}
+}
+
+@article{fruchterman1991graph,
+  author  = {Fruchterman, Thomas M. J. and Reingold, Edward M.},
+  title   = {Graph Drawing by Force-Directed Placement},
+  journal = {Software: Practice and Experience},
+  year    = {1991},
+  volume  = {21},
+  number  = {11},
+  pages   = {1129--1164},
+  doi     = {10.1002/spe.4380211102}
+}
+
+@article{gansner2000open,
+  author  = {Gansner, Emden R. and North, Stephen C.},
+  title   = {An Open Graph Visualization System and Its Applications to Software Engineering},
+  journal = {Software: Practice and Experience},
+  year    = {2000},
+  volume  = {30},
+  number  = {11},
+  pages   = {1203--1233},
+  doi     = {10.1002/1097-024X(200009)30:11<1203::AID-SPE338>3.0.CO;2-N}
+}
+
+@inproceedings{gansner2005graph,
+  author    = {Gansner, Emden R. and Koren, Yehuda and North, Stephen},
+  title     = {Graph Drawing by Stress Majorization},
+  booktitle = {Graph Drawing (GD 2004)},
+  editor    = {Pach, J{\'a}nos},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {3383},
+  publisher = {Springer},
+  address   = {Berlin, Heidelberg},
+  year      = {2005},
+  pages     = {239--250},
+  doi       = {10.1007/978-3-540-31843-9_25}
+}
+
+@article{garlaschelli2004patterns,
+  author  = {Garlaschelli, Diego and Loffredo, Maria I.},
+  title   = {Patterns of Link Reciprocity in Directed Networks},
+  journal = {Physical Review Letters},
+  year    = {2004},
+  volume  = {93},
+  number  = {26},
+  pages   = {268701},
+  doi     = {10.1103/PhysRevLett.93.268701}
+}
+
+@article{gelman1998simulating,
+  author  = {Gelman, Andrew and Meng, Xiao-Li},
+  title   = {Simulating Normalizing Constants: From Importance Sampling to Bridge Sampling to Path Sampling},
+  journal = {Statistical Science},
+  year    = {1998},
+  volume  = {13},
+  number  = {2},
+  pages   = {163--185},
+  doi     = {10.1214/ss/1028905934}
+}
+
+@incollection{geweke1992evaluating,
+  author    = {Geweke, John},
+  title     = {Evaluating the Accuracy of Sampling-Based Approaches to the Calculation of Posterior Moments},
+  booktitle = {Bayesian Statistics 4},
+  editor    = {Bernardo, J. M. and Berger, J. O. and Dawid, A. P. and Smith, A. F. M.},
+  publisher = {Oxford University Press},
+  year      = {1992},
+  pages     = {169--193}
+}
+
+@misc{gexf2009,
+  author       = {{GEXF Working Group}},
+  title        = {{GEXF} File Format},
+  howpublished = {\url{https://gexf.net}},
+  year         = {2009}
+}
+
+@article{geyer1992constrained,
+  author  = {Geyer, Charles J. and Thompson, Elizabeth A.},
+  title   = {Constrained {Monte Carlo} Maximum Likelihood for Dependent Data},
+  journal = {Journal of the Royal Statistical Society: Series B (Methodological)},
+  year    = {1992},
+  volume  = {54},
+  number  = {3},
+  pages   = {657--683},
+  doi     = {10.1111/j.2517-6161.1992.tb01443.x}
+}
+
+@article{geyer1992practical,
+  author  = {Geyer, Charles J.},
+  title   = {Practical {Markov} Chain {Monte Carlo}},
+  journal = {Statistical Science},
+  year    = {1992},
+  volume  = {7},
+  number  = {4},
+  pages   = {473--483},
+  doi     = {10.1214/ss/1177011137}
+}
+
+@article{gilbert1959random,
+  author  = {Gilbert, E. N.},
+  title   = {Random Graphs},
+  journal = {Annals of Mathematical Statistics},
+  year    = {1959},
+  volume  = {30},
+  number  = {4},
+  pages   = {1141--1144},
+  doi     = {10.1214/aoms/1177706098}
+}
+
+@article{girvan2002community,
+  author  = {Girvan, M. and Newman, M. E. J.},
+  title   = {Community structure in social and biological networks},
+  journal = {Proceedings of the National Academy of Sciences},
+  year    = {2002},
+  volume  = {99},
+  number  = {12},
+  pages   = {7821--7826},
+  doi     = {10.1073/pnas.122653799}
+}
+
+@article{glover1989tabu,
+  author  = {Glover, Fred},
+  title   = {Tabu Search---Part {I}},
+  journal = {ORSA Journal on Computing},
+  year    = {1989},
+  volume  = {1},
+  number  = {3},
+  pages   = {190--206},
+  doi     = {10.1287/ijoc.1.3.190}
+}
+
+@article{goh2008burstiness,
+  author  = {Goh, K.-I. and Barab{\'a}si, A.-L.},
+  title   = {Burstiness and Memory in Complex Systems},
+  journal = {EPL (Europhysics Letters)},
+  year    = {2008},
+  volume  = {81},
+  number  = {4},
+  pages   = {48002},
+  doi     = {10.1209/0295-5075/81/48002}
+}
+
+@book{golub2013matrix,
+  author    = {Golub, Gene H. and Van Loan, Charles F.},
+  title     = {Matrix Computations},
+  edition   = {4th},
+  publisher = {Johns Hopkins University Press},
+  address   = {Baltimore},
+  year      = {2013},
+  isbn      = {9781421407944}
+}
+
+@article{gomory1961multi,
+  author  = {Gomory, R. E. and Hu, T. C.},
+  title   = {Multi-Terminal Network Flows},
+  journal = {Journal of the Society for Industrial and Applied Mathematics},
+  year    = {1961},
+  volume  = {9},
+  number  = {4},
+  pages   = {551--570},
+  doi     = {10.1137/0109047}
+}
+
+@article{gould1989structures,
+  author  = {Gould, Roger V. and Fernandez, Roberto M.},
+  title   = {Structures of Mediation: A Formal Approach to Brokerage in Transaction Networks},
+  journal = {Sociological Methodology},
+  year    = {1989},
+  volume  = {19},
+  pages   = {89--126},
+  doi     = {10.2307/270949}
+}
+
+@article{gower1966some,
+  author  = {Gower, J. C.},
+  title   = {Some distance properties of latent root and vector methods used in multivariate analysis},
+  journal = {Biometrika},
+  year    = {1966},
+  volume  = {53},
+  number  = {3-4},
+  pages   = {325--338},
+  doi     = {10.1093/biomet/53.3-4.325}
+}
+
+@misc{gray1953pulse,
+  author       = {Gray, Frank},
+  title        = {Pulse Code Communication},
+  howpublished = {U.S. Patent 2,632,058},
+  year         = {1953}
+}
+
+@article{gusfield1990very,
+  author  = {Gusfield, Dan},
+  title   = {Very Simple Methods for All Pairs Network Flow Analysis},
+  journal = {SIAM Journal on Computing},
+  year    = {1990},
+  volume  = {19},
+  number  = {1},
+  pages   = {143--155},
+  doi     = {10.1137/0219009}
+}
+
+@inproceedings{hagberg2008exploring,
+  author    = {Hagberg, Aric A. and Schult, Daniel A. and Swart, Pieter J.},
+  title     = {Exploring Network Structure, Dynamics, and Function using {NetworkX}},
+  booktitle = {Proceedings of the 7th Python in Science Conference (SciPy 2008)},
+  year      = {2008},
+  pages     = {11--15}
+}
+
+@article{hage1995eccentricity,
+  author  = {Hage, Per and Harary, Frank},
+  title   = {Eccentricity and Centrality in Networks},
+  journal = {Social Networks},
+  year    = {1995},
+  volume  = {17},
+  number  = {1},
+  pages   = {57--63},
+  doi     = {10.1016/0378-8733(94)00248-9}
+}
+
+@techreport{handcock2003assessing,
+  author      = {Handcock, Mark S.},
+  title       = {Assessing Degeneracy in Statistical Models of Social Networks},
+  institution = {Center for Statistics and the Social Sciences, University of Washington},
+  number      = {Working Paper 39},
+  year        = {2003}
+}
+
+@article{handcock2008statnet,
+  author  = {Handcock, Mark S. and Hunter, David R. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
+  title   = {{statnet}: Software Tools for the Representation, Visualization, Analysis and Simulation of Network Data},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {1},
+  pages   = {1--11},
+  doi     = {10.18637/jss.v024.i01}
+}
+
+@article{hanneke2010discrete,
+  author  = {Hanneke, Steve and Fu, Wenjie and Xing, Eric P.},
+  title   = {Discrete Temporal Models of Social Networks},
+  journal = {Electronic Journal of Statistics},
+  year    = {2010},
+  volume  = {4},
+  pages   = {585--605},
+  doi     = {10.1214/09-EJS548}
+}
+
+@misc{hanneman2005introduction,
+  author       = {Hanneman, Robert A. and Riddle, Mark},
+  title        = {Introduction to Social Network Methods},
+  howpublished = {University of California, Riverside; \url{https://faculty.ucr.edu/~hanneman/nettext/}},
+  year         = {2005},
+  note         = {Online textbook; chapters 6 (working with network data), 11 (cliques and sub-groups), and 16 (multi-plex relations) describe the UCINET menu routines cited. No DOI}
+}
+
+@article{hastings1970monte,
+  author  = {Hastings, W. K.},
+  title   = {{Monte Carlo} Sampling Methods Using {Markov} Chains and Their Applications},
+  journal = {Biometrika},
+  year    = {1970},
+  volume  = {57},
+  number  = {1},
+  pages   = {97--109},
+  doi     = {10.1093/biomet/57.1.97}
+}
+
+@techreport{himsolt1997gml,
+  author      = {Himsolt, Michael},
+  title       = {{GML}: A Portable Graph File Format},
+  institution = {Universit{\"a}t Passau},
+  year        = {1997}
+}
+
+@article{holland1976local,
+  author  = {Holland, Paul W. and Leinhardt, Samuel},
+  title   = {Local Structure in Social Networks},
+  journal = {Sociological Methodology},
+  year    = {1976},
+  volume  = {7},
+  pages   = {1--45},
+  doi     = {10.2307/270703}
+}
+
+@article{holland1981exponential,
+  author  = {Holland, Paul W. and Leinhardt, Samuel},
+  title   = {An Exponential Family of Probability Distributions for Directed Graphs},
+  journal = {Journal of the American Statistical Association},
+  year    = {1981},
+  volume  = {76},
+  number  = {373},
+  pages   = {33--50},
+  doi     = {10.1080/01621459.1981.10477598}
+}
+
+@article{holland1983stochastic,
+  author    = {Holland, Paul W. and Laskey, Kathryn Blackmond and Leinhardt, Samuel},
+  title     = {Stochastic Blockmodels: First Steps},
+  journal   = {Social Networks},
+  volume    = {5},
+  number    = {2},
+  pages     = {109--137},
+  year      = {1983},
+  doi       = {10.1016/0378-8733(83)90021-7}
+}
+
+@article{holme2002attack,
+  author  = {Holme, Petter and Kim, Beom Jun and Yoon, Chang No and Han, Seung Kee},
+  title   = {Attack Vulnerability of Complex Networks},
+  journal = {Physical Review E},
+  year    = {2002},
+  volume  = {65},
+  number  = {5},
+  pages   = {056109},
+  doi     = {10.1103/PhysRevE.65.056109}
+}
+
+@article{holme2002growing,
+  author    = {Holme, Petter and Kim, Beom Jun},
+  title     = {Growing Scale-Free Networks with Tunable Clustering},
+  journal   = {Physical Review E},
+  volume    = {65},
+  number    = {2},
+  pages     = {026107},
+  year      = {2002},
+  doi       = {10.1103/PhysRevE.65.026107}
+}
+
+@article{holme2005network,
+  author  = {Holme, Petter},
+  title   = {Network Reachability of Real-World Contact Sequences},
+  journal = {Physical Review E},
+  year    = {2005},
+  volume  = {71},
+  number  = {4},
+  pages   = {046119},
+  doi     = {10.1103/PhysRevE.71.046119}
+}
+
+@article{holme2012temporal,
+  author  = {Holme, Petter and Saram{\"a}ki, Jari},
+  title   = {Temporal Networks},
+  journal = {Physics Reports},
+  year    = {2012},
+  volume  = {519},
+  number  = {3},
+  pages   = {97--125},
+  doi     = {10.1016/j.physrep.2012.03.001}
+}
+
+@article{hopcroft1973algorithm,
+  author  = {Hopcroft, John and Tarjan, Robert},
+  title   = {Algorithm 447: Efficient Algorithms for Graph Manipulation},
+  journal = {Communications of the ACM},
+  year    = {1973},
+  volume  = {16},
+  number  = {6},
+  pages   = {372--378},
+  doi     = {10.1145/362248.362272}
+}
+
+@article{hubert1976quadratic,
+  author  = {Hubert, Lawrence and Schultz, James},
+  title   = {Quadratic Assignment as a General Data Analysis Strategy},
+  journal = {British Journal of Mathematical and Statistical Psychology},
+  year    = {1976},
+  volume  = {29},
+  number  = {2},
+  pages   = {190--241},
+  doi     = {10.1111/j.2044-8317.1976.tb00714.x}
+}
+
+@book{hubert1987assignment,
+  author    = {Hubert, Lawrence J.},
+  title     = {Assignment Methods in Combinatorial Data Analysis},
+  series    = {Statistics: Textbooks and Monographs},
+  volume    = {73},
+  publisher = {Marcel Dekker},
+  address   = {New York},
+  year      = {1987},
+  isbn      = {0-8247-7617-8}
+}
+
+@article{hummel2012improving,
+  author  = {Hummel, Ruth M. and Hunter, David R. and Handcock, Mark S.},
+  title   = {Improving Simulation-Based Algorithms for Fitting {ERGMs}},
+  journal = {Journal of Computational and Graphical Statistics},
+  year    = {2012},
+  volume  = {21},
+  number  = {4},
+  pages   = {920--939},
+  doi     = {10.1080/10618600.2012.679224}
+}
+
+@article{humphries2008network,
+  author  = {Humphries, Mark D. and Gurney, Kevin},
+  title   = {Network `Small-World-Ness': A Quantitative Method for Determining Canonical Network Equivalence},
+  journal = {PLoS ONE},
+  year    = {2008},
+  volume  = {3},
+  number  = {4},
+  pages   = {e0002051},
+  doi     = {10.1371/journal.pone.0002051}
+}
+
+@article{hunter2006inference,
+  author  = {Hunter, David R. and Handcock, Mark S.},
+  title   = {Inference in Curved Exponential Family Models for Networks},
+  journal = {Journal of Computational and Graphical Statistics},
+  year    = {2006},
+  volume  = {15},
+  number  = {3},
+  pages   = {565--583},
+  doi     = {10.1198/106186006X133069}
+}
+
+@article{hunter2007curved,
+  author  = {Hunter, David R.},
+  title   = {Curved Exponential Family Models for Social Networks},
+  journal = {Social Networks},
+  year    = {2007},
+  volume  = {29},
+  number  = {2},
+  pages   = {216--230},
+  doi     = {10.1016/j.socnet.2006.08.005}
+}
+
+@article{hunter2008ergm,
+  author  = {Hunter, David R. and Handcock, Mark S. and Butts, Carter T. and Goodreau, Steven M. and Morris, Martina},
+  title   = {{ergm}: A Package to Fit, Simulate and Diagnose Exponential-Family Models for Networks},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {3},
+  pages   = {1--29},
+  doi     = {10.18637/jss.v024.i03}
+}
+
+@article{hunter2008goodness,
+  author  = {Hunter, David R. and Goodreau, Steven M. and Handcock, Mark S.},
+  title   = {Goodness of Fit of Social Network Models},
+  journal = {Journal of the American Statistical Association},
+  year    = {2008},
+  volume  = {103},
+  number  = {481},
+  pages   = {248--258},
+  doi     = {10.1198/016214507000000446}
+}
+
+@inproceedings{hwang2008bridging,
+  author    = {Hwang, Woochang and Kim, Taehyong and Ramanathan, Murali and Zhang, Aidong},
+  title     = {Bridging centrality: Graph mining from element level to group level},
+  booktitle = {Proceedings of the 14th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
+  publisher = {ACM},
+  year      = {2008},
+  pages     = {336--344},
+  doi       = {10.1145/1401890.1401934}
+}
+
+@article{jacobi1846leichtes,
+  author  = {Jacobi, C. G. J.},
+  title   = {{\"U}ber ein leichtes {V}erfahren die in der {T}heorie der {S}{\"a}cularst{\"o}rungen vorkommenden {G}leichungen numerisch aufzul{\"o}sen},
+  journal = {Journal f{\"u}r die reine und angewandte Mathematik},
+  year    = {1846},
+  volume  = {30},
+  pages   = {51--94},
+  doi     = {10.1515/crll.1846.30.51}
+}
+
+@article{johnson1967hierarchical,
+  author  = {Johnson, Stephen C.},
+  title   = {Hierarchical Clustering Schemes},
+  journal = {Psychometrika},
+  year    = {1967},
+  volume  = {32},
+  number  = {3},
+  pages   = {241--254},
+  doi     = {10.1007/BF02289588}
+}
+
+@article{kaiser2008mean,
+  author  = {Kaiser, Marcus},
+  title   = {Mean Clustering Coefficients: The Role of Isolated Nodes and Leafs on Clustering Measures for Small-World Networks},
+  journal = {New Journal of Physics},
+  year    = {2008},
+  volume  = {10},
+  number  = {8},
+  pages   = {083042},
+  doi     = {10.1088/1367-2630/10/8/083042}
+}
+
+@article{kamada1989algorithm,
+  author  = {Kamada, Tomihisa and Kawai, Satoru},
+  title   = {An Algorithm for Drawing General Undirected Graphs},
+  journal = {Information Processing Letters},
+  year    = {1989},
+  volume  = {31},
+  number  = {1},
+  pages   = {7--15},
+  doi     = {10.1016/0020-0190(89)90102-6}
+}
+
+@article{katz1953new,
+  author  = {Katz, Leo},
+  title   = {A New Status Index Derived from Sociometric Analysis},
+  journal = {Psychometrika},
+  year    = {1953},
+  volume  = {18},
+  number  = {1},
+  pages   = {39--43},
+  doi     = {10.1007/BF02289026}
+}
+
+@article{kempe2002connectivity,
+  author  = {Kempe, David and Kleinberg, Jon and Kumar, Amit},
+  title   = {Connectivity and Inference Problems for Temporal Networks},
+  journal = {Journal of Computer and System Sciences},
+  year    = {2002},
+  volume  = {64},
+  number  = {4},
+  pages   = {820--842},
+  doi     = {10.1006/jcss.2002.1829}
+}
+
+@inproceedings{kepner2016mathematical,
+  author    = {Kepner, Jeremy and Aaltonen, Peter and Bader, David and Bulu{\c{c}}, Ayd{\i}n and Franchetti, Franz and Gilbert, John and Hutchison, Dylan and Kumar, Manoj and Lumsdaine, Andrew and Meyerhenke, Henning and McMillan, Scott and Moreira, Jose and Owens, John D. and Yang, Carl and Zalewski, Marcin and Mattson, Timothy},
+  title     = {Mathematical Foundations of the {GraphBLAS}},
+  booktitle = {2016 IEEE High Performance Extreme Computing Conference (HPEC)},
+  year      = {2016},
+  doi       = {10.1109/HPEC.2016.7761646}
+}
+
+@article{kim2016measuring,
+  author  = {Kim, Eun-Kyeong and Jo, Hang-Hyun},
+  title   = {Measuring Burstiness for Finite Event Sequences},
+  journal = {Physical Review E},
+  year    = {2016},
+  volume  = {94},
+  number  = {3},
+  pages   = {032311},
+  doi     = {10.1103/PhysRevE.94.032311}
+}
+
+@article{kleinberg1999authoritative,
+  author  = {Kleinberg, Jon M.},
+  title   = {Authoritative Sources in a Hyperlinked Environment},
+  journal = {Journal of the ACM},
+  year    = {1999},
+  volume  = {46},
+  number  = {5},
+  pages   = {604--632},
+  doi     = {10.1145/324133.324140}
+}
+
+@misc{knapp2019homophily,
+  author       = {Knapp, Brendan G.},
+  title        = {homophily: Measuring Network Homophily},
+  howpublished = {\url{https://github.com/knapply/homophily}},
+  year         = {2019},
+  note         = {R package version 0.0.0.9000. Its mixing matrices, E-I index, and assortativity functions are reproduced by knappnet's `convention = "homophily"` options.}
+}
+
+@book{knuth1993stanford,
+  author    = {Knuth, Donald E.},
+  title     = {The {Stanford GraphBase}: A Platform for Combinatorial Computing},
+  publisher = {Addison-Wesley},
+  address   = {Reading, MA},
+  year      = {1993}
+}
+
+@book{knuth2011art,
+  author    = {Knuth, Donald E.},
+  title     = {The Art of Computer Programming, Volume 4A: Combinatorial Algorithms, Part 1},
+  publisher = {Addison-Wesley},
+  year      = {2011},
+  isbn      = {978-0-201-03804-0}
+}
+
+@article{koschade2006social,
+  author  = {Koschade, Stuart},
+  title   = {A Social Network Analysis of {Jemaah Islamiyah}: The Applications to Counterterrorism and Intelligence},
+  journal = {Studies in Conflict \& Terrorism},
+  year    = {2006},
+  volume  = {29},
+  number  = {6},
+  pages   = {559--575},
+  doi     = {10.1080/10576100600798418}
 }
 
 @incollection{koschutzki2005centrality,
@@ -1496,72 +1650,507 @@
   doi       = {10.1007/978-3-540-31955-9_3}
 }
 
-% No DOI. Title, volume, and pages of the Russian original from Math-Net.Ru
-% (Dokl. Akad. Nauk SSSR 194(4), 754-757); the translation's volume and
-% pages as commonly cited.
-
-@article{dinic1970algorithm,
-  author  = {Dinic, E. A.},
-  title   = {Algorithm for Solution of a Problem of Maximum Flow in a Network with Power Estimation},
-  journal = {Soviet Mathematics Doklady},
-  year    = {1970},
-  volume  = {11},
-  pages   = {1277--1280},
-  note    = {Translated from Doklady Akademii Nauk SSSR 194(4), 754--757}
-}
-
-@article{ford1956maximal,
-  author  = {Ford, Jr., L. R. and Fulkerson, D. R.},
-  title   = {Maximal Flow Through a Network},
-  journal = {Canadian Journal of Mathematics},
-  year    = {1956},
-  volume  = {8},
-  pages   = {399--404},
-  doi     = {10.4153/CJM-1956-045-5}
-}
-
-@article{edmonds1972theoretical,
-  author  = {Edmonds, Jack and Karp, Richard M.},
-  title   = {Theoretical Improvements in Algorithmic Efficiency for Network Flow Problems},
-  journal = {Journal of the ACM},
-  year    = {1972},
-  volume  = {19},
+@article{krackhardt1987qap,
+  author  = {Krackhardt, David},
+  title   = {{QAP} Partialling as a Test of Spuriousness},
+  journal = {Social Networks},
+  year    = {1987},
+  volume  = {9},
   number  = {2},
-  pages   = {248--264},
-  doi     = {10.1145/321694.321699}
+  pages   = {171--186},
+  doi     = {10.1016/0378-8733(87)90012-8}
 }
 
-@article{an2016keyplayer,
-  author  = {An, Weihua and Liu, Yu-Hsin},
-  title   = {keyplayer: An {R} Package for Locating Key Players in Social Networks},
-  journal = {The R Journal},
-  year    = {2016},
-  volume  = {8},
-  number  = {1},
-  pages   = {257--268},
-  doi     = {10.32614/RJ-2016-018}
+@article{krackhardt1988informal,
+  author  = {Krackhardt, David and Stern, Robert N.},
+  title   = {Informal Networks and Organizational Crises: An Experimental Simulation},
+  journal = {Social Psychology Quarterly},
+  year    = {1988},
+  volume  = {51},
+  number  = {2},
+  pages   = {123--140},
+  doi     = {10.2307/2786835}
 }
 
-@article{holme2012temporal,
-  author  = {Holme, Petter and Saram{\"a}ki, Jari},
-  title   = {Temporal Networks},
-  journal = {Physics Reports},
-  year    = {2012},
-  volume  = {519},
-  number  = {3},
-  pages   = {97--125},
-  doi     = {10.1016/j.physrep.2012.03.001}
-}
-
-@article{kempe2002connectivity,
-  author  = {Kempe, David and Kleinberg, Jon and Kumar, Amit},
-  title   = {Connectivity and Inference Problems for Temporal Networks},
-  journal = {Journal of Computer and System Sciences},
-  year    = {2002},
-  volume  = {64},
+@article{krackhardt1988predicting,
+  author  = {Krackhardt, David},
+  title   = {Predicting with Networks: Nonparametric Multiple Regression Analysis of Dyadic Data},
+  journal = {Social Networks},
+  year    = {1988},
+  volume  = {10},
   number  = {4},
-  pages   = {820--842},
-  doi     = {10.1006/jcss.2002.1829}
+  pages   = {359--381},
+  doi     = {10.1016/0378-8733(88)90004-4}
+}
+
+@article{krackhardt1990assessing,
+  author  = {Krackhardt, David},
+  title   = {Assessing the Political Landscape: Structure, Cognition, and Power in Organizations},
+  journal = {Administrative Science Quarterly},
+  year    = {1990},
+  volume  = {35},
+  number  = {2},
+  pages   = {342--369},
+  doi     = {10.2307/2393394}
+}
+
+@article{kruskal1964multidimensional,
+  author  = {Kruskal, J. B.},
+  title   = {Multidimensional scaling by optimizing goodness of fit to a nonmetric hypothesis},
+  journal = {Psychometrika},
+  year    = {1964},
+  volume  = {29},
+  number  = {1},
+  pages   = {1--27},
+  doi     = {10.1007/BF02289565}
+}
+
+@article{lancichinetti2008benchmark,
+  author    = {Lancichinetti, Andrea and Fortunato, Santo and Radicchi, Filippo},
+  title     = {Benchmark Graphs for Testing Community Detection Algorithms},
+  journal   = {Physical Review E},
+  volume    = {78},
+  number    = {4},
+  pages     = {046110},
+  year      = {2008},
+  doi       = {10.1103/PhysRevE.78.046110}
+}
+
+@article{lanczos1950iteration,
+  author  = {Lanczos, Cornelius},
+  title   = {An Iteration Method for the Solution of the Eigenvalue Problem of Linear Differential and Integral Operators},
+  journal = {Journal of Research of the National Bureau of Standards},
+  year    = {1950},
+  volume  = {45},
+  number  = {4},
+  pages   = {255--282},
+  doi     = {10.6028/jres.045.026}
+}
+
+@article{langville2004deeper,
+  author  = {Langville, Amy N. and Meyer, Carl D.},
+  title   = {Deeper Inside {PageRank}},
+  journal = {Internet Mathematics},
+  year    = {2004},
+  volume  = {1},
+  number  = {3},
+  pages   = {335--380},
+  doi     = {10.1080/15427951.2004.10129091}
+}
+
+@article{latora2001efficient,
+  author  = {Latora, Vito and Marchiori, Massimo},
+  title   = {Efficient Behavior of Small-World Networks},
+  journal = {Physical Review Letters},
+  year    = {2001},
+  volume  = {87},
+  number  = {19},
+  pages   = {198701},
+  doi     = {10.1103/PhysRevLett.87.198701}
+}
+
+@article{leicht2008community,
+  author  = {Leicht, E. A. and Newman, M. E. J.},
+  title   = {Community Structure in Directed Networks},
+  journal = {Physical Review Letters},
+  year    = {2008},
+  volume  = {100},
+  number  = {11},
+  pages   = {118703},
+  doi     = {10.1103/PhysRevLett.100.118703}
+}
+
+@article{leifeld2018temporal,
+  author  = {Leifeld, Philip and Cranmer, Skyler J. and Desmarais, Bruce A.},
+  title   = {Temporal Exponential Random Graph Models with {btergm}: Estimation and Bootstrap Confidence Intervals},
+  journal = {Journal of Statistical Software},
+  year    = {2018},
+  volume  = {83},
+  number  = {6},
+  pages   = {1--36},
+  doi     = {10.18637/jss.v083.i06}
+}
+
+@book{lin1976foundations,
+  author    = {Lin, Nan},
+  title     = {Foundations of Social Research},
+  publisher = {McGraw-Hill},
+  address   = {New York},
+  year      = {1976}
+}
+
+@article{lorrain1971structural,
+  author  = {Lorrain, Fran{\c{c}}ois and White, Harrison C.},
+  title   = {Structural Equivalence of Individuals in Social Networks},
+  journal = {Journal of Mathematical Sociology},
+  year    = {1971},
+  volume  = {1},
+  number  = {1},
+  pages   = {49--80},
+  doi     = {10.1080/0022250X.1971.9989788}
+}
+
+@article{lospinoso2019goodness,
+  author  = {Lospinoso, Josh and Snijders, Tom A. B.},
+  title   = {Goodness of Fit for Stochastic Actor-Oriented Models},
+  journal = {Methodological Innovations},
+  year    = {2019},
+  volume  = {12},
+  number  = {3},
+  pages   = {2059799119884282},
+  doi     = {10.1177/2059799119884282}
+}
+
+@article{luce1950connectivity,
+  author  = {Luce, R. Duncan},
+  title   = {Connectivity and Generalized Cliques in Sociometric Group Structure},
+  journal = {Psychometrika},
+  year    = {1950},
+  volume  = {15},
+  number  = {2},
+  pages   = {169--190},
+  doi     = {10.1007/BF02289199}
+}
+
+@article{marchiori2000harmony,
+  author  = {Marchiori, Massimo and Latora, Vito},
+  title   = {Harmony in the Small-World},
+  journal = {Physica A: Statistical Mechanics and its Applications},
+  year    = {2000},
+  volume  = {285},
+  number  = {3--4},
+  pages   = {539--546},
+  doi     = {10.1016/S0378-4371(00)00311-3}
+}
+
+@article{marsden2002egocentric,
+  author  = {Marsden, Peter V.},
+  title   = {Egocentric and Sociocentric Measures of Network Centrality},
+  journal = {Social Networks},
+  year    = {2002},
+  volume  = {24},
+  number  = {4},
+  pages   = {407--422},
+  doi     = {10.1016/S0378-8733(02)00016-3}
+}
+
+@article{martin1968householder,
+  author  = {Martin, R. S. and Reinsch, C. and Wilkinson, J. H.},
+  title   = {Householder's Tridiagonalization of a Symmetric Matrix},
+  journal = {Numerische Mathematik},
+  year    = {1968},
+  volume  = {11},
+  number  = {3},
+  pages   = {181--195},
+  doi     = {10.1007/BF02161841}
+}
+
+@article{matula1983smallest,
+  author  = {Matula, David W. and Beck, Leland L.},
+  title   = {Smallest-Last Ordering and Clustering and Graph Coloring Algorithms},
+  journal = {Journal of the ACM},
+  year    = {1983},
+  volume  = {30},
+  number  = {3},
+  pages   = {417--427},
+  doi     = {10.1145/2402.322385}
+}
+
+@book{mccullagh1989generalized,
+  author    = {McCullagh, P. and Nelder, J. A.},
+  title     = {Generalized Linear Models},
+  edition   = {2},
+  publisher = {Chapman and Hall},
+  year      = {1989},
+  doi       = {10.1007/978-1-4899-3242-6}
+}
+
+@article{mckay2014practical,
+  author  = {McKay, Brendan D. and Piperno, Adolfo},
+  title   = {Practical graph isomorphism, {II}},
+  journal = {Journal of Symbolic Computation},
+  year    = {2014},
+  volume  = {60},
+  pages   = {94--112},
+  doi     = {10.1016/j.jsc.2013.09.003}
+}
+
+@article{mcpherson2001birds,
+  author  = {McPherson, Miller and Smith-Lovin, Lynn and Cook, James M.},
+  title   = {Birds of a Feather: Homophily in Social Networks},
+  journal = {Annual Review of Sociology},
+  year    = {2001},
+  volume  = {27},
+  number  = {1},
+  pages   = {415--444},
+  doi     = {10.1146/annurev.soc.27.1.415}
+}
+
+@article{metropolis1953equation,
+  author  = {Metropolis, Nicholas and Rosenbluth, Arianna W. and Rosenbluth, Marshall N. and Teller, Augusta H. and Teller, Edward},
+  title   = {Equation of State Calculations by Fast Computing Machines},
+  journal = {The Journal of Chemical Physics},
+  year    = {1953},
+  volume  = {21},
+  number  = {6},
+  pages   = {1087--1092},
+  doi     = {10.1063/1.1699114}
+}
+
+@article{mises1929praktische,
+  author  = {von Mises, R. and Pollaczek-Geiringer, H.},
+  title   = {Praktische Verfahren der Gleichungsaufl{\"o}sung},
+  journal = {ZAMM -- Zeitschrift f{\"u}r Angewandte Mathematik und Mechanik},
+  year    = {1929},
+  volume  = {9},
+  number  = {2},
+  pages   = {152--164},
+  doi     = {10.1002/zamm.19290090206}
+}
+
+@article{mokken1979cliques,
+  author  = {Mokken, Robert J.},
+  title   = {Cliques, Clubs and Clans},
+  journal = {Quality and Quantity},
+  year    = {1979},
+  volume  = {13},
+  number  = {2},
+  pages   = {161--173},
+  doi     = {10.1007/BF00139635}
+}
+
+@article{molloy1995critical,
+  author  = {Molloy, Michael and Reed, Bruce},
+  title   = {A Critical Point for Random Graphs with a Given Degree Sequence},
+  journal = {Random Structures \& Algorithms},
+  year    = {1995},
+  volume  = {6},
+  number  = {2--3},
+  pages   = {161--180},
+  doi     = {10.1002/rsa.3240060204}
+}
+
+@article{moritz2000geodetic,
+  author  = {Moritz, H.},
+  title   = {Geodetic Reference System 1980},
+  journal = {Journal of Geodesy},
+  year    = {2000},
+  volume  = {74},
+  number  = {1},
+  pages   = {128--133},
+  doi     = {10.1007/s001900050278}
+}
+
+@article{morris2008specification,
+  author  = {Morris, Martina and Handcock, Mark S. and Hunter, David R.},
+  title   = {Specification of Exponential-Family Random Graph Models: Terms and Computational Aspects},
+  journal = {Journal of Statistical Software},
+  year    = {2008},
+  volume  = {24},
+  number  = {4},
+  pages   = {1--24},
+  doi     = {10.18637/jss.v024.i04}
+}
+
+@article{nelder1972generalized,
+  author  = {Nelder, J. A. and Wedderburn, R. W. M.},
+  title   = {Generalized Linear Models},
+  journal = {Journal of the Royal Statistical Society: Series A (General)},
+  year    = {1972},
+  volume  = {135},
+  number  = {3},
+  pages   = {370--384},
+  doi     = {10.2307/2344614}
+}
+
+@article{newman2001random,
+  author  = {Newman, M. E. J. and Strogatz, S. H. and Watts, D. J.},
+  title   = {Random Graphs with Arbitrary Degree Distributions and Their Applications},
+  journal = {Physical Review E},
+  year    = {2001},
+  volume  = {64},
+  number  = {2},
+  pages   = {026118},
+  doi     = {10.1103/PhysRevE.64.026118}
+}
+
+@article{newman2001scientific,
+  author  = {Newman, M. E. J.},
+  title   = {Scientific Collaboration Networks. {II}. Shortest Paths, Weighted Networks, and Centrality},
+  journal = {Physical Review E},
+  year    = {2001},
+  volume  = {64},
+  number  = {1},
+  pages   = {016132},
+  doi     = {10.1103/PhysRevE.64.016132}
+}
+
+@article{newman2002assortative,
+  author  = {Newman, M. E. J.},
+  title   = {Assortative Mixing in Networks},
+  journal = {Physical Review Letters},
+  year    = {2002},
+  volume  = {89},
+  number  = {20},
+  pages   = {208701},
+  doi     = {10.1103/PhysRevLett.89.208701}
+}
+
+@article{newman2002email,
+  author  = {Newman, M. E. J. and Forrest, Stephanie and Balthrop, Justin},
+  title   = {Email Networks and the Spread of Computer Viruses},
+  journal = {Physical Review E},
+  year    = {2002},
+  volume  = {66},
+  number  = {3},
+  pages   = {035101},
+  doi     = {10.1103/PhysRevE.66.035101}
+}
+
+@article{newman2003mixing,
+  author  = {Newman, M. E. J.},
+  title   = {Mixing Patterns in Networks},
+  journal = {Physical Review E},
+  year    = {2003},
+  volume  = {67},
+  number  = {2},
+  pages   = {026126},
+  doi     = {10.1103/PhysRevE.67.026126}
+}
+
+@article{newman2003structure,
+  author  = {Newman, M. E. J.},
+  title   = {The Structure and Function of Complex Networks},
+  journal = {SIAM Review},
+  year    = {2003},
+  volume  = {45},
+  number  = {2},
+  pages   = {167--256},
+  doi     = {10.1137/S003614450342480}
+}
+
+@article{newman2004analysis,
+  author  = {Newman, M. E. J.},
+  title   = {Analysis of Weighted Networks},
+  journal = {Physical Review E},
+  year    = {2004},
+  volume  = {70},
+  number  = {5},
+  pages   = {056131},
+  doi     = {10.1103/PhysRevE.70.056131}
+}
+
+@article{newman2004fast,
+  author  = {Newman, M. E. J.},
+  title   = {Fast Algorithm for Detecting Community Structure in Networks},
+  journal = {Physical Review E},
+  year    = {2004},
+  volume  = {69},
+  number  = {6},
+  pages   = {066133},
+  doi     = {10.1103/PhysRevE.69.066133}
+}
+
+@article{newman2004finding,
+  author  = {Newman, M. E. J. and Girvan, M.},
+  title   = {Finding and Evaluating Community Structure in Networks},
+  journal = {Physical Review E},
+  year    = {2004},
+  volume  = {69},
+  number  = {2},
+  pages   = {026113},
+  doi     = {10.1103/PhysRevE.69.026113}
+}
+
+@article{newman2006finding,
+  author  = {Newman, M. E. J.},
+  title   = {Modularity and Community Structure in Networks},
+  journal = {Proceedings of the National Academy of Sciences},
+  year    = {2006},
+  volume  = {103},
+  number  = {23},
+  pages   = {8577--8582},
+  doi     = {10.1073/pnas.0601602103}
+}
+
+@article{newman2006modularity,
+  author  = {Newman, M. E. J.},
+  title   = {Modularity and Community Structure in Networks},
+  journal = {Proceedings of the National Academy of Sciences},
+  year    = {2006},
+  volume  = {103},
+  number  = {23},
+  pages   = {8577--8582},
+  doi     = {10.1073/pnas.0601602103}
+}
+
+@book{nocedal2006numerical,
+  author    = {Nocedal, Jorge and Wright, Stephen J.},
+  title     = {Numerical Optimization},
+  publisher = {Springer},
+  address   = {New York},
+  year      = {2006},
+  edition   = {2},
+  series    = {Springer Series in Operations Research and Financial Engineering},
+  doi       = {10.1007/978-0-387-40065-5}
+}
+
+@misc{okabe2008color,
+  author       = {Okabe, Masataka and Ito, Kei},
+  title        = {Color Universal Design ({CUD}): How to Make Figures and Presentations That Are Friendly to Colorblind People},
+  year         = {2008},
+  howpublished = {\url{https://jfly.uni-koeln.de/color/}}
+}
+
+@article{onnela2005intensity,
+  author  = {Onnela, Jukka-Pekka and Saram{\"a}ki, Jari and Kert{\'e}sz, J{\'a}nos and Kaski, Kimmo},
+  title   = {Intensity and Coherence of Motifs in Weighted Complex Networks},
+  journal = {Physical Review E},
+  year    = {2005},
+  volume  = {71},
+  number  = {6},
+  pages   = {065103},
+  doi     = {10.1103/PhysRevE.71.065103}
+}
+
+@misc{ooms_hellorust,
+  author       = {Ooms, Jeroen},
+  title        = {hellorust: Minimal Example of Calling Rust from {R}},
+  howpublished = {\url{https://github.com/r-rust/hellorust}},
+  note         = {Pattern for linking a Rust static library into an R package through C}
+}
+
+@article{opsahl2010node,
+  author  = {Opsahl, Tore and Agneessens, Filip and Skvoretz, John},
+  title   = {Node Centrality in Weighted Networks: Generalizing Degree and Shortest Paths},
+  journal = {Social Networks},
+  year    = {2010},
+  volume  = {32},
+  number  = {3},
+  pages   = {245--251},
+  doi     = {10.1016/j.socnet.2010.03.006}
+}
+
+@article{ortmann2017sparse,
+  author  = {Ortmann, Mark and Klimenta, Mirza and Brandes, Ulrik},
+  title   = {A Sparse Stress Model},
+  journal = {Journal of Graph Algorithms and Applications},
+  year    = {2017},
+  volume  = {21},
+  number  = {5},
+  pages   = {791--821},
+  doi     = {10.7155/jgaa.00440}
+}
+
+@article{padgett1993robust,
+  author  = {Padgett, John F. and Ansell, Christopher K.},
+  title   = {Robust Action and the Rise of the {Medici}, 1400--1434},
+  journal = {American Journal of Sociology},
+  year    = {1993},
+  volume  = {98},
+  number  = {6},
+  pages   = {1259--1319},
+  doi     = {10.1086/230190}
 }
 
 @article{pan2011path,
@@ -1575,229 +2164,200 @@
   doi     = {10.1103/PhysRevE.84.016105}
 }
 
-@article{wu2014path,
-  author  = {Wu, Huanhuan and Cheng, James and Huang, Silu and Ke, Yiping and Lu, Yi and Xu, Yanyan},
-  title   = {Path Problems in Temporal Graphs},
-  journal = {Proceedings of the VLDB Endowment},
-  year    = {2014},
-  volume  = {7},
-  number  = {9},
-  pages   = {721--732},
-  doi     = {10.14778/2732939.2732945}
-}
-
-@article{holme2005network,
-  author  = {Holme, Petter},
-  title   = {Network Reachability of Real-World Contact Sequences},
-  journal = {Physical Review E},
-  year    = {2005},
-  volume  = {71},
-  number  = {4},
-  pages   = {046119},
-  doi     = {10.1103/PhysRevE.71.046119}
-}
-
-@article{goh2008burstiness,
-  author  = {Goh, K.-I. and Barab{\'a}si, A.-L.},
-  title   = {Burstiness and Memory in Complex Systems},
-  journal = {EPL (Europhysics Letters)},
-  year    = {2008},
-  volume  = {81},
-  number  = {4},
-  pages   = {48002},
-  doi     = {10.1209/0295-5075/81/48002}
-}
-
-@article{kim2016measuring,
-  author  = {Kim, Eun-Kyeong and Jo, Hang-Hyun},
-  title   = {Measuring Burstiness for Finite Event Sequences},
-  journal = {Physical Review E},
-  year    = {2016},
-  volume  = {94},
-  number  = {3},
-  pages   = {032311},
-  doi     = {10.1103/PhysRevE.94.032311}
-}
-
-@manual{butts2026networkdynamic,
-  author = {Butts, Carter T. and Leslie-Cook, Ayn and Krivitsky, Pavel N. and Bender-deMoll, Skye},
-  title  = {{networkDynamic}: Dynamic Extensions for Network Objects},
-  year   = {2026},
-  note   = {R package version 0.12.0},
-  url    = {https://CRAN.R-project.org/package=networkDynamic},
-  doi    = {10.32614/CRAN.package.networkDynamic}
-}
-
-@article{girvan2002community,
-  author  = {Girvan, M. and Newman, M. E. J.},
-  title   = {Community structure in social and biological networks},
-  journal = {Proceedings of the National Academy of Sciences},
-  year    = {2002},
-  volume  = {99},
-  number  = {12},
-  pages   = {7821--7826},
-  doi     = {10.1073/pnas.122653799}
-}
-
-@article{stephenson1989rethinking,
-  author  = {Stephenson, Karen and Zelen, Marvin},
-  title   = {Rethinking centrality: Methods and examples},
-  journal = {Social Networks},
-  year    = {1989},
-  volume  = {11},
+@article{pebesma2018sf,
+  author  = {Pebesma, Edzer},
+  title   = {Simple Features for {R}: Standardized Support for Spatial Vector Data},
+  journal = {The R Journal},
+  year    = {2018},
+  volume  = {10},
   number  = {1},
-  pages   = {1--37},
-  doi     = {10.1016/0378-8733(89)90016-6}
+  pages   = {439--446},
+  doi     = {10.32614/RJ-2018-009}
 }
 
-@incollection{brandes2005centrality,
-  author    = {Brandes, Ulrik and Fleischer, Daniel},
-  title     = {Centrality measures based on current flow},
-  booktitle = {STACS 2005},
-  series    = {Lecture Notes in Computer Science},
-  volume    = {3404},
-  publisher = {Springer},
-  address   = {Berlin, Heidelberg},
-  year      = {2005},
-  pages     = {533--544},
-  doi       = {10.1007/978-3-540-31856-9_44}
+@misc{peixoto2014graphtool,
+  author       = {Peixoto, Tiago P.},
+  title        = {The graph-tool python library},
+  howpublished = {figshare},
+  year         = {2014},
+  doi          = {10.6084/m9.figshare.1164194}
 }
 
-@inproceedings{hwang2008bridging,
-  author    = {Hwang, Woochang and Kim, Taehyong and Ramanathan, Murali and Zhang, Aidong},
-  title     = {Bridging centrality: Graph mining from element level to group level},
-  booktitle = {Proceedings of the 14th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining},
-  publisher = {ACM},
-  year      = {2008},
-  pages     = {336--344},
-  doi       = {10.1145/1401890.1401934}
+@book{penrose2003random,
+  author    = {Penrose, Mathew},
+  title     = {Random Geometric Graphs},
+  publisher = {Oxford University Press},
+  address   = {Oxford},
+  year      = {2003},
+  isbn      = {9780198506263},
+  doi       = {10.1093/acprof:oso/9780198506263.001.0001}
 }
 
-@book{lin1976foundations,
-  author    = {Lin, Nan},
-  title     = {Foundations of Social Research},
-  publisher = {McGraw-Hill},
-  address   = {New York},
-  year      = {1976}
+@book{perry2018egocentric,
+  author    = {Perry, Brea L. and Pescosolido, Bernice A. and Borgatti, Stephen P.},
+  title     = {Egocentric Network Analysis: Foundations, Methods, and Models},
+  publisher = {Cambridge University Press},
+  address   = {Cambridge},
+  year      = {2018},
+  doi       = {10.1017/9781316443255}
 }
 
-@article{white1983graph,
-  author  = {White, Douglas R. and Reitz, Karl P.},
-  title   = {Graph and semigroup homomorphisms on networks of relations},
+@article{phipson2010permutation,
+  author  = {Phipson, Belinda and Smyth, Gordon K.},
+  title   = {Permutation {P}-values Should Never Be Zero: Calculating Exact {P}-values When Permutations Are Randomly Drawn},
+  journal = {Statistical Applications in Genetics and Molecular Biology},
+  year    = {2010},
+  volume  = {9},
+  number  = {1},
+  pages   = {Article 39},
+  doi     = {10.2202/1544-6115.1585}
+}
+
+@article{polyak1992acceleration,
+  author  = {Polyak, B. T. and Juditsky, A. B.},
+  title   = {Acceleration of Stochastic Approximation by Averaging},
+  journal = {SIAM Journal on Control and Optimization},
+  year    = {1992},
+  volume  = {30},
+  number  = {4},
+  pages   = {838--855},
+  doi     = {10.1137/0330046}
+}
+
+@article{reichardt2006statistical,
+  author  = {Reichardt, J{\"o}rg and Bornholdt, Stefan},
+  title   = {Statistical Mechanics of Community Detection},
+  journal = {Physical Review E},
+  year    = {2006},
+  volume  = {74},
+  number  = {1},
+  pages   = {016110},
+  doi     = {10.1103/PhysRevE.74.016110}
+}
+
+@article{reingold1981tidier,
+  author  = {Reingold, Edward M. and Tilford, John S.},
+  title   = {Tidier Drawings of Trees},
+  journal = {IEEE Transactions on Software Engineering},
+  year    = {1981},
+  volume  = {SE-7},
+  number  = {2},
+  pages   = {223--228},
+  doi     = {10.1109/TSE.1981.234519}
+}
+
+@article{rinaldo2009geometry,
+  author  = {Rinaldo, Alessandro and Fienberg, Stephen E. and Zhou, Yi},
+  title   = {On the Geometry of Discrete Exponential Families with Application to Exponential Random Graph Models},
+  journal = {Electronic Journal of Statistics},
+  year    = {2009},
+  volume  = {3},
+  pages   = {446--484},
+  doi     = {10.1214/08-EJS350}
+}
+
+@manual{ripley2026manual,
+  author       = {Ripley, Ruth M. and Snijders, Tom A. B. and Boda, Zs{\'o}fia and V{\"o}r{\"o}s, Andr{\'a}s},
+  title        = {Manual for {RSiena}},
+  organization = {University of Oxford, Department of Statistics and Nuffield College; University of Groningen, Department of Sociology},
+  address      = {Oxford},
+  year         = {2026},
+  month        = oct,
+  note         = {Version for RSiena 1.6.13, dated 4 October 2026. The companion document Siena\_algorithms (same site) describes the estimation algorithm and is cited through this entry},
+  url          = {https://www.stats.ox.ac.uk/~snijders/siena/RSiena_Manual.pdf}
+}
+
+@article{robbins1951stochastic,
+  author  = {Robbins, Herbert and Monro, Sutton},
+  title   = {A Stochastic Approximation Method},
+  journal = {The Annals of Mathematical Statistics},
+  year    = {1951},
+  volume  = {22},
+  number  = {3},
+  pages   = {400--407},
+  doi     = {10.1214/aoms/1177729586}
+}
+
+@inproceedings{rochat2009closeness,
+  author    = {Rochat, Yannick},
+  title     = {Closeness Centrality Extended to Unconnected Graphs: The Harmonic Centrality Index},
+  booktitle = {6th Conference on Applications of Social Network Analysis (ASNA 2009)},
+  address   = {Zurich, Switzerland},
+  year      = {2009},
+  note      = {Abstract. Records: EPFL Infoscience 200525 (https://infoscience.epfl.ch/record/200525) and University of Lausanne Serval BIB_4638B6B2DEBA. No DOI.}
+}
+
+@article{sabidussi1966centrality,
+  author  = {Sabidussi, Gert},
+  title   = {The Centrality Index of a Graph},
+  journal = {Psychometrika},
+  year    = {1966},
+  volume  = {31},
+  number  = {4},
+  pages   = {581--603},
+  doi     = {10.1007/BF02289527}
+}
+
+@inproceedings{salmon2011parallel,
+  author    = {Salmon, John K. and Moraes, Mark A. and Dror, Ron O. and Shaw, David E.},
+  title     = {Parallel Random Numbers: As Easy as 1, 2, 3},
+  booktitle = {Proceedings of the 2011 International Conference for High Performance Computing, Networking, Storage and Analysis (SC '11)},
+  year      = {2011},
+  doi       = {10.1145/2063384.2063405}
+}
+
+@article{schweinberger2007markov,
+  author  = {Schweinberger, Michael and Snijders, Tom A. B.},
+  title   = {Markov Models for Digraph Panel Data: {Monte Carlo}-Based Derivative Estimation},
+  journal = {Computational Statistics \& Data Analysis},
+  year    = {2007},
+  volume  = {51},
+  number  = {9},
+  pages   = {4465--4483},
+  doi     = {10.1016/j.csda.2006.07.014}
+}
+
+@article{schweinberger2011instability,
+  author  = {Schweinberger, Michael},
+  title   = {Instability, Sensitivity, and Degeneracy of Discrete Exponential Families},
+  journal = {Journal of the American Statistical Association},
+  year    = {2011},
+  volume  = {106},
+  number  = {496},
+  pages   = {1361--1370},
+  doi     = {10.1198/jasa.2011.tm10747}
+}
+
+@article{seidman1978graph,
+  author  = {Seidman, Stephen B. and Foster, Brian L.},
+  title   = {A Graph-Theoretic Generalization of the Clique Concept},
+  journal = {Journal of Mathematical Sociology},
+  year    = {1978},
+  volume  = {6},
+  number  = {1},
+  pages   = {139--154},
+  doi     = {10.1080/0022250X.1978.9989883}
+}
+
+@article{seidman1983network,
+  author  = {Seidman, Stephen B.},
+  title   = {Network Structure and Minimum Degree},
   journal = {Social Networks},
   year    = {1983},
   volume  = {5},
+  number  = {3},
+  pages   = {269--287},
+  doi     = {10.1016/0378-8733(83)90028-X}
+}
+
+@article{sinnott1984virtues,
+  author  = {Sinnott, Roger W.},
+  title   = {Virtues of the haversine},
+  journal = {Sky and Telescope},
+  year    = {1984},
+  volume  = {68},
   number  = {2},
-  pages   = {193--234},
-  doi     = {10.1016/0378-8733(83)90025-4}
-}
-
-@article{borgatti1993two,
-  author  = {Borgatti, Stephen P. and Everett, Martin G.},
-  title   = {Two algorithms for computing regular equivalence},
-  journal = {Social Networks},
-  year    = {1993},
-  volume  = {15},
-  number  = {4},
-  pages   = {361--376},
-  doi     = {10.1016/0378-8733(93)90012-A}
-}
-
-@article{everett1994regular,
-  author  = {Everett, Martin G. and Borgatti, Stephen P.},
-  title   = {Regular equivalence: General theory},
-  journal = {The Journal of Mathematical Sociology},
-  year    = {1994},
-  volume  = {19},
-  number  = {1},
-  pages   = {29--52},
-  doi     = {10.1080/0022250X.1994.9990134}
-}
-
-@article{everett1985role,
-  author  = {Everett, Martin G.},
-  title   = {Role similarity and complexity in social networks},
-  journal = {Social Networks},
-  year    = {1985},
-  volume  = {7},
-  number  = {4},
-  pages   = {353--359},
-  doi     = {10.1016/0378-8733(85)90013-9}
-}
-
-@article{borgatti1992notions,
-  author  = {Borgatti, Stephen P. and Everett, Martin G.},
-  title   = {Notions of position in social network analysis},
-  journal = {Sociological Methodology},
-  year    = {1992},
-  volume  = {22},
-  pages   = {1--35},
-  doi     = {10.2307/270991}
-}
-
-@article{mckay2014practical,
-  author  = {McKay, Brendan D. and Piperno, Adolfo},
-  title   = {Practical graph isomorphism, {II}},
-  journal = {Journal of Symbolic Computation},
-  year    = {2014},
-  volume  = {60},
-  pages   = {94--112},
-  doi     = {10.1016/j.jsc.2013.09.003}
-}
-
-@article{white1976social,
-  author  = {White, Harrison C. and Boorman, Scott A. and Breiger, Ronald L.},
-  title   = {Social structure from multiple networks. {I}. {Blockmodels} of roles and positions},
-  journal = {American Journal of Sociology},
-  year    = {1976},
-  volume  = {81},
-  number  = {4},
-  pages   = {730--780},
-  doi     = {10.1086/226141}
-}
-
-@article{arabie1978constructing,
-  author  = {Arabie, Phipps and Boorman, Scott A. and Levitt, Paul R.},
-  title   = {Constructing blockmodels: How and why},
-  journal = {Journal of Mathematical Psychology},
-  year    = {1978},
-  volume  = {17},
-  number  = {1},
-  pages   = {21--63},
-  doi     = {10.1016/0022-2496(78)90034-2}
-}
-
-@article{torgerson1952multidimensional,
-  author  = {Torgerson, Warren S.},
-  title   = {Multidimensional scaling: {I}. {Theory} and method},
-  journal = {Psychometrika},
-  year    = {1952},
-  volume  = {17},
-  number  = {4},
-  pages   = {401--419},
-  doi     = {10.1007/BF02288916}
-}
-
-@article{gower1966some,
-  author  = {Gower, J. C.},
-  title   = {Some distance properties of latent root and vector methods used in multivariate analysis},
-  journal = {Biometrika},
-  year    = {1966},
-  volume  = {53},
-  number  = {3-4},
-  pages   = {325--338},
-  doi     = {10.1093/biomet/53.3-4.325}
-}
-
-@article{kruskal1964multidimensional,
-  author  = {Kruskal, J. B.},
-  title   = {Multidimensional scaling by optimizing goodness of fit to a nonmetric hypothesis},
-  journal = {Psychometrika},
-  year    = {1964},
-  volume  = {29},
-  number  = {1},
-  pages   = {1--27},
-  doi     = {10.1007/BF02289565}
+  pages   = {159}
 }
 
 @book{smith1976matrix,
@@ -1812,758 +2372,26 @@
   doi       = {10.1007/3-540-07546-1}
 }
 
-@article{barthelemy2011spatial,
-  author  = {Barth{\'e}lemy, Marc},
-  title   = {Spatial networks},
-  journal = {Physics Reports},
-  year    = {2011},
-  volume  = {499},
-  number  = {1-3},
-  pages   = {1--101},
-  doi     = {10.1016/j.physrep.2010.11.002}
-}
-
-@article{sinnott1984virtues,
-  author  = {Sinnott, Roger W.},
-  title   = {Virtues of the haversine},
-  journal = {Sky and Telescope},
-  year    = {1984},
-  volume  = {68},
-  number  = {2},
-  pages   = {159}
-}
-
-@article{moritz2000geodetic,
-  author  = {Moritz, H.},
-  title   = {Geodetic Reference System 1980},
-  journal = {Journal of Geodesy},
-  year    = {2000},
-  volume  = {74},
-  number  = {1},
-  pages   = {128--133},
-  doi     = {10.1007/s001900050278}
-}
-
-@article{bentley1975multidimensional,
-  author  = {Bentley, Jon Louis},
-  title   = {Multidimensional binary search trees used for associative searching},
-  journal = {Communications of the ACM},
-  year    = {1975},
-  volume  = {18},
-  number  = {9},
-  pages   = {509--517},
-  doi     = {10.1145/361002.361007}
-}
-
-@article{friedman1977algorithm,
-  author  = {Friedman, Jerome H. and Bentley, Jon Louis and Finkel, Raphael Ari},
-  title   = {An algorithm for finding best matches in logarithmic expected time},
-  journal = {ACM Transactions on Mathematical Software},
-  year    = {1977},
-  volume  = {3},
-  number  = {3},
-  pages   = {209--226},
-  doi     = {10.1145/355744.355745}
-}
-
-@article{bachi1963standard,
-  author  = {Bachi, Roberto},
-  title   = {Standard distance measures and related methods for spatial analysis},
-  journal = {Papers of the Regional Science Association},
-  year    = {1963},
-  volume  = {10},
-  number  = {1},
-  pages   = {83--132},
-  doi     = {10.1007/BF01934680}
-}
-
-@article{erdos1959random,
-  author    = {Erd{\H{o}}s, Paul and R{\'e}nyi, Alfr{\'e}d},
-  title     = {On Random Graphs {I}},
-  journal   = {Publicationes Mathematicae Debrecen},
-  volume    = {6},
-  number    = {3--4},
-  pages     = {290--297},
-  year      = {1959},
-  doi       = {10.5486/PMD.1959.6.3-4.12}
-}
-
-@article{holland1983stochastic,
-  author    = {Holland, Paul W. and Laskey, Kathryn Blackmond and Leinhardt, Samuel},
-  title     = {Stochastic Blockmodels: First Steps},
-  journal   = {Social Networks},
-  volume    = {5},
-  number    = {2},
-  pages     = {109--137},
-  year      = {1983},
-  doi       = {10.1016/0378-8733(83)90021-7}
-}
-
-@article{holme2002growing,
-  author    = {Holme, Petter and Kim, Beom Jun},
-  title     = {Growing Scale-Free Networks with Tunable Clustering},
-  journal   = {Physical Review E},
-  volume    = {65},
-  number    = {2},
-  pages     = {026107},
-  year      = {2002},
-  doi       = {10.1103/PhysRevE.65.026107}
-}
-
-@article{lancichinetti2008benchmark,
-  author    = {Lancichinetti, Andrea and Fortunato, Santo and Radicchi, Filippo},
-  title     = {Benchmark Graphs for Testing Community Detection Algorithms},
-  journal   = {Physical Review E},
-  volume    = {78},
-  number    = {4},
-  pages     = {046110},
-  year      = {2008},
-  doi       = {10.1103/PhysRevE.78.046110}
-}
-
-@book{penrose2003random,
-  author    = {Penrose, Mathew},
-  title     = {Random Geometric Graphs},
-  publisher = {Oxford University Press},
-  address   = {Oxford},
-  year      = {2003},
-  isbn      = {9780198506263},
-  doi       = {10.1093/acprof:oso/9780198506263.001.0001}
-}
-
-@article{pebesma2018sf,
-  author  = {Pebesma, Edzer},
-  title   = {Simple Features for {R}: Standardized Support for Spatial Vector Data},
-  journal = {The R Journal},
-  year    = {2018},
-  volume  = {10},
-  number  = {1},
-  pages   = {439--446},
-  doi     = {10.32614/RJ-2018-009}
-}
-
-@article{egenhofer1991pointset,
-  author  = {Egenhofer, Max J. and Franzosa, Robert D.},
-  title   = {Point-Set Topological Spatial Relations},
-  journal = {International Journal of Geographical Information Systems},
-  year    = {1991},
-  volume  = {5},
-  number  = {2},
-  pages   = {161--174},
-  doi     = {10.1080/02693799108927841}
-}
-
-@incollection{clementini1993smallset,
-  author    = {Clementini, Eliseo and Di Felice, Paolino and van Oosterom, Peter},
-  title     = {A Small Set of Formal Topological Relationships Suitable for End-User Interaction},
-  booktitle = {Advances in Spatial Databases},
-  series    = {Lecture Notes in Computer Science},
-  volume    = {692},
-  publisher = {Springer},
-  address   = {Berlin, Heidelberg},
-  year      = {1993},
-  pages     = {277--295},
-  doi       = {10.1007/3-540-56869-7_16}
-}
-
-@book{anselin1988spatial,
-  author    = {Anselin, Luc},
-  title     = {Spatial Econometrics: Methods and Models},
-  publisher = {Springer Netherlands},
-  address   = {Dordrecht},
-  series    = {Studies in Operational Regional Science},
-  year      = {1988},
-  doi       = {10.1007/978-94-015-7799-1}
-}
-
-@book{bivand2013applied,
-  author    = {Bivand, Roger S. and Pebesma, Edzer and G{\'o}mez-Rubio, Virgilio},
-  title     = {Applied Spatial Data Analysis with {R}},
-  edition   = {2},
-  publisher = {Springer},
-  address   = {New York},
-  year      = {2013},
-  doi       = {10.1007/978-1-4614-7618-4}
-}
-
-@article{bivand2018comparing,
-  author  = {Bivand, Roger S. and Wong, David W. S.},
-  title   = {Comparing Implementations of Global and Local Indicators of Spatial Association},
-  journal = {TEST},
-  year    = {2018},
-  volume  = {27},
-  number  = {3},
-  pages   = {716--748},
-  doi     = {10.1007/s11749-018-0599-x}
-}
-
-@article{boeing2017osmnx,
-  author  = {Boeing, Geoff},
-  title   = {{OSMnx}: New Methods for Acquiring, Constructing, Analyzing, and Visualizing Complex Street Networks},
-  journal = {Computers, Environment and Urban Systems},
-  year    = {2017},
-  volume  = {65},
-  pages   = {126--139},
-  doi     = {10.1016/j.compenvurbsys.2017.05.004}
-}
-
-@manual{vandermeer2026sfnetworks,
-  author = {van der Meer, Lucas and Abad, Lorena and Gilardi, Andrea and Lovelace, Robin},
-  title  = {sfnetworks: Tidy Geospatial Networks},
-  year   = {2026},
-  note   = {R package version 0.6.6},
-  doi    = {10.32614/CRAN.package.sfnetworks}
-}
-
-@book{borg2005modern,
-  author    = {Borg, Ingwer and Groenen, Patrick J. F.},
-  title     = {Modern Multidimensional Scaling: Theory and Applications},
-  edition   = {2},
-  publisher = {Springer},
-  address   = {New York},
-  year      = {2005},
-  doi       = {10.1007/0-387-28981-X}
-}
-
-@article{clauset2009powerlaw,
-  author  = {Clauset, Aaron and Shalizi, Cosma Rohilla and Newman, M. E. J.},
-  title   = {Power-Law Distributions in Empirical Data},
-  journal = {SIAM Review},
-  year    = {2009},
-  volume  = {51},
-  number  = {4},
-  pages   = {661--703},
-  doi     = {10.1137/070710111}
-}
-
-@article{albert2000error,
-  author  = {Albert, R{\'e}ka and Jeong, Hawoong and Barab{\'a}si, Albert-L{\'a}szl{\'o}},
-  title   = {Error and Attack Tolerance of Complex Networks},
-  journal = {Nature},
-  year    = {2000},
-  volume  = {406},
-  number  = {6794},
-  pages   = {378--382},
-  doi     = {10.1038/35019019}
-}
-
-@article{holme2002attack,
-  author  = {Holme, Petter and Kim, Beom Jun and Yoon, Chang No and Han, Seung Kee},
-  title   = {Attack Vulnerability of Complex Networks},
-  journal = {Physical Review E},
-  year    = {2002},
-  volume  = {65},
-  number  = {5},
-  pages   = {056109},
-  doi     = {10.1103/PhysRevE.65.056109}
-}
-
-@article{luce1950connectivity,
-  author  = {Luce, R. Duncan},
-  title   = {Connectivity and Generalized Cliques in Sociometric Group Structure},
-  journal = {Psychometrika},
-  year    = {1950},
-  volume  = {15},
-  number  = {2},
-  pages   = {169--190},
-  doi     = {10.1007/BF02289199}
-}
-
-@article{alba1973graph,
-  author  = {Alba, Richard D.},
-  title   = {A Graph-Theoretic Definition of a Sociometric Clique},
-  journal = {Journal of Mathematical Sociology},
-  year    = {1973},
-  volume  = {3},
-  number  = {1},
-  pages   = {113--126},
-  doi     = {10.1080/0022250X.1973.9989826}
-}
-
-@article{mokken1979cliques,
-  author  = {Mokken, Robert J.},
-  title   = {Cliques, Clubs and Clans},
-  journal = {Quality and Quantity},
-  year    = {1979},
-  volume  = {13},
-  number  = {2},
-  pages   = {161--173},
-  doi     = {10.1007/BF00139635}
-}
-
-@article{seidman1978graph,
-  author  = {Seidman, Stephen B. and Foster, Brian L.},
-  title   = {A Graph-Theoretic Generalization of the Clique Concept},
-  journal = {Journal of Mathematical Sociology},
-  year    = {1978},
-  volume  = {6},
-  number  = {1},
-  pages   = {139--154},
-  doi     = {10.1080/0022250X.1978.9989883}
-}
-
-@article{borgatti1990ls,
-  author  = {Borgatti, Stephen P. and Everett, Martin G. and Shirey, Paul R.},
-  title   = {{LS} Sets, Lambda Sets and Other Cohesive Subsets},
-  journal = {Social Networks},
-  year    = {1990},
-  volume  = {12},
-  number  = {4},
-  pages   = {337--357},
-  doi     = {10.1016/0378-8733(90)90014-Z}
-}
-
-@article{gomory1961multi,
-  author  = {Gomory, R. E. and Hu, T. C.},
-  title   = {Multi-Terminal Network Flows},
-  journal = {Journal of the Society for Industrial and Applied Mathematics},
-  year    = {1961},
-  volume  = {9},
-  number  = {4},
-  pages   = {551--570},
-  doi     = {10.1137/0109047}
-}
-
-@article{gusfield1990very,
-  author  = {Gusfield, Dan},
-  title   = {Very Simple Methods for All Pairs Network Flow Analysis},
-  journal = {SIAM Journal on Computing},
-  year    = {1990},
-  volume  = {19},
-  number  = {1},
-  pages   = {143--155},
-  doi     = {10.1137/0219009}
-}
-
-@book{doreian2005generalized,
-  author    = {Doreian, Patrick and Batagelj, Vladimir and Ferligoj, Anu{\v{s}}ka},
-  title     = {Generalized Blockmodeling},
-  publisher = {Cambridge University Press},
-  address   = {Cambridge},
-  year      = {2005},
-  series    = {Structural Analysis in the Social Sciences},
-  doi       = {10.1017/CBO9780511584176},
-  note      = {Crossref records the print edition as 2004; the book carries a 2005 copyright and is cited as 2005}
-}
-
-@article{glover1989tabu,
-  author  = {Glover, Fred},
-  title   = {Tabu Search---Part {I}},
-  journal = {ORSA Journal on Computing},
-  year    = {1989},
-  volume  = {1},
-  number  = {3},
-  pages   = {190--206},
-  doi     = {10.1287/ijoc.1.3.190}
-}
-
-@misc{hanneman2005introduction,
-  author       = {Hanneman, Robert A. and Riddle, Mark},
-  title        = {Introduction to Social Network Methods},
-  howpublished = {University of California, Riverside; \url{https://faculty.ucr.edu/~hanneman/nettext/}},
-  year         = {2005},
-  note         = {Online textbook; chapters 6 (working with network data), 11 (cliques and sub-groups), and 16 (multi-plex relations) describe the UCINET menu routines cited. No DOI}
-}
-
-% ---------------------------------------------------------------------------
-% Community partitions
-% ---------------------------------------------------------------------------
-
-@article{newman2006finding,
-  author  = {Newman, M. E. J.},
-  title   = {Modularity and Community Structure in Networks},
-  journal = {Proceedings of the National Academy of Sciences},
-  year    = {2006},
-  volume  = {103},
-  number  = {23},
-  pages   = {8577--8582},
-  doi     = {10.1073/pnas.0601602103}
-}
-
-@article{clauset2004finding,
-  author  = {Clauset, Aaron and Newman, M. E. J. and Moore, Cristopher},
-  title   = {Finding Community Structure in Very Large Networks},
-  journal = {Physical Review E},
-  year    = {2004},
-  volume  = {70},
-  number  = {6},
-  pages   = {066111},
-  doi     = {10.1103/PhysRevE.70.066111}
-}
-
-@article{newman2004fast,
-  author  = {Newman, M. E. J.},
-  title   = {Fast Algorithm for Detecting Community Structure in Networks},
-  journal = {Physical Review E},
-  year    = {2004},
-  volume  = {69},
-  number  = {6},
-  pages   = {066133},
-  doi     = {10.1103/PhysRevE.69.066133}
-}
-
-@article{martin1968householder,
-  author  = {Martin, R. S. and Reinsch, C. and Wilkinson, J. H.},
-  title   = {Householder's Tridiagonalization of a Symmetric Matrix},
-  journal = {Numerische Mathematik},
-  year    = {1968},
-  volume  = {11},
-  number  = {3},
-  pages   = {181--195},
-  doi     = {10.1007/BF02161841}
-}
-
-@article{bowdler1968ql,
-  author  = {Bowdler, Hilary and Martin, R. S. and Reinsch, C. and Wilkinson, J. H.},
-  title   = {The {QR} and {QL} Algorithms for Symmetric Matrices},
-  journal = {Numerische Mathematik},
-  year    = {1968},
-  volume  = {11},
-  number  = {4},
-  pages   = {293--306},
-  doi     = {10.1007/BF02166681}
-}
-
-@article{johnson1967hierarchical,
-  author  = {Johnson, Stephen C.},
-  title   = {Hierarchical Clustering Schemes},
-  journal = {Psychometrika},
-  year    = {1967},
-  volume  = {32},
-  number  = {3},
-  pages   = {241--254},
-  doi     = {10.1007/BF02289588}
-}
-
-@article{sokal1958statistical,
-  author  = {Sokal, Robert R. and Michener, Charles D.},
-  title   = {A Statistical Method for Evaluating Systematic Relationships},
-  journal = {University of Kansas Science Bulletin},
-  year    = {1958},
-  volume  = {38},
-  pages   = {1409--1438},
-  note    = {No DOI; the UPGMA (average linkage) method}
-}
-
-@article{ward1963hierarchical,
-  author  = {Ward, Joe H.},
-  title   = {Hierarchical Grouping to Optimize an Objective Function},
-  journal = {Journal of the American Statistical Association},
-  year    = {1963},
-  volume  = {58},
-  number  = {301},
-  pages   = {236--244},
-  doi     = {10.1080/01621459.1963.10500845}
-}
-
-% ---------------------------------------------------------------------------
-% Topography: core-periphery, compactness, small worlds
-% ---------------------------------------------------------------------------
-
-@article{borgatti1999models,
-  author  = {Borgatti, Stephen P. and Everett, Martin G.},
-  title   = {Models of Core/Periphery Structures},
-  journal = {Social Networks},
-  year    = {1999},
-  volume  = {21},
-  number  = {4},
-  pages   = {375--395},
-  doi     = {10.1016/S0378-8733(99)00019-2},
-  note    = {Issue dated October 1999; Crossref records the print publication as 2000}
-}
-
-@article{boyd2010computing,
-  author  = {Boyd, John P. and Fitzgerald, William J. and Mahutga, Matthew C. and Smith, David A.},
-  title   = {Computing Continuous Core/Periphery Structures for Social Relations Data with {MINRES/SVD}},
-  journal = {Social Networks},
-  year    = {2010},
-  volume  = {32},
-  number  = {2},
-  pages   = {125--137},
-  doi     = {10.1016/j.socnet.2009.09.003}
-}
-
-@article{comrey1962minimum,
-  author  = {Comrey, Andrew L.},
-  title   = {The Minimum Residual Method of Factor Analysis},
-  journal = {Psychological Reports},
-  year    = {1962},
-  volume  = {11},
-  number  = {1},
-  pages   = {15--18},
-  doi     = {10.2466/pr0.1962.11.1.15}
-}
-
-@book{nocedal2006numerical,
-  author    = {Nocedal, Jorge and Wright, Stephen J.},
-  title     = {Numerical Optimization},
-  publisher = {Springer},
-  address   = {New York},
-  year      = {2006},
-  edition   = {2},
-  series    = {Springer Series in Operations Research and Financial Engineering},
-  doi       = {10.1007/978-0-387-40065-5}
-}
-
-@article{latora2001efficient,
-  author  = {Latora, Vito and Marchiori, Massimo},
-  title   = {Efficient Behavior of Small-World Networks},
-  journal = {Physical Review Letters},
-  year    = {2001},
-  volume  = {87},
-  number  = {19},
-  pages   = {198701},
-  doi     = {10.1103/PhysRevLett.87.198701}
-}
-
-@article{uzzi2005collaboration,
-  author  = {Uzzi, Brian and Spiro, Jarrett},
-  title   = {Collaboration and Creativity: The Small World Problem},
-  journal = {American Journal of Sociology},
-  year    = {2005},
-  volume  = {111},
-  number  = {2},
-  pages   = {447--504},
-  doi     = {10.1086/432782}
-}
-
-@article{humphries2008network,
-  author  = {Humphries, Mark D. and Gurney, Kevin},
-  title   = {Network `Small-World-Ness': A Quantitative Method for Determining Canonical Network Equivalence},
-  journal = {PLoS ONE},
-  year    = {2008},
-  volume  = {3},
-  number  = {4},
-  pages   = {e0002051},
-  doi     = {10.1371/journal.pone.0002051}
-}
-
-@article{clauset2009power,
-  author  = {Clauset, Aaron and Shalizi, Cosma Rohilla and Newman, M. E. J.},
-  title   = {Power-Law Distributions in Empirical Data},
-  journal = {SIAM Review},
-  year    = {2009},
-  volume  = {51},
-  number  = {4},
-  pages   = {661--703},
-  doi     = {10.1137/070710111}
-}
-
-% ---------------------------------------------------------------------------
-% Random graphs and conditional uniform graph tests
-% ---------------------------------------------------------------------------
-
-@article{gilbert1959random,
-  author  = {Gilbert, E. N.},
-  title   = {Random Graphs},
-  journal = {Annals of Mathematical Statistics},
-  year    = {1959},
-  volume  = {30},
-  number  = {4},
-  pages   = {1141--1144},
-  doi     = {10.1214/aoms/1177706098}
-}
-
-@article{batagelj2005efficient,
-  author  = {Batagelj, Vladimir and Brandes, Ulrik},
-  title   = {Efficient Generation of Large Random Networks},
-  journal = {Physical Review E},
-  year    = {2005},
-  volume  = {71},
-  number  = {3},
-  pages   = {036113},
-  doi     = {10.1103/PhysRevE.71.036113}
-}
-
-@article{bentley1987sample,
-  author  = {Bentley, Jon and Floyd, Bob},
-  title   = {Programming Pearls: A Sample of Brilliance},
-  journal = {Communications of the ACM},
-  year    = {1987},
-  volume  = {30},
-  number  = {9},
-  pages   = {754--757},
-  doi     = {10.1145/30401.315746}
-}
-
-@article{bollobas1980probabilistic,
-  author  = {Bollob{\'a}s, B{\'e}la},
-  title   = {A Probabilistic Proof of an Asymptotic Formula for the Number of Labelled Regular Graphs},
-  journal = {European Journal of Combinatorics},
-  year    = {1980},
-  volume  = {1},
-  number  = {4},
-  pages   = {311--316},
-  doi     = {10.1016/S0195-6698(80)80030-8}
-}
-
-@article{molloy1995critical,
-  author  = {Molloy, Michael and Reed, Bruce},
-  title   = {A Critical Point for Random Graphs with a Given Degree Sequence},
-  journal = {Random Structures \& Algorithms},
-  year    = {1995},
-  volume  = {6},
-  number  = {2--3},
-  pages   = {161--180},
-  doi     = {10.1002/rsa.3240060204}
-}
-
-@article{newman2001random,
-  author  = {Newman, M. E. J. and Strogatz, S. H. and Watts, D. J.},
-  title   = {Random Graphs with Arbitrary Degree Distributions and Their Applications},
-  journal = {Physical Review E},
-  year    = {2001},
-  volume  = {64},
-  number  = {2},
-  pages   = {026118},
-  doi     = {10.1103/PhysRevE.64.026118}
-}
-
-@article{barabasi1999emergence,
-  author  = {Barab{\'a}si, Albert-L{\'a}szl{\'o} and Albert, R{\'e}ka},
-  title   = {Emergence of Scaling in Random Networks},
-  journal = {Science},
-  year    = {1999},
-  volume  = {286},
-  number  = {5439},
-  pages   = {509--512},
-  doi     = {10.1126/science.286.5439.509}
-}
-
-@article{anderson1999interaction,
-  author  = {Anderson, Brigham S. and Butts, Carter and Carley, Kathleen},
-  title   = {The Interaction of Size and Density with Graph-Level Indices},
-  journal = {Social Networks},
-  year    = {1999},
-  volume  = {21},
-  number  = {3},
-  pages   = {239--267},
-  doi     = {10.1016/S0378-8733(99)00011-8}
-}
-
-@article{holland1981exponential,
-  author  = {Holland, Paul W. and Leinhardt, Samuel},
-  title   = {An Exponential Family of Probability Distributions for Directed Graphs},
-  journal = {Journal of the American Statistical Association},
-  year    = {1981},
-  volume  = {76},
-  number  = {373},
-  pages   = {33--50},
-  doi     = {10.1080/01621459.1981.10477598}
-}
-
-@article{frank1986markov,
-  author  = {Frank, Ove and Strauss, David},
-  title   = {Markov Graphs},
-  journal = {Journal of the American Statistical Association},
-  year    = {1986},
-  volume  = {81},
-  number  = {395},
-  pages   = {832--842},
-  doi     = {10.1080/01621459.1986.10478342}
-}
-
-@article{wasserman1996logit,
-  author  = {Wasserman, Stanley and Pattison, Philippa},
-  title   = {Logit Models and Logistic Regressions for Social Networks: {I}. An Introduction to {Markov} Graphs and $p^*$},
-  journal = {Psychometrika},
+@article{snijders1996stochastic,
+  author  = {Snijders, Tom A. B.},
+  title   = {Stochastic Actor-Oriented Models for Network Change},
+  journal = {The Journal of Mathematical Sociology},
   year    = {1996},
-  volume  = {61},
-  number  = {3},
-  pages   = {401--425},
-  doi     = {10.1007/BF02294547}
+  volume  = {21},
+  number  = {1-2},
+  pages   = {149--172},
+  doi     = {10.1080/0022250X.1996.9990178}
 }
 
-@article{hunter2007curved,
-  author  = {Hunter, David R.},
-  title   = {Curved Exponential Family Models for Social Networks},
-  journal = {Social Networks},
-  year    = {2007},
-  volume  = {29},
-  number  = {2},
-  pages   = {216--230},
-  doi     = {10.1016/j.socnet.2006.08.005}
-}
-
-@article{morris2008specification,
-  author  = {Morris, Martina and Handcock, Mark S. and Hunter, David R.},
-  title   = {Specification of Exponential-Family Random Graph Models: Terms and Computational Aspects},
-  journal = {Journal of Statistical Software},
-  year    = {2008},
-  volume  = {24},
-  number  = {4},
-  pages   = {1--24},
-  doi     = {10.18637/jss.v024.i04}
-}
-
-% ---------------------------------------------------------------------------
-% Estimation
-% ---------------------------------------------------------------------------
-
-@article{strauss1990pseudolikelihood,
-  author  = {Strauss, David and Ikeda, Michael},
-  title   = {Pseudolikelihood Estimation for Social Networks},
-  journal = {Journal of the American Statistical Association},
-  year    = {1990},
-  volume  = {85},
-  number  = {409},
-  pages   = {204--212},
-  doi     = {10.1080/01621459.1990.10475327}
-}
-
-@article{vanduijn2009framework,
-  author  = {van Duijn, Marijtje A. J. and Gile, Krista J. and Handcock, Mark S.},
-  title   = {A Framework for the Comparison of Maximum Pseudo-Likelihood and Maximum Likelihood Estimation of Exponential Family Random Graph Models},
-  journal = {Social Networks},
-  year    = {2009},
+@article{snijders2001statistical,
+  author  = {Snijders, Tom A. B.},
+  title   = {The Statistical Evaluation of Social Network Dynamics},
+  journal = {Sociological Methodology},
+  year    = {2001},
   volume  = {31},
   number  = {1},
-  pages   = {52--62},
-  doi     = {10.1016/j.socnet.2008.10.003}
-}
-
-@article{geyer1992constrained,
-  author  = {Geyer, Charles J. and Thompson, Elizabeth A.},
-  title   = {Constrained {Monte Carlo} Maximum Likelihood for Dependent Data},
-  journal = {Journal of the Royal Statistical Society: Series B (Methodological)},
-  year    = {1992},
-  volume  = {54},
-  number  = {3},
-  pages   = {657--683},
-  doi     = {10.1111/j.2517-6161.1992.tb01443.x}
-}
-
-@article{hunter2006inference,
-  author  = {Hunter, David R. and Handcock, Mark S.},
-  title   = {Inference in Curved Exponential Family Models for Networks},
-  journal = {Journal of Computational and Graphical Statistics},
-  year    = {2006},
-  volume  = {15},
-  number  = {3},
-  pages   = {565--583},
-  doi     = {10.1198/106186006X133069}
-}
-
-@article{hummel2012improving,
-  author  = {Hummel, Ruth M. and Hunter, David R. and Handcock, Mark S.},
-  title   = {Improving Simulation-Based Algorithms for Fitting {ERGMs}},
-  journal = {Journal of Computational and Graphical Statistics},
-  year    = {2012},
-  volume  = {21},
-  number  = {4},
-  pages   = {920--939},
-  doi     = {10.1080/10618600.2012.679224}
-}
-
-@article{gelman1998simulating,
-  author  = {Gelman, Andrew and Meng, Xiao-Li},
-  title   = {Simulating Normalizing Constants: From Importance Sampling to Bridge Sampling to Path Sampling},
-  journal = {Statistical Science},
-  year    = {1998},
-  volume  = {13},
-  number  = {2},
-  pages   = {163--185},
-  doi     = {10.1214/ss/1028905934}
+  pages   = {361--395},
+  doi     = {10.1111/0081-1750.00099}
 }
 
 @article{snijders2002markov,
@@ -2574,179 +2402,6 @@
   volume  = {3},
   number  = {2},
   pages   = {1--40}
-}
-
-@article{metropolis1953equation,
-  author  = {Metropolis, Nicholas and Rosenbluth, Arianna W. and Rosenbluth, Marshall N. and Teller, Augusta H. and Teller, Edward},
-  title   = {Equation of State Calculations by Fast Computing Machines},
-  journal = {The Journal of Chemical Physics},
-  year    = {1953},
-  volume  = {21},
-  number  = {6},
-  pages   = {1087--1092},
-  doi     = {10.1063/1.1699114}
-}
-
-@article{hastings1970monte,
-  author  = {Hastings, W. K.},
-  title   = {{Monte Carlo} Sampling Methods Using {Markov} Chains and Their Applications},
-  journal = {Biometrika},
-  year    = {1970},
-  volume  = {57},
-  number  = {1},
-  pages   = {97--109},
-  doi     = {10.1093/biomet/57.1.97}
-}
-
-@article{geyer1992practical,
-  author  = {Geyer, Charles J.},
-  title   = {Practical {Markov} Chain {Monte Carlo}},
-  journal = {Statistical Science},
-  year    = {1992},
-  volume  = {7},
-  number  = {4},
-  pages   = {473--483},
-  doi     = {10.1214/ss/1177011137}
-}
-
-@incollection{geweke1992evaluating,
-  author    = {Geweke, John},
-  title     = {Evaluating the Accuracy of Sampling-Based Approaches to the Calculation of Posterior Moments},
-  booktitle = {Bayesian Statistics 4},
-  editor    = {Bernardo, J. M. and Berger, J. O. and Dawid, A. P. and Smith, A. F. M.},
-  publisher = {Oxford University Press},
-  year      = {1992},
-  pages     = {169--193}
-}
-
-@article{nelder1972generalized,
-  author  = {Nelder, J. A. and Wedderburn, R. W. M.},
-  title   = {Generalized Linear Models},
-  journal = {Journal of the Royal Statistical Society: Series A (General)},
-  year    = {1972},
-  volume  = {135},
-  number  = {3},
-  pages   = {370--384},
-  doi     = {10.2307/2344614}
-}
-
-@book{mccullagh1989generalized,
-  author    = {McCullagh, P. and Nelder, J. A.},
-  title     = {Generalized Linear Models},
-  edition   = {2},
-  publisher = {Chapman and Hall},
-  year      = {1989},
-  doi       = {10.1007/978-1-4899-3242-6}
-}
-
-% ---------------------------------------------------------------------------
-% Degeneracy and the existence of the MLE
-% ---------------------------------------------------------------------------
-
-@techreport{handcock2003assessing,
-  author      = {Handcock, Mark S.},
-  title       = {Assessing Degeneracy in Statistical Models of Social Networks},
-  institution = {Center for Statistics and the Social Sciences, University of Washington},
-  number      = {Working Paper 39},
-  year        = {2003}
-}
-
-@article{schweinberger2011instability,
-  author  = {Schweinberger, Michael},
-  title   = {Instability, Sensitivity, and Degeneracy of Discrete Exponential Families},
-  journal = {Journal of the American Statistical Association},
-  year    = {2011},
-  volume  = {106},
-  number  = {496},
-  pages   = {1361--1370},
-  doi     = {10.1198/jasa.2011.tm10747}
-}
-
-@article{rinaldo2009geometry,
-  author  = {Rinaldo, Alessandro and Fienberg, Stephen E. and Zhou, Yi},
-  title   = {On the Geometry of Discrete Exponential Families with Application to Exponential Random Graph Models},
-  journal = {Electronic Journal of Statistics},
-  year    = {2009},
-  volume  = {3},
-  pages   = {446--484},
-  doi     = {10.1214/08-EJS350}
-}
-
-% ---------------------------------------------------------------------------
-% Goodness of fit and temporal models
-% ---------------------------------------------------------------------------
-
-@article{hunter2008goodness,
-  author  = {Hunter, David R. and Goodreau, Steven M. and Handcock, Mark S.},
-  title   = {Goodness of Fit of Social Network Models},
-  journal = {Journal of the American Statistical Association},
-  year    = {2008},
-  volume  = {103},
-  number  = {481},
-  pages   = {248--258},
-  doi     = {10.1198/016214507000000446}
-}
-
-@article{hanneke2010discrete,
-  author  = {Hanneke, Steve and Fu, Wenjie and Xing, Eric P.},
-  title   = {Discrete Temporal Models of Social Networks},
-  journal = {Electronic Journal of Statistics},
-  year    = {2010},
-  volume  = {4},
-  pages   = {585--605},
-  doi     = {10.1214/09-EJS548}
-}
-
-@article{desmarais2012statistical,
-  author  = {Desmarais, Bruce A. and Cranmer, Skyler J.},
-  title   = {Statistical Mechanics of Networks: Estimation and Uncertainty},
-  journal = {Physica A: Statistical Mechanics and its Applications},
-  year    = {2012},
-  volume  = {391},
-  number  = {4},
-  pages   = {1865--1876},
-  doi     = {10.1016/j.physa.2011.10.018}
-}
-
-@article{leifeld2018temporal,
-  author  = {Leifeld, Philip and Cranmer, Skyler J. and Desmarais, Bruce A.},
-  title   = {Temporal Exponential Random Graph Models with {btergm}: Estimation and Bootstrap Confidence Intervals},
-  journal = {Journal of Statistical Software},
-  year    = {2018},
-  volume  = {83},
-  number  = {6},
-  pages   = {1--36},
-  doi     = {10.18637/jss.v083.i06}
-}
-
-% ---------------------------------------------------------------------------
-% Enumeration
-% ---------------------------------------------------------------------------
-
-@misc{gray1953pulse,
-  author       = {Gray, Frank},
-  title        = {Pulse Code Communication},
-  howpublished = {U.S. Patent 2,632,058},
-  year         = {1953}
-}
-
-@book{knuth2011art,
-  author    = {Knuth, Donald E.},
-  title     = {The Art of Computer Programming, Volume 4A: Combinatorial Algorithms, Part 1},
-  publisher = {Addison-Wesley},
-  year      = {2011},
-  isbn      = {978-0-201-03804-0}
-}
-
-@article{snijders1996stochastic,
-  author  = {Snijders, Tom A. B.},
-  title   = {Stochastic Actor-Oriented Models for Network Change},
-  journal = {The Journal of Mathematical Sociology},
-  year    = {1996},
-  volume  = {21},
-  number  = {1-2},
-  pages   = {149--172},
-  doi     = {10.1080/0022250X.1996.9990178}
 }
 
 @incollection{snijders2005models,
@@ -2761,6 +2416,17 @@
   pages     = {215--247},
   doi       = {10.1017/CBO9780511811395.011},
   note      = {DOI checked by its resolution to the publisher's chapter page; Crossref could not be reached}
+}
+
+@article{snijders2006new,
+  author  = {Snijders, Tom A. B. and Pattison, Philippa E. and Robins, Garry L. and Handcock, Mark S.},
+  title   = {New Specifications for Exponential Random Graph Models},
+  journal = {Sociological Methodology},
+  year    = {2006},
+  volume  = {36},
+  number  = {1},
+  pages   = {99--153},
+  doi     = {10.1111/j.1467-9531.2006.00176.x}
 }
 
 @article{snijders2010introduction,
@@ -2785,57 +2451,316 @@
   doi     = {10.1146/annurev-statistics-060116-054035}
 }
 
-@article{schweinberger2007markov,
-  author  = {Schweinberger, Michael and Snijders, Tom A. B.},
-  title   = {Markov Models for Digraph Panel Data: {Monte Carlo}-Based Derivative Estimation},
-  journal = {Computational Statistics \& Data Analysis},
-  year    = {2007},
-  volume  = {51},
-  number  = {9},
-  pages   = {4465--4483},
-  doi     = {10.1016/j.csda.2006.07.014}
+@article{sokal1958statistical,
+  author  = {Sokal, Robert R. and Michener, Charles D.},
+  title   = {A Statistical Method for Evaluating Systematic Relationships},
+  journal = {University of Kansas Science Bulletin},
+  year    = {1958},
+  volume  = {38},
+  pages   = {1409--1438},
+  note    = {No DOI; the UPGMA (average linkage) method}
 }
 
-@article{lospinoso2019goodness,
-  author  = {Lospinoso, Josh and Snijders, Tom A. B.},
-  title   = {Goodness of Fit for Stochastic Actor-Oriented Models},
-  journal = {Methodological Innovations},
-  year    = {2019},
-  volume  = {12},
-  number  = {3},
-  pages   = {2059799119884282},
-  doi     = {10.1177/2059799119884282}
-}
-
-@article{robbins1951stochastic,
-  author  = {Robbins, Herbert and Monro, Sutton},
-  title   = {A Stochastic Approximation Method},
-  journal = {The Annals of Mathematical Statistics},
-  year    = {1951},
-  volume  = {22},
-  number  = {3},
-  pages   = {400--407},
-  doi     = {10.1214/aoms/1177729586}
-}
-
-@article{polyak1992acceleration,
-  author  = {Polyak, B. T. and Juditsky, A. B.},
-  title   = {Acceleration of Stochastic Approximation by Averaging},
-  journal = {SIAM Journal on Control and Optimization},
-  year    = {1992},
-  volume  = {30},
+@article{staudt2016networkit,
+  author  = {Staudt, Christian L. and Sazonovs, Aleksejs and Meyerhenke, Henning},
+  title   = {{NetworKit}: A Tool Suite for Large-Scale Complex Network Analysis},
+  journal = {Network Science},
+  year    = {2016},
+  volume  = {4},
   number  = {4},
-  pages   = {838--855},
-  doi     = {10.1137/0330046}
+  pages   = {508--530},
+  doi     = {10.1017/nws.2016.20}
 }
 
-@manual{ripley2026manual,
-  author       = {Ripley, Ruth M. and Snijders, Tom A. B. and Boda, Zs{\'o}fia and V{\"o}r{\"o}s, Andr{\'a}s},
-  title        = {Manual for {RSiena}},
-  organization = {University of Oxford, Department of Statistics and Nuffield College; University of Groningen, Department of Sociology},
-  address      = {Oxford},
-  year         = {2026},
-  month        = oct,
-  note         = {Version for RSiena 1.6.13, dated 4 October 2026. The companion document Siena\_algorithms (same site) describes the estimation algorithm and is cited through this entry},
-  url          = {https://www.stats.ox.ac.uk/~snijders/siena/RSiena_Manual.pdf}
+@inproceedings{steele2014fast,
+  author    = {Steele, Guy L., Jr. and Lea, Doug and Flood, Christine H.},
+  title     = {Fast Splittable Pseudorandom Number Generators},
+  booktitle = {Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages \& Applications (OOPSLA '14)},
+  year      = {2014},
+  pages     = {453--472},
+  doi       = {10.1145/2660193.2660195}
+}
+
+@article{stephenson1989rethinking,
+  author  = {Stephenson, Karen and Zelen, Marvin},
+  title   = {Rethinking centrality: Methods and examples},
+  journal = {Social Networks},
+  year    = {1989},
+  volume  = {11},
+  number  = {1},
+  pages   = {1--37},
+  doi     = {10.1016/0378-8733(89)90016-6}
+}
+
+@article{stewart2002krylov,
+  author  = {Stewart, G. W.},
+  title   = {A {Krylov}--{Schur} Algorithm for Large Eigenproblems},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  year    = {2002},
+  volume  = {23},
+  number  = {3},
+  pages   = {601--614},
+  doi     = {10.1137/S0895479800371529}
+}
+
+@article{strauss1990pseudolikelihood,
+  author  = {Strauss, David and Ikeda, Michael},
+  title   = {Pseudolikelihood Estimation for Social Networks},
+  journal = {Journal of the American Statistical Association},
+  year    = {1990},
+  volume  = {85},
+  number  = {409},
+  pages   = {204--212},
+  doi     = {10.1080/01621459.1990.10475327}
+}
+
+@article{sugiyama1981methods,
+  author  = {Sugiyama, Kozo and Tagawa, Shojiro and Toda, Mitsuhiko},
+  title   = {Methods for Visual Understanding of Hierarchical System Structures},
+  journal = {IEEE Transactions on Systems, Man, and Cybernetics},
+  year    = {1981},
+  volume  = {11},
+  number  = {2},
+  pages   = {109--125},
+  doi     = {10.1109/TSMC.1981.4308636}
+}
+
+@article{tarjan1972depth,
+  author  = {Tarjan, Robert},
+  title   = {Depth-First Search and Linear Graph Algorithms},
+  journal = {SIAM Journal on Computing},
+  year    = {1972},
+  volume  = {1},
+  number  = {2},
+  pages   = {146--160},
+  doi     = {10.1137/0201010}
+}
+
+@article{tarjan1975efficiency,
+  author  = {Tarjan, Robert Endre},
+  title   = {Efficiency of a Good But Not Linear Set Union Algorithm},
+  journal = {Journal of the ACM},
+  year    = {1975},
+  volume  = {22},
+  number  = {2},
+  pages   = {215--225}
+}
+
+@article{tomita2006worst,
+  author  = {Tomita, Etsuji and Tanaka, Akira and Takahashi, Haruhisa},
+  title   = {The Worst-Case Time Complexity for Generating All Maximal Cliques and Computational Experiments},
+  journal = {Theoretical Computer Science},
+  year    = {2006},
+  volume  = {363},
+  number  = {1},
+  pages   = {28--42},
+  doi     = {10.1016/j.tcs.2006.06.015}
+}
+
+@article{torgerson1952multidimensional,
+  author  = {Torgerson, Warren S.},
+  title   = {Multidimensional scaling: {I}. {Theory} and method},
+  journal = {Psychometrika},
+  year    = {1952},
+  volume  = {17},
+  number  = {4},
+  pages   = {401--419},
+  doi     = {10.1007/BF02288916}
+}
+
+@article{traag2019louvain,
+  author  = {Traag, V. A. and Waltman, L. and van Eck, N. J.},
+  title   = {From {Louvain} to {Leiden}: Guaranteeing Well-Connected Communities},
+  journal = {Scientific Reports},
+  year    = {2019},
+  volume  = {9},
+  pages   = {5233},
+  doi     = {10.1038/s41598-019-41695-z}
+}
+
+@techreport{tsvetovat2004dynetml,
+  author      = {Tsvetovat, Maksim and Reminga, Jeff and Carley, Kathleen M.},
+  title       = {{DyNetML}: Interchange Format for Rich Social Network Data},
+  institution = {Carnegie Mellon University, School of Computer Science},
+  type        = {Technical Report},
+  number      = {CMU-ISRI-04-105},
+  address     = {Pittsburgh, PA},
+  month       = feb,
+  year        = {2004},
+  doi         = {10.1184/R1/6622022.v1}
+}
+
+@misc{ucinet_help_betweenness,
+  author       = {{Analytic Technologies}},
+  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Betweenness -> Nodes},
+  howpublished = {\url{http://www.analytictech.com/ucinet/help/pvn0n9.htm}},
+  note         = {Accessed 22 October 2026}
+}
+
+@misc{ucinet_help_closeness,
+  author       = {{Analytic Technologies}},
+  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Closeness},
+  howpublished = {\url{http://www.analytictech.com/ucinet/help/oeky47.htm}},
+  note         = {Accessed 22 October 2026}
+}
+
+@misc{ucinet_help_eigenvector,
+  author       = {{Analytic Technologies}},
+  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Eigenvector},
+  howpublished = {\url{http://www.analytictech.com/ucinet/help/24d9zjj.htm}},
+  note         = {Accessed 22 October 2026}
+}
+
+@misc{ucinet_help_multiple,
+  author       = {{Analytic Technologies}},
+  title        = {{UCINET} 6 for Windows Help: Networks -> Centrality -> Multiple Measures},
+  howpublished = {\url{http://www.analytictech.com/ucinet/help/hs4214.htm}},
+  note         = {Accessed 22 October 2026}
+}
+
+@article{uzzi2005collaboration,
+  author  = {Uzzi, Brian and Spiro, Jarrett},
+  title   = {Collaboration and Creativity: The Small World Problem},
+  journal = {American Journal of Sociology},
+  year    = {2005},
+  volume  = {111},
+  number  = {2},
+  pages   = {447--504},
+  doi     = {10.1086/432782}
+}
+
+@manual{vandermeer2026sfnetworks,
+  author = {van der Meer, Lucas and Abad, Lorena and Gilardi, Andrea and Lovelace, Robin},
+  title  = {sfnetworks: Tidy Geospatial Networks},
+  year   = {2026},
+  note   = {R package version 0.6.6},
+  doi    = {10.32614/CRAN.package.sfnetworks}
+}
+
+% The viridis colour map was presented at SciPy 2015; the page is the
+% authors' own record of it. No DOI.
+@misc{vanderwalt2015viridis,
+  author       = {van der Walt, St{\'e}fan and Smith, Nathaniel},
+  title        = {mpl Colormaps},
+  year         = {2015},
+  howpublished = {\url{https://bids.github.io/colormap/}},
+  note         = {Presented at SciPy 2015, Austin, TX}
+}
+
+@article{vanduijn2009framework,
+  author  = {van Duijn, Marijtje A. J. and Gile, Krista J. and Handcock, Mark S.},
+  title   = {A Framework for the Comparison of Maximum Pseudo-Likelihood and Maximum Likelihood Estimation of Exponential Family Random Graph Models},
+  journal = {Social Networks},
+  year    = {2009},
+  volume  = {31},
+  number  = {1},
+  pages   = {52--62},
+  doi     = {10.1016/j.socnet.2008.10.003}
+}
+
+@article{ward1963hierarchical,
+  author  = {Ward, Joe H.},
+  title   = {Hierarchical Grouping to Optimize an Objective Function},
+  journal = {Journal of the American Statistical Association},
+  year    = {1963},
+  volume  = {58},
+  number  = {301},
+  pages   = {236--244},
+  doi     = {10.1080/01621459.1963.10500845}
+}
+
+@book{wasserman1994social,
+  author    = {Wasserman, Stanley and Faust, Katherine},
+  title     = {Social Network Analysis: Methods and Applications},
+  publisher = {Cambridge University Press},
+  address   = {Cambridge},
+  year      = {1994},
+  doi       = {10.1017/CBO9780511815478}
+}
+
+@article{wasserman1996logit,
+  author  = {Wasserman, Stanley and Pattison, Philippa},
+  title   = {Logit Models and Logistic Regressions for Social Networks: {I}. An Introduction to {Markov} Graphs and $p^*$},
+  journal = {Psychometrika},
+  year    = {1996},
+  volume  = {61},
+  number  = {3},
+  pages   = {401--425},
+  doi     = {10.1007/BF02294547}
+}
+
+@article{watts1998collective,
+  author  = {Watts, Duncan J. and Strogatz, Steven H.},
+  title   = {Collective Dynamics of `Small-World' Networks},
+  journal = {Nature},
+  year    = {1998},
+  volume  = {393},
+  number  = {6684},
+  pages   = {440--442},
+  doi     = {10.1038/30918}
+}
+
+@article{white1976social,
+  author  = {White, Harrison C. and Boorman, Scott A. and Breiger, Ronald L.},
+  title   = {Social structure from multiple networks. {I}. {Blockmodels} of roles and positions},
+  journal = {American Journal of Sociology},
+  year    = {1976},
+  volume  = {81},
+  number  = {4},
+  pages   = {730--780},
+  doi     = {10.1086/226141}
+}
+
+@article{white1983graph,
+  author  = {White, Douglas R. and Reitz, Karl P.},
+  title   = {Graph and semigroup homomorphisms on networks of relations},
+  journal = {Social Networks},
+  year    = {1983},
+  volume  = {5},
+  number  = {2},
+  pages   = {193--234},
+  doi     = {10.1016/0378-8733(83)90025-4}
+}
+
+@article{wu2000thick,
+  author  = {Wu, Kesheng and Simon, Horst},
+  title   = {Thick-Restart {Lanczos} Method for Large Symmetric Eigenvalue Problems},
+  journal = {SIAM Journal on Matrix Analysis and Applications},
+  year    = {2000},
+  volume  = {22},
+  number  = {2},
+  pages   = {602--616},
+  doi     = {10.1137/S0895479898334605}
+}
+
+@article{wu2014path,
+  author  = {Wu, Huanhuan and Cheng, James and Huang, Silu and Ke, Yiping and Lu, Yi and Xu, Yanyan},
+  title   = {Path Problems in Temporal Graphs},
+  journal = {Proceedings of the VLDB Endowment},
+  year    = {2014},
+  volume  = {7},
+  number  = {9},
+  pages   = {721--732},
+  doi     = {10.14778/2732939.2732945}
+}
+
+@article{zachary1977information,
+  author  = {Zachary, Wayne W.},
+  title   = {An Information Flow Model for Conflict and Fission in Small Groups},
+  journal = {Journal of Anthropological Research},
+  year    = {1977},
+  volume  = {33},
+  number  = {4},
+  pages   = {452--473},
+  doi     = {10.1086/jar.33.4.3629752}
+}
+
+@article{zeileis2020colorspace,
+  author  = {Zeileis, Achim and Fisher, Jason C. and Hornik, Kurt and Ihaka, Ross and McWhite, Claire D. and Murrell, Paul and Stauffer, Reto and Wilke, Claus O.},
+  title   = {colorspace: A Toolbox for Manipulating and Assessing Colors and Palettes},
+  journal = {Journal of Statistical Software},
+  year    = {2020},
+  volume  = {96},
+  number  = {1},
+  doi     = {10.18637/jss.v096.i01}
 }

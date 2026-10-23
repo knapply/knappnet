@@ -8,7 +8,7 @@ over all ordered pairs, counting shortest paths with exact rational
 arithmetic. Parallel edges count as distinct paths, which arbitrates between
 the igraph and NetworkX conventions on multigraphs.
 
-    python3 validation/oracles/definition_oracle.py
+    python3 validation/oracles/core_definition_oracle.py
 """
 
 from __future__ import annotations
@@ -19,8 +19,8 @@ from fractions import Fraction
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, applies, fixture_names, load_fixture, write_values  # noqa: E402
-from common import load_manifest  # noqa: E402
+from common import (DEFINITION_VERSION, applies, fixture_names, load_fixture,
+                    load_manifest, write_values, write_version)  # noqa: E402
 
 ORACLE = "definition"
 MAX_NODES = 80
@@ -184,8 +184,7 @@ def main() -> None:
                 continue
             write_values(ORACLE, name, variant, values)
             count += 1
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text("definition (direct evaluation, exact arithmetic)\n", newline="")
+    write_version(ORACLE, DEFINITION_VERSION)
     print(f"definition: wrote {count} golden files")
 
 

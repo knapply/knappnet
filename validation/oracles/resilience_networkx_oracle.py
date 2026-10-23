@@ -16,10 +16,9 @@ import sys
 from pathlib import Path
 
 import networkx as nx
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import MANIFEST_DIR, applies, fixture_names, load_fixture, write_values  # noqa: E402
+from common import (applies, fixture_names, load_area, load_fixture, write_values)  # noqa: E402
 
 ORACLE = "networkx"
 
@@ -62,7 +61,7 @@ def compute(spec, fx):
 
 
 def main() -> int:
-    manifest = yaml.safe_load((MANIFEST_DIR / "resilience.yaml").read_text())
+    manifest = load_area("resilience")
     count = 0
     for name in fixture_names():
         fx = load_fixture(name)

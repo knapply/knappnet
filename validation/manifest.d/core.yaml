@@ -1,22 +1,9 @@
-# Metric manifest.
+# Degree, strength, betweenness, and the triad census: the first measures,
+# validated against every oracle. The manifest format is documented in
+# ../README.md; this file is the reference example of it.
 #
-# Every measure the engine exposes is listed here with:
-#   engine       - the engine call and arguments being validated
-#   applies_to   - any | directed | undirected
-#   tolerance    - rel/abs tolerance for floating-point comparison
-#   oracles      - each reference implementation's equivalent call
-#
-# An oracle entry may declare `differs_when`, a list of fixture tags under
-# which that oracle is known to follow a different convention, or
-# `differs_on`, a list of fixture names, with the reason. On those fixtures a mismatch is reported as a documented
-# convention difference rather than a failure. Any other mismatch fails CI.
-#
-# An oracle that gives no answer on some fixtures (it raises an error, or
-# the answer is undefined) declares them with `undefined_on` (fixture
-# names) or `undefined_when` (tags) and an `undefined_reason`, so a missing
-# golden file is never silently accepted.
-#
-# No measure ships without an entry here and at least one passing oracle.
+# Oracle names: `definition` is core_definition_oracle.py, `networkx`
+# core_networkx_oracle.py, and `igraph` and `sna` r_core.R.
 
 degree_all:
   engine: {fn: degree, mode: all, loops: true}
@@ -24,7 +11,7 @@ degree_all:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "MultiGraph/MultiDiGraph G.degree()"
     igraph:
@@ -42,7 +29,7 @@ degree_all_noloops:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     igraph:
       call: "igraph::degree(g, mode = 'all', loops = FALSE)"
     sna:
@@ -56,7 +43,7 @@ degree_out:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "MultiDiGraph G.out_degree()"
     igraph:
@@ -72,7 +59,7 @@ degree_in:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "MultiDiGraph G.in_degree()"
     igraph:
@@ -99,7 +86,7 @@ betweenness:
   tolerance: {rel: 1.0e-9, abs: 1.0e-9}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "nx.betweenness_centrality(G, normalized = False)"
       differs_when: [multi_edges]
@@ -120,7 +107,7 @@ betweenness_normalized:
   tolerance: {rel: 1.0e-9, abs: 1.0e-12}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "nx.betweenness_centrality(G, normalized = True)"
       differs_when: [multi_edges]
@@ -140,7 +127,7 @@ betweenness_weighted:
   tolerance: {rel: 1.0e-9, abs: 1.0e-9}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "nx.betweenness_centrality(G, weight = 'weight', normalized = False)"
     igraph:
@@ -172,7 +159,7 @@ triad_census:
   tolerance: {rel: 0, abs: 0}
   oracles:
     definition:
-      call: "direct evaluation of the definition (validation/oracles/definition_oracle.py)"
+      call: "direct evaluation of the definition (core_definition_oracle.py)"
     networkx:
       call: "nx.triadic_census(DiGraph(G))"
       undefined_when: [undirected]

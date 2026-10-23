@@ -2,7 +2,7 @@
 (validation/manifest.d/saom.yaml).
 
 Every directed fixture becomes the three-wave panel of
-validation/saom_fixtures.py. The runners return the deterministic parts
+validation/derived/saom.py. The runners return the deterministic parts
 of the model: target statistics per period, change statistics for every
 actor and alter on wave 1, and the number of changed ties per period.
 
@@ -22,7 +22,7 @@ from pathlib import Path
 from engine import ERR_LEN, EngineError, load, register
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-import saom_fixtures as sf  # noqa: E402
+import derived.saom as sf  # noqa: E402
 
 EFFECT_CODES = {
     "density": 0, "recip": 1, "transTrip": 2, "transTies": 3, "transRecTrip": 4, "cycle3": 5,

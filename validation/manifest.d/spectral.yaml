@@ -1,6 +1,6 @@
 # PageRank, Katz centrality, Bonacich power centrality, hubs and
 # authorities, assortativity, mixing matrices, the E-I index, and
-# within-group tie shares. Format as in ../manifest.yaml.
+# within-group tie shares. Format: see ../README.md.
 #
 # Undefined values (NaN) are written as empty lines, so they match only
 # undefined values. Fixtures have no node attributes, so attributes come
@@ -10,7 +10,7 @@
 # The R oracles name nodes "n1", "n2", ... and attach these rules as node
 # attributes.
 #
-# Engine options not in ../manifest.yaml:
+# Engine options beyond the common keys:
 #   alpha_fraction, exponent_fraction: the parameter is this fraction of
 #       1 / lambda_max for the adjacency matrix the measure uses; each
 #       oracle computes lambda_max itself.

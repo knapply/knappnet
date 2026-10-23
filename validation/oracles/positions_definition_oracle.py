@@ -34,8 +34,8 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, applies, fixture_names, load_fixture, write_values  # noqa: E402
-from common import load_manifest  # noqa: E402
+from common import (GOLDEN, applies, fixture_names, load_fixture, load_manifest,
+                    write_values)  # noqa: E402
 
 ORACLE = "definition"
 MAX_NODES = 80

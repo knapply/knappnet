@@ -1,7 +1,7 @@
 # Cohesive subsets (bicomponents, n-cliques, n-clans, k-plexes, lambda
 # sets, factions), community partitions (Girvan-Newman, leading
 # eigenvector, greedy modularity), and topography (core-periphery,
-# compactness, small-world inputs). Format as in ../manifest.yaml.
+# compactness, small-world inputs). Format: see ../README.md.
 #
 # Undefined results (NaN, or an engine error for an input the method does
 # not accept, such as a core-periphery fit of a network whose ties are all
