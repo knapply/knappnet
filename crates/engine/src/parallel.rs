@@ -59,3 +59,61 @@ where
             .collect()
     })
 }
+
+/// Coarse phase timings for profiling expensive measures.
+///
+/// Off by default, when each probe costs one relaxed atomic load. After
+/// [`probe::enable`]`(true)`, instrumented measures record how long each of
+/// their phases took on the calling thread (for example setup, traversal,
+/// accumulation, and copying the result), and [`probe::take`] returns and
+/// clears the record. The benchmark example uses this to show where the
+/// time of a measure goes; results never depend on it.
+pub mod probe {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Mutex;
+    use std::time::Instant;
+
+    static ENABLED: AtomicBool = AtomicBool::new(false);
+    static RECORD: Mutex<Vec<(&'static str, f64)>> = Mutex::new(Vec::new());
+
+    /// Turns phase recording on or off.
+    pub fn enable(on: bool) {
+        ENABLED.store(on, Ordering::Relaxed);
+    }
+
+    /// Returns the phases recorded since the last call, as (name, seconds)
+    /// in the order they ended, and clears the record.
+    pub fn take() -> Vec<(&'static str, f64)> {
+        std::mem::take(&mut *RECORD.lock().unwrap_or_else(|e| e.into_inner()))
+    }
+
+    /// A running phase clock; `None` inside when recording is off.
+    #[derive(Debug)]
+    pub struct Clock(Option<Instant>);
+
+    impl Clock {
+        /// Starts the clock if recording is on.
+        #[inline]
+        pub fn start() -> Clock {
+            Clock(if ENABLED.load(Ordering::Relaxed) {
+                Some(Instant::now())
+            } else {
+                None
+            })
+        }
+
+        /// Records the time since the last mark (or the start) under
+        /// `name`, and restarts the clock.
+        #[inline]
+        pub fn mark(&mut self, name: &'static str) {
+            if let Some(t) = self.0 {
+                let now = Instant::now();
+                RECORD
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .push((name, (now - t).as_secs_f64()));
+                self.0 = Some(now);
+            }
+        }
+    }
+}

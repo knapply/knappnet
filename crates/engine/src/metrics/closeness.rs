@@ -53,15 +53,13 @@
 //!   closeness") report the normalized form.
 
 use std::borrow::Cow;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 
 use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 /// How closeness treats nodes that cannot be reached. See the module
 /// documentation for the formulas.
@@ -239,10 +237,12 @@ pub(crate) fn oriented(g: &Graph, mode: DegreeMode) -> Result<Cow<'_, Graph>> {
 
 /// One shortest-path search from every node, in parallel.
 pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Vec<Profile>> {
+    let mut clock = parallel::probe::Clock::start();
     let h = oriented(g, opts.mode)?;
     let h = h.as_ref();
     let n = h.node_count();
     let lengths = path_lengths(h, opts.weighted, opts.weights_as, opts.algorithm)?;
+    clock.mark("setup");
     let partials = match &lengths {
         // Unweighted: breadth-first search from 64 sources at a time
         // (`crate::bitset::MultiBfs`); one batch is one work item, so the
@@ -316,6 +316,7 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
         }
         _ => 1.0,
     };
+    clock.mark("search");
     let mut out = vec![Profile::default(); n];
     for found in partials {
         for (s, mut p) in found {
@@ -327,6 +328,7 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
             out[s as usize] = p;
         }
     }
+    clock.mark("merge");
     Ok(out)
 }
 
@@ -338,7 +340,7 @@ struct Search {
     done: Vec<bool>,
     touched: Vec<u32>,
     buckets: Vec<Vec<u32>>,
-    heap: BinaryHeap<HeapItem>,
+    heap: IndexedHeap,
 }
 
 impl Search {
@@ -350,7 +352,7 @@ impl Search {
             done: vec![false; n],
             touched: Vec::new(),
             buckets: Vec::new(),
-            heap: BinaryHeap::new(),
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -416,24 +418,17 @@ impl Search {
         }
     }
 
-    /// Dijkstra's algorithm with a binary heap and lazy deletion
+    /// Dijkstra's algorithm with an indexed 4-ary heap
     /// (`dijkstra1959note`).
     fn dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize) -> Profile {
         let adj = g.out();
-        self.heap.clear();
         self.touched.clear();
         self.touched.push(s as u32);
         self.dist[s] = 0.0;
-        self.heap.push(HeapItem {
-            dist: 0.0,
-            node: s as u32,
-        });
+        self.heap.push_or_decrease(s as u32, 0.0);
         let (mut reached, mut total, mut harmonic, mut longest) = (0usize, 0.0, 0.0, 0.0f64);
-        while let Some(HeapItem { dist: d, node }) = self.heap.pop() {
+        while let Some((d, node)) = self.heap.pop() {
             let v = node as usize;
-            if self.done[v] || d > self.dist[v] {
-                continue;
-            }
             self.done[v] = true;
             if v != s {
                 reached += 1;
@@ -452,10 +447,7 @@ impl Search {
                 }
                 if alt < self.dist[w] {
                     self.dist[w] = alt;
-                    self.heap.push(HeapItem {
-                        dist: alt,
-                        node: w as u32,
-                    });
+                    self.heap.push_or_decrease(w as u32, alt);
                 }
             }
         }
@@ -469,33 +461,6 @@ impl Search {
             harmonic,
             longest,
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct HeapItem {
-    dist: f64,
-    node: u32,
-}
-
-impl PartialEq for HeapItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-impl Eq for HeapItem {}
-impl PartialOrd for HeapItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for HeapItem {
-    // Reversed so that BinaryHeap (a max-heap) pops the smallest distance.
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .dist
-            .total_cmp(&self.dist)
-            .then_with(|| other.node.cmp(&self.node))
     }
 }
 

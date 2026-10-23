@@ -105,6 +105,8 @@ pub struct MultiBfs {
     active: Vec<u32>,
     /// Nodes reached by at least one source.
     reached: Vec<u32>,
+    /// Nodes whose `next` set is not empty, in order of first push.
+    touched: Vec<u32>,
 }
 
 impl MultiBfs {
@@ -116,6 +118,7 @@ impl MultiBfs {
             next: vec![0; n],
             active: Vec::new(),
             reached: Vec::new(),
+            touched: Vec::new(),
         }
     }
 
@@ -141,35 +144,33 @@ impl MultiBfs {
         let mut level = 0;
         while !self.active.is_empty() && level < max_level {
             level += 1;
-            // Push every frontier set along its arcs. `next` is clean at
-            // this point, and is scanned in full below so the arc loop
-            // needs no bookkeeping.
+            // Push every frontier set along its arcs, noting the nodes
+            // pushed to. `next` is clean at this point.
+            self.touched.clear();
             for &v in &self.active {
                 let f = self.frontier[v as usize];
                 for &w in adj.neighbors(v as usize) {
-                    self.next[w as usize] |= f;
+                    let x = &mut self.next[w as usize];
+                    if *x == 0 {
+                        self.touched.push(w);
+                    }
+                    *x |= f;
                 }
             }
             self.active.clear();
-            for w in 0..n {
-                let pushed = self.next[w];
-                if pushed == 0 {
-                    continue;
+            // Visit the pushed nodes in increasing index order: sort the
+            // list when it is short, scan every node when it is long.
+            if self.touched.len() < n / 32 {
+                self.touched.sort_unstable();
+                for i in 0..self.touched.len() {
+                    let w = self.touched[i] as usize;
+                    self.settle(w, level, &mut on);
                 }
-                self.next[w] = 0;
-                let new = pushed & !self.seen[w];
-                if new != 0 {
-                    if self.seen[w] == 0 {
-                        self.reached.push(w as u32);
+            } else {
+                for w in 0..n {
+                    if self.next[w] != 0 {
+                        self.settle(w, level, &mut on);
                     }
-                    self.seen[w] |= new;
-                    self.frontier[w] = new;
-                    self.active.push(w as u32);
-                    on(Step::Reached {
-                        level,
-                        node: w as u32,
-                        sources: new,
-                    });
                 }
             }
             if !self.active.is_empty() {
@@ -181,6 +182,28 @@ impl MultiBfs {
         for &v in &self.reached {
             self.seen[v as usize] = 0;
             self.frontier[v as usize] = 0;
+        }
+    }
+
+    /// Moves the sources pushed to `w` into its frontier, reporting those
+    /// that reach it for the first time, and clears `next[w]`.
+    #[inline]
+    fn settle(&mut self, w: usize, level: u32, on: &mut impl FnMut(Step)) {
+        let pushed = self.next[w];
+        self.next[w] = 0;
+        let new = pushed & !self.seen[w];
+        if new != 0 {
+            if self.seen[w] == 0 {
+                self.reached.push(w as u32);
+            }
+            self.seen[w] |= new;
+            self.frontier[w] = new;
+            self.active.push(w as u32);
+            on(Step::Reached {
+                level,
+                node: w as u32,
+                sources: new,
+            });
         }
     }
 

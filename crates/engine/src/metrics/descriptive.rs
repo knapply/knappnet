@@ -102,8 +102,6 @@
 //!   and weighted clustering.
 
 use std::borrow::Cow;
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
 
 use crate::bitset::{for_each_bit, MultiBfs, Step, BATCH};
 use crate::error::{Error, Result};
@@ -113,7 +111,7 @@ use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::topography::{components, ComponentKind};
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 // ---- Reciprocity ---------------------------------------------------------------
 
@@ -605,9 +603,8 @@ pub fn distance_rows(
                     let lo = b * BATCH;
                     let hi = (lo + BATCH).min(batch.len());
                     let group = &batch[lo..hi];
-                    let mut out: Vec<Vec<f64>> = (0..group.len())
-                        .map(|_| vec![f64::INFINITY; n])
-                        .collect();
+                    let mut out: Vec<Vec<f64>> =
+                        (0..group.len()).map(|_| vec![f64::INFINITY; n]).collect();
                     for (i, &s) in group.iter().enumerate() {
                         out[i][s as usize] = 0.0;
                     }
@@ -693,9 +690,11 @@ fn profiles(
     opts: &PathOptions,
 ) -> Result<(Vec<PathProfile>, bool, f64)> {
     let n = g.node_count();
+    let mut clock = parallel::probe::Clock::start();
     let p = prepare(g, opts)?;
     let h = p.h.as_ref();
     let integral = !matches!(p.lengths, Lengths::Real(_));
+    clock.mark("setup");
     let parts: Vec<Vec<(usize, PathProfile)>> = if matches!(p.lengths, Lengths::Uniform) {
         // Breadth-first search from 64 sources at a time
         // (`crate::bitset::MultiBfs`), one batch per work item. Every
@@ -770,12 +769,14 @@ fn profiles(
         .map(|(_, found)| found)
         .collect()
     };
+    clock.mark("search");
     let mut out = vec![PathProfile::default(); sources.len()];
     for found in parts {
         for (k, q) in found {
             out[k] = q;
         }
     }
+    clock.mark("merge");
     Ok((out, integral, p.unit))
 }
 
@@ -981,7 +982,7 @@ struct Search {
     done: Vec<bool>,
     order: Vec<u32>,
     buckets: Vec<Vec<u32>>,
-    heap: BinaryHeap<HeapItem>,
+    heap: IndexedHeap,
 }
 
 impl Search {
@@ -992,7 +993,7 @@ impl Search {
             done: vec![false; n],
             order: Vec::new(),
             buckets: Vec::new(),
-            heap: BinaryHeap::new(),
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -1101,28 +1102,22 @@ impl Search {
         }
     }
 
-    /// Dijkstra's algorithm with a binary heap and lazy deletion
+    /// Dijkstra's algorithm with an indexed 4-ary heap
     /// (`dijkstra1959note`).
     fn dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize, limit: f64) {
         let adj = g.out();
-        self.heap.clear();
         self.dist[s] = 0.0;
-        self.heap.push(HeapItem {
-            dist: 0.0,
-            node: s as u32,
-        });
-        while let Some(HeapItem { dist: d, node }) = self.heap.pop() {
+        self.heap.push_or_decrease(s as u32, 0.0);
+        while let Some((d, node)) = self.heap.pop() {
             let v = node as usize;
             if d > limit {
                 // Every node within the limit is settled; forget the rest.
                 self.dist[v] = f64::INFINITY;
-                for item in self.heap.drain() {
-                    self.dist[item.node as usize] = f64::INFINITY;
+                for &(_, w) in self.heap.entries() {
+                    self.dist[w as usize] = f64::INFINITY;
                 }
+                self.heap.clear();
                 break;
-            }
-            if self.done[v] || d > self.dist[v] {
-                continue;
             }
             self.done[v] = true;
             self.order.push(v as u32);
@@ -1134,40 +1129,10 @@ impl Search {
                 let alt = d + lens[k];
                 if alt < self.dist[w] {
                     self.dist[w] = alt;
-                    self.heap.push(HeapItem {
-                        dist: alt,
-                        node: w as u32,
-                    });
+                    self.heap.push_or_decrease(w as u32, alt);
                 }
             }
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct HeapItem {
-    dist: f64,
-    node: u32,
-}
-
-impl PartialEq for HeapItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-impl Eq for HeapItem {}
-impl PartialOrd for HeapItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for HeapItem {
-    // Reversed so that BinaryHeap (a max-heap) pops the smallest distance.
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .dist
-            .total_cmp(&self.dist)
-            .then_with(|| other.node.cmp(&self.node))
     }
 }
 

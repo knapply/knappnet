@@ -24,20 +24,18 @@
 //!   positive. The cheapest exact algorithm is chosen automatically: uniform
 //!   weights reduce to breadth-first search, small integer lengths use
 //!   Dial's bucket queue with exact integer distances, and other lengths use
-//!   Dijkstra's algorithm. In the last case two path lengths are considered
+//!   Dijkstra's algorithm (indexed 4-ary heap, see [`crate::weights`]).
+//!   In the last case two path lengths are considered
 //!   equal when they agree to a relative tolerance of 1e-10, the policy
 //!   igraph uses, so floating-point rounding does not drop tied paths.
 //! - Normalization divides by the number of ordered (directed) or unordered
 //!   (undirected) pairs of nodes other than the focal node:
 //!   (n - 1)(n - 2) or (n - 1)(n - 2) / 2.
 
-use std::cmp::Ordering;
-use std::collections::BinaryHeap;
-
 use crate::error::Result;
 use crate::graph::Graph;
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 const EPSILON: f64 = 1e-10;
 
@@ -61,7 +59,9 @@ pub struct BetweennessOptions {
 /// See the module documentation for conventions.
 pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
     let n = g.node_count();
+    let mut clock = parallel::probe::Clock::start();
     let lengths = path_lengths(g, opts.weighted, opts.weights_as, opts.algorithm)?;
+    clock.mark("setup");
 
     let partials = parallel::for_each_item(
         n,
@@ -73,6 +73,7 @@ pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
             Lengths::Real(lens) => ws.single_source_dijkstra(g, lens, s),
         },
     );
+    clock.mark("search");
 
     let mut bc = vec![0.0; n];
     for ws in partials {
@@ -80,6 +81,7 @@ pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
             *b += x;
         }
     }
+    clock.mark("merge");
 
     let mut scale = if g.is_directed() { 1.0 } else { 0.5 };
     if opts.normalized && n > 2 {
@@ -107,7 +109,11 @@ fn approx_eq(a: f64, b: f64) -> bool {
 struct Workspace {
     bc: Vec<f64>,
     sigma: Vec<f64>,
-    delta: Vec<f64>,
+    /// (1 + dependency) / path count of every settled node, the share each
+    /// predecessor receives per shortest path through the arc.
+    coef: Vec<f64>,
+    /// Nodes given a tentative distance in the current search.
+    touched: Vec<u32>,
     hops: Vec<u32>,
     dist: Vec<f64>,
     idist: Vec<u64>,
@@ -116,7 +122,7 @@ struct Workspace {
     rank: Vec<u32>,
     /// Nodes in the order they were settled (non-decreasing distance).
     order: Vec<u32>,
-    heap: BinaryHeap<HeapItem>,
+    heap: IndexedHeap,
 }
 
 impl Workspace {
@@ -124,14 +130,15 @@ impl Workspace {
         Workspace {
             bc: vec![0.0; n],
             sigma: vec![0.0; n],
-            delta: vec![0.0; n],
+            coef: vec![0.0; n],
+            touched: Vec::new(),
             hops: vec![u32::MAX; n],
             dist: vec![f64::INFINITY; n],
             idist: vec![u64::MAX; n],
             buckets: Vec::new(),
             rank: vec![u32::MAX; n],
             order: Vec::with_capacity(n),
-            heap: BinaryHeap::new(),
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -168,12 +175,13 @@ impl Workspace {
             for &w in adj.neighbors(v) {
                 let w = w as usize;
                 if self.hops[w] == next {
-                    dv += (1.0 + self.delta[w]) / self.sigma[w];
+                    dv += self.coef[w];
                 }
             }
-            self.delta[v] = self.sigma[v] * dv;
+            let delta = self.sigma[v] * dv;
+            self.coef[v] = (1.0 + delta) / self.sigma[v];
             if v != s {
-                self.bc[v] += self.delta[v];
+                self.bc[v] += delta;
             }
         }
 
@@ -181,7 +189,7 @@ impl Workspace {
             let v = v as usize;
             self.hops[v] = u32::MAX;
             self.sigma[v] = 0.0;
-            self.delta[v] = 0.0;
+            self.coef[v] = 0.0;
         }
     }
 
@@ -198,7 +206,9 @@ impl Workspace {
         self.sigma[s] = 1.0;
         self.buckets[0].push(s as u32);
         let mut pending = 1usize;
-        let mut touched: Vec<u32> = vec![s as u32];
+        let mut touched = std::mem::take(&mut self.touched);
+        touched.clear();
+        touched.push(s as u32);
         let mut cur: u64 = 0;
 
         while pending > 0 {
@@ -248,12 +258,13 @@ impl Workspace {
                     && self.rank[w] > rank_v
                     && dist_v + lens[k] as u64 == self.idist[w]
                 {
-                    dv += (1.0 + self.delta[w]) / self.sigma[w];
+                    dv += self.coef[w];
                 }
             }
-            self.delta[v] = self.sigma[v] * dv;
+            let delta = self.sigma[v] * dv;
+            self.coef[v] = (1.0 + delta) / self.sigma[v];
             if v != s {
-                self.bc[v] += self.delta[v];
+                self.bc[v] += delta;
             }
         }
 
@@ -261,30 +272,27 @@ impl Workspace {
             let v = v as usize;
             self.idist[v] = u64::MAX;
             self.sigma[v] = 0.0;
-            self.delta[v] = 0.0;
+            self.coef[v] = 0.0;
             self.rank[v] = u32::MAX;
         }
+        self.touched = touched;
     }
 
     fn single_source_dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize) {
         let adj = g.out();
         self.order.clear();
-        self.heap.clear();
         self.dist[s] = 0.0;
         self.sigma[s] = 1.0;
-        self.heap.push(HeapItem {
-            dist: 0.0,
-            node: s as u32,
-        });
+        self.heap.push_or_decrease(s as u32, 0.0);
 
-        // Dijkstra's algorithm with lazy deletion. Path counts propagate only
-        // from settled nodes, so sigma[v] is final when v's arcs are relaxed.
-        let mut touched: Vec<u32> = vec![s as u32];
-        while let Some(HeapItem { dist: d, node }) = self.heap.pop() {
+        // Dijkstra's algorithm with an indexed heap. Path counts propagate
+        // only from settled nodes, so sigma[v] is final when v's arcs are
+        // relaxed.
+        let mut touched = std::mem::take(&mut self.touched);
+        touched.clear();
+        touched.push(s as u32);
+        while let Some((d, node)) = self.heap.pop() {
             let v = node as usize;
-            if self.rank[v] != u32::MAX || d > self.dist[v] {
-                continue;
-            }
             self.rank[v] = self.order.len() as u32;
             self.order.push(v as u32);
             for (k, &w) in adj.arc_range(v).zip(adj.neighbors(v)) {
@@ -298,19 +306,13 @@ impl Workspace {
                     touched.push(w as u32);
                     self.dist[w] = alt;
                     self.sigma[w] = self.sigma[v];
-                    self.heap.push(HeapItem {
-                        dist: alt,
-                        node: w as u32,
-                    });
+                    self.heap.push_or_decrease(w as u32, alt);
                 } else if approx_eq(alt, cur) {
                     self.sigma[w] += self.sigma[v];
                 } else if alt < cur {
                     self.dist[w] = alt;
                     self.sigma[w] = self.sigma[v];
-                    self.heap.push(HeapItem {
-                        dist: alt,
-                        node: w as u32,
-                    });
+                    self.heap.push_or_decrease(w as u32, alt);
                 }
             }
         }
@@ -329,12 +331,13 @@ impl Workspace {
                     && self.rank[w] != u32::MAX
                     && approx_eq(dist_v + lens[k], self.dist[w])
                 {
-                    dv += (1.0 + self.delta[w]) / self.sigma[w];
+                    dv += self.coef[w];
                 }
             }
-            self.delta[v] = self.sigma[v] * dv;
+            let delta = self.sigma[v] * dv;
+            self.coef[v] = (1.0 + delta) / self.sigma[v];
             if v != s {
-                self.bc[v] += self.delta[v];
+                self.bc[v] += delta;
             }
         }
 
@@ -342,37 +345,10 @@ impl Workspace {
             let v = v as usize;
             self.dist[v] = f64::INFINITY;
             self.sigma[v] = 0.0;
-            self.delta[v] = 0.0;
+            self.coef[v] = 0.0;
             self.rank[v] = u32::MAX;
         }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct HeapItem {
-    dist: f64,
-    node: u32,
-}
-
-impl PartialEq for HeapItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.cmp(other) == Ordering::Equal
-    }
-}
-impl Eq for HeapItem {}
-impl PartialOrd for HeapItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl Ord for HeapItem {
-    // Reversed so that BinaryHeap (a max-heap) pops the smallest distance.
-    // Distances are finite and non-negative, so total_cmp is a true order.
-    fn cmp(&self, other: &Self) -> Ordering {
-        other
-            .dist
-            .total_cmp(&self.dist)
-            .then_with(|| other.node.cmp(&self.node))
+        self.touched = touched;
     }
 }
 
