@@ -318,6 +318,34 @@ impl<'a> IdView<'a> {
     }
 }
 
+/// A text identifier as a hash key: short values are stored inline so a
+/// lookup compares bytes in the table itself rather than following a
+/// pointer into the column (the second cache miss that dominated lookups
+/// on large networks); longer values are compared through the pointer.
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+enum StrKey<'a> {
+    Short([u8; 16], u8),
+    Long(&'a [u8]),
+}
+
+impl<'a> StrKey<'a> {
+    #[inline]
+    fn new(bytes: &'a [u8]) -> StrKey<'a> {
+        if bytes.len() <= 16 {
+            let mut k = [0u8; 16];
+            k[..bytes.len()].copy_from_slice(bytes);
+            StrKey::Short(k, bytes.len() as u8)
+        } else {
+            StrKey::Long(bytes)
+        }
+    }
+
+    #[inline]
+    fn is_empty(self) -> bool {
+        matches!(self, StrKey::Short(_, 0))
+    }
+}
+
 /// The result of mapping identifiers to indices.
 struct Mapping {
     n: usize,
@@ -327,14 +355,24 @@ struct Mapping {
     ok: bool,
 }
 
+/// Endpoint states after the parallel lookup pass.
+const UNKNOWN: u32 = u32::MAX;
+const MISSING: u32 = u32::MAX - 1;
+const EMPTY: u32 = u32::MAX - 2;
+
 /// Maps node identifiers and edge endpoints to indices with one hash
-/// table, reporting missing, duplicate, and unknown identifiers.
-fn map_ids<K: Hash + Eq + Copy>(
+/// table, reporting missing, duplicate, and unknown identifiers. Node
+/// identifiers are inserted in row order; endpoints are looked up in
+/// parallel chunks, and the ones not found are resolved in row order
+/// afterwards, so nodes added from the edges are numbered by first
+/// appearance whatever the thread count.
+fn map_ids<K: Hash + Eq + Copy + Sync>(
     frame: &Frame,
     node_key: impl Fn(usize) -> Option<K>,
-    src_key: impl Fn(usize) -> Option<K>,
-    tgt_key: impl Fn(usize) -> Option<K>,
-    empty: impl Fn(K) -> bool,
+    src_key: impl Fn(usize) -> Option<K> + Sync,
+    tgt_key: impl Fn(usize) -> Option<K> + Sync,
+    empty: impl Fn(K) -> bool + Sync,
+    threads: usize,
     report: &mut Report,
 ) -> Mapping {
     let has_nodes = frame.nodes().is_some();
@@ -403,45 +441,80 @@ fn map_ids<K: Hash + Eq + Copy>(
         ));
     }
 
+    // Parallel lookup of every endpoint against the node table.
+    let lookup = |key: Option<K>| match key {
+        None => MISSING,
+        Some(k) if empty(k) => EMPTY,
+        Some(k) => index.get(&k).copied().unwrap_or(UNKNOWN),
+    };
+    let chunks = (m + CHUNK - 1) / CHUNK;
     let mut src = Vec::with_capacity(m);
     let mut tgt = Vec::with_capacity(m);
+    if chunks <= 1 || threads == 1 {
+        for e in 0..m {
+            src.push(lookup(src_key(e)));
+            tgt.push(lookup(tgt_key(e)));
+        }
+    } else {
+        let mut parts: Vec<(usize, Vec<u32>, Vec<u32>)> = for_each_item(
+            chunks,
+            threads,
+            Vec::<(usize, Vec<u32>, Vec<u32>)>::new,
+            |state, chunk| {
+                let lo = chunk * CHUNK;
+                let hi = (lo + CHUNK).min(m);
+                let s: Vec<u32> = (lo..hi).map(|e| lookup(src_key(e))).collect();
+                let t: Vec<u32> = (lo..hi).map(|e| lookup(tgt_key(e))).collect();
+                state.push((chunk, s, t));
+            },
+        )
+        .into_iter()
+        .flatten()
+        .collect();
+        parts.sort_unstable_by_key(|p| p.0);
+        for (_, s, t) in parts {
+            src.extend_from_slice(&s);
+            tgt.extend_from_slice(&t);
+        }
+    }
+
+    // Row-order pass over what the lookup could not settle.
     let mut added = Vec::new();
     let mut missing = Vec::new();
     let mut empties = Vec::new();
     let mut unknown = Vec::new();
     let (mut n_missing, mut n_empty, mut n_unknown) = (0, 0, 0);
     for e in 0..m {
-        for (is_target, key) in [(false, src_key(e)), (true, tgt_key(e))] {
-            let idx = match key {
-                None => {
+        for is_target in [false, true] {
+            let slot = if is_target { &mut tgt[e] } else { &mut src[e] };
+            match *slot {
+                MISSING => {
                     n_missing += 1;
                     push_capped(&mut missing, e);
-                    0
+                    *slot = 0;
                 }
-                Some(k) if empty(k) => {
+                EMPTY => {
                     n_empty += 1;
                     push_capped(&mut empties, e);
-                    0
+                    *slot = 0;
                 }
-                Some(k) => match index.get(&k) {
-                    Some(&i) => i,
-                    None if add_nodes => {
+                UNKNOWN => {
+                    let k = if is_target { tgt_key(e) } else { src_key(e) }.expect("looked up");
+                    // An earlier row may have added this identifier.
+                    if let Some(&i) = index.get(&k) {
+                        *slot = i;
+                    } else if add_nodes {
                         let i = (n0 + added.len()) as u32;
                         index.insert(k, i);
                         added.push((e, is_target));
-                        i
-                    }
-                    None => {
+                        *slot = i;
+                    } else {
                         n_unknown += 1;
                         push_capped(&mut unknown, e);
-                        0
+                        *slot = 0;
                     }
-                },
-            };
-            if is_target {
-                tgt.push(idx);
-            } else {
-                src.push(idx);
+                }
+                _ => {}
             }
         }
     }
@@ -593,7 +666,7 @@ fn id_kind(frame: &Frame, report: &mut Report) -> Option<(Kind, bool)> {
 }
 
 /// Maps identifiers to node indices by their resolved kind.
-fn resolve_endpoints(frame: &Frame, kind: Kind, report: &mut Report) -> Mapping {
+fn resolve_endpoints(frame: &Frame, kind: Kind, threads: usize, report: &mut Report) -> Mapping {
     let src = IdView::of(frame.edge_role(EdgeRole::Source).expect("checked").1).expect("checked");
     let tgt = IdView::of(frame.edge_role(EdgeRole::Target).expect("checked").1).expect("checked");
     let id = frame
@@ -607,6 +680,7 @@ fn resolve_endpoints(frame: &Frame, kind: Kind, report: &mut Report) -> Mapping 
             |e| src.int(e),
             |e| tgt.int(e),
             |_| false,
+            threads,
             report,
         ),
         Kind::Float => map_ids(
@@ -615,14 +689,22 @@ fn resolve_endpoints(frame: &Frame, kind: Kind, report: &mut Report) -> Mapping 
             |e| src.float(e),
             |e| tgt.float(e),
             |_| false,
+            threads,
             report,
         ),
         _ => map_ids(
             frame,
-            |i| if no_nodes { None } else { id.unwrap().str(i) },
-            |e| src.str(e),
-            |e| tgt.str(e),
-            |k| k.is_empty(),
+            |i| {
+                if no_nodes {
+                    None
+                } else {
+                    id.unwrap().str(i).map(StrKey::new)
+                }
+            },
+            |e| src.str(e).map(StrKey::new),
+            |e| tgt.str(e).map(StrKey::new),
+            |k: StrKey| k.is_empty(),
+            threads,
             report,
         ),
     }
@@ -742,7 +824,7 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
     if !report.has(Code::E_ENDPOINTS_UNDECLARED) && !report.has(Code::E_ID_UNDECLARED) {
         if let Some((kind, _)) = id_kind(frame, &mut report) {
             id_kind_resolved = kind;
-            mapping = Some(resolve_endpoints(frame, kind, &mut report));
+            mapping = Some(resolve_endpoints(frame, kind, threads, &mut report));
         }
     }
 
@@ -1320,6 +1402,7 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
     let mut groups = None;
     if groups_possible {
         let g = edge_groups(
+            n,
             &src,
             &tgt,
             decl.directed,
@@ -1439,7 +1522,14 @@ pub fn validate(frame: &Frame, threads: usize) -> Validation {
 
 /// Groups edges by their key: endpoints (ordered when directed), relation
 /// code, and spell, as the module documentation defines parallel edges.
+/// Groups are numbered in order of first appearance.
+///
+/// Edges are ordered by endpoint pair with two stable counting sorts (the
+/// same O(n + m) passes that build the CSR rows), then each run of equal
+/// pairs is split by relation and spell. This touches memory
+/// sequentially, where a hash table keyed on the whole tuple did not.
 pub(super) fn edge_groups(
+    n: usize,
     src: &[u32],
     tgt: &[u32],
     directed: bool,
@@ -1448,25 +1538,97 @@ pub(super) fn edge_groups(
     end: Option<&[f64]>,
 ) -> Groups {
     let m = src.len();
-    let mut map: FastMap<(u32, u32, u32, u64, u64), u32> = fast_map(m);
-    let mut group = Vec::with_capacity(m);
-    let mut sizes: Vec<u32> = Vec::new();
-    let mut first = Vec::new();
+    let mut a = Vec::with_capacity(m);
+    let mut b = Vec::with_capacity(m);
     for e in 0..m {
-        let (a, b) = if directed || src[e] <= tgt[e] {
-            (src[e], tgt[e])
+        if directed || src[e] <= tgt[e] {
+            a.push(src[e]);
+            b.push(tgt[e]);
         } else {
-            (tgt[e], src[e])
-        };
+            a.push(tgt[e]);
+            b.push(src[e]);
+        }
+    }
+    // Stable counting sort by b, then by a: equal pairs end up adjacent,
+    // in row order.
+    let mut order = vec![0usize; m];
+    let mut count = vec![0usize; n + 1];
+    for &x in &b {
+        count[x as usize + 1] += 1;
+    }
+    for i in 0..n {
+        count[i + 1] += count[i];
+    }
+    for e in 0..m {
+        order[count[b[e] as usize]] = e;
+        count[b[e] as usize] += 1;
+    }
+    let mut count = vec![0usize; n + 1];
+    for &x in &a {
+        count[x as usize + 1] += 1;
+    }
+    for i in 0..n {
+        count[i + 1] += count[i];
+    }
+    let mut sorted = vec![0usize; m];
+    for &e in &order {
+        sorted[count[a[e] as usize]] = e;
+        count[a[e] as usize] += 1;
+    }
+    drop(order);
+
+    // Split each run of equal pairs by (relation, start, end).
+    let key = |e: usize| {
         let r = relation.map_or(0, |r| r[e]);
         let s = start.map_or(0, |s| (s[e] + 0.0).to_bits());
         let t = end.map_or(s, |t| (t[e] + 0.0).to_bits());
-        let next = sizes.len() as u32;
-        let g = *map.entry((a, b, r, s, t)).or_insert(next);
-        if g == next {
-            sizes.push(0);
-            first.push(e);
+        (r, s, t)
+    };
+    let mut tentative = vec![0u32; m];
+    let mut first_row: Vec<usize> = Vec::new();
+    let mut run: Vec<(u32, u64, u64, usize)> = Vec::new();
+    let mut i = 0;
+    while i < m {
+        let mut j = i + 1;
+        let (pa, pb) = (a[sorted[i]], b[sorted[i]]);
+        while j < m && a[sorted[j]] == pa && b[sorted[j]] == pb {
+            j += 1;
         }
+        if j - i == 1 {
+            tentative[sorted[i]] = first_row.len() as u32;
+            first_row.push(sorted[i]);
+        } else {
+            run.clear();
+            run.extend(sorted[i..j].iter().map(|&e| {
+                let (r, s, t) = key(e);
+                (r, s, t, e)
+            }));
+            run.sort_unstable();
+            let mut prev: Option<(u32, u64, u64)> = None;
+            for &(r, s, t, e) in &run {
+                if prev != Some((r, s, t)) {
+                    prev = Some((r, s, t));
+                    first_row.push(e);
+                }
+                tentative[e] = first_row.len() as u32 - 1;
+            }
+        }
+        i = j;
+    }
+
+    // Renumber by first appearance.
+    let mut relabel = vec![u32::MAX; first_row.len()];
+    let mut group = Vec::with_capacity(m);
+    let mut sizes: Vec<u32> = Vec::new();
+    let mut first = Vec::new();
+    for &t in &tentative {
+        let t = t as usize;
+        if relabel[t] == u32::MAX {
+            relabel[t] = sizes.len() as u32;
+            sizes.push(0);
+            first.push(first_row[t]);
+        }
+        let g = relabel[t];
         sizes[g as usize] += 1;
         group.push(g);
     }

@@ -91,6 +91,7 @@ pub fn simplify(resolved: &Resolved, combine: Combine, drop_loops: bool) -> Simp
     let groups = match &resolved.groups {
         Some(g) => g.clone(),
         None => edge_groups(
+            resolved.n,
             &resolved.src,
             &resolved.tgt,
             resolved.directed,
