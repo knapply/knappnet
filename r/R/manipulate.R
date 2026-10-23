@@ -66,6 +66,7 @@ combine_relations <- function(x, relation = NULL,
   }
   rel <- as.character(rel)
   all_rel <- unique(rel)
+  which_given <- which
   if (is.null(which)) {
     which <- all_rel
   } else {
@@ -80,7 +81,8 @@ combine_relations <- function(x, relation = NULL,
                    paste0("\"", all_rel, "\"", collapse = ", ")), call. = FALSE)
     }
   }
-  if (method == "difference" && length(which) != 2L) {
+  # The order of a difference matters, so the two relations must be named.
+  if (method == "difference" && (is.null(which_given) || length(which) != 2L)) {
     stop("`method = \"difference\"` needs exactly two relations in `which` (first minus second).",
          call. = FALSE)
   }

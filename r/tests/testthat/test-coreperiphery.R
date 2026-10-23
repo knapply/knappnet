@@ -97,7 +97,8 @@ test_that("small-world quotient is a ratio of ratios", {
   expect_true(sw$quotient > 1)
   expect_equal(small_world(g, reps = 20, seed = 1, threads = 1), sw)
   local <- small_world(g, local = TRUE, reps = 20, seed = 1, threads = 2)
-  expect_equal(local$clustering, average_clustering(g))
+  # Nodes with fewer than two neighbours count as 0, as in NetworkX.
+  expect_equal(local$clustering, average_clustering(g, convention = "networkx"))
   expect_false(isTRUE(all.equal(local$quotient, sw$quotient)))
   expect_output(print(sw), "quotient")
   grDevices::pdf(NULL)

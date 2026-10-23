@@ -91,6 +91,8 @@ mean_reciprocal <- function(g, weights) {
   mean((1 / d)[row(d) != col(d)])
 }
 
+# igraph uses an edge attribute called `weight` unless told otherwise, so
+# unweighted variants pass weights = NA explicitly.
 igraph_values <- function(spec, g, meta) {
   e <- spec$engine
   su <- simple_undirected(g)
@@ -103,7 +105,7 @@ igraph_values <- function(spec, g, meta) {
     },
     girvan_newman = {
       if (igraph::ecount(su) == 0) return(NaN)
-      cl <- igraph::cluster_edge_betweenness(su, weights = NULL, directed = FALSE)
+      cl <- igraph::cluster_edge_betweenness(su, weights = NA, directed = FALSE)
       max(cl$modularity)
     },
     leading_eigen = {
@@ -114,7 +116,7 @@ igraph_values <- function(spec, g, meta) {
         as.integer(igraph::membership(cl)) - 1L
       } else {
         igraph::modularity(g, igraph::membership(cl),
-                           weights = if (isTRUE(e$weighted)) igraph::E(g)$weight else NULL)
+                           weights = if (isTRUE(e$weighted)) igraph::E(g)$weight else NA)
       }
     },
     fast_greedy = {
@@ -131,7 +133,7 @@ igraph_values <- function(spec, g, meta) {
         igraph::transitivity(su, type = "global")
       }
       if (igraph::vcount(su) == 0) c <- NaN
-      c(c, igraph::mean_distance(su, directed = FALSE, unconnected = TRUE))
+      c(c, igraph::mean_distance(su, weights = NA, directed = FALSE, unconnected = TRUE))
     },
     NULL
   )

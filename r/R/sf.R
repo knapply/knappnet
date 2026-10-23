@@ -1096,7 +1096,7 @@ read_gpkg <- function(file, directed, weight, weight_type) {
   }
   nodes <- read_gpkg_layer(path, "nodes")
   edges <- read_gpkg_layer(path, "edges")
-  meta <- list()
+  meta <- stats::setNames(list(), character())
   if ("network" %in% layers) {
     m <- read_gpkg_layer(path, "network")
     if (all(c("key", "value") %in% names(m))) {

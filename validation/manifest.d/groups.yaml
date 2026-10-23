@@ -241,6 +241,13 @@ leading_eigen_membership:
       undefined_on: [kite, two_triangles_isolate]
       undefined_when: [loops, multi_edges, edge_case]
       undefined_reason: as for leading_eigen
+      differs_when: [disconnected]
+      reason: >-
+        igraph puts each isolated node in a group of its own; the engine
+        leaves isolated nodes, whose eigenvector components are zero, on
+        the non-positive side of each division. Isolated nodes add nothing
+        to modularity, so the modularity of the two partitions is the same
+        (checked by leading_eigen)
 
 leading_eigen_weighted:
   engine: {fn: leading_eigen, weighted: true}
@@ -278,14 +285,19 @@ fast_greedy:
     igraph:
       call: "modularity of igraph::cluster_fast_greedy(simplify(g, edge.attr.comb = 'sum'), weights = multiplicity)"
       undefined_when: [loops]
-      undefined_on: [gnp_und_sparse, real_weights_und, twomode_weighted, weighted_und]
+      undefined_on: [gnp_und_sparse, real_weights_und, twomode_weighted, weighted_und,
+                     complete6, star8, davis_twomode, southern_women, uniform_weights]
       undefined_reason: >-
         cluster_fast_greedy() needs a graph without multiple edges, so
         parallel edges are collapsed into weights, and the self-loops dropped
         with them count toward degree and modularity in the engine (as in
         NetworkX) but not in the simplified igraph graph; the listed fixtures
-        have tied mergers on the greedy path (verified in exact arithmetic
-        by the NetworkX oracle), which igraph breaks by its own order
+        have tied mergers on the greedy path (verified in exact arithmetic),
+        which igraph breaks by its own order and so reaches a different
+        partition. On complete6 and star8, which have no community
+        structure, every merger along the engine's path raises modularity
+        and the path ends in one group (modularity 0), while igraph reports
+        a partition of negative modularity
 
 fast_greedy_membership:
   engine: {fn: fast_greedy, resolution: 1.0, weighted: false, output: membership}
@@ -308,6 +320,10 @@ fast_greedy_weighted:
       call: "modularity of nx.community.greedy_modularity_communities(G, weight = 'weight')"
     igraph:
       call: "modularity of igraph::cluster_fast_greedy(g, weights = E(g)$weight)"
+      undefined_on: [uniform_weights, weighted_und]
+      undefined_reason: >-
+        the weighted greedy path has tied mergers on these fixtures
+        (verified in exact arithmetic), which igraph breaks by its own order
 
 fast_greedy_resolution:
   engine: {fn: fast_greedy, resolution: 0.5, weighted: false}
