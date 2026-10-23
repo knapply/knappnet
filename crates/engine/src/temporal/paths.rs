@@ -577,16 +577,183 @@ fn relax(
     }
 }
 
-/// Earliest arrival without a waiting limit: the earliest arrival at a
-/// node is always its most extensible one, so one time per node suffices
-/// and no queue is needed. O(m) per root.
-fn sweep_earliest(stream: &Stream, root: u32, rule: &Rule, ws: &mut Workspace, out: &mut [f64]) {
-    ws.stack.clear();
-    out.iter_mut().for_each(|x| *x = f64::INFINITY);
-    let r = root as usize;
-    let k = stream.len();
+/// An arrival of several roots' walks at once, waiting until usable.
+#[derive(Debug, Clone, Copy)]
+struct BatchPending {
+    arr: f64,
+    node: u32,
+    bits: u64,
+}
+
+impl PartialEq for BatchPending {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == Ordering::Equal
+    }
+}
+impl Eq for BatchPending {}
+impl PartialOrd for BatchPending {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for BatchPending {
+    // Reversed, so the standard max-heap pops the earliest arrival first.
+    fn cmp(&self, other: &Self) -> Ordering {
+        other
+            .arr
+            .total_cmp(&self.arr)
+            .then(other.node.cmp(&self.node))
+    }
+}
+
+/// Scratch space for earliest-arrival sweeps from up to 64 roots at once.
+/// Without a waiting limit the earliest arrival at a node is always its
+/// most extensible one, so a node needs only one bit per root: whether
+/// the root's walks have reached it, and whether that arrival is usable
+/// yet. A pass over the contacts then serves 64 roots, and each (node,
+/// root) arrival is handled once. This needs arrivals to be produced in
+/// time order (the FIFO condition of `prepare`), so that the first arrival
+/// of a root's walks at a node is also its earliest.
+struct Batch {
+    reached: Vec<u64>,
+    usable: Vec<u64>,
+    touched: Vec<u32>,
+    fifo: bool,
+    queue: VecDeque<BatchPending>,
+    heap: BinaryHeap<BatchPending>,
+    stack: Vec<u32>,
+}
+
+impl Batch {
+    fn new(n: usize, fifo: bool) -> Batch {
+        Batch {
+            reached: vec![0; n],
+            usable: vec![0; n],
+            touched: Vec::new(),
+            fifo,
+            queue: VecDeque::new(),
+            heap: BinaryHeap::new(),
+            stack: Vec::new(),
+        }
+    }
+
+    fn reset(&mut self) {
+        for &v in &self.touched {
+            self.reached[v as usize] = 0;
+            self.usable[v as usize] = 0;
+        }
+        self.touched.clear();
+        self.queue.clear();
+        self.heap.clear();
+        self.stack.clear();
+    }
+
+    fn push(&mut self, p: BatchPending) {
+        if self.fifo {
+            self.queue.push_back(p);
+        } else {
+            self.heap.push(p);
+        }
+    }
+
+    /// Makes waiting arrivals usable at time `t`.
+    fn release(&mut self, t: f64, rule: &Rule) {
+        loop {
+            let next = if self.fifo {
+                self.queue.front()
+            } else {
+                self.heap.peek()
+            };
+            match next {
+                Some(p) if rule.usable(t - p.arr) => {
+                    let p = if self.fifo {
+                        self.queue.pop_front()
+                    } else {
+                        self.heap.pop()
+                    }
+                    .expect("peeked");
+                    self.usable[p.node as usize] |= p.bits;
+                }
+                _ => break,
+            }
+        }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    #[inline]
+    fn relax(
+        &mut self,
+        stream: &Stream,
+        a: usize,
+        t: f64,
+        rule: &Rule,
+        chain: bool,
+        out: &mut Option<&mut [f64]>,
+        n: usize,
+    ) {
+        let (u, v, arr) = (
+            stream.from[a] as usize,
+            stream.to[a] as usize,
+            stream.arr[a],
+        );
+        if arr > rule.hi {
+            return;
+        }
+        let new = self.usable[u] & !self.reached[v];
+        if new == 0 {
+            return;
+        }
+        if self.reached[v] == 0 && self.usable[v] == 0 {
+            self.touched.push(v as u32);
+        }
+        self.reached[v] |= new;
+        if let Some(o) = out.as_deref_mut() {
+            let mut bits = new;
+            while bits != 0 {
+                let r = bits.trailing_zeros() as usize;
+                o[r * n + v] = arr;
+                bits &= bits - 1;
+            }
+        }
+        if chain && arr == t {
+            self.usable[v] |= new;
+            self.stack.push(v as u32);
+        } else {
+            self.push(BatchPending {
+                arr,
+                node: v as u32,
+                bits: new,
+            });
+        }
+    }
+}
+
+/// Earliest arrival without a waiting limit from up to 64 roots in one
+/// pass, O(m + n) per pass. `out`, when given, receives one row of n
+/// arrival times per root; afterwards `b.reached` holds the reach sets.
+fn sweep_earliest(
+    stream: &Stream,
+    roots: &[u32],
+    rule: &Rule,
+    b: &mut Batch,
+    mut out: Option<&mut [f64]>,
+) {
+    debug_assert!(roots.len() <= 64);
+    b.reset();
+    let n = b.reached.len();
+    if let Some(o) = out.as_deref_mut() {
+        o.iter_mut().for_each(|x| *x = f64::INFINITY);
+    }
+    for (r, &root) in roots.iter().enumerate() {
+        let v = root as usize;
+        if b.reached[v] == 0 {
+            b.touched.push(root);
+        }
+        b.reached[v] |= 1 << r;
+        b.usable[v] |= 1 << r;
+    }
     let chain = rule.zero_wait();
-    let usable = |out: &[f64], u: usize, t: f64| u == r || rule.usable(t - out[u]);
+    let k = stream.len();
     let mut i = stream.dep.partition_point(|&d| d < rule.lo);
     while i < k {
         let t = stream.dep[i];
@@ -597,34 +764,25 @@ fn sweep_earliest(stream: &Stream, root: u32, rule: &Rule, ws: &mut Workspace, o
         while j < k && stream.dep[j] == t {
             j += 1;
         }
+        b.release(t, rule);
         for a in i..j {
-            let (u, v, arr) = (
-                stream.from[a] as usize,
-                stream.to[a] as usize,
-                stream.arr[a],
-            );
-            if arr <= rule.hi && usable(out, u, t) && arr < out[v] {
-                out[v] = arr;
-                if chain && arr == t {
-                    ws.stack.push(v as u32);
-                }
-            }
+            b.relax(stream, a, t, rule, chain, &mut out, n);
         }
-        while let Some(w) = ws.stack.pop() {
+        // Arrivals at time t that may leave at once are pushed through
+        // the group's arcs again.
+        while let Some(w) = b.stack.pop() {
             let (a0, a1) = tail_range(stream, (i, j), w);
             for a in a0..a1 {
-                let (v, arr) = (stream.to[a] as usize, stream.arr[a]);
-                if arr <= rule.hi && arr < out[v] {
-                    out[v] = arr;
-                    if arr == t {
-                        ws.stack.push(v as u32);
-                    }
-                }
+                b.relax(stream, a, t, rule, chain, &mut out, n);
             }
         }
         i = j;
     }
-    out[r] = rule.lo;
+    if let Some(o) = out {
+        for (r, &root) in roots.iter().enumerate() {
+            o[r * n + root as usize] = rule.lo;
+        }
+    }
 }
 
 /// A stream and the rule in its orientation, ready for sweeps.
@@ -677,41 +835,49 @@ fn check_roots(net: &TemporalNetwork, roots: &[usize]) -> Result<()> {
     Ok(())
 }
 
-/// Runs one sweep per root in parallel; returns rows in root order.
+/// Runs one sweep per root in parallel (64 roots per pass for earliest
+/// arrival without a waiting limit when arrivals come in time order);
+/// returns rows in root order.
 fn sweep_all(p: &Prepared, roots: &[usize], n: usize, kind: Kind, threads: usize) -> Vec<f64> {
     let limited = p.rule.max_wait.is_finite();
-    let fast = kind == Kind::Reach && !limited;
+    let batched = kind == Kind::Reach && !limited && p.fifo;
+    let size = if batched { 64 } else { 1 };
+    let items = (roots.len() + size - 1) / size;
     let states = parallel::for_each_item(
-        roots.len(),
+        items,
         threads,
         || {
             (
-                Workspace::new(n, limited, p.fifo),
+                Workspace::new(n, limited && !batched, p.fifo),
+                Batch::new(if batched { n } else { 0 }, p.fifo),
                 Vec::<(usize, Vec<f64>)>::new(),
             )
         },
-        |(ws, rows), r| {
-            let mut row = vec![0.0; n];
-            if fast {
-                sweep_earliest(&p.stream, roots[r] as u32, &p.rule, ws, &mut row);
+        |(ws, b, rows), item| {
+            let first = item * size;
+            let these = &roots[first..roots.len().min(first + size)];
+            let mut block = vec![0.0; these.len() * n];
+            if batched {
+                let r: Vec<u32> = these.iter().map(|&x| x as u32).collect();
+                sweep_earliest(&p.stream, &r, &p.rule, b, Some(&mut block));
             } else {
                 sweep(
                     &p.stream,
-                    roots[r] as u32,
+                    these[0] as u32,
                     &p.rule,
                     kind,
                     ws,
-                    &mut row,
+                    &mut block,
                     None,
                 );
             }
-            rows.push((r, row));
+            rows.push((first, block));
         },
     );
     let mut out = vec![0.0; roots.len() * n];
-    for (_, rows) in states {
-        for (r, row) in rows {
-            out[r * n..(r + 1) * n].copy_from_slice(&row);
+    for (_, _, rows) in states {
+        for (first, block) in rows {
+            out[first * n..first * n + block.len()].copy_from_slice(&block);
         }
     }
     out
@@ -781,29 +947,46 @@ pub fn temporal_reach_counts(
 ) -> Result<Vec<f64>> {
     let n = net.node_count();
     let (p, _) = prepare(net, direction, opts)?;
-    let limited = p.rule.max_wait.is_finite();
+    // Batches need arrivals in time order (see `Batch`).
+    let limited = p.rule.max_wait.is_finite() || !p.fifo;
+    let size = if limited { 1 } else { 64 };
+    let items = (n + size - 1) / size;
     let states = parallel::for_each_item(
-        n,
+        items,
         opts.threads,
         || {
             (
-                Workspace::new(n, limited, p.fifo),
-                vec![0.0; n],
+                Workspace::new(n, p.rule.max_wait.is_finite(), p.fifo),
+                Batch::new(if limited { 0 } else { n }, p.fifo),
+                vec![0.0; if limited { n } else { 0 }],
                 Vec::<(usize, f64)>::new(),
             )
         },
-        |(ws, row, counts), r| {
+        |(ws, b, row, counts), item| {
+            let first = item * size;
             if limited {
-                sweep(&p.stream, r as u32, &p.rule, Kind::Reach, ws, row, None);
+                sweep(&p.stream, first as u32, &p.rule, Kind::Reach, ws, row, None);
+                let c = row.iter().filter(|x| x.is_finite()).count() - 1;
+                counts.push((first, c as f64));
             } else {
-                sweep_earliest(&p.stream, r as u32, &p.rule, ws, row);
+                let roots: Vec<u32> = (first..n.min(first + size)).map(|r| r as u32).collect();
+                sweep_earliest(&p.stream, &roots, &p.rule, b, None);
+                let mut c = vec![0usize; roots.len()];
+                for &v in &b.touched {
+                    let mut bits = b.reached[v as usize];
+                    while bits != 0 {
+                        c[bits.trailing_zeros() as usize] += 1;
+                        bits &= bits - 1;
+                    }
+                }
+                for (k, &x) in c.iter().enumerate() {
+                    counts.push((first + k, (x - 1) as f64));
+                }
             }
-            let c = row.iter().filter(|x| x.is_finite()).count() - 1;
-            counts.push((r, c as f64));
         },
     );
     let mut out = vec![0.0; n];
-    for (_, _, counts) in states {
+    for (_, _, _, counts) in states {
         for (r, c) in counts {
             out[r] = c;
         }

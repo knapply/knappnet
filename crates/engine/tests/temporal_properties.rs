@@ -582,3 +582,44 @@ fn windows_and_aggregation_match_definitions() {
         assert!(same(clipped, total));
     }
 }
+
+/// Earliest arrival without a waiting limit runs 64 roots per pass; a
+/// waiting limit too large to matter forces the one-root sweep, which
+/// must agree, across batch boundaries and in both directions.
+#[test]
+fn batched_sweeps_match_single_root_sweeps() {
+    let mut rng = Rng(17);
+    for _ in 0..20 {
+        let n = 60 + rng.below(100) as usize;
+        let m = rng.below(4 * n as u64) as usize;
+        let mut c = Case {
+            n,
+            src: (0..m).map(|_| rng.below(n as u64) as i64).collect(),
+            tgt: (0..m).map(|_| rng.below(n as u64) as i64).collect(),
+            start: (0..m).map(|_| rng.below(20) as f64).collect(),
+            end: Vec::new(),
+            directed: rng.below(2) == 0,
+        };
+        c.end = c.start.iter().map(|s| s + rng.below(3) as f64).collect();
+        let net = c.net();
+        let mut o = random_options(&mut rng);
+        o.max_wait = f64::INFINITY;
+        let mut huge = o;
+        huge.max_wait = 1e300;
+        let roots: Vec<usize> = (0..n).rev().collect();
+        for (crit, dir) in [
+            (Criterion::EarliestArrival, Direction::Out),
+            (Criterion::LatestDeparture, Direction::In),
+            (Criterion::EarliestArrival, Direction::In),
+        ] {
+            let a = temporal_paths(&net, crit, dir, &roots, &o).unwrap();
+            let b = temporal_paths(&net, crit, dir, &roots, &huge).unwrap();
+            assert_eq!(a, b, "{crit:?} {dir:?} {o:?}");
+        }
+        for dir in [Direction::Out, Direction::In] {
+            let a = temporal_reach_counts(&net, dir, &o).unwrap();
+            let b = temporal_reach_counts(&net, dir, &huge).unwrap();
+            assert_eq!(a, b);
+        }
+    }
+}
