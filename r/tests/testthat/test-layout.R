@@ -171,8 +171,8 @@ test_that("two-mode layouts use the node type of twomode() networks", {
   second <- g$nodes[[g$roles$type]]
   expect_true(min(xy[!second, "y"]) > max(xy[second, "y"]))
   # The type role is used even when the column is not called `type`.
-  g$nodes$type <- NULL
-  names(g$nodes)[names(g$nodes) == g$roles$type] <- "is_event"
+  expect_identical(g$roles$type, "type")
+  names(g$nodes)[names(g$nodes) == "type"] <- "is_event"
   g$roles$type <- "is_event"
   expect_identical(layout_network(g, "twomode"), xy)
 })
