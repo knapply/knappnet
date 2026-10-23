@@ -183,10 +183,13 @@ reference:
   - qap_cor
   - mrqap
 
-# INTEGRATION (layouts and plotting).
-# - title: Layouts and plotting
-#   contents:
-#   - <new topics>
+- title: Layouts and plotting
+  desc: >-
+    Layouts computed in the engine and a default plot that needs no
+    arguments.
+  contents:
+  - plot.netframe
+  - layout_network
 
 - title: Conventions
   desc: >-

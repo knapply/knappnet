@@ -53,6 +53,12 @@ extern SEXP C_assortativity_degree(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_mixing_matrix(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_ei_index(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_group_shares(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_stress(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_fr(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_layout_simple(SEXP, SEXP, SEXP);
+extern SEXP C_layout_tree(SEXP, SEXP);
+extern SEXP C_layout_twomode(SEXP, SEXP, SEXP);
+extern SEXP C_layout_stress_value(SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -106,6 +112,12 @@ static const R_CallMethodDef call_methods[] = {
     {"C_mixing_matrix", (DL_FUNC)&C_mixing_matrix, 7},
     {"C_ei_index", (DL_FUNC)&C_ei_index, 6},
     {"C_group_shares", (DL_FUNC)&C_group_shares, 4},
+    {"C_layout_stress", (DL_FUNC)&C_layout_stress, 9},
+    {"C_layout_fr", (DL_FUNC)&C_layout_fr, 8},
+    {"C_layout_simple", (DL_FUNC)&C_layout_simple, 3},
+    {"C_layout_tree", (DL_FUNC)&C_layout_tree, 2},
+    {"C_layout_twomode", (DL_FUNC)&C_layout_twomode, 3},
+    {"C_layout_stress_value", (DL_FUNC)&C_layout_stress_value, 5},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */
