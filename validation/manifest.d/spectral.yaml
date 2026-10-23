@@ -324,12 +324,13 @@ assortativity_degree:
       call: "igraph::assortativity_degree(g, directed = TRUE)"
     homophily:
       call: "homophily::assort_degree(g)"
-      differs_when: [multi_edges]
+      differs_when: [loops, multi_edges]
       reason: >-
-        homophily computes degrees from the adjacency matrix but correlates
-        them over the edge list, so with parallel edges the two disagree;
-        this engine (like igraph) uses each edge's endpoints' degrees counted
-        with multiplicity throughout.
+        homophily takes degrees from the row and column sums of the
+        adjacency matrix, which count self-loops and parallel edges
+        differently from the degrees this engine and igraph use (an
+        undirected loop adds 2 to degree here). The networks agree when
+        there are no loops or parallel edges.
 
 assortativity_degree_networkx:
   engine: {fn: assortativity_degree, directed: true, loops: once}
