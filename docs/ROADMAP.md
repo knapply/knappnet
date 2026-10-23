@@ -327,3 +327,65 @@ contraction hierarchies and hub labels, exact modularity by integer
 programming, skip-gram and graph-neural-network embeddings, distributed
 implementations, and a promise of bitwise-identical results across
 platforms.
+
+## Statistical network modelling: primitives and model families
+
+From the October 2026 survey of statistical network modelling. ERGM,
+TERGM, and SAOM code lives on the `ergm-saom` branch until its interface
+is redesigned; the primitives below serve those models and the others
+listed. Citations are verified before implementation.
+
+**Engine primitives, in order**
+
+1. Network state with cached shared-partner and two-path counts, and
+   change statistics for many dyads at once (bitset popcounts or masked
+   sparse products).
+2. Streamed dyad design matrices with sparse logistic and Poisson IRLS,
+   rare-event corrections, and case-control subsampling.
+3. Samplers on independent seeded streams with block proposals and chain
+   diagnostics (effective sample size, R-hat, Hotelling convergence).
+4. Exact enumeration extended to isomorphism classes (ground truth for
+   larger tiny networks).
+5. Permutation machinery: indexed streams, sequential stopping,
+   Freedman-Lane and max-T procedures.
+6. High-dimensional sender and receiver fixed effects with dyadic-robust
+   (sandwich) variance.
+7. Cox and conditional-logit fitting for event data with sampled risk sets
+   (Borgan et al. 1995; Lerner and Lomi 2020).
+8. Alias tables, Fenwick-tree sampling, and Gillespie event simulation.
+9. Stochastic approximation, including equilibrium expectation (Byshkin
+   et al. 2018), and bridge, path, and annealed likelihood ratios.
+10. A sparse truncated eigensolver and randomized SVD (shared with the
+    spectral work).
+
+Close behind: log-determinants for large sparse matrices (sparse
+Cholesky, Chebyshev, stochastic Lanczos quadrature); batched simulation
+addressed by (seed, index) with export to npy/npz/Arrow, and calibration
+tooling (simulation-based calibration, coverage, exact posterior grids)
+for simulation-based and amortized neural inference.
+
+**Model families, in order**
+
+1. Dyadic regression (GLM, fixed effects, QAP/MRQAP, dyadic-robust
+   standard errors).
+2. ERGMs: MPLE with bootstrap, MCMC-MLE, equilibrium expectation and
+   contrastive divergence for large networks, tapered, valued,
+   multilayer, missing-data, and egocentric variants.
+3. Relational event models.
+4. Latent variable models: additive and multiplicative effects, latent
+   space with case-control likelihoods, random dot product graph
+   inference.
+5. Stochastic block models as statistical models (with the community
+   detection work).
+6. Network autocorrelation and peer-effects models.
+7. SAOMs and dynamic network actor models, with score tests.
+8. Temporal ERGMs (pooled pseudolikelihood, then separable temporal
+   ERGMs).
+9. Interference and diffusion inference (exposure mappings,
+   randomization tests, ALAAMs).
+10. Simulation-based and amortized inference support, with the learners
+    in Python.
+
+Not planned: neural networks or automatic differentiation inside the
+engine, GPU kernels before batched CPU code, full Bayesian ERGMs as the
+default estimator, rejection ABC, and hypergraph ERGMs.
