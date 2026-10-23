@@ -652,17 +652,9 @@ pub fn bridging_coefficient(g: &Graph) -> Vec<f64> {
 
 /// Distinct neighbors of every node other than itself, direction ignored.
 fn distinct_neighbors(g: &Graph) -> Vec<Vec<u32>> {
+    let s = g.simple_undirected(false);
     (0..g.node_count())
-        .map(|v| {
-            let mut nb: Vec<u32> = g.out().neighbors(v).to_vec();
-            if g.is_directed() {
-                nb.extend_from_slice(g.inc().neighbors(v));
-            }
-            nb.retain(|&u| u as usize != v);
-            nb.sort_unstable();
-            nb.dedup();
-            nb
-        })
+        .map(|v| s.neighbors(v).to_vec())
         .collect()
 }
 
