@@ -356,9 +356,7 @@ fn column_correlations(m: &Dense, threads: usize) -> Dense {
         let i0 = blk * RB;
         let i1 = (i0 + RB).min(b);
         let mut part: Vec<Vec<f64>> = (i0..i1).map(|i| vec![0.0; b - i]).collect();
-        let xs: Vec<&[f64]> = (i0..RB + i0)
-            .map(|i| centred.row(i.min(i1 - 1)))
-            .collect();
+        let xs: Vec<&[f64]> = (i0..RB + i0).map(|i| centred.row(i.min(i1 - 1))).collect();
         let mut j = i0;
         while j < b {
             let j2 = (j + 1).min(b - 1);

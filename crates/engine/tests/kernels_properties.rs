@@ -74,10 +74,10 @@ fn symmetric_eigen_decomposes() {
         let (vals, vecs) = symmetric_eigen(&a).unwrap();
         assert!(vals.windows(2).all(|w| w[0] <= w[1]));
         let scale = a.as_slice().iter().fold(1.0f64, |m, x| m.max(x.abs())) * n as f64;
-        for j in 0..n {
+        for (j, &val) in vals.iter().enumerate() {
             for i in 0..n {
                 let av: f64 = (0..n).map(|k| a.get(i, k) * vecs.get(k, j)).sum();
-                assert!((av - vals[j] * vecs.get(i, j)).abs() < 1e-11 * scale);
+                assert!((av - val * vecs.get(i, j)).abs() < 1e-11 * scale);
             }
             for l in 0..n {
                 let dot: f64 = (0..n).map(|k| vecs.get(k, j) * vecs.get(k, l)).sum();
@@ -158,7 +158,11 @@ fn lazy_greedy_merges_match_brute_force() {
         for u in 0..n {
             for v in u..n {
                 if (u != v || r.below(10) == 0) && r.uniform() < p {
-                    let x = if weighted { 1.0 + r.below(4) as f64 } else { 1.0 };
+                    let x = if weighted {
+                        1.0 + r.below(4) as f64
+                    } else {
+                        1.0
+                    };
                     edges.push((u, v, x));
                 }
             }
@@ -173,6 +177,10 @@ fn lazy_greedy_merges_match_brute_force() {
         } else {
             edges.iter().map(|&(u, v, _)| (u, v, 1.0)).collect()
         };
-        assert_eq!(fast.merges, reference_merges(n, &unit, gamma), "case {case}");
+        assert_eq!(
+            fast.merges,
+            reference_merges(n, &unit, gamma),
+            "case {case}"
+        );
     }
 }

@@ -584,8 +584,9 @@ struct Fit {
     coef: Vec<f64>,
     se: Vec<f64>,
     /// Residuals at every row; NaN at rows dropped for missing values.
+    /// Empty when the fit was asked not to compute them.
     residuals: Vec<f64>,
-    /// Fitted values at the rows used.
+    /// Fitted values at the rows used (empty likewise).
     fitted_used: Vec<f64>,
     rows: usize,
     rss: f64,
@@ -603,7 +604,6 @@ impl Fit {
 /// Reusable buffers for [`ols`].
 #[derive(Default)]
 struct Workspace {
-    tol: f64,
     a: Vec<f64>,
     used: Vec<usize>,
     diag: Vec<f64>,
@@ -651,7 +651,7 @@ fn qr_prefix(
         return None;
     }
     load(cols, y, &mut ws);
-    if !householder(&mut ws, rows, 0, q, q) {
+    if !householder(&mut ws, rows, 0, q, q, tol) {
         return None;
     }
     let y_t = keep_y.then(|| ws.a[q * rows..(q + 1) * rows].to_vec());
@@ -686,7 +686,14 @@ fn load(cols: &[&[f64]], y: &[f64], ws: &mut Workspace) {
 /// Householder steps j = `from..to` on the column-major `ws.a` (columns
 /// 0..=p, the last being the response), each applied to every later
 /// column. Returns false at a rank-deficient column.
-fn householder(ws: &mut Workspace, rows: usize, from: usize, to: usize, p: usize) -> bool {
+fn householder(
+    ws: &mut Workspace,
+    rows: usize,
+    from: usize,
+    to: usize,
+    p: usize,
+    tol: f64,
+) -> bool {
     ws.diag.resize(to, 0.0);
     let a = &mut ws.a;
     for j in from..to {
@@ -694,7 +701,7 @@ fn householder(ws: &mut Workspace, rows: usize, from: usize, to: usize, p: usize
         let col = &mut left[j * rows..];
         let orig = dot(col, col).sqrt();
         let alpha = dot(&col[j..], &col[j..]).sqrt();
-        if orig == 0.0 || alpha <= tol_of(ws.tol) * orig {
+        if orig == 0.0 || alpha <= tol * orig {
             return false;
         }
         // Reflector mapping col[j..] to s e1 with s = -sign(col[j]) alpha.
@@ -708,11 +715,6 @@ fn householder(ws: &mut Workspace, rows: usize, from: usize, to: usize, p: usize
         ws.diag[j] = s;
     }
     true
-}
-
-#[inline]
-fn tol_of(t: f64) -> f64 {
-    t
 }
 
 /// Applies the reflector I - 2 v v' / (v'v) to `target`.
@@ -735,7 +737,7 @@ fn ols(cols: &[&[f64]], y: &[f64], tol: f64, ws: &mut Workspace) -> Option<Fit> 
 
 /// [`ols`], starting from `prefix` when it was built on the same rows for
 /// the leading columns of `cols` (and for `y`, if it kept the response),
-/// and computing residuals and fitted values only if `residuals`.
+/// and computing residuals and fitted values only if `want_residuals`.
 fn ols_with(
     cols: &[&[f64]],
     y: &[f64],
@@ -751,7 +753,6 @@ fn ols_with(
     if rows <= p {
         return None;
     }
-    ws.tol = tol;
     let start = match prefix {
         Some(pre) if pre.q <= p && pre.used == ws.used => {
             // The prefix columns as factored; the others (and the response
@@ -761,7 +762,7 @@ fn ols_with(
             for c in cols[pre.q..].iter().copied().chain(std::iter::once(y)) {
                 ws.a.extend(ws.used.iter().map(|&i| c[i]));
             }
-            let fixed_y = pre.y.as_ref().filter(|_| true);
+            let fixed_y = pre.y.as_ref();
             if let Some(yt) = fixed_y {
                 ws.a[p * rows..].copy_from_slice(yt);
             }
@@ -784,7 +785,7 @@ fn ols_with(
             0
         }
     };
-    if !householder(ws, rows, start, p, p) {
+    if !householder(ws, rows, start, p, p, tol) {
         return None;
     }
     let a = &ws.a;
@@ -936,6 +937,27 @@ pub fn mrqap(y: &Dense, x: &[Dense], opts: MrqapOptions) -> Result<MrqapResult> 
         }
     }
 
+    // The fixed columns of the permutation refits, factored once: all of
+    // X for Y-permutation (only the response changes), and for DSP the
+    // other columns of each k together with the transformed response.
+    let y_prefix = if method == MrqapMethod::YPermutation {
+        qr_prefix(&xs, &xs, &yv, false, opts.tol)
+    } else {
+        None
+    };
+    let dsp_prefix: Vec<Option<QrPrefix>> = if method == MrqapMethod::DoubleSemiPartialling {
+        (0..p)
+            .map(|k| {
+                let others: Vec<&[f64]> = (0..p).filter(|&j| j != k).map(|j| xs[j]).collect();
+                let mut all = others.clone();
+                all.push(xs[k]);
+                qr_prefix(&others, &all, &yv, true, opts.tol)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
     let keep = opts.keep_draws;
     struct State {
         tails: Vec<Tail>,
@@ -965,7 +987,8 @@ pub fn mrqap(y: &Dense, x: &[Dense], opts: MrqapOptions) -> Result<MrqapResult> 
             match method {
                 MrqapMethod::YPermutation => {
                     gather(y, opts.mode, &cells, Some(&s.perm), &mut s.buf);
-                    if let Some(f) = ols(&xs, &s.buf, opts.tol, &mut s.ws) {
+                    let f = ols_with(&xs, &s.buf, opts.tol, &mut s.ws, y_prefix.as_ref(), false);
+                    if let Some(f) = f {
                         for (k, st) in stats.iter_mut().enumerate() {
                             *st = f.stat(k, opts.statistic);
                         }
@@ -978,7 +1001,9 @@ pub fn mrqap(y: &Dense, x: &[Dense], opts: MrqapOptions) -> Result<MrqapResult> 
                         let mut design: Vec<&[f64]> =
                             (0..p).filter(|&j| j != k).map(|j| xs[j]).collect();
                         design.push(&s.buf);
-                        if let Some(f) = ols(&design, &yv, opts.tol, &mut s.ws) {
+                        let pre = dsp_prefix[k].as_ref();
+                        let f = ols_with(&design, &yv, opts.tol, &mut s.ws, pre, false);
+                        if let Some(f) = f {
                             *st = f.stat(p - 1, opts.statistic);
                         }
                     }
