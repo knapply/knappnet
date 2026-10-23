@@ -126,6 +126,12 @@ reference:
   - katz_centrality
   - power_centrality
   - hub_score
+  - reach
+  - proximity_prestige
+  - edge_betweenness
+  - information_centrality
+  - bridging_centrality
+  - centralize
 
 - title: Cohesion and subgroups
   contents:
@@ -159,6 +165,25 @@ reference:
   - brokerage
   - structural_equivalence
   - concor
+  - regular_equivalence
+  - automorphic_equivalence
+  - blockmodel
+
+- title: Scaling
+  desc: >-
+    Multidimensional scaling of distances and dissimilarities, as in
+    UCINET's MDS tools.
+  contents:
+  - classical_mds
+  - mds_distances
+
+- title: Geospatial networks
+  desc: >-
+    Networks whose nodes have locations: great-circle or planar distances,
+    proximity networks, and the spatial spread of groups.
+  contents:
+  - spatial_network
+  - proximity_network
 
 - title: Ego networks
   desc: >-

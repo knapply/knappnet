@@ -72,6 +72,18 @@ extern SEXP C_temporal_active_at(SEXP, SEXP);
 extern SEXP C_temporal_aggregate(SEXP, SEXP);
 extern SEXP C_temporal_inter_event(SEXP, SEXP, SEXP);
 extern SEXP C_temporal_burstiness(SEXP, SEXP, SEXP);
+extern SEXP C_reach(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_edge_betweenness(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_information_centrality(SEXP, SEXP);
+extern SEXP C_bridging_coefficient(SEXP);
+extern SEXP C_regular_equivalence(SEXP, SEXP, SEXP);
+extern SEXP C_automorphic_equivalence(SEXP, SEXP);
+extern SEXP C_block_model(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_classical_mds(SEXP, SEXP, SEXP);
+extern SEXP C_mds_stress(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_edge_lengths(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_proximity(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_group_geometry(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -144,6 +156,18 @@ static const R_CallMethodDef call_methods[] = {
     {"C_temporal_aggregate", (DL_FUNC)&C_temporal_aggregate, 2},
     {"C_temporal_inter_event", (DL_FUNC)&C_temporal_inter_event, 3},
     {"C_temporal_burstiness", (DL_FUNC)&C_temporal_burstiness, 3},
+    {"C_reach", (DL_FUNC)&C_reach, 7},
+    {"C_edge_betweenness", (DL_FUNC)&C_edge_betweenness, 5},
+    {"C_information_centrality", (DL_FUNC)&C_information_centrality, 2},
+    {"C_bridging_coefficient", (DL_FUNC)&C_bridging_coefficient, 1},
+    {"C_regular_equivalence", (DL_FUNC)&C_regular_equivalence, 3},
+    {"C_automorphic_equivalence", (DL_FUNC)&C_automorphic_equivalence, 2},
+    {"C_block_model", (DL_FUNC)&C_block_model, 5},
+    {"C_classical_mds", (DL_FUNC)&C_classical_mds, 3},
+    {"C_mds_stress", (DL_FUNC)&C_mds_stress, 4},
+    {"C_edge_lengths", (DL_FUNC)&C_edge_lengths, 5},
+    {"C_proximity", (DL_FUNC)&C_proximity, 7},
+    {"C_group_geometry", (DL_FUNC)&C_group_geometry, 6},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */
