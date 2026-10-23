@@ -118,6 +118,14 @@ extern SEXP C_ergm_exact(SEXP, SEXP);
 extern SEXP C_ergm_exact_mle(SEXP, SEXP, SEXP);
 extern SEXP C_ergm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_tergm_mple(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_new(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_alive(SEXP);
+extern SEXP C_saom_distances(SEXP);
+extern SEXP C_saom_targets(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_contributions(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_initial(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_simulate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_saom_estimate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -236,6 +244,14 @@ static const R_CallMethodDef call_methods[] = {
     {"C_ergm_exact_mle", (DL_FUNC)&C_ergm_exact_mle, 3},
     {"C_ergm_loglik", (DL_FUNC)&C_ergm_loglik, 10},
     {"C_tergm_mple", (DL_FUNC)&C_tergm_mple, 9},
+    {"C_saom_new", (DL_FUNC)&C_saom_new, 5},
+    {"C_saom_alive", (DL_FUNC)&C_saom_alive, 1},
+    {"C_saom_distances", (DL_FUNC)&C_saom_distances, 1},
+    {"C_saom_targets", (DL_FUNC)&C_saom_targets, 4},
+    {"C_saom_contributions", (DL_FUNC)&C_saom_contributions, 8},
+    {"C_saom_initial", (DL_FUNC)&C_saom_initial, 5},
+    {"C_saom_simulate", (DL_FUNC)&C_saom_simulate, 10},
+    {"C_saom_estimate", (DL_FUNC)&C_saom_estimate, 8},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

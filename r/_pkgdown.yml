@@ -47,6 +47,8 @@ navbar:
         href: articles/conventions.html
       - text: Exponential random graph models
         href: articles/ergm.html
+      - text: Stochastic actor-oriented models
+        href: articles/saom.html
       - text: Plotting
         href: articles/plotting.html
       - text: Spatial networks with sf
@@ -82,6 +84,7 @@ articles:
   - articles/spatial-networks
   - articles/plotting
   - articles/ergm
+  - articles/saom
 
 # Every help topic must appear below; pkgdown stops if one is missing.
 reference:
@@ -252,6 +255,19 @@ reference:
   - ergm_gof
   - mcmc_diagnostics
   - tergm_fit
+
+- title: Stochastic actor-oriented models
+  desc: >-
+    Network panel data: effects, method of moments estimation by
+    stochastic approximation, simulation, and goodness of fit.
+  contents:
+  - saom_data
+  - saom_effects
+  - saom_control
+  - saom_fit
+  - plot.saom_fit
+  - saom_simulate
+  - saom_gof
 
 - title: Statistical tests
   desc: >-

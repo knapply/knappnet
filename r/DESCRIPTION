@@ -33,6 +33,7 @@ Suggests:
     network,
     networkDynamic,
     rmarkdown,
+    RSiena,
     sf,
     sfnetworks,
     sna,
