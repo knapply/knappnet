@@ -102,6 +102,13 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   accumulator per node (node) or per edge (edge betweenness).
 - Measured: 586 KB peak heap for n = 10k (sparse10k), about 59 B/node; the
   per-thread accumulators make it O(threads x n).
+- Reduction: sources split into 64 fixed groups, each summed into its own
+  accumulator and merged in group order (`parallel::sum_in_order`), so
+  results are thread-count independent. Live accumulators: at most about
+  2T + 1 (a thread more than 2T groups ahead waits), each n f64 (node) or
+  m f64 (edge betweenness: 8 B/edge each, so 3T+ copies of an m-vector is
+  the dominant memory term for edge betweenness on large m). Workers no
+  longer hold their own result vector.
 - Semi-external: the reverse pass needs the settle order (4 B/node) and the
   forward level structure; per source two passes over the edge stream per
   level. Exact all-pairs is O(nm) regardless of storage, so the feasible
