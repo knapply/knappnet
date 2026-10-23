@@ -1,0 +1,945 @@
+---
+title: "What knappnet means by a network"
+description: >
+  The definitions behind the data model: direction, loops and parallel
+  edges, weights, modes, relations and layers, signs, time, space, ego
+  networks, and missing data, with how other tools differ and why
+  knappnet chose as it did.
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Most of the words in network analysis mean more than one thing. A
+"bipartite" network is a declared pairing of two node sets to one
+person and a graph with no odd cycle to another; a "weight" is a cost to
+one program and a strength to the next; "multiplex" means several
+relations in the social-network literature and parallel edges in the
+`network` package. Programs rarely say which meaning they use, and the
+teaching texts an analyst learns from do not always agree with the
+software they teach. knappnet fixes one meaning for each term, records it
+here, and builds the data model around it.
+
+This article goes through the concepts in the order an analyst meets
+them. For each it gives the definition knappnet uses, how a netframe
+represents it (which columns and roles in the node and edge tables, and
+which S3 class), how [igraph](https://r.igraph.org/), [statnet](https://statnet.org/)'s `network` and networkDynamic,
+[tidygraph](https://tidygraph.data-imaginist.com/), [NetworkX](https://networkx.org/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [ORA](https://www.casos.cs.cmu.edu/projects/ora/), and the teaching
+sources differ, and why knappnet chose as it did. The decisions were made
+in October 2026 and are recorded, with their alternatives, in
+`docs/DECISIONS.md` in the repository. Representations marked *planned*
+are decided but not yet implemented; the code in this article builds
+plain data frames and shows the decided constructor calls without running
+them, so that nothing here depends on functions that do not exist yet.
+
+## A network
+
+**Definition.** A network is a set of nodes and a set of edges, each edge
+joining two nodes, together with whatever is known about the nodes, the
+edges, and the network as a whole. This is the graph of Wasserman and
+Faust (1994, ch. 4) and Newman (2018, ch. 6) with attributes attached;
+the smallest network is a dyad (Kadushin 2012).
+
+**In knappnet.** A netframe is two data frames. `nodes` has one row per
+node and an identifier column; `edges` has one row per edge and two
+endpoint columns. Any other column is an attribute. A list of *roles*
+records which columns carry structural meaning (identifier, endpoints,
+weight, mode, relation, times, geometry), and a `directed` flag and a
+named list `graph` of network-level metadata complete the object.
+
+```{r}
+nodes <- data.frame(name = c("ana", "ben", "cy", "dee"),
+                    age  = c(31, 45, 28, 52))
+edges <- data.frame(source = c("ana", "ana", "ben", "cy"),
+                    target = c("ben", "cy",  "cy",  "dee"),
+                    years  = c(4, 2, 7, 1))
+edges
+```
+
+```{r, eval = FALSE}
+# Decided constructor call (the endpoint column names are always given
+# explicitly or taken from the defaults "source" and "target"; nothing is
+# guessed from column positions).
+g <- netframe(edges, nodes, directed = FALSE,
+              source = "source", target = "target", id = "name",
+              weight = "years", weight_type = "strength")
+```
+
+The endpoint columns are named by the `source` and `target` arguments,
+whose defaults are the column names `"source"` and `"target"`. Nothing is
+guessed from column position, and a table whose endpoints are called
+`from`/`to` or `sender`/`receiver` (the names used by Rawlings et al.
+2023 and by Shafie and Schoch 2026) is passed with
+`source = "sender", target = "receiver"`. Nodes that appear only in the
+edge table are added to `nodes` with a message. Every measure returns a
+vector aligned with the rows of `nodes` (or of `edges`), so results are
+stored as columns.
+
+The constructor validates in four groups, modelled on the checks of
+`as.network.data.frame()` in the `network` package (Butts 2008): the
+structure (endpoint columns of one atomic type, no missing endpoints,
+every endpoint in the node table, unique identifiers), the declared
+properties (a declared absence of loops or parallel edges, or a
+between-modes-only rule, lists the rows that violate it, and contradictory
+declarations are errors rather than silent overrides), attribute sanity
+(weights numeric and finite, spells ordered and inside node spells,
+geometries in one coordinate reference system), and advisory notes (nodes
+added from edges, isolates, identifiers that look 0-based, loops and
+parallel edges when none were declared), which `quiet = TRUE` silences.
+This validation lives in the engine so that the planned Python package
+applies exactly the same rules.
+
+**Other tools.** [igraph](https://r.igraph.org/) (Csardi and Nepusz 2006), `network` (Butts 2008),
+[NetworkX](https://networkx.org/) (Hagberg, Schult, and Swart 2008), and [graph-tool](https://graph-tool.skewed.de/) keep attributes
+inside an opaque object reached through accessors (`V(g)$x`, `%v%`,
+`G.nodes[n]`, property maps); [tidygraph](https://tidygraph.data-imaginist.com/) (Pedersen 2017) and sfnetworks
+(van der Meer et al. 2026) expose a node tibble and an edge tibble, which
+is the model knappnet shares. [UCINET](https://sites.google.com/site/ucinetsoftware/home) works on matrices with attributes in
+separate datasets; [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) stores a network, its partitions, and its vectors
+in separate files; [ORA](https://www.casos.cs.cmu.edu/projects/ora/) stores typed node classes and the networks between
+them in one meta-network (Tsvetovat, Reminga, and Carley 2004). Every
+teaching source consulted builds from an edge list plus a node table
+(Rawlings et al. 2023 call the columns sender and receiver and pass the
+node table as `vertices`; Almeida-Silva 2024 and Wiederstein 2021 do the
+same with igraph), which is the two-table model with other column names.
+
+**Why.** Attributes in data frames need no accessor vocabulary and work
+with every data tool the analyst already uses; two of the books spend a
+section explaining why a node table must always be supplied so that
+isolates and node order survive, which the netframe makes the default.
+
+## Nodes and edges
+
+**Definition.** A node (vertex, actor) is a unit; an edge (tie, link,
+line, arc) joins two nodes. Wasserman and Faust (1994, ch. 2) distinguish
+structural variables (ties) from composition variables (actor
+attributes). knappnet uses *node* and *edge* in code and documentation;
+*actor* and *tie* appear when a source uses them.
+
+**In knappnet.** One row per node, one row per edge. A node identifier may
+be character, factor, integer, double, logical, or a classed vector such
+as a `Date`; it is a label, never a position, and never required to be
+1 to *n*. Two edges are two rows even when they join the same nodes
+(see parallel edges below).
+
+**Other tools.** [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) number nodes from 1 and 0 respectively
+and keep names as an attribute; `network` numbers from 1 and keeps
+`vertex.names`; [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) files number vertices and carry labels; [UCINET](https://sites.google.com/site/ucinetsoftware/home) uses
+row and column labels. Two teaching sources show readers subtracting 1 or
+indexing by row position to satisfy a tool.
+
+**Why.** Identifiers are data. Positions are an implementation detail the
+engine handles (0-based, internally) and the analyst never sees.
+
+## Node, edge, and network attributes
+
+**Definition.** A node attribute holds one value per node; an edge
+attribute one value per edge; a network attribute describes the whole
+network (title, source, collection date, design notes) and has no
+structural effect.
+
+**In knappnet.** Node and edge attributes are the non-role columns of
+`nodes` and `edges`, of any R type, including list columns and sf
+geometry. Network attributes live in `graph`, a named list. Structural
+declarations (`directed`, the roles, the mode rule) are fields of the
+object and are *not* network attributes.
+
+**Other tools.** `network` stores its structural flags (`directed`,
+`loops`, `multiple`, `bipartite`, `hyper`) as network attributes next to
+the user's metadata (Butts 2008); [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) keep graph
+attributes apart from structure; [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) has one numeric value per line and
+separate partition and vector files; [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL and DyNetML carry one value
+per cell or link. Conversions therefore write only the weight column to
+those single-value formats.
+
+**Why.** Separating structure from metadata means a converter can map
+`network`'s flags onto netframe fields and pass the rest through
+untouched, and no user attribute can accidentally change how a measure
+runs.
+
+## Directed and undirected networks
+
+**Definition.** Direction is a property of the network, not of individual
+edges. In a directed network an edge is an ordered pair (source, target):
+the edge from `a` to `b` is not the edge from `b` to `a`, and both may
+exist. In an undirected network an edge is an unordered pair, and
+(`a`, `b`) and (`b`, `a`) denote the same edge. knappnet has no mixed
+networks containing both arcs and edges (Wasserman and Faust 1994, ch. 4;
+Newman 2018, ch. 6).
+
+**In knappnet.** The `directed` flag. In undirected networks the endpoint
+columns are kept exactly as given and never swapped; algorithms treat the
+pair as unordered, and the columns round-trip through conversion and
+files unchanged.
+
+**Other tools.** [igraph](https://r.igraph.org/), `network`, [tidygraph](https://tidygraph.data-imaginist.com/), [NetworkX](https://networkx.org/) (`Graph` versus
+`DiGraph`), [graph-tool](https://graph-tool.skewed.de/), and [NetworKit](https://networkit.github.io/) all use a network-level flag. [Pajek](http://mrvar.fdv.uni-lj.si/pajek/)
+has `*Arcs` and `*Edges` sections and allows both in one file, a mixed
+network (Batagelj and Mrvar 2026); knappnet reads such a file as
+directed, writes each edge as two arcs, and records `graph$source_mixed = TRUE`. sfnetworks reorders the
+endpoints of undirected networks so that `from <= to`; knappnet does not.
+[UCINET](https://sites.google.com/site/ucinetsoftware/home) works on square matrices, symmetric or not, and the `symmetrize`
+transform is how analysts move between the two (Borgatti, Everett,
+Johnson, and Agneessens 2022, ch. 5).
+
+**Why.** One flag is what every library and every teaching source
+assumes. Not reordering endpoints keeps the user's columns their own.
+
+## Self-loops
+
+**Definition.** A self-loop is an edge whose two endpoints are the same
+node. Loops are allowed, kept, counted when the network is printed, and
+each measure states how it treats them (Newman 2018, ch. 6; Wiederstein
+2021 gives the same plain definition).
+
+**In knappnet.** A row with equal endpoints. There is no network-level
+flag; the printed card reports the count. Helpers to find and remove
+loops are planned.
+
+**Other tools.** [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [graph-tool](https://graph-tool.skewed.de/), and [NetworKit](https://networkit.github.io/) allow loops.
+`network` has a `loops` flag that defaults to `FALSE`, so loops are
+rejected unless declared. [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) keeps loops and can remove them; [UCINET](https://sites.google.com/site/ucinetsoftware/home)
+holds them on the matrix diagonal, which most routines ignore. Newman
+(2018) and igraph count an undirected loop twice in degree, UCINET-style
+routines once; this is the main source of cross-tool differences in
+degree and density and is selectable with `convention` (see the
+[conventions](conventions.html) article).
+
+**Why.** Data should never be dropped silently. `network`'s default
+becomes an explicit removal step rather than a constructor default.
+
+## Parallel edges and simple networks
+
+**Definition.** Two edges are parallel when they have the same endpoints
+(as an ordered pair in a directed network, unordered otherwise) *and the
+same values of every edge role that distinguishes edges*: the relation
+when the network is multiplex and the time spell when it is temporal. A
+network with no loops and no parallel edges is simple; otherwise it is a
+multigraph (Newman 2018, ch. 6). knappnet networks are multigraphs by
+default.
+
+The role-aware rule is what makes a multiplex network behave sensibly:
+
+```{r}
+multiplex <- data.frame(source   = c("ana", "ana", "ana", "ben"),
+                        target   = c("ben", "ben", "ben", "cy"),
+                        relation = c("friendship", "advice", "advice", "advice"))
+multiplex
+```
+
+Rows 1 and 2 are not parallel (different relations); rows 2 and 3 are.
+The network is simple within `friendship` and has one pair of parallel
+edges within `advice`.
+
+**In knappnet.** A repeated structural key among the rows of `edges`. The
+printed card reports "parallel edges (within the same relation)". Planned
+helpers test simplicity, give each edge's multiplicity, and simplify with
+a declared rule for combining attributes (sum for weights by default,
+first value otherwise), following the idea of [igraph](https://r.igraph.org/)'s `edge.attr.comb`.
+
+**Other tools.** igraph and [graph-tool](https://graph-tool.skewed.de/) are multigraphs by default;
+[NetworkX](https://networkx.org/) needs `MultiGraph`; [NetworKit](https://networkit.github.io/) does not support parallel edges;
+`network` needs `multiple = TRUE`, and calls parallel edges "multiplex
+edges" (Butts 2008), a usage that collides with the social-network
+meaning of multiplex used below. [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) keeps multiple lines and offers a
+removal with sum, count, minimum, maximum, or single; [UCINET](https://sites.google.com/site/ucinetsoftware/home) matrices
+cannot hold them, so multiplicity becomes a cell value. None of the tools
+defines parallelism relative to relations or times. Shafie and Schoch
+(2026) and Almeida-Silva (2024) reach for igraph's `simplify()`; the
+conventions table in `?conventions` records which measures count parallel
+edges and which collapse them.
+
+**Why.** An edge list naturally holds repeated pairs, and collapsing them
+at construction loses data. Defining "parallel" relative to roles means a
+long multiplex edge table is simple within each relation, which is what
+analysts expect, and it keeps "multiplex" for several relations and
+"parallel" for repeated pairs.
+
+## Weights, and what they mean
+
+**Definition.** A network is weighted when one numeric edge column is
+declared the weight; otherwise it is binary. The weight's meaning is
+declared once and is one of two things: a **distance** (cost, length,
+latency; larger keeps nodes farther apart) or a **strength** (frequency,
+intensity, capacity; larger brings nodes closer). Path-based measures use
+the weight as a length under `"distance"` and 1/weight under
+`"strength"` (Newman 2001; Opsahl, Agneessens, and Skvoretz 2010);
+additive measures such as node strength (Barrat et al. 2004) use the
+weight as given either way.
+
+**In knappnet.** The `weight` role plus `weight_type`. `netframe(weight =
+"w")` is an error unless `weight_type` is `"strength"` or `"distance"`:
+there is no default meaning. The printed card shows the column, the
+meaning, and the range. Missing, `NaN`, and infinite weights are stored,
+reported, and refused by every measure until resolved.
+
+```{r, eval = FALSE}
+netframe(edges, weight = "years")                           # error: say what the weights mean
+netframe(edges, weight = "years", weight_type = "strength") # years of acquaintance
+netframe(edges, weight = "minutes", weight_type = "distance")
+```
+
+**Other tools.** [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) read an attribute called `weight` by
+default and treat it as a length in path functions and as an intensity in
+strength, modularity, and community detection, in the same session,
+without saying so. [UCINET](https://sites.google.com/site/ucinetsoftware/home) and [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) mostly treat values as strengths,
+with per-command options. `network` stores a weight as any edge
+attribute. Every teaching source consulted reads weight as strength
+(Rawlings et al. 2023; Shafie and Schoch 2026; Wiederstein 2021;
+Almeida-Silva 2024, who also note that igraph silently stores a numeric
+third column as `weight`); only igraph's path functions read it as a
+distance, which is why Rawlings et al. devote a section to closeness
+computed with the wrong weight direction before switching to tnet.
+Epskamp's qgraph treats weights as correlations, a similarity, with sign
+inside the value (Epskamp et al. 2012); see signed networks below.
+
+**Why.** The literature is clear that "weight" means two different things
+(Newman 2004; Opsahl, Agneessens, and Skvoretz 2010), and the cost of a
+wrong default is an invisible error in every path-based result. Requiring
+the declaration once, and printing it, is cheaper than any convention.
+
+## One-mode, two-mode, and k-mode networks; the bipartite property
+
+**Definitions.** A *mode* is a declared, disjoint set of nodes of one
+kind: actors, events, organisations. A one-mode network has a single set.
+A two-mode (affiliation) network has two declared modes and every edge
+joins a node of one to a node of the other (Wasserman and Faust 1994,
+ch. 8; Breiger 1974; Borgatti and Everett 1997). A k-mode (multipartite)
+network has k declared modes with every edge crossing modes (Fararo and
+Doreian 1984 for the tripartite case). A *multimode* network, in [ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s
+sense, declares modes but allows edges within a mode.
+
+The *bipartite property* is different: a graph is bipartite when its
+nodes can be 2-coloured so that no edge joins two nodes of the same
+colour, equivalently when it has no odd cycle (Newman 2018, ch. 6). It is
+found by search and needs no declaration. A declared two-mode network is
+always bipartite; the converse is false (a path, a tree, or an even cycle
+is bipartite without being two-mode), and the 2-colouring is not unique
+in a disconnected graph.
+
+**In knappnet.** The `mode` node role: any column with two or more
+values (character, factor, integer, or logical), with the order of its
+levels recorded so that the first mode gives the rows and the second the
+columns of the incidence matrix, and a network-level rule stating whether
+edges may only cross modes. A logical `type` column, [igraph](https://r.igraph.org/)'s convention,
+is accepted as input and written when converting to igraph. Two tests
+with two names are planned: one reports the declared modes (today
+`is_twomode()`), the other tests 2-colourability and returns the
+colouring, stopping with a clear message when the graph is not bipartite.
+
+```{r}
+affiliations <- data.frame(source = c("ana", "ana", "ben", "cy"),
+                           target = c("club A", "club B", "club A", "club B"))
+members <- data.frame(name = c("ana", "ben", "cy", "club A", "club B"),
+                      mode = c("person", "person", "person", "club", "club"))
+members
+```
+
+Two-mode networks default to undirected, as in igraph and `network`, but
+may be directed (people to events they attended, events to people they
+invited) since the edge table carries direction anyway.
+
+**Other tools.** igraph uses a logical `type` vertex attribute (`FALSE`
+first kind, `TRUE` second); its R `is_bipartite()` checks that the
+attribute exists, while the C core's `igraph_is_bipartite()` runs the
+colouring test. `network` records `bipartite` as the count of first-mode
+vertices, which must come first. [NetworkX](https://networkx.org/) has no bipartite class, recommends
+a 0/1 `bipartite` node attribute "only as a recommendation", passes node
+sets explicitly, and raises `AmbiguousSolution` on disconnected graphs.
+[Pajek](http://mrvar.fdv.uni-lj.si/pajek/)'s `*Vertices n n1` header gives the size of the first mode; [UCINET](https://sites.google.com/site/ucinetsoftware/home)
+holds a rectangular actor-by-event matrix; ORA types nodes by class
+(agent, organization, location, event, ...) and networks by the classes
+they join; [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/) takes a bipartite dependent variable with two node sets.
+Shafie and Schoch (2026) use "two-mode" for the concept and "bipartite"
+for igraph's function names and warn that the coding of `type` decides
+which mode is projected; Rawlings et al. (2023) use the two words
+interchangeably. The Noordin Top data shipped with knappnet (Cunningham,
+Everton, and Murphy 2016) is a multimode multiplex network: one-mode
+relations among agents and two-mode affiliations with organisations,
+operations, and training events.
+
+**Why.** No tool separates "declared two modes" from "2-colourable", and
+both questions are asked. A `mode` role of any type covers two-mode,
+k-mode, and multimode data with one mechanism, and it removes a collision
+in the DyNetML reader, which writes an ORA node type into a column called
+`type`.
+
+## Multiplex, multilayer, and multilevel networks
+
+**Multiplex.** Several relations (kinds of tie) on one node set; each
+edge belongs to exactly one relation, and the same pair may be tied in
+several (Wasserman and Faust 1994, ch. 3). Formally an edge-coloured
+multigraph, and a special case of a multilayer network with one aspect
+and no interlayer edges (Kivelä et al. 2014; Battiston, Nicosia, and
+Latora 2014 give its structural measures).
+
+*In knappnet:* the `relation` edge role, a discrete column in one long
+edge table, as the Noordin data already has. Parallel edges are detected
+within relation. Measures take `relation =` to select or combine
+relations, and a planned split helper returns one netframe per relation.
+Relation-level attributes may go in `graph$relations`. Conversion writes
+an edge attribute for [igraph](https://r.igraph.org/) and `network`, relation numbers for [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
+stacked matrices for [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, and one `<network>` per relation for
+DyNetML.
+
+**Multilayer.** Following Kivelä et al. (2014) and De Domenico et al.
+(2013): a set of actors, a set of layers (possibly structured by several
+aspects, such as relation by time), node-layers (an actor's presence in a
+layer), intralayer edges within a layer, and interlayer edges between
+layers. The network is node-aligned when every actor is in every layer.
+Mucha et al. (2010) call layers "slices"; knappnet treats the word as a
+synonym.
+
+*In knappnet (later, as a separate subclass):* node-layers are rows of
+`nodes` with `actor` and `layer` roles, `id` stays unique per row, and an
+edge is interlayer when its endpoints' layers differ. A planned
+`as_multilayer()` lifts a multiplex network by replicating each actor per
+relation and adding coupling edges on request. The alternative of one
+row per actor with `layer_from`/`layer_to` on edges was rejected: node
+attributes that differ by layer would have no home, and interlayer edges
+between different actors would need four endpoint columns.
+
+**Multilevel.** In the sense of Lazega et al. (2008), Wang et al. (2013),
+and Lazega and Snijders (2016): two or more node sets at distinct levels
+(people and organisations), a within-level network at each level, and a
+cross-level affiliation network. This is a multimode network whose
+relations are typed by the levels they join.
+
+*In knappnet:* the `mode` role with the level labels, within-mode edges
+allowed, and the `relation` role naming within-level and cross-level
+ties. No new structure; an [ORA](https://www.casos.cs.cmu.edu/projects/ora/) meta-network maps onto it one-to-one.
+
+**Other tools.** UCINET stacks matrices, with a Multiplex transform that
+packs them into one coded matrix (Hanneman and Riddle 2005, ch. 16);
+Pajek uses relation numbers; ORA holds several networks between node
+classes; igraph, [NetworkX](https://networkx.org/), and [tidygraph](https://tidygraph.data-imaginist.com/) have no concept beyond an edge
+attribute by convention; multinet (Magnani, Rossi, and Vega 2021) and
+pymnet (Nurmi et al. 2024) use actor-layer vertices as the physics
+literature does; Raphtory uses "layer" for what knappnet calls a
+relation. Rawlings et al. (2023) handle advice and friendship as two
+networks; Borgatti et al. (2022) and Cunningham, Everton, and Murphy
+(2016) work relation by relation in the UCINET style.
+
+**Why.** "Multiplex" is kept for several relations, "parallel" for
+repeated pairs, "multilayer" for node-layers, and "multilevel" for the
+Lazega/Snijders design, each with one representation, so that an analyst
+coming from any of the tools above finds the word with its usual meaning
+and a glossary entry saying which other tool uses it differently.
+
+## Signed networks
+
+**Definition.** Every edge carries a sign, positive or negative,
+optionally with a magnitude (Harary 1953; Cartwright and Harary 1956).
+Sign is categorical and distinct from weight: a negative tie is not a
+shorter path.
+
+**In knappnet (provisional, adopted from the research recommendation and
+to be implemented after the core changes).** A `sign` edge role holding
+-1 and +1, the values signnet uses so that objects convert without
+recoding (Shafie and Schoch 2026, ch. 7). `weight`, if present, is the
+magnitude and stays non-negative. A planned `as_signed(x, sign =
+"weight")` splits a signed value column into sign and magnitude, which is
+how [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), [UCINET](https://sites.google.com/site/ucinetsoftware/home), and correlation networks (Epskamp et al. 2012) arrive;
+export writes `sign * weight` back as the single value. Measures to come
+are structural balance, the frustration index, Doreian and Mrvar (1996)
+partitioning, and signed degree.
+
+**Other tools.** Pajek and UCINET code the sign in the line value;
+[igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [tidygraph](https://tidygraph.data-imaginist.com/), and `network` have no concept beyond an
+attribute; [ORA](https://www.casos.cs.cmu.edu/projects/ora/) has no sign.
+
+**Why.** Keeping sign and magnitude apart means the positivity checks on
+path-based measures are never tripped by a negative tie, a network can be
+signed without being weighted, and a correlation network read from
+qgraph does not get its negative correlations treated as negative
+lengths.
+
+## Temporal and dynamic networks
+
+**Vocabulary.** A *temporal network* is one whose edges (and optionally
+nodes) carry times, as instants or intervals, so that the structure is
+defined at each moment (Holme and Saramäki 2012; Masuda and Lambiotte
+2016). *Dynamic network* is the umbrella term and is used only as a
+synonym; dynamics *on* networks (diffusion, epidemics) are processes and
+out of scope. A *longitudinal* or *panel* network is the same bounded
+node set observed at discrete waves (Snijders, van de Bunt, and Steglich
+2010). Both R textbooks teach the split as discrete (panel) versus
+continuous (event or spell) data (Rawlings et al. 2023, ch. 3; Shafie
+and Schoch 2026, ch. 19-20), and knappnet uses the same words.
+
+For continuous time, knappnet uses the terms of Latapy, Viard, and
+Magnien (2018): a *contact sequence* is a set of (source, target, time)
+triples; a *link stream* gives each link an interval; a *stream graph*
+gives nodes intervals too. Holme and Saramäki (2012) call networks with
+edge durations "interval graphs", a term knappnet avoids because in graph
+theory an interval graph is the intersection graph of intervals on a line
+(Lekkerkerker and Boland 1962), an unrelated object. Casteigts et al.
+(2012) give the general time-varying-graph formalism as background.
+
+**In knappnet.** The `start`, `end` or `duration`, `node_start`, and
+`node_end` roles, with the time class recorded, on a
+`c("temporal_netframe", "netframe")` object. `start` alone is a contact
+sequence; `start` and `end` a link stream; node spells make a stream
+graph.
+
+| Data | Columns |
+|---|---|
+| Contact sequence | `source`, `target`, `start` |
+| Link stream | `source`, `target`, `start`, `end` (or `duration`) |
+| Stream graph | the above, plus `node_start`, `node_end` on `nodes` |
+| Panel of waves | `source`, `target`, `start = k`, `end = k + 1` |
+
+Spells are half-open, `[start, end)`: an edge is active at `start` and
+not at `end`, so consecutive spells and snapshot boundaries are
+unambiguous. An edge with `end == start`, or with no `end`, is an
+instantaneous contact. `start = -Inf` and `end = Inf` mean the start or
+end was not observed (left and right censoring), as in networkDynamic. A
+missing `end` when other edges have one is an error, not "forever". An
+edge may be active only while both endpoints are present, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/)'s
+consistency rule, and the constructor checks it when node spells are
+given.
+
+```{r}
+contacts <- data.frame(source = c("ana", "ana", "ben"),
+                       target = c("ben", "cy",  "cy"),
+                       start  = c(1, 1, 3),
+                       end    = c(3, 2, 6))
+contacts   # active on [1, 3), [1, 2), [3, 6)
+```
+
+**Panels.** Waves are time spells: wave k of a panel is the spell
+`[k, k + 1)` in a temporal netframe, so every window, snapshot, and
+rolling measure applies to panels unchanged. Planned helpers build the
+spells from a list of networks (one per wave, as [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/), networkDynamic's
+`network.list`, and the textbooks supply them) and split them back.
+
+**Node presence and time-varying attributes (planned).** A node is
+present during its spell and does not exist for measures outside it, not
+merely isolated. A node with several spells, and an attribute whose value
+changes over time (networkDynamic's temporally extended attributes;
+RSiena's behaviour variables per wave), go in optional long tables
+`node_spells` and `edge_spells` (identifier, `start`, `end`, and one
+column per time-varying attribute); the main tables keep one row per node
+and per edge, so `id` stays unique and results stay aligned.
+
+**Other tools.** networkDynamic (Butts et al. 2026) uses half-open
+activity spells with `-Inf`/`Inf` censoring, vertex and edge spells,
+toggles, and panel lists; tsna computes temporal paths on them.
+Raphtory (Steer et al. 2024) timestamps every update and views the same
+data as an event graph or a persistent graph with explicit deletions;
+teneto (Thompson, Brantefors, and Fransson 2017) uses (i, j, t) rows or
+a three-dimensional array; Pajek writes time intervals on vertices and
+lines and has an `*Events` format; RSiena takes arrays of adjacency
+matrices over waves with composition change in wave units; [igraph](https://r.igraph.org/),
+[NetworkX](https://networkx.org/), and [tidygraph](https://tidygraph.data-imaginist.com/) have none; [ORA](https://www.casos.cs.cmu.edu/projects/ora/) keeps one meta-network per
+period. Latapy, Viard, and Magnien (2018) use closed intervals.
+
+**Why.** Half-open spells match networkDynamic, the main R interchange
+partner, and make a sequence of windows a partition of time. Coding waves
+as unit spells gives one engine path for panels and event data, and the
+long-table plan for spells and time-varying attributes keeps the
+two-table contract and the alignment of results.
+
+## Spatial and spatio-temporal networks
+
+**Definition.** A spatial network has nodes and/or edges with geometry in
+one coordinate reference system; its edges are constrained by space but
+its adjacency is still given by the edge table, never inferred from
+geometry (Barthélemy 2011; Gastner and Newman 2006). A *planar* graph is
+one that can be drawn in the plane without edge crossings, a property of
+the structure that needs no coordinates; whether a particular geometry
+has crossings is a different, spatial question. Road networks are nearly
+but not exactly planar (bridges, tunnels).
+
+**In knappnet.** The `node_geometry`, `edge_geometry`, and `crs` roles,
+taken from sf geometry columns, on a `c("spatial_netframe", "netframe")`
+object; both tables must share a CRS. A spatio-temporal network combines
+the spatial and temporal roles on a
+`c("spatiotemporal_netframe", "spatial_netframe", "temporal_netframe",
+"netframe")` object: fixed geometries with timed edges and nodes
+(Williams and Musolesi 2016). Moving nodes are not represented; a
+trajectory would be modelled as node spells with a geometry attribute.
+knappnet does not require edge linestrings to end at node points; the
+check is available on request. A planarity test (graph) and a crossing
+count (geometry) are planned under distinct names.
+
+**Other tools.** sfnetworks (van der Meer et al. 2026) requires POINT
+nodes and LINESTRING edges whose ends match node coordinates unless
+forced, and one CRS for both tables; [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) hold coordinates
+as attributes only (NetworkX has a planarity check); [Pajek](http://mrvar.fdv.uni-lj.si/pajek/) stores drawing
+coordinates in the `.net` file; [ORA](https://www.casos.cs.cmu.edu/projects/ora/) has a Location node class. The
+[spatial networks](spatial-networks.html) article shows the functions.
+
+**Why.** Connectivity is the authoritative data, and geometry a
+description of it; requiring the two to agree at construction would
+reject real data (a flight edge drawn as a great circle, a node whose
+point is a centroid). "Planar" is used only in its graph-theoretic sense.
+
+## Ego networks
+
+**Definition.** The ego network of a node at order k consists of the node
+(ego), every node within k steps of it (the alters), and every edge among
+them; removing ego and its ties gives the order-1.5 network of ties among
+alters that egocentric surveys collect (Marsden 2002; Everett and
+Borgatti 2005). An *egocentric* dataset is a collection of such networks,
+one per sampled ego, usually with no ties across egos (Burt 1984; Perry,
+Pescosolido, and Borgatti 2018).
+
+**In knappnet.** Extraction from a whole network (today `ego_network()`)
+returns an ordinary netframe, with ego included by default. For
+egocentric survey data an `ego` role on nodes and edges is planned, so
+one netframe holds every ego's network and measures run per ego; the
+three-table shape (ego, alter, alter-alter tie) that egor uses and both R
+textbooks teach (Rawlings et al. 2023, ch. 6; Shafie and Schoch 2026,
+ch. 8) is the planned import and export bridge.
+
+**Other tools.** [igraph](https://r.igraph.org/)'s `make_ego_graph()` and [NetworkX](https://networkx.org/)'s `ego_graph()`
+include ego; egor's conversion excludes ego by default, a difference the
+help page states; [sna](https://cran.r-project.org/package=sna) has `ego.extract`; [UCINET](https://sites.google.com/site/ucinetsoftware/home) and [ORA](https://www.casos.cs.cmu.edu/projects/ora/) have ego-network
+routines, and Borgatti et al. (2022, ch. 8) treat ego measures before
+centrality.
+
+## Whole and sampled networks
+
+**Definition.** A complete (whole, sociocentric) network records every
+tie among all nodes within a declared boundary; deciding who is inside
+it is the boundary specification problem (Marsden 1990). A partial
+network is anything else: sampled nodes (random, snowball,
+respondent-driven), sampled dyads, fixed-choice instruments, or
+egocentric collection (Handcock and Gile 2010). Kadushin (2012) organises
+the field around whole versus ego-centred networks; Hanneman and Riddle
+(2005, ch. 1) make the same split.
+
+**In knappnet.** Not structural. Design metadata (boundary, sampling,
+instrument, fixed-choice limit) is recorded in `graph$design`, which
+measures do not read and which reports can print. No tool represents
+design, and knappnet does not pretend to compute with it.
+
+## Missing data (provisional)
+
+**Definitions.** An *absent* tie was observed not to exist: no row. A
+*missing* tie is a dyad whose status was not observed (non-response,
+out-of-range, censoring). A *missing node* is a known node whose own
+ties were not observed, a non-respondent, whose incoming ties reported by
+others may still be known. A *structural zero* is a dyad that cannot be
+tied by design and is excluded from denominators and models; a
+*structural one* is fixed as present (Kossinets 2006; Robins, Pattison,
+and Woolcock 2004; Wasserman and Faust 1994, ch. 2).
+
+**In knappnet (provisional, after the core changes).** An `na` node role
+marks non-respondents, the operational notion in the textbooks (Rawlings
+et al. 2023, ch. 4, where a non-respondent's row is entirely `NA` and a
+zero in their column does not mean the tie would not have been
+reciprocated). An `na` edge role marks dyads whose status is unknown.
+Measures stop when any unresolved `na` node or edge exists unless an
+`na_action` says what to do (treat as absent, as present, or exclude the
+dyad from denominators), mirroring the existing rule that `NA` weights
+are stored but refused. Structural zeros and ones are better kept as a
+rule or a pair table than as rows, since in edge-list form they are
+mostly absent pairs; that representation is still open.
+
+**Other tools.** `network` marks missing edges with an `na` attribute and
+returns `NA` from the adjacency matrix for them; [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/) codes `NA` for
+missing, 10 for structural zeros, and 11 for structural ones (Ripley et
+al. 2026); [UCINET](https://sites.google.com/site/ucinetsoftware/home) has a missing-value code that routines treat
+differently; [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [tidygraph](https://tidygraph.data-imaginist.com/), [Pajek](http://mrvar.fdv.uni-lj.si/pajek/), and [ORA](https://www.casos.cs.cmu.edu/projects/ora/) do not
+distinguish missing from absent. Borgatti, Carley, and Krackhardt (2006)
+and Kossinets (2006) are the standard references on what missingness does
+to measures.
+
+## Hypergraphs and simplicial complexes (out of scope)
+
+**Definitions.** A hypergraph is a node set with a family of hyperedges,
+each a non-empty subset of nodes of any size; a simplicial complex is a
+hypergraph closed under taking subsets (Battiston et al. 2020; Bianconi
+2021). Both share the incidence structure of a two-mode network (nodes by
+hyperedges) but are not two-mode networks: a hyperedge has no identity
+beyond its member set, a duplicate hyperedge means multiplicity, and
+simplicial closure is a constraint no two-mode network has (Torres et al.
+2021 discuss when each representation is right).
+
+**In knappnet.** Not first-class; an edge has two endpoints. The
+documented exchange is a two-mode netframe with `mode = c("node",
+"hyperedge")`, and the clique expansion to a weighted one-mode network is
+the ordinary two-mode projection:
+
+```{r}
+hyperedges <- data.frame(source = c("ana", "ben", "cy", "ana", "dee"),
+                         target = c("h1",  "h1",  "h1", "h2",  "h2"))
+hyperedges   # h1 = {ana, ben, cy}, h2 = {ana, dee}
+```
+
+`network` supports hyperedges with `hyper = TRUE`; XGI (Landry et al.
+2023) is the reference library for higher-order data. Measures on
+hypergraphs are out of scope until a need appears.
+
+## A glossary of clashes
+
+| knappnet says | Also called | Means something else in |
+|---|---|---|
+| parallel edges | multi-edges, multiple lines | `network`: "multiplex edges" |
+| multiplex (relations) | multirelational, edge-coloured | `network`'s `multiple` flag (parallel edges); Raphtory and graph-tool: "layer" |
+| multilayer (node-layers) | multislice (Mucha et al. 2010) | Raphtory: edge colouring |
+| multilevel (Lazega/Snijders) | linked design | statistics: hierarchical models; Kivelä et al.: a synonym of multilayer |
+| two-mode (declared) | affiliation, bipartite in SNA usage | graph theory: 2-colourable |
+| bipartite (property) | 2-colourable, no odd cycle | [igraph](https://r.igraph.org/) R: "has a `type` attribute"; SNA: two-mode |
+| link stream, contact sequence | temporal network | Holme and Saramäki: "interval graph", which in graph theory is a different object |
+| planar (graph) | | geometry: no crossing linestrings |
+| distance weight | cost, length | igraph's `strength()`: the same column as an intensity |
+| strength weight | intensity, frequency | igraph's `distances()`: the same column as a length |
+
+## References
+
+Almeida-Silva, F. (2024). *Network Analysis in R*. Course materials.
+<https://almeidasilvaf.github.io/NAR/>
+
+Barrat, A., Barthélemy, M., Pastor-Satorras, R., & Vespignani, A. (2004).
+The architecture of complex weighted networks. *Proceedings of the
+National Academy of Sciences*, 101(11), 3747-3752.
+<https://doi.org/10.1073/pnas.0400087101>
+
+Barthélemy, M. (2011). Spatial networks. *Physics Reports*, 499(1-3),
+1-101. <https://doi.org/10.1016/j.physrep.2010.11.002>
+
+Batagelj, V., & Mrvar, A. (2026). *Pajek: Program for Analysis and
+Visualization of Large Networks. Reference Manual*.
+<http://mrvar.fdv.uni-lj.si/pajek/pajekman.pdf>
+
+Battiston, F., Cencetti, G., Iacopini, I., Latora, V., Lucas, M.,
+Patania, A., Young, J.-G., & Petri, G. (2020). Networks beyond pairwise
+interactions: Structure and dynamics. *Physics Reports*, 874, 1-92.
+<https://doi.org/10.1016/j.physrep.2020.05.004>
+
+Battiston, F., Nicosia, V., & Latora, V. (2014). Structural measures for
+multiplex networks. *Physical Review E*, 89(3), 032804.
+<https://doi.org/10.1103/PhysRevE.89.032804>
+
+Bianconi, G. (2021). *Higher-Order Networks: An Introduction to
+Simplicial Complexes*. Cambridge University Press.
+<https://doi.org/10.1017/9781108770996>
+
+Borgatti, S. P., Carley, K. M., & Krackhardt, D. (2006). On the
+robustness of centrality measures under conditions of imperfect data.
+*Social Networks*, 28(2), 124-136.
+<https://doi.org/10.1016/j.socnet.2005.05.001>
+
+Borgatti, S. P., & Everett, M. G. (1997). Network analysis of 2-mode
+data. *Social Networks*, 19(3), 243-269.
+<https://doi.org/10.1016/S0378-8733(96)00301-2>
+
+Borgatti, S. P., Everett, M. G., Johnson, J. C., & Agneessens, F. (2022).
+*Analyzing Social Networks Using R*. SAGE.
+
+Breiger, R. L. (1974). The duality of persons and groups. *Social
+Forces*, 53(2), 181-190. <https://doi.org/10.1093/sf/53.2.181>
+
+Burt, R. S. (1984). Network items and the General Social Survey. *Social
+Networks*, 6(4), 293-339.
+<https://doi.org/10.1016/0378-8733(84)90007-8>
+
+Butts, C. T. (2008). network: A package for managing relational data in
+R. *Journal of Statistical Software*, 24(2), 1-36.
+<https://doi.org/10.18637/jss.v024.i02>
+
+Butts, C. T., Leslie-Cook, A., Krivitsky, P. N., & Bender-deMoll, S.
+(2026). networkDynamic: Dynamic extensions for network objects. R package
+version 0.12.0. <https://CRAN.R-project.org/package=networkDynamic>
+
+Cartwright, D., & Harary, F. (1956). Structural balance: A generalization
+of Heider's theory. *Psychological Review*, 63(5), 277-293.
+<https://doi.org/10.1037/h0046049>
+
+Casteigts, A., Flocchini, P., Quattrociocchi, W., & Santoro, N. (2012).
+Time-varying graphs and dynamic networks. *International Journal of
+Parallel, Emergent and Distributed Systems*, 27(5), 387-408.
+<https://doi.org/10.1080/17445760.2012.668546>
+
+Csardi, G., & Nepusz, T. (2006). The [igraph](https://r.igraph.org/) software package for complex
+network research. *InterJournal, Complex Systems*, 1695.
+
+Cunningham, D., Everton, S., & Murphy, P. (2016). *Understanding Dark
+Networks: A Strategic Framework for the Use of Social Network Analysis*.
+Rowman & Littlefield.
+
+De Domenico, M., Solé-Ribalta, A., Cozzo, E., Kivelä, M., Moreno, Y.,
+Porter, M. A., Gómez, S., & Arenas, A. (2013). Mathematical formulation
+of multilayer networks. *Physical Review X*, 3(4), 041022.
+<https://doi.org/10.1103/PhysRevX.3.041022>
+
+Doreian, P., & Mrvar, A. (1996). A partitioning approach to structural
+balance. *Social Networks*, 18(2), 149-168.
+<https://doi.org/10.1016/0378-8733(95)00259-6>
+
+Epskamp, S., Cramer, A. O. J., Waldorp, L. J., Schmittmann, V. D., &
+Borsboom, D. (2012). qgraph: Network visualizations of relationships in
+psychometric data. *Journal of Statistical Software*, 48(4).
+<https://doi.org/10.18637/jss.v048.i04>
+
+Everett, M., & Borgatti, S. P. (2005). Ego network betweenness. *Social
+Networks*, 27(1), 31-38. <https://doi.org/10.1016/j.socnet.2004.11.007>
+
+Fararo, T. J., & Doreian, P. (1984). Tripartite structural analysis:
+Generalizing the Breiger-Wilson formalism. *Social Networks*, 6(2),
+141-175. <https://doi.org/10.1016/0378-8733(84)90015-7>
+
+Gastner, M. T., & Newman, M. E. J. (2006). The spatial structure of
+networks. *The European Physical Journal B*, 49(2), 247-252.
+<https://doi.org/10.1140/epjb/e2006-00046-8>
+
+Hagberg, A. A., Schult, D. A., & Swart, P. J. (2008). Exploring network
+structure, dynamics, and function using [NetworkX](https://networkx.org/). *Proceedings of the 7th
+Python in Science Conference*, 11-15.
+
+Handcock, M. S., & Gile, K. J. (2010). Modeling social networks from
+sampled data. *The Annals of Applied Statistics*, 4(1), 5-25.
+<https://doi.org/10.1214/08-AOAS221>
+
+Hanneman, R. A., & Riddle, M. (2005). *Introduction to Social Network
+Methods*. University of California, Riverside.
+<https://faculty.ucr.edu/~hanneman/nettext/>
+
+Harary, F. (1953). On the notion of balance of a signed graph. *Michigan
+Mathematical Journal*, 2(2), 143-146.
+<https://doi.org/10.1307/mmj/1028989917>
+
+Holme, P., & Saramäki, J. (2012). Temporal networks. *Physics Reports*,
+519(3), 97-125. <https://doi.org/10.1016/j.physrep.2012.03.001>
+
+Kadushin, C. (2012). *Understanding Social Networks: Theories, Concepts,
+and Findings*. Oxford University Press.
+
+Kivelä, M., Arenas, A., Barthelemy, M., Gleeson, J. P., Moreno, Y., &
+Porter, M. A. (2014). Multilayer networks. *Journal of Complex Networks*,
+2(3), 203-271. <https://doi.org/10.1093/comnet/cnu016>
+
+Kossinets, G. (2006). Effects of missing data in social networks. *Social
+Networks*, 28(3), 247-268.
+<https://doi.org/10.1016/j.socnet.2005.07.002>
+
+Landry, N. W., Lucas, M., Iacopini, I., Petri, G., Schwarze, A., Patania,
+A., & Torres, L. (2023). XGI: A Python package for higher-order
+interaction networks. *Journal of Open Source Software*, 8(85), 5162.
+<https://doi.org/10.21105/joss.05162>
+
+Latapy, M., Viard, T., & Magnien, C. (2018). Stream graphs and link
+streams for the modeling of interactions over time. *Social Network
+Analysis and Mining*, 8(1), 61.
+<https://doi.org/10.1007/s13278-018-0537-7>
+
+Lazega, E., Jourda, M.-T., Mounier, L., & Stofer, R. (2008). Catching up
+with big fish in the big pond? Multi-level network analysis through
+linked design. *Social Networks*, 30(2), 159-176.
+<https://doi.org/10.1016/j.socnet.2008.02.001>
+
+Lazega, E., & Snijders, T. A. B. (Eds.). (2016). *Multilevel Network
+Analysis for the Social Sciences: Theory, Methods and Applications*.
+Springer. <https://doi.org/10.1007/978-3-319-24520-1>
+
+Lekkerkerker, C. G., & Boland, J. Ch. (1962). Representation of a finite
+graph by a set of intervals on the real line. *Fundamenta Mathematicae*,
+51(1), 45-64. <https://doi.org/10.4064/fm-51-1-45-64>
+
+Magnani, M., Rossi, L., & Vega, D. (2021). Analysis of multiplex social
+networks with R. *Journal of Statistical Software*, 98(8).
+<https://doi.org/10.18637/jss.v098.i08>
+
+Marsden, P. V. (1990). Network data and measurement. *Annual Review of
+Sociology*, 16(1), 435-463.
+<https://doi.org/10.1146/annurev.so.16.080190.002251>
+
+Marsden, P. V. (2002). Egocentric and sociocentric measures of network
+centrality. *Social Networks*, 24(4), 407-422.
+<https://doi.org/10.1016/S0378-8733(02)00016-3>
+
+Masuda, N., & Lambiotte, R. (2016). *A Guide to Temporal Networks*. World
+Scientific. <https://doi.org/10.1142/q0033>
+
+Mucha, P. J., Richardson, T., Macon, K., Porter, M. A., & Onnela, J.-P.
+(2010). Community structure in time-dependent, multiscale, and multiplex
+networks. *Science*, 328(5980), 876-878.
+<https://doi.org/10.1126/science.1184819>
+
+Newman, M. E. J. (2001). Scientific collaboration networks. II. Shortest
+paths, weighted networks, and centrality. *Physical Review E*, 64(1),
+016132. <https://doi.org/10.1103/PhysRevE.64.016132>
+
+Newman, M. E. J. (2004). Analysis of weighted networks. *Physical Review
+E*, 70(5), 056131. <https://doi.org/10.1103/PhysRevE.70.056131>
+
+Newman, M. (2018). *Networks* (2nd ed.). Oxford University Press.
+<https://doi.org/10.1093/oso/9780198805090.001.0001>
+
+Nurmi, T., Badie-Modiri, A., Coupette, C., & Kivelä, M. (2024). pymnet: A
+Python library for multilayer networks. *Journal of Open Source
+Software*, 9(99), 6930. <https://doi.org/10.21105/joss.06930>
+
+Opsahl, T., Agneessens, F., & Skvoretz, J. (2010). Node centrality in
+weighted networks: Generalizing degree and shortest paths. *Social
+Networks*, 32(3), 245-251.
+<https://doi.org/10.1016/j.socnet.2010.03.006>
+
+Pedersen, T. L. (2017). tidygraph: A tidy API for graph manipulation. R
+package. <https://CRAN.R-project.org/package=tidygraph>
+
+Perry, B. L., Pescosolido, B. A., & Borgatti, S. P. (2018). *Egocentric
+Network Analysis: Foundations, Methods, and Models*. Cambridge University
+Press. <https://doi.org/10.1017/9781316443255>
+
+Rawlings, C. M., Smith, J. A., Moody, J., & McFarland, D. A. (2023).
+*Network Analysis: Integrating Social Network Theory, Method, and
+Application with R*. Cambridge University Press.
+<https://inarwhal.github.io/NetworkAnalysisR-book/>
+
+Ripley, R. M., Snijders, T. A. B., Boda, Z., & Vörös, A. (2026). *Manual
+for [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/)*. University of Oxford and University of Groningen.
+<https://www.stats.ox.ac.uk/~snijders/siena/RSiena_Manual.pdf>
+
+Robins, G., Pattison, P., & Woolcock, J. (2004). Missing data in
+networks: Exponential random graph (p*) models for networks with
+non-respondents. *Social Networks*, 26(3), 257-283.
+<https://doi.org/10.1016/j.socnet.2004.05.001>
+
+Shafie, T., & Schoch, D. (2026). *R for Social Network Analysis*. Online
+book. <https://schochastics.github.io/R4SNA/>
+
+Snijders, T. A. B., van de Bunt, G. G., & Steglich, C. E. G. (2010).
+Introduction to stochastic actor-based models for network dynamics.
+*Social Networks*, 32(1), 44-60.
+<https://doi.org/10.1016/j.socnet.2009.02.004>
+
+Steer, B., Arnold, N. A., Tidiane, C., et al. (2024). Raphtory: The
+temporal graph engine for Rust and Python. *Journal of Open Source
+Software*, 9(95), 5940. <https://doi.org/10.21105/joss.05940>
+
+Thompson, W. H., Brantefors, P., & Fransson, P. (2017). From static to
+temporal network theory: Applications to functional brain connectivity.
+*Network Neuroscience*, 1(2), 69-99.
+<https://doi.org/10.1162/NETN_a_00011>
+
+Torres, L., Blevins, A. S., Bassett, D., & Eliassi-Rad, T. (2021). The
+why, how, and when of representations for complex systems. *SIAM
+Review*, 63(3), 435-485. <https://doi.org/10.1137/20M1355896>
+
+Tsvetovat, M., Reminga, J., & Carley, K. M. (2004). *DyNetML: Interchange
+format for rich social network data* (Technical Report CMU-ISRI-04-105).
+Carnegie Mellon University. <https://doi.org/10.1184/R1/6622022.v1>
+
+van der Meer, L., Abad, L., Gilardi, A., & Lovelace, R. (2026).
+sfnetworks: Tidy geospatial networks. R package version 0.6.6.
+<https://CRAN.R-project.org/package=sfnetworks>
+
+Wang, P., Robins, G., Pattison, P., & Lazega, E. (2013). Exponential
+random graph models for multilevel networks. *Social Networks*, 35(1),
+96-115. <https://doi.org/10.1016/j.socnet.2013.01.004>
+
+Wasserman, S., & Faust, K. (1994). *Social Network Analysis: Methods and
+Applications*. Cambridge University Press.
+<https://doi.org/10.1017/CBO9780511815478>
+
+Wiederstein, R. (2021). *Network Analysis in R*. Online tutorial.
+<https://robwiederstein.github.io/network_analysis/>
+
+Williams, M. J., & Musolesi, M. (2016). Spatio-temporal networks:
+Reachability, centrality and robustness. *Royal Society Open Science*,
+3(6), 160196. <https://doi.org/10.1098/rsos.160196>
