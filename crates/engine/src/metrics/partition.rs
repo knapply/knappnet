@@ -12,11 +12,16 @@
 //! - Groups are labelled 0, 1, ... in order of their first node.
 
 pub mod compare;
+pub mod dendrogram;
 pub mod fast_greedy;
 pub mod girvan_newman;
 pub mod leading_eigen;
 
 pub use compare::{compare_partitions, split_join_distance, CompareMethod};
+pub use dendrogram::{
+    check_merges, cut_at_groups, cut_at_max_modularity, cut_dendrogram, dendrogram_modularity,
+    merges_from_edge_removals, merges_from_node_pairs,
+};
 pub use fast_greedy::{fast_greedy, FastGreedy};
 pub use girvan_newman::{girvan_newman, GirvanNewman};
 pub use leading_eigen::{leading_eigen, LeadingEigen};
