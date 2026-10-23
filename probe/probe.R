@@ -1,21 +1,20 @@
 suppressPackageStartupMessages(library(RSiena))
-n <- 4
-w1 <- matrix(0, n, n); w1[cbind(c(1, 2, 3, 1), c(2, 3, 1, 4))] <- 1
-w2 <- w1; w2[cbind(c(4, 2), c(1, 1))] <- 1
-w3 <- w2; w3[2, 4] <- 1
-net <- sienaDependent(array(c(w1, w2, w3), dim = c(n, n, 3)))
-show <- function(label, m) {
-  ch <- varCovar(m)
-  dat <- sienaDataCreate(net, ch)
-  a <- attributes(dat$vCovars$ch)
-  cat(label, ": mean", a$mean, " range", a$range, " simMeans", a$simMeans, "\n")
+toggle <- function(a, mult, add, mod) {
+  n <- nrow(a)
+  for (i in 0:(n - 1)) for (j in 0:(n - 1))
+    if (i != j && (mult * (i * n + j) + add) %% mod == 0) a[i + 1, j + 1] <- 1 - a[i + 1, j + 1]
+  a
 }
-show("A same columns 0..3", cbind(0:3, 0:3))
-show("B col2 1,1,3,3", cbind(0:3, c(1, 1, 3, 3)))
-show("C col2 all 0", cbind(0:3, c(0, 0, 0, 0)))
-show("D col1 1,1,3,3 col2 0..3", cbind(c(1, 1, 3, 3), 0:3))
-show("E three cols", cbind(0:3, c(1, 1, 3, 3), c(3, 0, 0, 0)))
-co <- coCovar(0:3)
-dat <- sienaDataCreate(net, co)
-a <- attributes(dat$cCovars$co)
-cat("constant 0..3: mean", a$mean, " range", a$range, " simMean", a$simMean, "\n")
+w1 <- matrix(0, 2, 2); w1[1, 2] <- 1
+w2 <- toggle(w1, 37, 11, 7); w3 <- toggle(w2, 53, 5, 9)
+print(list(w1, w2, w3))
+net <- sienaDependent(array(c(w1, w2, w3), dim = c(2, 2, 3)))
+dat <- sienaDataCreate(net)
+eff <- getEffects(dat)
+print(eff[eff$include, c("shortName", "type")])
+r <- tryCatch({
+  eff2 <- includeEffects(eff, "density", character = TRUE, verbose = FALSE)
+  alg <- sienaAlgorithmCreate(nsub = 0, n3 = 5, cond = FALSE, simOnly = TRUE, seed = 1, projname = NULL)
+  ans <- siena07(alg, data = dat, effects = eff2, batch = TRUE, silent = TRUE)
+  print(ans$requestedEffects[, c("shortName", "type")]); print(ans$targets2)
+}, error = function(e) cat("ERROR:", conditionMessage(e), "\n"))
