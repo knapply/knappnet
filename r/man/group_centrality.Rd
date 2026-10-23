@@ -93,7 +93,16 @@ University Press. \doi{10.1017/CBO9781139136877}
 \code{\link{key_players}}, \code{\link{flow_betweenness}}
 }
 \examples{
-# A hypothetical chain of command: orders flow from the leaders down to
+# The Jemaah Islamiyah cell behind the 2002 Bali bombings (Koschade 2006):
+# how central is each role group as a whole?
+ji <- example_network("jemaah_islamiyah")
+roles <- split(ji$nodes$name, ji$nodes$role)
+for (measure in c("degree", "closeness", "betweenness")) {
+  print(sapply(roles, function(members) group_centrality(ji, members, measure, threads = 2)))
+}
+
+# In a directed network, closeness can be measured from the group or to
+# it. A hypothetical chain of command: orders flow from the leaders down to
 # two operational cells.
 orders <- data.frame(
   from = c("boss", "boss", "lt1", "lt1", "lt2", "lt2", "op3", "lt2"),
@@ -101,10 +110,6 @@ orders <- data.frame(
 )
 g <- netframe(orders)
 leaders <- c("boss", "lt1")
-
-group_centrality(g, leaders, "degree")
-group_centrality(g, leaders, "betweenness")
-
 # Closeness from the group, along the direction orders travel.
 group_centrality(g, leaders, "closeness", mode = "out")
 # Closeness to the group, as NetworkX's group_closeness_centrality()

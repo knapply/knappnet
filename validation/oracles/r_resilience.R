@@ -66,9 +66,12 @@ sna_values <- function(variant, m, mw, meta) {
   )
 }
 
+# One node at a time: a vector of nodes would score them as one set.
 keyplayer_values <- function(variant, m) {
   switch(variant,
-    kpp_distance_fragmentation_single = keyplayer::fragment(m, binary = TRUE),
+    kpp_distance_fragmentation_single =
+      vapply(seq_len(nrow(m)), function(v) keyplayer::fragment(m, v, binary = TRUE),
+             numeric(1)),
     NULL
   )
 }

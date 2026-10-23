@@ -1409,7 +1409,7 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(!better(e.score, a.score) || e.score >= a.score);
+        // The exact optimum is never worse than the greedy result.
         assert!(e.score >= a.score - 1e-12);
     }
 

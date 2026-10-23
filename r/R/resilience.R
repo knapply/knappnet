@@ -148,24 +148,16 @@ check_reach_limit <- function(m) {
   as.double(m)
 }
 
-# Positions (1-based) of a set of distinct node identifiers in x$nodes.
+# Positions (1-based) of a set of distinct node identifiers in x$nodes:
+# node_positions() with the checks a set needs.
 set_positions <- function(x, nodes, what, allow_empty) {
-  if (!is.atomic(nodes) || (!allow_empty && !length(nodes))) {
+  if (!is.atomic(nodes) || is.null(nodes) || (!allow_empty && !length(nodes))) {
     stop(sprintf("`%s` must be a vector of node identifiers.", what), call. = FALSE)
   }
-  ids <- x$nodes[[x$roles$id]]
-  if (is.factor(ids)) ids <- as.character(ids)
-  if (is.factor(nodes)) nodes <- as.character(nodes)
   if (anyNA(nodes)) {
     stop(sprintf("`%s` must not contain missing values (NA).", what), call. = FALSE)
   }
-  pos <- match(nodes, ids)
-  if (anyNA(pos)) {
-    shown <- utils::head(unique(nodes[is.na(pos)]), 5L)
-    stop(sprintf("%d node(s) in `%s` are not in the network, for example: %s.",
-                 length(unique(nodes[is.na(pos)])), what,
-                 paste(format(shown), collapse = ", ")), call. = FALSE)
-  }
+  pos <- node_positions(x, nodes, what)
   if (anyDuplicated(pos)) {
     stop(sprintf("`%s` lists a node more than once.", what), call. = FALSE)
   }

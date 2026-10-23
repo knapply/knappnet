@@ -160,3 +160,60 @@ test_that("flow betweenness uses capacities when asked", {
   neg <- netframe(transform(e, w = -w), directed = FALSE, weight = "w")
   expect_error(flow_betweenness(neg, capacity = TRUE), "non-negative")
 })
+
+# Krackhardt's kite as an undirected edge list.
+kite_edges <- function() {
+  data.frame(
+    from = c(1, 1, 1, 1, 2, 2, 2, 3, 3, 4, 4, 5, 6, 6, 7, 8, 9),
+    to   = c(2, 3, 4, 6, 4, 5, 7, 4, 6, 5, 6, 7, 7, 8, 8, 9, 10)
+  )
+}
+
+test_that("flow betweenness matches sna", {
+  skip_if_not_installed("sna")
+  g <- netframe(kite_edges(), nodes = data.frame(id = 1:10), directed = FALSE)
+  m <- as.matrix(g)
+  for (scale in c("raw", "normalized", "fractional")) {
+    cmode <- switch(scale, raw = "rawflow", normalized = "normflow", fractional = "fracflow")
+    expect_equal(flow_betweenness(g, scale, threads = 2),
+                 unname(sna::flowbet(m, gmode = "graph", cmode = cmode, ignore.eval = TRUE)),
+                 tolerance = 1e-10, info = scale)
+  }
+  # Directed, with capacities.
+  set.seed(2)
+  e <- data.frame(from = sample(8, 24, TRUE), to = sample(8, 24, TRUE), w = sample(1:3, 24, TRUE))
+  e <- e[e$from != e$to & !duplicated(e[c("from", "to")]), ]
+  d <- netframe(e, nodes = data.frame(id = 1:8), weight = "w", weight_type = "strength")
+  md <- matrix(0, 8, 8)
+  md[cbind(e$from, e$to)] <- e$w
+  expect_equal(flow_betweenness(d, threads = 2),
+               unname(sna::flowbet(md, gmode = "digraph", cmode = "rawflow")), tolerance = 1e-10)
+  expect_equal(flow_betweenness(d, capacity = FALSE, threads = 2),
+               unname(sna::flowbet(md, gmode = "digraph", cmode = "rawflow", ignore.eval = TRUE)),
+               tolerance = 1e-10)
+})
+
+test_that("distance-weighted fragmentation matches keyplayer's fragmentation centrality", {
+  skip_if_not_installed("keyplayer")
+  g <- netframe(kite_edges(), nodes = data.frame(id = 1:10), directed = FALSE)
+  m <- as.matrix(g)
+  ours <- vapply(1:10, function(v) key_player_score(g, v, "distance_fragmentation"), numeric(1))
+  theirs <- vapply(1:10, function(v) keyplayer::fragment(m, v, binary = TRUE), numeric(1))
+  expect_equal(ours, unname(theirs), tolerance = 1e-10)
+})
+
+test_that("the example networks give the published key players", {
+  ji <- example_network("jemaah_islamiyah")
+  kp <- key_players(ji, 2, "fragmentation", seed = 1, threads = 2)
+  expect_equal(sort(kp$set), c("Muklas", "Samudra"))
+  expect_equal(kp$score, key_player_score(ji, kp$set))
+  ex <- key_players(ji, 2, "fragmentation", method = "exact", threads = 2)
+  expect_equal(ex$set, kp$set)
+  expect_equal(ex$evaluations, choose(17, 2))
+  expect_equal(key_players(ji, 1, "distance_reach", method = "exact", threads = 2)$set, "Samudra")
+  command <- ji$nodes$name[ji$nodes$role == "command team"]
+  expect_equal(group_centrality(ji, command, "degree"), 13 / 14)
+  fb <- flow_betweenness(ji, threads = 2)
+  expect_equal(ji$nodes$name[which.max(fb)], "Samudra")
+  expect_equal(fb[ji$nodes$name == "Samudra"], 317)
+})

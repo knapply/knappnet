@@ -128,26 +128,25 @@ players in social networks. \emph{The R Journal}, 8(1), 257-268.
 }
 \seealso{
 \code{\link{fragmentation}}, \code{\link{group_centrality}},
-\code{\link{flow_betweenness}}
+\code{\link{flow_betweenness}}; \code{\link{example_network}} for the
+networks in the examples.
 }
 \examples{
-# A hypothetical covert network: two cells whose leaders (a1, b1) are
-# linked only through a courier, and a financier tied to both cells.
-cells <- data.frame(
-  from = c("a1", "a1", "a2", "b1", "b1", "b2", "a1", "courier", "fin", "fin"),
-  to   = c("a2", "a3", "a3", "b2", "b3", "b3", "courier", "b1", "a2", "b2")
-)
-g <- netframe(cells, directed = FALSE)
+# The Jemaah Islamiyah cell behind the 2002 Bali bombings (Koschade 2006).
+ji <- example_network("jemaah_islamiyah")
 
-# Whom to remove to split the network apart (KPP-Neg).
-key_players(g, k = 2, measure = "fragmentation", seed = 1, threads = 1)
-key_players(g, k = 2, measure = "distance_fragmentation", method = "exact",
-            threads = 1)
+# Whom to remove to break the cell apart (KPP-Neg): the greedy search and
+# exact enumeration both pick Muklas, the overall leader, and Samudra, the
+# field commander.
+key_players(ji, k = 2, measure = "fragmentation", seed = 1, threads = 2)
+key_players(ji, k = 2, measure = "distance_fragmentation", method = "exact",
+            threads = 2)
 
-# Whom to watch to reach everyone quickly (KPP-Pos).
-key_players(g, k = 1, measure = "distance_reach", method = "exact", threads = 1)
-key_players(g, k = 2, measure = "m_reach", m = 1, method = "exact", threads = 1)
+# Whom to watch to reach the whole cell quickly (KPP-Pos).
+key_players(ji, k = 1, measure = "distance_reach", method = "exact", threads = 2)
+key_players(ji, k = 2, measure = "m_reach", m = 1, method = "exact", threads = 2)
 
-# Scoring a set chosen by hand.
-key_player_score(g, c("a1", "b1"), measure = "fragmentation")
+# Scoring a set chosen by hand: the command team.
+command <- ji$nodes$name[ji$nodes$role == "command team"]
+key_player_score(ji, command, measure = "fragmentation")
 }

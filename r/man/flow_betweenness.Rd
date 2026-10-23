@@ -98,22 +98,22 @@ University Press. \doi{10.1017/CBO9781139136877}
 \code{\link{group_centrality}}
 }
 \examples{
-# A hypothetical covert network: two cells whose leaders (a1, b1) are
-# linked through a courier, and a financier tied to both cells.
-cells <- data.frame(
-  from = c("a1", "a1", "a2", "b1", "b1", "b2", "a1", "courier", "fin", "fin"),
-  to   = c("a2", "a3", "a3", "b2", "b3", "b3", "courier", "b1", "a2", "b2")
-)
-g <- netframe(cells, directed = FALSE)
+# The Jemaah Islamiyah cell behind the 2002 Bali bombings (Koschade 2006).
+ji <- example_network("jemaah_islamiyah")
 
 # Freeman, Borgatti, and White's totals (UCINET; sna cmode = "rawflow").
-flow_betweenness(g, threads = 1)
+# Samudra, the field commander, carries most of the flow.
+fb <- flow_betweenness(ji, threads = 2)
+head(sort(setNames(fb, ji$nodes$name), decreasing = TRUE))
 # Divided by the flow between other pairs (UCINET's normalized scores, as
 # proportions; sna cmode = "normflow").
-flow_betweenness(g, scale = "normalized", threads = 1)
+flow_betweenness(ji, scale = "normalized", threads = 2)
 # Shares of each pair's flow, summed (sna cmode = "fracflow").
-flow_betweenness(g, scale = "fractional", threads = 1)
+flow_betweenness(ji, scale = "fractional", threads = 2)
 
 # Shortest-path betweenness credits only the shortest routes.
-betweenness(g)
+betweenness(ji, threads = 2)
+
+# With the interaction strengths as capacities.
+flow_betweenness(example_network("jemaah_islamiyah", weighted = TRUE), threads = 2)
 }

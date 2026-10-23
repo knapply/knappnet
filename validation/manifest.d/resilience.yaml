@@ -43,13 +43,14 @@ kpp_distance_fragmentation_single:
     definition:
       call: "1 - sum over ordered pairs of 1/d / (n'(n' - 1)) in G - v (Borgatti 2006, eq. 9)"
     keyplayer:
-      call: "keyplayer::fragment(adjacency, binary = TRUE): 1 - sum_{j,k != i} 1/d_jk / ((n - 1)(n - 2)) (An and Liu 2016)"
+      call: "keyplayer::fragment(adjacency, v, binary = TRUE) for each node v: 1 - sum_{j,k != v} 1/d_jk / (d (n - 1)(n - 2)), d the largest 1/d_jk (An and Liu 2016, eq. 7)"
       undefined_when: [directed]
       undefined_on: [single_node, star8]
       undefined_reason: >-
         keyplayer's fragmentation is not directional, so it is compared on
         undirected networks only. Its formula divides by the largest inverse
-        distance in the residual network, which is undefined when removing
+        distance in the residual network (1 on a binary network with any tie
+        left, which makes it Borgatti's DF), so it is undefined when removing
         a node leaves no ties (the centre of star8) or no pairs (one node).
 
 kpp_distance_fragmentation_single_weighted:
