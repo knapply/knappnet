@@ -5,11 +5,12 @@
 proximity_network(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                   radius = 6371008.7714, within = NULL, k = NULL,
                   knn = c("directed", "either", "mutual"), id = 1L,
-                  threads = 0L)
+                  threads = 0L, exact = FALSE)
 }
 \arguments{
-\item{nodes}{A data frame of points, or a spatial netframe (its nodes and
-coordinate record are used).}
+\item{nodes}{A data frame of points, a spatial netframe (its nodes and
+coordinate record are used), or an sf data frame of any geometry type (see
+Details).}
 \item{coords}{The two columns of \code{nodes} holding the coordinates, by
 name or position: longitude then latitude for \code{crs = "lonlat"}, x
 then y for \code{"planar"}.}
@@ -27,10 +28,17 @@ from each point to each of its neighbours; \code{"either"} makes an
 undirected edge wherever at least one of the two points lists the other;
 \code{"mutual"} only where both do.}
 \item{id}{Column of \code{nodes} holding node identifiers, as in
-\code{\link{netframe}}.}
+\code{\link{netframe}}. For sf nodes, the default is the first column other
+than the geometry; a table with no other column gets a new column \code{id}
+numbering the features.}
 \item{threads}{Number of threads, a whole number; \code{0} uses all available
 cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
 \code{\link{netframe}}).}
+\item{exact}{For sf nodes only: whether to measure distances between the
+geometries themselves with \code{\link[sf]{st_distance}} (so two polygons
+that touch are at distance 0) rather than between their representative
+points. Exact distances with \code{k} compute every pair, so they are
+limited to 5000 features.}
 }
 \value{A spatial netframe (see \code{\link{spatial_network}}) with edge
 columns \code{from}, \code{to}, and \code{distance}.}
@@ -52,6 +60,14 @@ fewer than \code{k} other points gets them all. The edges carry a
 \code{distance} column, which is the network's weight column (as
 distances), so path-based measures use spatial lengths unless asked not
 to.
+
+For an sf node table (or a netframe with sf node geometry), when
+\code{coords} is not given, the geometries are reduced to representative
+points (see \code{\link{to_sf}}), longitude and latitude are recognized
+from the CRS (with the default Earth radius, so distances are in metres),
+and planar coordinates give distances in the units of the CRS. The result
+keeps the sf node table and its geometry roles. With \code{exact = TRUE}
+the distances are those between the geometries themselves.
 
 For longitude and latitude the tree searches the points on the unit
 sphere, where the chord between two points increases with their

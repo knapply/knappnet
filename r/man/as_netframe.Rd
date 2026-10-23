@@ -7,6 +7,8 @@
 \alias{as_netframe.network}
 \alias{as_netframe.matrix}
 \alias{as_netframe.Matrix}
+\alias{as_netframe.sf}
+\alias{as_netframe.sfnetwork}
 \alias{to_igraph}
 \alias{to_network}
 \alias{to_tbl_graph}
@@ -29,6 +31,10 @@ as_netframe(x, ...)
 
 \method{as_netframe}{Matrix}(x, directed = NULL, weighted = NULL, ...)
 
+\method{as_netframe}{sf}(x, nodes = NULL, ..., edges = NULL)
+
+\method{as_netframe}{sfnetwork}(x, ...)
+
 to_igraph(x)
 
 to_tbl_graph(x)
@@ -39,6 +45,10 @@ to_network(x)
 }
 \arguments{
 \item{x}{An object to convert.}
+\item{nodes}{For sf edge tables, the node table (a data frame or sf data
+frame), as in \code{\link{netframe}}.}
+\item{edges}{For sf node tables, the edge table: when given, \code{x} is
+taken as the node table instead.}
 \item{...}{Passed on to methods. For data frames, arguments of
 \code{\link{netframe}}.}
 \item{directed}{For matrices, whether edges are directed. \code{NULL} infers
@@ -83,6 +93,9 @@ contributes only its upper triangle. Missing values (\code{NA}) are read as 0,
 no tie.
 \item \strong{data.frame}: treated as an edge list, as in
 \code{\link{netframe}}.
+\item \strong{sf} data frames: an edge list whose geometry is kept (see
+\code{\link{to_sf}}), or the node table when \code{edges} is given.
+\item \strong{sfnetwork} (sfnetworks): see \code{\link{to_sfnetwork}}.
 }
 \code{as.matrix()} sums parallel edges. In undirected networks the matrix is
 symmetric and a self-loop contributes once to the diagonal.
