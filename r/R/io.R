@@ -97,6 +97,13 @@ net_write <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) 
 
   if (fmt %in% c("csv", "tsv")) {
     sep <- if (fmt == "tsv") "\t" else ","
+    # Edge lists name the endpoints as net_read() and net_frame() expect
+    # by default; attributes of those names get a suffix.
+    en <- names(tables$edges)
+    clash <- en[-(1:2)] %in% c("source", "target")
+    en[-(1:2)][clash] <- paste0(en[-(1:2)][clash], "_attr")
+    en[1:2] <- c("source", "target")
+    names(tables$edges) <- en
     utils::write.table(tables$edges, file, sep = sep, row.names = FALSE,
                        qmethod = "double", fileEncoding = "UTF-8")
     if (!is.null(nodes_file)) {
