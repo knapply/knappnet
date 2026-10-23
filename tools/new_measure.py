@@ -297,29 +297,8 @@ def init_snippet(name: str) -> str:
 
 def r_function(area: str, name: str) -> str:
     title = name.replace("_", " ").capitalize()
-    return f'''#' {title}
-#'
-#' TODO: one sentence on what the measure is.
-#'
-#' @inheritParams betweenness
-#'
-#' @details
-#' TODO: the conventions, in the same order as the engine module: loops,
-#' parallel edges, direction, weights, normalization, undefined values
-#' (`NaN`), and which tools the result matches. If tools disagree, add a
-#' `convention` argument (see [closeness()]) and one example per
-#' convention below.
-#'
-#' @return A numeric vector aligned with the rows of `x$nodes`.
-#'
-#' @references
-#' TODO: Author, A. (Year). Title. *Journal*, volume(issue), pages.
-#' \\doi{{10.xxxx/xxxxx}}
-#' @export
-#' @examples
-#' g <- netframe(data.frame(from = c(1, 2, 2, 3), to = c(2, 3, 3, 3)),
-#'               directed = FALSE)
-#' {name}(g)
+    return f'''# {title} (man/{name}.Rd). Conventions and references are documented
+# there; tools/check_r_docs.py checks that the usage matches this signature.
 {name} <- function(x, threads = 0L) {{
   check_netframe(x)
   threads <- resolve_threads(threads)
@@ -333,16 +312,15 @@ def rd_file(area: str, name: str) -> str:
     return f'''\\name{{{name}}}
 \\alias{{{name}}}
 \\title{{{title}}}
+\\description{{
+TODO: one sentence on what the measure is.
+}}
 \\usage{{
 {name}(x, threads = 0L)
 }}
 \\arguments{{
 \\item{{x}}{{A \\code{{\\link{{netframe}}}}.}}
 \\item{{threads}}{{Number of threads; \\code{{0}} uses all available cores.}}
-}}
-\\value{{A numeric vector aligned with the rows of \\code{{x$nodes}}.}}
-\\description{{
-TODO: one sentence on what the measure is.
 }}
 \\details{{
 TODO: the conventions, in the same order as the engine module: loops,
@@ -351,6 +329,7 @@ parallel edges, direction, weights, normalization, undefined values
 \\code{{convention}} argument (see \\code{{\\link{{closeness}}}}) and one example
 per convention below, with a comment naming the tool each reproduces.
 }}
+\\value{{A numeric vector aligned with the rows of \\code{{x$nodes}}.}}
 \\references{{
 TODO: Author, A. (Year). Title. \\emph{{Journal}}, volume(issue), pages.
 \\doi{{10.xxxx/xxxxx}}
@@ -685,6 +664,7 @@ def main(argv: list[str]) -> int:
     cargo clippy --workspace --all-targets --offline -- -D warnings
     ./tools/check_c_abi.sh
     gcc -std=c99 -Wall -Wextra -fsyntax-only -Ir/src r/src/{area}.c    # with R's headers
+    python3 tools/check_r_docs.py
     python3 validation/check_manifest.py
     python3 validation/run_oracles.py --python-only
     python3 validation/compare.py

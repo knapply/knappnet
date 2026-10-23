@@ -1,7 +1,7 @@
 # The full test suite, on every push to main and every pull request:
 #
 #   lint         format, clippy, docs, crate packaging, WebAssembly build,
-#                bibliography, manifest, scaffold, R sources in sync
+#                bibliography, manifest, scaffold, R docs, R sources in sync
 #   engine       cargo test and the C ABI smoke test on Linux, macOS, Windows
 #   validation   every oracle regenerated and compared with the engine on
 #                Linux, macOS, Windows, plus the checks outside the manifest
@@ -62,6 +62,8 @@ jobs:
         run: python tools/check_bib.py
       - name: No R function defined twice
         run: python tools/check_r_functions.py
+      - name: R help pages, NAMESPACE, and pkgdown index are consistent
+        run: python tools/check_r_docs.py
       - name: R sources in sync
         run: python tools/sync_r_sources.py --check
       - name: Validation manifest is well-formed

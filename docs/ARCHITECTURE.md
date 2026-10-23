@@ -26,6 +26,13 @@ measures, ...) is one module per layer with the same name: an engine
 module, a C ABI module, a C glue file, an R file, a test file, a manifest
 file, a runner, and oracle scripts. `tools/new_measure.py` creates them.
 
+The R package (`r/`) keeps user-facing functions in `r/R/<area>.R`,
+shared helpers in `r/R/utils-*.R` (argument checks, the engine handle and
+error rewriting, node lookups), and plotting in `r/R/plot-*.R`. Help pages
+are hand-written Rd files in `r/man/`, the only source of documentation
+(there are no roxygen comments); `tools/check_r_docs.py` keeps them, the
+function signatures, `NAMESPACE`, and the pkgdown index consistent.
+
 Language bindings never call the engine directly; they go through the C ABI.
 Python bindings will use the same ABI, so every language shares one tested
 surface.

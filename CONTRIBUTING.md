@@ -47,15 +47,23 @@ checks to run. `--dry-run` only prints. The steps, in order:
 4. **C glue** `C_<name>` in `r/src/<area>.c` (include `"netcapi.h"`; raise
    R errors only after the engine call has returned), registered in
    `r/src/init.c` (an `extern` line and a `R_CallMethodDef` row).
-5. **R function** in `r/R/<area>.R`, its help page `r/man/<name>.Rd`
-   (hand-written; the `\usage` must match the signature exactly), tests in
-   `r/tests/testthat/test-<area>.R`, `export(<name>)` in `r/NAMESPACE`, and
-   the help topic in the reference index of `r/_pkgdown.yml`. Use the
-   helpers in `r/R/netframe.R`: `check_netframe()`, `resolve_threads()`,
-   `engine_call()`, `check_flag()`, `check_choice()`, and the weight
-   helpers `resolve_weighting()`, `resolve_additive_weights()`, and
-   `positions_weighted()`. Tests use `skip_if_not_installed()` for every
-   suggested package and at most 2 threads.
+5. **R function** in `r/R/<area>.R`, its help page `r/man/<name>.Rd`,
+   tests in `r/tests/testthat/test-<area>.R`, `export(<name>)` in
+   `r/NAMESPACE`, and the help topic in the reference index of
+   `r/_pkgdown.yml`. The R package has no roxygen comments: the Rd files
+   are the single, hand-written source of documentation, each function
+   carries a one-line comment naming its Rd file, and
+   `tools/check_r_docs.py` checks that every `\usage` matches the
+   function's formals, every export is defined and documented, every
+   topic is in the pkgdown index, and Rd sections come in the package's
+   order. Shared helpers live in `r/R/utils-*.R`: `check_netframe()`,
+   `engine_graph()`, `engine_call()`, `resolve_threads()`,
+   `resolve_weighting()`, and `resolve_additive_weights()` in
+   `utils-engine.R`; `check_flag()`, `check_choice()`, `check_count()`, and
+   the other argument checks in `utils-checks.R`; node lookups and
+   attribute columns in `utils-nodes.R`. Plotting lives in `plot-*.R`.
+   Tests use `skip_if_not_installed()` for every suggested package and at
+   most 2 threads.
 6. **Validation**: a manifest entry in `validation/manifest.d/<area>.yaml`,
    a runner in `validation/bindings/<area>.py`, a definition oracle in
    `validation/oracles/<area>_definition_oracle.py`, and an oracle for every
@@ -143,6 +151,7 @@ RUSTDOCFLAGS="-D warnings" cargo doc -p knappnet --no-deps
 ./tools/check_c_abi.sh                      # netcapi.h matches the ABI
 python3 tools/check_bib.py                  # bibliography and docs/references.md
 python3 tools/check_r_functions.py          # no R function defined twice
+python3 tools/check_r_docs.py               # Rd usage, NAMESPACE, pkgdown index
 python3 tools/sync_r_sources.py --check     # r/src/rust/ is current
 python3 tools/new_measure.py probe probe_measure --dry-run
 python3 validation/check_manifest.py        # manifest entries well-formed
@@ -165,6 +174,7 @@ R CMD build r && R CMD check --as-cran knappnet_*.tar.gz
 | `tools/check_bib.py` | Check `docs/references.bib` (unique sorted keys, fields, DOIs, cited keys exist) and that `docs/references.md` is current; `--update` sorts and regenerates. |
 | `tools/check_c_abi.sh` | Compile and run a C program against `netcapi.h`. |
 | `tools/check_r_functions.py` | Fail if two files in `r/R` define the same function. |
+| `tools/check_r_docs.py` | Static checks of the R package without R: balanced brackets, `\usage` against function formals, NAMESPACE against definitions and Rd aliases, pkgdown index completeness, Rd section order. |
 | `tools/check_readme.R` | Run the README's R chunks and compare their printed output; `--update` rewrites it. |
 | `tools/sync_r_sources.py` | Copy the engine into `r/src/rust/`; `--check` for CI. |
 | `tools/link_tools.py <files>` | Link the first mention of each reference tool in a Markdown file to its website. |
