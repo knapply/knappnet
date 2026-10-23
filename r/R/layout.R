@@ -15,9 +15,10 @@
 #'   `"strength"`.
 #' @param types For `method = "twomode"`: which mode each node belongs to,
 #'   as the name of a column of `x$nodes` or a vector with one value per
-#'   node, with exactly two distinct values. `NULL` uses a column named
-#'   `type`. Nodes of the first value (`FALSE`, or the first level or
-#'   sorted value) form the top row.
+#'   node, with at most two distinct values. `NULL` uses the node type of a
+#'   network made by [twomode()] or [as_twomode()], or else a column named
+#'   `type`. Nodes of the first value (`FALSE`, or the first factor level
+#'   or smallest value) form the top row.
 #' @param root For `method = "tree"`: identifiers of root nodes, at most
 #'   one per component. `NULL` uses each component's center.
 #' @param center For `method = "star"`: the identifier of the center node.
@@ -142,6 +143,21 @@
 #'   `y` and one row per node, aligned with the rows of `x$nodes`.
 #'   `layout_stress()` returns a number.
 #' @seealso [plot.netframe()]
+#' @examples
+#' # A triangle with a pendant node, a separate pair, and an isolate.
+#' g <- netframe(data.frame(from = c(1, 2, 3, 3, 5), to = c(2, 3, 1, 4, 6)),
+#'               nodes = data.frame(id = 1:7), directed = FALSE)
+#' xy <- layout_network(g, seed = 1, threads = 2)
+#' xy
+#' layout_stress(g, xy, threads = 2)
+#' layout_network(g, "fr", seed = 1, threads = 2)
+#' layout_network(g, "circle")
+#' layout_network(g, "tree", root = c(3, 5))
+#'
+#' # Two rows for a two-mode network.
+#' attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+#'                        event  = c("gala", "fair", "gala", "fair"))
+#' layout_network(twomode(attended), "twomode")
 #' @export
 layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
                                          "star", "grid", "tree", "twomode"),
@@ -152,33 +168,41 @@ layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr"
   check_netframe(x)
   method <- match.arg(method)
   approximation <- match.arg(approximation)
+  threads <- resolve_threads(threads)
+  # Arguments are checked before the engine runs, and the seed is drawn
+  # only for the methods that use it.
+  args <- switch(method,
+    auto = , stress = , sparse_stress = list(
+      w = resolve_weighting(x, weighted, weights_as),
+      pivots = layout_count(pivots, "pivots"), max_iter = layout_count(max_iter, "max_iter"),
+      tol = layout_tol(tol), seed = layout_seed(seed)),
+    fr = list(
+      w = resolve_weighting(x, weighted, weights_as),
+      max_iter = layout_count(max_iter, "max_iter"), seed = layout_seed(seed)),
+    star = list(center = if (is.null(center)) -1 else
+      node_index(x, center, "center", one = TRUE) - 1),
+    tree = list(roots = if (is.null(root)) double() else node_index(x, root, "root") - 1),
+    twomode = list(types = layout_types(x, types)),
+    list()
+  )
   ptr <- engine_graph(x)
-  xy <- switch(method,
+  xy <- engine_call("layout_network", switch(method,
     auto = , stress = , sparse_stress = {
-      w <- resolve_weighting(x, weighted, weights_as)
       algorithm <- switch(method, auto = 0L, stress = 1L, sparse_stress = 2L)
-      .Call(C_layout_stress, ptr, algorithm, w$weighted, w$code,
-            layout_count(pivots, "pivots"), layout_count(max_iter, "max_iter"),
-            layout_tol(tol), layout_seed(seed), as.integer(threads))
+      .Call(C_layout_stress, ptr, algorithm, args$w$weighted, args$w$code, args$pivots,
+            args$max_iter, args$tol, args$seed, threads)
     },
     fr = {
-      w <- resolve_weighting(x, weighted, weights_as)
       code <- switch(approximation, auto = 0L, exact = 1L, barnes_hut = 2L)
-      .Call(C_layout_fr, ptr, w$weighted, w$code, layout_count(max_iter, "max_iter"), code,
-            0, layout_seed(seed), as.integer(threads))
+      .Call(C_layout_fr, ptr, args$w$weighted, args$w$code, args$max_iter, code, 0,
+            args$seed, threads)
     },
     circle = .Call(C_layout_simple, ptr, 0L, 0),
-    star = {
-      param <- if (is.null(center)) -1 else node_index(x, center, "center", one = TRUE) - 1
-      .Call(C_layout_simple, ptr, 1L, as.double(param))
-    },
+    star = .Call(C_layout_simple, ptr, 1L, as.double(args$center)),
     grid = .Call(C_layout_simple, ptr, 2L, 0),
-    tree = {
-      roots <- if (is.null(root)) double() else node_index(x, root, "root") - 1
-      .Call(C_layout_tree, ptr, as.double(roots))
-    },
-    twomode = .Call(C_layout_twomode, ptr, twomode_types(x, types), 0)
-  )
+    tree = .Call(C_layout_tree, ptr, as.double(args$roots)),
+    twomode = .Call(C_layout_twomode, ptr, args$types, 0)
+  ))
   n <- nrow(x$nodes)
   matrix(xy, nrow = n, ncol = 2L, dimnames = list(NULL, c("x", "y")))
 }
@@ -191,8 +215,10 @@ layout_stress <- function(x, layout, weighted = NULL, weights_as = NULL, threads
   check_netframe(x)
   xy <- layout_matrix(layout, nrow(x$nodes))
   w <- resolve_weighting(x, weighted, weights_as)
-  .Call(C_layout_stress_value, engine_graph(x), as.double(xy), w$weighted, w$code,
-        as.integer(threads))
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call("layout_stress",
+              .Call(C_layout_stress_value, ptr, as.double(xy), w$weighted, w$code, threads))
 }
 
 layout_seed <- function(seed) {
@@ -239,29 +265,35 @@ node_index <- function(x, ids, what, one = FALSE) {
 }
 
 # Node types for a two-mode layout as 0 (top row) and 1 (bottom row).
-twomode_types <- function(x, types) {
+layout_types <- function(x, types) {
   n <- nrow(x$nodes)
   if (is.null(types)) {
-    if (!"type" %in% names(x$nodes)) {
-      stop("A two-mode layout needs node types: supply `types =` or a `type` column ",
-           "in the node table.", call. = FALSE)
+    col <- if (!is.null(x$roles$type)) x$roles$type else "type"
+    if (!col %in% names(x$nodes)) {
+      stop(paste0("A two-mode layout needs node types: supply `types =`, use a network ",
+                  "made by twomode() or as_twomode(), or add a `type` column to the node ",
+                  "table."), call. = FALSE)
     }
-    types <- x$nodes$type
-  } else if (is.character(types) && length(types) == 1L && types %in% names(x$nodes)) {
-    types <- x$nodes[[types]]
+    types <- x$nodes[[col]]
   } else if (is.character(types) && length(types) == 1L && n != 1L) {
-    stop(sprintf("Column `%s` not found in the node table.", types), call. = FALSE)
+    if (!types %in% names(x$nodes)) {
+      stop(sprintf("Column `%s` not found in the node table.", types), call. = FALSE)
+    }
+    types <- x$nodes[[types]]
   }
   if (length(types) != n) {
     stop("`types` must have one value per node.", call. = FALSE)
   }
   if (anyNA(types)) stop("`types` must not contain missing values.", call. = FALSE)
-  values <- if (is.factor(types)) levels(droplevels(types)) else sort(unique(types))
+  # Radix sorting orders text by bytes, the same in every locale.
+  values <- if (is.factor(types)) levels(droplevels(types)) else
+    sort(unique(types), method = "radix")
   if (length(values) > 2L) {
-    stop("`types` must have exactly two distinct values for a two-mode layout.",
+    stop("`types` must have at most two distinct values for a two-mode layout.",
          call. = FALSE)
   }
-  as.integer(match(as.character(types), as.character(values)) - 1L)
+  key <- if (is.factor(types)) as.character(types) else types
+  as.integer(match(as.character(key), as.character(values)) - 1L)
 }
 
 # A layout given as a matrix or data frame, checked against the node count.

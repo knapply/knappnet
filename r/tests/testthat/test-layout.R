@@ -162,3 +162,17 @@ test_that("stress is no worse than igraph's stress layout on a classic network",
   }
   expect_lte(best(ours), best(theirs) * 1.02)
 })
+
+test_that("two-mode layouts use the node type of twomode() networks", {
+  attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+                         event  = c("gala", "fair", "gala", "fair"))
+  g <- twomode(attended)
+  xy <- layout_network(g, "twomode")
+  second <- g$nodes[[g$roles$type]]
+  expect_true(min(xy[!second, "y"]) > max(xy[second, "y"]))
+  # The type role is used even when the column is not called `type`.
+  g$nodes$type <- NULL
+  names(g$nodes)[names(g$nodes) == g$roles$type] <- "is_event"
+  g$roles$type <- "is_event"
+  expect_identical(layout_network(g, "twomode"), xy)
+})

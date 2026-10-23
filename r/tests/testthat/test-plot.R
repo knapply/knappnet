@@ -140,3 +140,22 @@ test_that("column mappings follow the documented palettes and order", {
   sizes <- map_numeric(c(0, 1, 4, NA), 1, 2, area = TRUE)$values
   expect_equal(sizes, c(1, 1.5, 2, 1))
 })
+
+test_that("two-mode networks are colored by mode by default", {
+  attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+                         event  = c("gala", "fair", "gala", "fair"))
+  g <- twomode(attended)
+  fill <- twomode_fill(g)
+  pal <- grDevices::hcl.colors(2, "Dark 3")
+  expect_identical(fill$col, pal[g$nodes[[g$roles$type]] + 1L])
+  expect_identical(fill$legend$labels, c("first", "second"))
+  nodes <- data.frame(name = c("ann", "bob", "gala"), kind = c("person", "person", "event"))
+  labelled <- twomode(data.frame(from = c("ann", "bob"), to = c("gala", "gala")), nodes,
+                      type = "kind", first = "person")
+  expect_identical(twomode_fill(labelled)$legend$labels, c("person", "event"))
+  on_null_device({
+    expect_silent(plot(g, seed = 1))
+    expect_silent(plot(g, layout = "twomode"))
+    expect_silent(plot(g, node_color = "red", seed = 1))
+  })
+})

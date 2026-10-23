@@ -44,7 +44,8 @@ Defaults:
 \itemize{
   \item Node size grows with degree (as area), and nodes are smaller in
     larger networks.
-  \item Nodes are a single blue with a white border.
+  \item Nodes are a single blue with a white border, except in two-mode
+    networks (\code{\link{twomode}}), where each mode has its own color.
   \item Nodes are labelled with their identifiers in networks of at most
     40 nodes.
   \item Edges are gray and more transparent the more edges there are. In
@@ -73,9 +74,17 @@ The plot is reproducible for a given \code{seed} (or after
 }
 \seealso{\code{\link{layout_network}}}
 \examples{
-g <- netframe(data.frame(from = c("a", "a", "b", "c", "c"),
-                         to   = c("b", "c", "c", "d", "e")),
+g <- netframe(data.frame(from  = c("a", "a", "b", "c", "c", "d"),
+                         to    = c("b", "c", "c", "d", "e", "e"),
+                         calls = c(1, 4, 2, 8, 3, 5)),
               directed = FALSE)
 g$nodes$group <- c("x", "x", "y", "y", "y")
-plot(g, node_color = "group", seed = 1)
+plot(g, seed = 1)
+plot(g, node_color = "group", edge_width = "calls", seed = 1, main = "Calls")
+xy <- plot(g, layout = "circle", node_label = FALSE)
+plot(g, layout = xy, node_size = I(c(3, 1, 1, 1, 1)))
+
+attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+                       event  = c("gala", "fair", "gala", "fair"))
+plot(twomode(attended), layout = "twomode")
 }

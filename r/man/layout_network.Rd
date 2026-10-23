@@ -24,9 +24,10 @@ layouts only). \code{NULL} uses them when the network has a weight column.}
 \code{"distance"} or \code{"strength"}.}
 \item{types}{For \code{method = "twomode"}: which mode each node belongs
 to, as the name of a column of \code{x$nodes} or a vector with one value
-per node, with exactly two distinct values. \code{NULL} uses a column named
-\code{type}. Nodes of the first value (\code{FALSE}, or the first level or
-sorted value) form the top row.}
+per node, with at most two distinct values. \code{NULL} uses the node type
+of a network made by \code{\link{twomode}} or \code{\link{as_twomode}}, or
+else a column named \code{type}. Nodes of the first value (\code{FALSE}, or
+the first factor level or smallest value) form the top row.}
 \item{root}{For \code{method = "tree"}: identifiers of root nodes, at most
 one per component. \code{NULL} uses each component's center.}
 \item{center}{For \code{method = "star"}: the identifier of the center
@@ -163,10 +164,18 @@ Systems, Man, and Cybernetics}, 11(2), 109-125.
 }
 \seealso{\code{\link{plot.netframe}}}
 \examples{
+# A triangle with a pendant node, a separate pair, and an isolate.
 g <- netframe(data.frame(from = c(1, 2, 3, 3, 5), to = c(2, 3, 1, 4, 6)),
-              directed = FALSE)
-xy <- layout_network(g, seed = 1)
+              nodes = data.frame(id = 1:7), directed = FALSE)
+xy <- layout_network(g, seed = 1, threads = 2)
 xy
-layout_stress(g, xy)
+layout_stress(g, xy, threads = 2)
+layout_network(g, "fr", seed = 1, threads = 2)
 layout_network(g, "circle")
+layout_network(g, "tree", root = c(3, 5))
+
+# Two rows for a two-mode network.
+attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+                       event  = c("gala", "fair", "gala", "fair"))
+layout_network(twomode(attended), "twomode")
 }

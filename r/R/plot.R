@@ -33,7 +33,8 @@
 #' \itemize{
 #'   \item Node size grows with degree (as area), and nodes are smaller in
 #'     larger networks.
-#'   \item Nodes are a single blue with a white border.
+#'   \item Nodes are a single blue with a white border, except in two-mode
+#'     networks ([twomode()]), where each mode has its own color.
 #'   \item Nodes are labelled with their identifiers in networks of at most
 #'     40 nodes.
 #'   \item Edges are gray and more transparent the more edges there are.
@@ -63,11 +64,19 @@
 #'   and one row per node, which can be passed back as `layout`.
 #' @seealso [layout_network()]
 #' @examples
-#' g <- netframe(data.frame(from = c("a", "a", "b", "c", "c"),
-#'                          to   = c("b", "c", "c", "d", "e")),
+#' g <- netframe(data.frame(from  = c("a", "a", "b", "c", "c", "d"),
+#'                          to    = c("b", "c", "c", "d", "e", "e"),
+#'                          calls = c(1, 4, 2, 8, 3, 5)),
 #'               directed = FALSE)
 #' g$nodes$group <- c("x", "x", "y", "y", "y")
-#' plot(g, node_color = "group", seed = 1)
+#' plot(g, seed = 1)
+#' plot(g, node_color = "group", edge_width = "calls", seed = 1, main = "Calls")
+#' xy <- plot(g, layout = "circle", node_label = FALSE)
+#' plot(g, layout = xy, node_size = I(c(3, 1, 1, 1, 1)))
+#'
+#' attended <- data.frame(person = c("ann", "ann", "bob", "cat"),
+#'                        event  = c("gala", "fair", "gala", "fair"))
+#' plot(twomode(attended), layout = "twomode")
 #' @export
 plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
                           node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
@@ -79,7 +88,11 @@ plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
 
   base <- if (n > 0) min(2.5, max(0.25, 4 / n^0.25)) else 1
   size <- plot_node_size(x, node_size, n, base)
-  fill <- plot_color(node_color, x$nodes, n, "node_color", "nodes", "#2C6FAC")
+  fill <- if (is.null(node_color) && n > 0 && is_twomode(x)) {
+    twomode_fill(x)
+  } else {
+    plot_color(node_color, x$nodes, n, "node_color", "nodes", "#2C6FAC")
+  }
   labels <- plot_labels(x, node_label, n)
   lwd_base <- if (m <= 200) 1 else if (m <= 5000) 0.7 else 0.5
   width <- plot_edge_width(x, edge_width, m, lwd_base)
@@ -183,6 +196,20 @@ plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
     }
   }
   invisible(xy)
+}
+
+# Default node colors of a two-mode network: one per mode, labelled with
+# the two values recorded by twomode() or as_twomode() ("first" and
+# "second" for a logical type column).
+twomode_fill <- function(x) {
+  labels <- x$roles$type_labels
+  if (length(labels) != 2L || identical(labels, c("FALSE", "TRUE"))) {
+    labels <- c("first", "second")
+  }
+  second <- x$nodes[[x$roles$type]]
+  pal <- grDevices::hcl.colors(2L, "Dark 3")
+  list(col = pal[second + 1L], mapped = TRUE,
+       legend = list(type = "fill", title = "mode", labels = labels, col = pal, lwd = 2))
 }
 
 plot_layout <- function(x, layout, seed) {
