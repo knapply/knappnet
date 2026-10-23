@@ -23,16 +23,51 @@
 //!   a core-periphery pattern.
 //! - The correlation does not change when c is multiplied by a positive
 //!   number, so the result is scaled to unit Euclidean norm.
-//! - Optimization starts from c proportional to each node's total value
-//!   plus 1 (degree plus 1 for binary data) and stops when the largest
-//!   gradient component is below 1e-9 or no step improves the correlation;
-//!   at most `max_iter` iterations are made. The result is a local maximum,
-//!   found deterministically. Cost O(n^2) per iteration and O(n^2) memory.
+//! - The correlation has several local maxima in general (and the
+//!   substitution c = t^2 adds stationary points where some t_i = 0), so
+//!   the search runs from `starts` points and keeps the best: the first
+//!   start is c proportional to each node's total value plus 1 (degree
+//!   plus 1 for binary data), and the others draw t_i uniformly from
+//!   (0.05, 1) using [`crate::rng::Stream`] with the given seed, so the
+//!   result is reproducible for a seed whatever the thread count. Each
+//!   search stops when the largest gradient component is below 1e-9 or no
+//!   step improves the correlation, after at most `max_iter` iterations.
+//!   Among starts with the same best correlation the earliest wins. Cost
+//!   O(n^2) per iteration and O(n^2) memory per thread.
 //! - A network whose values are all equal is rejected.
 
 use super::PairRows;
 use crate::error::{Error, Result};
 use crate::graph::Graph;
+use crate::parallel;
+use crate::rng::Stream;
+
+/// Options for [`continuous_core_periphery`].
+#[derive(Debug, Clone, Copy)]
+pub struct ContinuousOptions {
+    /// Use total weights between nodes as values instead of binary ties.
+    pub weighted: bool,
+    /// Iteration limit per start.
+    pub max_iter: usize,
+    /// Number of starts (the degree start plus `starts - 1` random ones).
+    pub starts: usize,
+    /// Seed for the random starts.
+    pub seed: u64,
+    /// Worker threads; 0 uses all available cores.
+    pub threads: usize,
+}
+
+impl Default for ContinuousOptions {
+    fn default() -> Self {
+        ContinuousOptions {
+            weighted: false,
+            max_iter: 1000,
+            starts: 20,
+            seed: 1,
+            threads: 0,
+        }
+    }
+}
 
 /// Result of [`continuous_core_periphery`].
 #[derive(Debug, Clone, PartialEq)]
@@ -81,7 +116,16 @@ impl Objective {
             }
         }
         let mean_a = pr.sum / pr.pairs;
-        let sxx = pr.sum_sq - pr.pairs * mean_a * mean_a;
+        let mut sxx = 0.0;
+        for i in 0..n {
+            for j in 0..n {
+                if i == j || (!directed && j < i) {
+                    continue;
+                }
+                let d = a[i * n + j] - mean_a;
+                sxx += d * d;
+            }
+        }
         Ok(Objective {
             n,
             directed,
@@ -106,16 +150,19 @@ impl Objective {
     }
 
     /// Correlation for coreness c, and its gradient with respect to c.
+    /// Sums of squares are taken about the means in a second pass, since
+    /// the pattern values c_i c_j can all be nearly equal and the one-pass
+    /// formula then loses most of its digits.
     fn eval(&self, c: &[f64]) -> (f64, Vec<f64>) {
-        let (mut sy, mut syy, mut sxy) = (0.0, 0.0, 0.0);
-        self.for_pairs(|i, j, a| {
-            let y = c[i] * c[j];
-            sy += y;
-            syy += y * y;
-            sxy += (a - self.mean_a) * y;
-        });
+        let mut sy = 0.0;
+        self.for_pairs(|i, j, _| sy += c[i] * c[j]);
         let mean_y = sy / self.pairs;
-        let vyy = syy - self.pairs * mean_y * mean_y;
+        let (mut vyy, mut sxy) = (0.0, 0.0);
+        self.for_pairs(|i, j, a| {
+            let dy = c[i] * c[j] - mean_y;
+            vyy += dy * dy;
+            sxy += (a - self.mean_a) * dy;
+        });
         let mut grad = vec![0.0; self.n];
         if vyy.is_nan() || vyy <= 0.0 {
             return (f64::NAN, grad);
@@ -137,11 +184,15 @@ impl Objective {
 /// documentation.
 pub fn continuous_core_periphery(
     g: &Graph,
-    weighted: bool,
-    max_iter: usize,
+    opts: ContinuousOptions,
 ) -> Result<ContinuousCorePeriphery> {
     let n = g.node_count();
-    let obj = Objective::new(g, weighted)?;
+    if opts.starts == 0 {
+        return Err(Error::InvalidArgument(
+            "the number of starts must be at least 1".into(),
+        ));
+    }
+    let obj = Objective::new(g, opts.weighted)?;
     if n < 2 || obj.sxx.is_nan() || obj.sxx <= 0.0 {
         return Err(Error::InvalidArgument(
             "a core-periphery fit needs at least two nodes and pairs with different values \
@@ -149,13 +200,55 @@ pub fn continuous_core_periphery(
                 .into(),
         ));
     }
-    // Start: total value plus 1, as t = sqrt(c).
-    let mut start = vec![1.0; n];
-    obj.for_pairs(|i, j, a| {
-        start[i] += a;
-        start[j] += a;
+    let parts = parallel::for_each_item(opts.starts, opts.threads, Vec::new, |acc, s| {
+        let t = if s == 0 {
+            // Total value plus 1, as t = sqrt(c).
+            let mut start = vec![1.0; n];
+            obj.for_pairs(|i, j, a| {
+                start[i] += a;
+                start[j] += a;
+            });
+            start.iter().map(|&x| x.sqrt()).collect()
+        } else {
+            let mut rng = Stream::new(opts.seed, s as u64);
+            (0..n).map(|_| 0.05 + 0.95 * rng.uniform()).collect()
+        };
+        acc.push((s, ascend(&obj, t, opts.max_iter)));
     });
-    let mut t: Vec<f64> = start.iter().map(|&x| x.sqrt()).collect();
+    let mut runs: Vec<(usize, Option<(Vec<f64>, f64, usize)>)> =
+        parts.into_iter().flatten().collect();
+    runs.sort_by_key(|r| r.0);
+    let mut best: Option<(Vec<f64>, f64, usize)> = None;
+    for (_, run) in runs {
+        if let Some(run) = run {
+            if best.as_ref().map_or(true, |b| run.1 > b.1) {
+                best = Some(run);
+            }
+        }
+    }
+    let Some((t, _, iterations)) = best else {
+        return Err(Error::InvalidArgument(
+            "the core-periphery correlation is undefined at every starting point".into(),
+        ));
+    };
+    let mut c: Vec<f64> = t.iter().map(|x| x * x).collect();
+    let norm = c.iter().map(|x| x * x).sum::<f64>().sqrt();
+    for x in c.iter_mut() {
+        *x /= norm;
+    }
+    let (r, _) = obj.eval(&c);
+    Ok(ContinuousCorePeriphery {
+        coreness: c,
+        correlation: r,
+        iterations,
+    })
+}
+
+/// BFGS ascent of the correlation over t (c = t^2) from `t`, returning the
+/// final point, its correlation, and the iterations made, or None when the
+/// correlation is undefined at the start (a constant pattern).
+fn ascend(obj: &Objective, mut t: Vec<f64>, max_iter: usize) -> Option<(Vec<f64>, f64, usize)> {
+    let n = obj.n;
     let norm = t.iter().map(|x| x * x).sum::<f64>().sqrt();
     for x in t.iter_mut() {
         *x /= norm;
@@ -169,15 +262,14 @@ pub fn continuous_core_periphery(
     };
     let (mut fx, mut gx) = f(&t);
     if fx.is_nan() {
-        return Err(Error::InvalidArgument(
-            "the core-periphery correlation is undefined at the starting point".into(),
-        ));
+        return None;
     }
     // Inverse Hessian approximation of -f (we minimize -r).
     let mut h = vec![0.0; n * n];
     for i in 0..n {
         h[i * n + i] = 1.0;
     }
+    let mut fresh = true;
     let mut iterations = 0;
     while iterations < max_iter {
         let gmax = gx.iter().fold(0.0f64, |m, x| m.max(x.abs()));
@@ -192,11 +284,8 @@ pub fn continuous_core_periphery(
         let mut slope: f64 = p.iter().zip(&gx).map(|(a, b)| a * b).sum();
         if slope.is_nan() || slope <= 0.0 {
             // Not an ascent direction: reset to steepest ascent.
-            for i in 0..n {
-                for j in 0..n {
-                    h[i * n + j] = if i == j { 1.0 } else { 0.0 };
-                }
-            }
+            reset(&mut h, n);
+            fresh = true;
             p.clone_from(&gx);
             slope = gx.iter().map(|x| x * x).sum();
         }
@@ -212,7 +301,15 @@ pub fn continuous_core_periphery(
             step *= 0.5;
         }
         let Some((cand, fc, gc)) = accepted else {
-            break;
+            // No step along p improves the correlation. A stale inverse
+            // Hessian can make p useless while the gradient is still
+            // large, so try once more from steepest ascent.
+            if fresh {
+                break;
+            }
+            reset(&mut h, n);
+            fresh = true;
+            continue;
         };
         let s: Vec<f64> = cand.iter().zip(&t).map(|(a, b)| a - b).collect();
         // y is the change in the gradient of -f.
@@ -237,20 +334,24 @@ pub fn continuous_core_periphery(
         fx = fc;
         gx = gc;
         if improved <= 1e-15 * fx.abs().max(1.0) {
-            break;
+            if fresh {
+                break;
+            }
+            reset(&mut h, n);
+            fresh = true;
+            continue;
+        }
+        fresh = false;
+    }
+    Some((t, fx, iterations))
+}
+
+fn reset(h: &mut [f64], n: usize) {
+    for i in 0..n {
+        for j in 0..n {
+            h[i * n + j] = if i == j { 1.0 } else { 0.0 };
         }
     }
-    let mut c: Vec<f64> = t.iter().map(|x| x * x).collect();
-    let norm = c.iter().map(|x| x * x).sum::<f64>().sqrt();
-    for x in c.iter_mut() {
-        *x /= norm;
-    }
-    let (r, _) = obj.eval(&c);
-    Ok(ContinuousCorePeriphery {
-        coreness: c,
-        correlation: r,
-        iterations,
-    })
 }
 
 #[cfg(test)]
@@ -282,7 +383,11 @@ mod tests {
     #[test]
     fn star_core_is_the_center() {
         let g = und(6, &[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5)]);
-        let r = continuous_core_periphery(&g, false, 500).unwrap();
+        let opts = ContinuousOptions {
+            max_iter: 500,
+            ..Default::default()
+        };
+        let r = continuous_core_periphery(&g, opts).unwrap();
         let top = (0..6)
             .max_by(|&a, &b| r.coreness[a].total_cmp(&r.coreness[b]))
             .unwrap();
@@ -291,6 +396,25 @@ mod tests {
         assert!((r.coreness.iter().map(|x| x * x).sum::<f64>() - 1.0).abs() < 1e-12);
         // Leaves are symmetric.
         assert!((r.coreness[1] - r.coreness[5]).abs() < 1e-6);
-        assert!(continuous_core_periphery(&und(3, &[]), false, 10).is_err());
+        assert!(continuous_core_periphery(&und(3, &[]), opts).is_err());
+    }
+
+    #[test]
+    fn starts_do_not_depend_on_threads() {
+        let g = und(
+            8,
+            &[(0, 1), (0, 2), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (3, 7)],
+        );
+        let one = continuous_core_periphery(&g, ContinuousOptions::default()).unwrap();
+        let opts = ContinuousOptions {
+            threads: 3,
+            ..Default::default()
+        };
+        let three = continuous_core_periphery(&g, opts).unwrap();
+        assert_eq!(one, three);
+        // A regular network has a constant degree start; random starts
+        // still give an answer.
+        let cycle = und(5, &[(0, 1), (1, 2), (2, 3), (3, 4), (4, 0)]);
+        assert!(continuous_core_periphery(&cycle, ContinuousOptions::default()).is_ok());
     }
 }

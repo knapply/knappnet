@@ -17,8 +17,8 @@ use std::ffi::c_char;
 
 use engine::generate::{self, Degrees, EdgeList};
 use engine::metrics::coreperiphery::{
-    compactness, continuous_core_periphery, core_periphery, small_world, CoreLinks,
-    CorePeripheryOptions, SmallWorldOptions,
+    compactness, continuous_core_periphery, core_periphery, small_world, ContinuousOptions,
+    CoreLinks, CorePeripheryOptions, SmallWorldOptions,
 };
 use engine::metrics::degree::DegreeMode;
 use engine::metrics::descriptive::PathOptions;
@@ -435,9 +435,10 @@ pub unsafe extern "C" fn net_core_periphery(
     })
 }
 
-/// Continuous core-periphery fit: coreness (non-negative, unit norm) to
-/// `coreness`, the correlation to `*correlation`, iterations to
-/// `*iterations`.
+/// Continuous core-periphery fit from `starts` starting points (the degree
+/// start plus seeded random ones): coreness (non-negative, unit norm) to
+/// `coreness`, the correlation to `*correlation`, iterations of the best
+/// start to `*iterations`.
 ///
 /// # Safety
 /// `h` must be a live handle; `coreness` must hold n values; the scalar
@@ -447,6 +448,9 @@ pub unsafe extern "C" fn net_core_periphery_continuous(
     h: *const GraphHandle,
     weighted: i32,
     max_iter: i64,
+    starts: i64,
+    seed: u64,
+    threads_: i32,
     coreness: *mut f64,
     correlation: *mut f64,
     iterations: *mut i64,
@@ -455,7 +459,14 @@ pub unsafe extern "C" fn net_core_periphery_continuous(
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        let r = continuous_core_periphery(g, weighted != 0, count(max_iter, "max_iter")?)?;
+        let opts = ContinuousOptions {
+            weighted: weighted != 0,
+            max_iter: count(max_iter, "max_iter")?,
+            starts: count(starts, "the number of starts")?,
+            seed,
+            threads: threads(threads_),
+        };
+        let r = continuous_core_periphery(g, opts)?;
         slice_mut(coreness, g.node_count()).copy_from_slice(&r.coreness);
         slice_mut(correlation, 1)[0] = r.correlation;
         slice_mut(iterations, 1)[0] = r.iterations as i64;
