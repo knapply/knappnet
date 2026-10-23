@@ -239,7 +239,7 @@ mcmc_diagnostics <- function(object, lags = c(1, 2, 5, 10, 20)) {
     for (c in seq_len(chains)) {
       v <- sample[(c - 1L) * nsim + seq_len(nsim), j]
       zs[c] <- geweke_z(v)
-      es[c] <- effective_size(v)
+      es[c] <- mcmc_effective_size(v)
     }
     # Chains are independent: their Geweke statistics combine as a sum
     # of independent normals, and effective sizes add.
@@ -286,7 +286,7 @@ geweke_z <- function(v) {
   (mean(a) - mean(b)) / se
 }
 
-effective_size <- function(v) {
+mcmc_effective_size <- function(v) {
   n <- length(v)
   s2 <- stats::var(v)
   vm <- batch_variance(v)

@@ -103,6 +103,21 @@ extern SEXP C_random_uman(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_random_small_world(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_random_preferential(SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_random_sbm(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ergm_new(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ergm_alive(SEXP);
+extern SEXP C_ergm_info(SEXP);
+extern SEXP C_ergm_stats(SEXP);
+extern SEXP C_ergm_changestats(SEXP);
+extern SEXP C_ergm_mple(SEXP, SEXP, SEXP);
+extern SEXP C_ergm_simulate(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ergm_sample_networks(SEXP);
+extern SEXP C_ergm_gof_sample(SEXP, SEXP, SEXP);
+extern SEXP C_ergm_gof_observed(SEXP, SEXP, SEXP);
+extern SEXP C_ergm_mcmle(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_ergm_exact(SEXP, SEXP);
+extern SEXP C_ergm_exact_mle(SEXP, SEXP, SEXP);
+extern SEXP C_ergm_loglik(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_tergm_mple(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -206,6 +221,21 @@ static const R_CallMethodDef call_methods[] = {
     {"C_random_small_world", (DL_FUNC)&C_random_small_world, 6},
     {"C_random_preferential", (DL_FUNC)&C_random_preferential, 5},
     {"C_random_sbm", (DL_FUNC)&C_random_sbm, 7},
+    {"C_ergm_new", (DL_FUNC)&C_ergm_new, 17},
+    {"C_ergm_alive", (DL_FUNC)&C_ergm_alive, 1},
+    {"C_ergm_info", (DL_FUNC)&C_ergm_info, 1},
+    {"C_ergm_stats", (DL_FUNC)&C_ergm_stats, 1},
+    {"C_ergm_changestats", (DL_FUNC)&C_ergm_changestats, 1},
+    {"C_ergm_mple", (DL_FUNC)&C_ergm_mple, 3},
+    {"C_ergm_simulate", (DL_FUNC)&C_ergm_simulate, 11},
+    {"C_ergm_sample_networks", (DL_FUNC)&C_ergm_sample_networks, 1},
+    {"C_ergm_gof_sample", (DL_FUNC)&C_ergm_gof_sample, 3},
+    {"C_ergm_gof_observed", (DL_FUNC)&C_ergm_gof_observed, 3},
+    {"C_ergm_mcmle", (DL_FUNC)&C_ergm_mcmle, 12},
+    {"C_ergm_exact", (DL_FUNC)&C_ergm_exact, 2},
+    {"C_ergm_exact_mle", (DL_FUNC)&C_ergm_exact_mle, 3},
+    {"C_ergm_loglik", (DL_FUNC)&C_ergm_loglik, 10},
+    {"C_tergm_mple", (DL_FUNC)&C_tergm_mple, 9},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

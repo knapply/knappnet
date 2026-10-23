@@ -37,10 +37,11 @@ library(knappnet)
 
 ## The data
 
-Padgett's marriage ties among fifteen Florentine families, with each
-family's wealth in thousands of lira, is the example of the `ergm`
-tutorial (`flomarriage`). The bundled network has the ties; the wealth
-values are added as a node attribute.
+Padgett's marriage ties among Florentine families (Padgett and Ansell
+1993), with each family's wealth in thousands of lira (Wasserman and
+Faust 1994, the Padgett data appendix), are also the example of the
+`ergm` tutorial (`flomarriage`). The bundled network has the ties; the
+wealth values are added as a node attribute.
 
 ```{r}
 flo <- example_network("florentine")

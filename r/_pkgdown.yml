@@ -45,6 +45,8 @@ navbar:
       menu:
       - text: Conventions across tools
         href: articles/conventions.html
+      - text: Exponential random graph models
+        href: articles/ergm.html
       - text: Plotting
         href: articles/plotting.html
       - text: Spatial networks with sf
@@ -79,6 +81,7 @@ articles:
   - articles/performance
   - articles/spatial-networks
   - articles/plotting
+  - articles/ergm
 
 # Every help topic must appear below; pkgdown stops if one is missing.
 reference:
@@ -236,6 +239,19 @@ reference:
   - small_world
   - compactness
   - average_degree
+
+- title: Exponential random graph models
+  desc: >-
+    ERGMs estimated by maximum pseudolikelihood, Monte Carlo maximum
+    likelihood, or exact enumeration for small networks, with simulation,
+    goodness of fit, MCMC diagnostics, and pooled temporal ERGMs.
+  contents:
+  - ergm_fit
+  - simulate.ergm_fit
+  - predict.ergm_fit
+  - ergm_gof
+  - mcmc_diagnostics
+  - tergm_fit
 
 - title: Statistical tests
   desc: >-

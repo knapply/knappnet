@@ -94,6 +94,7 @@ jobs:
           Rscript -e 'install.packages(c("igraph", "keyplayer", "sna", "tsna", "yaml"), repos = "https://cloud.r-project.org")'
           Rscript -e 'install.packages(c("remotes", "network", "Matrix"), repos = "https://cloud.r-project.org")'
           Rscript -e 'remotes::install_github("knapply/homophily", upgrade = "never")'
+          Rscript -e 'install.packages(c("ergm", "btergm"), repos = "https://cloud.r-project.org")'
       - name: Fixtures are reproducible
         run: |
           python validation/fixtures.py
