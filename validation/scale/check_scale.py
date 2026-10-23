@@ -11,7 +11,7 @@ hundred to 50,000 nodes). Nothing about the comparison is specific to
 this tier:
 
 - the measures, engine calls, tolerances, and documented convention
-  differences are read from validation/manifest.yaml and manifest.d/, the
+  differences are read from validation/manifest.d/, the
   single source of truth also used by validation/compare.py;
 - the oracle values come from the existing oracle scripts
   (validation/oracles/*networkx_oracle.py, and the R scripts run by
@@ -384,7 +384,7 @@ def prepare_r(out: Path) -> int:
     fixtures = out / "_fixtures"
     generate_fixtures(fixtures)
     common.FIXTURES = fixtures
-    sources = [VALIDATION / "manifest.yaml"] + sorted((VALIDATION / "manifest.d").glob("*.yaml"))
+    sources = common.manifest_files()
     for name in common.fixture_names():
         fx = common.load_fixture(name)
         if fx.n > R_MAX_NODES:

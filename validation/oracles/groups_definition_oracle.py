@@ -60,8 +60,8 @@ import numpy as np
 from scipy.optimize import minimize
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import GOLDEN, applies, fixture_names, load_fixture, write_values  # noqa: E402
-from common import load_manifest  # noqa: E402
+from common import (DEFINITION_VERSION, applies, fixture_names, load_fixture,
+                    load_manifest, write_values, write_version)  # noqa: E402
 
 ORACLE = "definition"
 MEASURES = {"n_cliques", "n_clans", "k_plexes", "lambda_connectivity", "lambda_sets",
@@ -757,9 +757,7 @@ def main() -> None:
                 continue
             write_values(ORACLE, name, variant, values)
             count += 1
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(
-        "definition (direct evaluation, exact arithmetic)\n", newline="")
+    write_version(ORACLE, DEFINITION_VERSION)
     print(f"definition (groups): wrote {count} golden files")
     for variant, name in skipped:
         print(f"  no answer: {variant} on {name}")

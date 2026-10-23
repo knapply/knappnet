@@ -45,13 +45,12 @@ from fractions import Fraction
 from pathlib import Path
 
 import numpy as np
-import yaml
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE.parent / "bindings"))
-from common import GOLDEN, MANIFEST_DIR, applies, fixture_names, load_fixture  # noqa: E402
-from common import write_values  # noqa: E402
+from common import (DEFINITION_VERSION, applies, fixture_names, load_area,
+                    load_fixture, write_values, write_version)  # noqa: E402
 
 ORACLE = "definition"
 MAX_NODES = 80
@@ -60,7 +59,7 @@ INF = None
 
 
 def manifest() -> dict:
-    return yaml.safe_load((MANIFEST_DIR / "roles.yaml").read_text())
+    return load_area("roles")
 
 
 # ---- Inputs derived from a fixture (data rules shared with the bindings) ------
@@ -694,7 +693,7 @@ def main() -> int:
                 continue
             write_values(ORACLE, name, variant, as_lines(values))
             written += 1
-    (GOLDEN / ORACLE / "VERSION").write_text("definition (direct evaluation, exact arithmetic)\n", newline="")
+    write_version(ORACLE, DEFINITION_VERSION)
     print(f"Wrote {written} definition golden files for roles ({skipped} undefined).")
     return 0
 

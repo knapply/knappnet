@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Golden values from NetworkX (Hagberg, Schult, and Swart 2008).
 
-    python3 validation/oracles/networkx_oracle.py
+    python3 validation/oracles/core_networkx_oracle.py
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from pathlib import Path
 import networkx as nx
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import (GOLDEN, applies, fixture_names, load_fixture,  # noqa: E402
-                    load_manifest, write_values)
+from common import (applies, fixture_names, load_fixture, load_manifest, write_values,
+                    write_version)  # noqa: E402
 
 ORACLE = "networkx"
 TRIADS = ["003", "012", "102", "021D", "021U", "021C", "111D", "111U",
@@ -75,8 +75,8 @@ def main() -> None:
             if values is not None:
                 write_values(ORACLE, name, variant, values)
                 count += 1
-    print(f"networkx {nx.__version__}: wrote {count} golden files to {GOLDEN / ORACLE}")
-    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n", newline="")
+    print(f"networkx {nx.__version__} (core): wrote {count} golden files")
+    write_version(ORACLE, f"networkx {nx.__version__}")
 
 
 if __name__ == "__main__":

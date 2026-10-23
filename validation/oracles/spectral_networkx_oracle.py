@@ -19,11 +19,10 @@ from pathlib import Path
 
 import networkx as nx
 import numpy as np
-import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from common import (GOLDEN, MANIFEST_DIR, applies, fixture_names,  # noqa: E402
-                    load_fixture, write_values)
+from common import (applies, fixture_names, load_area, load_fixture, write_values,
+                    write_version)  # noqa: E402
 
 ORACLE = "networkx"
 
@@ -127,7 +126,7 @@ def compute(spec, fx):
 
 
 def main() -> None:
-    spec = yaml.safe_load((MANIFEST_DIR / "spectral.yaml").read_text())
+    spec = load_area("spectral")
     count = 0
     for name in fixture_names():
         fx = load_fixture(name)
@@ -142,8 +141,7 @@ def main() -> None:
                 write_values(ORACLE, name, variant, defined([float(x) for x in values]))
                 count += 1
     print(f"networkx {nx.__version__} (spectral): wrote {count} golden files")
-    (GOLDEN / ORACLE).mkdir(parents=True, exist_ok=True)
-    (GOLDEN / ORACLE / "VERSION").write_text(f"networkx {nx.__version__}\n", newline="")
+    write_version(ORACLE, f"networkx {nx.__version__}")
 
 
 if __name__ == "__main__":

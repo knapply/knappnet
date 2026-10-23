@@ -1,7 +1,7 @@
 #!/usr/bin/env Rscript
 # Golden values from igraph (Csardi and Nepusz 2006) and sna (Butts 2008).
 #
-#   Rscript validation/oracles/r_oracles.R
+#   Rscript validation/oracles/r_core.R
 #
 # Requires the igraph, sna, and yaml packages. Run from the repository root.
 
@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
 root <- normalizePath(".")
 fixtures_dir <- file.path(root, "validation", "fixtures")
 golden_dir <- file.path(root, "validation", "golden")
-manifest <- yaml::read_yaml(file.path(root, "validation", "manifest.yaml"))
+manifest <- yaml::read_yaml(file.path(root, "validation", "manifest.d", "core.yaml"))
 
 write_values <- function(oracle, fixture, variant, values) {
   d <- file.path(golden_dir, oracle, fixture)

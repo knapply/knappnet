@@ -9,7 +9,7 @@
 # quietly when tsna is not installed. Run from the repository root.
 #
 # Every fixture is read as a contact sequence with the times of
-# validation/temporal_fixtures.py, with every contact instantaneous: contact
+# validation/derived/temporal.py, with every contact instantaneous: contact
 # e (0-based) starts at (37 e + 11) mod p, p = max(3, floor(m / 3) + 2). An
 # instantaneous contact is a networkDynamic point spell (onset = terminus),
 # and tsna::tPath() with graph.step.time = 0 follows paths whose contact
@@ -69,7 +69,7 @@ read_meta <- function(path) {
        weighted = get("weighted") == "true")
 }
 
-# Start times of validation/temporal_fixtures.py for m contacts.
+# Start times of validation/derived/temporal.py for m contacts.
 contact_starts <- function(m) {
   if (m == 0L) return(numeric())
   p <- max(3, m %/% 3 + 2)

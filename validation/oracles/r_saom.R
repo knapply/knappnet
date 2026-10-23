@@ -11,7 +11,7 @@
 # installed. Run from the repository root.
 #
 # Every directed fixture is read as the three-wave panel of
-# validation/saom_fixtures.py, rebuilt here with the same rules: wave 1 is
+# validation/derived/saom.py, rebuilt here with the same rules: wave 1 is
 # the fixture's adjacency matrix without self-loops; wave 2 flips tie
 # (i, j) (0-based) when (37 (i n + j) + 11) mod 7 == 0; wave 3 flips tie
 # (i, j) of wave 2 when (53 (i n + j) + 5) mod 9 == 0. Covariates of actor
@@ -52,7 +52,7 @@ read_meta <- function(path) {
   list(n = as.integer(get("n")), directed = get("directed") == "true")
 }
 
-# ---- The panel, as validation/saom_fixtures.py builds it -------------------
+# ---- The panel, as validation/derived/saom.py builds it -------------------
 
 toggle <- function(a, mult, add, mod) {
   n <- nrow(a)
