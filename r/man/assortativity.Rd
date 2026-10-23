@@ -80,11 +80,27 @@ E}, 67(2), 026126. \doi{10.1103/PhysRevE.67.026126}
 \code{\link{mixing_matrix}}, \code{\link{ei_index}}
 }
 \examples{
-g <- netframe(data.frame(from = c(1, 1, 2, 3, 4), to = c(2, 3, 3, 4, 5)),
+# An undirected network with a self-loop at node 5: igraph and homophily
+# count the loop as two arcs, NetworkX as one.
+g <- netframe(data.frame(from = c(1, 1, 2, 3, 4, 5), to = c(2, 3, 3, 4, 5, 5)),
               nodes = data.frame(id = 1:5, team = c("a", "a", "a", "b", "b"),
                                  age = c(30, 32, 35, 50, 52)),
               directed = FALSE)
-assortativity_nominal(g, "team")
-assortativity(g, "age")
-assortativity_degree(g)
+assortativity_nominal(g, "team")                           # igraph
+assortativity_nominal(g, "team", convention = "networkx")  # NetworkX
+assortativity_nominal(g, "team", convention = "homophily") # homophily
+
+assortativity(g, "age")                           # igraph
+assortativity(g, "age", convention = "networkx")  # NetworkX
+assortativity(g, "age", convention = "homophily") # homophily (as igraph)
+
+assortativity_degree(g)                           # igraph
+assortativity_degree(g, convention = "networkx")  # NetworkX
+assortativity_degree(g, convention = "homophily") # homophily (as igraph)
+
+# In a directed network homophily's assort_discrete() ignores direction.
+d <- netframe(data.frame(from = c(1, 1, 1, 2, 3, 3), to = c(2, 3, 5, 4, 2, 4)),
+              nodes = data.frame(id = 1:5, team = c("a", "a", "a", "b", "b")))
+assortativity_nominal(d, "team")                           # igraph, NetworkX
+assortativity_nominal(d, "team", convention = "homophily") # homophily
 }

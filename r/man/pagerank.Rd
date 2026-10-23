@@ -29,7 +29,9 @@ how an undirected self-loop counts (see Details).}
 \item{tol}{Convergence tolerance: iteration stops when the scores, which sum
 to 1, change by at most \code{tol} in total.}
 \item{max_iter}{Iteration cap. Not converging within it is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}, summing to
 1.}
@@ -63,7 +65,14 @@ Langville, A. N., & Meyer, C. D. (2004). Deeper inside PageRank.
 \doi{10.1080/15427951.2004.10129091}
 }
 \examples{
-g <- netframe(data.frame(from = c(1, 1, 2, 3), to = c(2, 3, 3, 1)))
-pagerank(g)
-pagerank(g, personalized = c(1, 0, 0))
+# An undirected network with a self-loop at node 4: igraph counts the loop
+# as two tie ends, NetworkX as one.
+g <- netframe(data.frame(from = c(1, 2, 3, 1, 4), to = c(2, 3, 4, 3, 4)),
+              directed = FALSE)
+pagerank(g)                          # igraph
+pagerank(g, convention = "networkx") # NetworkX
+
+# Personalized PageRank: every random jump returns to node 1.
+d <- netframe(data.frame(from = c(1, 1, 2, 3, 4), to = c(2, 3, 3, 1, 3)))
+pagerank(d, personalized = c(1, 0, 0, 0))
 }

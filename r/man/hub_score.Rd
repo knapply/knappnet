@@ -23,7 +23,9 @@ an undirected self-loop counts (twice or once on the diagonal).}
 \item{tol}{Convergence tolerance (relative residual of the eigenvector).}
 \item{max_iter}{Cap on matrix-vector products. Not converging within it is an
 error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
@@ -50,7 +52,11 @@ Kleinberg, J. M. (1999). Authoritative sources in a hyperlinked environment.
 \emph{Journal of the ACM}, 46(5), 604-632. \doi{10.1145/324133.324140}
 }
 \examples{
-g <- netframe(data.frame(from = c(1, 1, 2, 3, 4), to = c(3, 4, 3, 4, 3)))
-hub_score(g)
-authority_score(g)
+d <- netframe(data.frame(from = c(1, 1, 2, 3, 4), to = c(3, 4, 3, 4, 3)))
+hub_score(d)                          # igraph: largest score 1
+hub_score(d, convention = "networkx") # NetworkX: scores sum to 1
+hub_score(d, scale = "unit")          # Euclidean length 1
+
+authority_score(d)                          # igraph
+authority_score(d, convention = "networkx") # NetworkX
 }

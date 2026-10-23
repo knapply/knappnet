@@ -29,7 +29,9 @@ collapse into one tie (keeping the largest weight).}
 \item{tol}{Convergence tolerance of the iterative solver, relative to the
 largest score.}
 \item{max_iter}{Iteration cap. Not converging within it is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
@@ -61,7 +63,13 @@ Golub, G. H., & Van Loan, C. F. (2013). \emph{Matrix Computations} (4th
 ed.). Johns Hopkins University Press.
 }
 \examples{
-g <- netframe(data.frame(from = c(1, 1, 1, 2), to = c(2, 3, 4, 5)), directed = FALSE)
-power_centrality(g, exponent = 0.5)
-power_centrality(g, exponent = -0.5)
+# A star around node 1 with a pendant at node 5, and the tie 1-2 recorded
+# twice: igraph counts both edges, sna reads one tie.
+g <- netframe(data.frame(from = c(1, 1, 1, 1, 2), to = c(2, 2, 3, 4, 5)),
+              directed = FALSE)
+power_centrality(g, exponent = 0.3)                     # igraph
+power_centrality(g, exponent = 0.3, convention = "sna") # sna
+
+# A negative exponent rewards ties to weakly connected nodes.
+power_centrality(g, exponent = -0.3)
 }

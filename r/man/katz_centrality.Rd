@@ -28,7 +28,9 @@ column. They must not be negative.}
 \item{tol}{Convergence tolerance of the iteration, relative to the largest
 score.}
 \item{max_iter}{Iteration cap. Not converging within it is an error.}
-\item{threads}{Number of threads; \code{0} uses all available cores.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{netframe}}).}
 }
 \value{A numeric vector aligned with the rows of \code{x$nodes}.}
 \description{
@@ -67,7 +69,7 @@ Matrizen. \emph{Mathematische Zeitschrift}, 48(1), 221-226.
 \doi{10.1007/BF01180013}
 }
 \examples{
-g <- netframe(data.frame(from = c(1, 1, 2, 3), to = c(2, 3, 3, 1)))
-katz_centrality(g, alpha = 0.2)
-katz_centrality(g, alpha = 0.2, convention = "networkx")
+d <- netframe(data.frame(from = c(1, 1, 2, 3, 4), to = c(2, 3, 3, 1, 3)))
+katz_centrality(d, alpha = 0.2)                          # igraph: walk counts
+katz_centrality(d, alpha = 0.2, convention = "networkx") # NetworkX: unit length
 }

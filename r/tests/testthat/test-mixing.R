@@ -21,6 +21,18 @@ jemaah <- function() {
            nodes = data.frame(name = names, role = roles), directed = FALSE)
 }
 
+# Interaction strengths of Koschade's Table 2, in the edge order of jemaah().
+# The table leaves SARIJO-DULMATIN blank; DULMATIN-SARIJO is 5, and the
+# table is otherwise symmetric, so 5 is used.
+jemaah_weighted <- function() {
+  g <- jemaah()
+  strength <- c(2, 2, 1, 1, 5, 1, 1, 1, 1, 2, 4, 5, 3, 5, 3, 5, 5, 5, 1, 5, 2, 5, 2, 2, 2,
+                2, 2, 2, 2, 2, 2, 2, 2, 5, 5, 5, 1, 5, 2, 2, 2, 2, 2, 5, 2, 1, 2, 5, 1, 5,
+                2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 5, 1)
+  netframe(cbind(g$edges, strength = strength), nodes = g$nodes, directed = FALSE,
+           weight = "strength", weight_type = "strength")
+}
+
 roles <- c("command team", "operation assistant", "bomb maker", "suicide bomber", "Team Lima")
 
 test_that("mixing matrix of the Jemaah Islamiyah network matches homophily", {
@@ -72,6 +84,18 @@ test_that("assortativity of the Jemaah Islamiyah network matches homophily", {
   expect_equal(assortativity_nominal(g, "role", convention = "homophily"), 0.09078704,
                tolerance = 1e-6)
   expect_equal(assortativity_nominal(g, "role"), 0.09078704, tolerance = 1e-6)
+})
+
+test_that("strength assortativity of the weighted Jemaah Islamiyah network", {
+  # Values from NetworkX's degree_assortativity_coefficient(), with and
+  # without weight = "strength".
+  g <- jemaah_weighted()
+  expect_equal(sum(g$edges$strength), 166)
+  expect_equal(assortativity_degree(g, weighted = TRUE), 0.175836797, tolerance = 1e-8)
+  expect_equal(assortativity_degree(g), -0.022650693, tolerance = 1e-8)
+  # Weights do not enter the E-I index or the mixing matrix.
+  expect_identical(mixing_matrix(g, "role"), mixing_matrix(jemaah(), "role"))
+  expect_equal(ei_index(g, "role"), ei_index(jemaah(), "role"))
 })
 
 test_that("directed mixing matrices follow homophily's layout", {
@@ -156,6 +180,13 @@ test_that("homophily's samplike examples are reproduced", {
   expect_identical(mixing_matrix(s, "group"),
                    matrix(c(30, 1, 5, 7, 10, 1, 9, 2, 23), 3, byrow = TRUE,
                           dimnames = list(groups, groups)))
+  monks <- c("John Bosco", "Gregory", "Basil", "Peter", "Bonaventure", "Berthold", "Mark",
+             "Victor", "Ambrose", "Romauld", "Louis", "Winfrid", "Amand", "Hugh", "Boniface",
+             "Albert", "Elias", "Simplicius")
+  by_monk <- matrix(c(9, 3, 5, 11, 3, 1, 3, 5, 0, 0, 0, 9, 3, 2, 8, 1, 0, 5, 8, 2, 1, 4, 0, 7,
+                      2, 0, 6, 1, 1, 6, 3, 0, 5, 10, 0, 1, 1, 4, 3, 8, 0, 3, 8, 0, 1, 6, 0, 2,
+                      1, 5, 0, 3, 6, 0), 18, byrow = TRUE, dimnames = list(monks, groups))
+  expect_equal(mixing_matrix(s, s$roles$id, "group"), by_monk)
   expect_equal(mixing_matrix(s, "cloisterville", "group"),
                matrix(c(34, 15, 24, 48, 16, 39), 2, byrow = TRUE,
                       dimnames = list(c("TRUE", "FALSE"), groups)))

@@ -59,8 +59,10 @@ mixing_matrix <- function(x, dim1, dim2 = NULL, direction = c("all", "out", "in"
     same <- identical(d1$values, d2$values)
   }
   if (same) d2 <- d1
-  res <- .Call(C_mixing_matrix, engine_graph(x), d1$codes, length(d1$levels), d2$codes,
-               length(d2$levels), same, mode_code(direction))
+  ptr <- engine_graph(x)
+  res <- engine_call("mixing_matrix",
+    .Call(C_mixing_matrix, ptr, d1$codes, length(d1$levels), d2$codes, length(d2$levels),
+          same, mode_code(direction)))
   k1 <- length(d1$levels)
   k2 <- length(d2$levels)
   if (res[[2]]) {
@@ -145,12 +147,16 @@ assortativity <- function(x, values, values_in = NULL, directed = TRUE, normaliz
   convention <- match.arg(convention)
   v <- node_values(x, values, "values")
   vin <- if (is.null(values_in)) NULL else node_values(x, values_in, "values_in")
+  directed <- check_flag(directed, "directed")
+  normalized <- check_flag(normalized, "normalized")
   if (!is.null(vin) && !x$directed) {
     warning("`values_in` is ignored for undirected networks.", call. = FALSE)
     vin <- NULL
   }
-  .Call(C_assortativity_values, engine_graph(x), v, vin, isTRUE(directed),
-        assort_loops(convention), isTRUE(normalized))
+  ptr <- engine_graph(x)
+  engine_call("assortativity",
+    .Call(C_assortativity_values, ptr, v, vin, directed, assort_loops(convention),
+          normalized))
 }
 
 #' @rdname assortativity
@@ -160,9 +166,13 @@ assortativity_nominal <- function(x, types, directed = TRUE, normalized = TRUE,
   check_netframe(x)
   convention <- match.arg(convention)
   t <- node_categories(x, types, "types", missing_ok = FALSE)
+  directed <- check_flag(directed, "directed")
+  normalized <- check_flag(normalized, "normalized")
   if (convention == "homophily") directed <- FALSE
-  .Call(C_assortativity_nominal, engine_graph(x), t$codes, length(t$levels),
-        isTRUE(directed), assort_loops(convention), isTRUE(normalized))
+  ptr <- engine_graph(x)
+  engine_call("assortativity_nominal",
+    .Call(C_assortativity_nominal, ptr, t$codes, length(t$levels), directed,
+          assort_loops(convention), normalized))
 }
 
 #' @rdname assortativity
@@ -171,9 +181,14 @@ assortativity_degree <- function(x, directed = TRUE, weighted = FALSE, normalize
                                  convention = c("igraph", "networkx", "homophily")) {
   check_netframe(x)
   convention <- match.arg(convention)
-  if (isTRUE(weighted)) require_weights(x)
-  .Call(C_assortativity_degree, engine_graph(x), isTRUE(weighted), isTRUE(directed),
-        assort_loops(convention), isTRUE(normalized))
+  directed <- check_flag(directed, "directed")
+  weighted <- check_flag(weighted, "weighted")
+  normalized <- check_flag(normalized, "normalized")
+  if (weighted) require_weights(x)
+  ptr <- engine_graph(x)
+  engine_call("assortativity_degree",
+    .Call(C_assortativity_degree, ptr, weighted, directed, assort_loops(convention),
+          normalized))
 }
 
 assort_loops <- function(convention) if (convention == "networkx") 1L else 0L
@@ -242,10 +257,12 @@ ei_index <- function(x, groups, scope = c("global", "group", "node"),
   direction <- match.arg(direction)
   convention <- match.arg(convention)
   g <- node_categories(x, groups, "groups", missing_ok = FALSE)
+  ptr <- engine_graph(x)
   warn_parallel(x)
-  res <- .Call(C_ei_index, engine_graph(x), g$codes, length(g$levels),
-               switch(scope, global = 0L, group = 1L, node = 2L), mode_code(direction),
-               if (convention == "krackhardt") 0L else 1L)
+  res <- engine_call("ei_index",
+    .Call(C_ei_index, ptr, g$codes, length(g$levels),
+          switch(scope, global = 0L, group = 1L, node = 2L), mode_code(direction),
+          if (convention == "krackhardt") 0L else 1L))
   out <- res[[1]]
   if (scope == "group") names(out) <- g$levels
   attr(out, "external") <- res[[2]]
@@ -288,7 +305,8 @@ homophily <- function(x, groups, direction = c("all", "out", "in")) {
   direction <- match.arg(direction)
   g <- node_categories(x, groups, "groups", missing_ok = FALSE)
   k <- length(g$levels)
-  v <- .Call(C_group_shares, engine_graph(x), g$codes, k, mode_code(direction))
+  ptr <- engine_graph(x)
+  v <- engine_call("homophily", .Call(C_group_shares, ptr, g$codes, k, mode_code(direction)))
   m <- matrix(v, nrow = k, ncol = 5L, byrow = TRUE)
   data.frame(group = g$levels, size = as.integer(m[, 1]), internal = m[, 2],
              external = m[, 3], observed = m[, 4], expected = m[, 5],

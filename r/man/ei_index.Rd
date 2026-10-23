@@ -62,12 +62,15 @@ Knapp, B. G. (2019). homophily: Measuring network homophily. R package,
 \code{\link{mixing_matrix}}, \code{\link{homophily}}
 }
 \examples{
-staff <- data.frame(name = c("ann", "bob", "cat", "dan"),
-                    dept = c("sales", "sales", "eng", "eng"))
-g <- netframe(data.frame(from = c("ann", "ann", "bob", "cat"),
-                         to = c("bob", "cat", "dan", "dan")),
+staff <- data.frame(name = c("ann", "bob", "cat", "dan", "eve"),
+                    dept = c("sales", "sales", "eng", "eng", "hr"))
+g <- netframe(data.frame(from = c("ann", "ann", "bob", "cat", "dan"),
+                         to = c("bob", "cat", "dan", "dan", "eve")),
               nodes = staff, directed = FALSE)
 ei_index(g, "dept")
-ei_index(g, "dept", scope = "group")
 ei_index(g, "dept", scope = "node")
+
+# Group level: the two conventions count ties between groups differently.
+ei_index(g, "dept", scope = "group")                           # Krackhardt and Stern
+ei_index(g, "dept", scope = "group", convention = "homophily") # homophily
 }
