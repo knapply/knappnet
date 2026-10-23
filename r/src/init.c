@@ -59,6 +59,10 @@ extern SEXP C_layout_simple(SEXP, SEXP, SEXP);
 extern SEXP C_layout_tree(SEXP, SEXP);
 extern SEXP C_layout_twomode(SEXP, SEXP, SEXP);
 extern SEXP C_layout_stress_value(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_kpp_score(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_key_players(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_group_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_flow_betweenness(SEXP, SEXP, SEXP, SEXP);
 
 static const R_CallMethodDef call_methods[] = {
     {"C_graph_new", (DL_FUNC)&C_graph_new, 5},
@@ -118,6 +122,10 @@ static const R_CallMethodDef call_methods[] = {
     {"C_layout_tree", (DL_FUNC)&C_layout_tree, 2},
     {"C_layout_twomode", (DL_FUNC)&C_layout_twomode, 3},
     {"C_layout_stress_value", (DL_FUNC)&C_layout_stress_value, 5},
+    {"C_kpp_score", (DL_FUNC)&C_kpp_score, 7},
+    {"C_key_players", (DL_FUNC)&C_key_players, 11},
+    {"C_group_centrality", (DL_FUNC)&C_group_centrality, 8},
+    {"C_flow_betweenness", (DL_FUNC)&C_flow_betweenness, 4},
     {NULL, NULL, 0}};
 
 /* The symbol name must match the package name; tools/rename.py updates it. */

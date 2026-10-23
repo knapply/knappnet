@@ -144,6 +144,15 @@ reference:
   - assortativity
   - homophily
 
+- title: Key players and group centrality
+  desc: >-
+    Which nodes, removed or targeted together, most fragment or reach a
+    network, and centrality for groups of nodes.
+  contents:
+  - key_players
+  - group_centrality
+  - flow_betweenness
+
 - title: Brokerage and positions
   contents:
   - constraint
