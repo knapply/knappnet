@@ -6,9 +6,8 @@
 coreness <- function(x, mode = c("all", "out", "in")) {
   check_netframe(x)
   mode <- match.arg(mode)
-  code <- switch(mode, out = 1L, `in` = 2L, all = 3L)
   ptr <- engine_graph(x)
-  engine_call("coreness", .Call(C_coreness, ptr, code))
+  engine_call("coreness", .Call(C_coreness, ptr, mode_code(mode)))
 }
 
 # Maximal cliques and the clique number (man/max_cliques.Rd).
