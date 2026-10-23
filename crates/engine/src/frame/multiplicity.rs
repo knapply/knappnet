@@ -10,7 +10,7 @@
 //! the relation and the time spell so that a multiplex or temporal network
 //! with one edge per relation and spell is simple.
 
-use super::validate::{edge_groups, Groups, Resolved};
+use super::validate::{edge_groups, Groups, KeyColumns, Resolved};
 use crate::error::{Error, Result};
 
 /// How the weights of a group of parallel edges are combined.
@@ -83,10 +83,12 @@ pub fn is_simple(resolved: &Resolved) -> bool {
             .map_or(true, |g| g.sizes.len() == g.group.len())
 }
 
-/// Groups parallel edges (same endpoints, relation, and spell) and, with
-/// `drop_loops`, removes self-loops. `combine` says how the weights of a
-/// group are combined; without weights only `Combine::Count` produces a
-/// weight column.
+/// Groups parallel edges (same endpoints with their layers, relation, and
+/// spell) and, with `drop_loops`, removes self-loops (a coupling edge is
+/// not one). `combine` says how the weights of a group are combined;
+/// without weights only `Combine::Count` produces a weight column. Rows
+/// flagged as unobserved pairs are grouped like any other; the binding
+/// keeps or drops them by their flag.
 pub fn simplify(resolved: &Resolved, combine: Combine, drop_loops: bool) -> Simplified {
     let groups = match &resolved.groups {
         Some(g) => g.clone(),
@@ -95,9 +97,7 @@ pub fn simplify(resolved: &Resolved, combine: Combine, drop_loops: bool) -> Simp
             &resolved.src,
             &resolved.tgt,
             resolved.directed,
-            resolved.relations.as_ref().map(|r| &r.codes[..]),
-            resolved.start.as_deref(),
-            resolved.end.as_deref(),
+            KeyColumns::of(resolved),
         ),
     };
     let m = groups.group.len();
@@ -106,7 +106,7 @@ pub fn simplify(resolved: &Resolved, combine: Combine, drop_loops: bool) -> Simp
     let mut new_index = vec![None; k];
     let mut keep = Vec::with_capacity(k);
     for (g, &first) in groups.first.iter().enumerate() {
-        if drop_loops && resolved.src[first] == resolved.tgt[first] {
+        if drop_loops && resolved.is_loop(first) {
             continue;
         }
         new_index[g] = Some(keep.len() as u32);
