@@ -15,6 +15,7 @@ pub mod compare;
 pub mod dendrogram;
 pub mod fast_greedy;
 pub mod girvan_newman;
+pub mod infomap;
 pub mod label_propagation;
 pub mod leading_eigen;
 pub mod leiden;
@@ -27,6 +28,7 @@ pub use dendrogram::{
 };
 pub use fast_greedy::{fast_greedy, FastGreedy};
 pub use girvan_newman::{girvan_newman, GirvanNewman};
+pub use infomap::{infomap, map_equation, Infomap};
 pub use label_propagation::{label_propagation, LabelPropagationOptions, LpaMode, LpaVariant};
 pub use leading_eigen::{leading_eigen, LeadingEigen};
 pub use leiden::{leiden, Leiden, LeidenObjective, LeidenOptions};
