@@ -22,13 +22,15 @@ pub enum NodeRole {
     /// Representative y coordinate or latitude (double).
     Y,
     /// Logical: `true` marks a node whose ties were not observed (a
-    /// non-respondent). Provisional; see the module documentation.
+    /// non-respondent).
     NodeMissing,
+    /// The ego whose network the node belongs to (text or integer).
+    Ego,
 }
 
 impl NodeRole {
     /// Every node role, in code order.
-    pub const ALL: [NodeRole; 7] = [
+    pub const ALL: [NodeRole; 8] = [
         NodeRole::Id,
         NodeRole::Mode,
         NodeRole::NodeStart,
@@ -36,6 +38,7 @@ impl NodeRole {
         NodeRole::X,
         NodeRole::Y,
         NodeRole::NodeMissing,
+        NodeRole::Ego,
     ];
 
     /// The role's name, as bindings and messages use it.
@@ -48,6 +51,7 @@ impl NodeRole {
             NodeRole::X => "x",
             NodeRole::Y => "y",
             NodeRole::NodeMissing => "node_missing",
+            NodeRole::Ego => "ego",
         }
     }
 
@@ -81,14 +85,22 @@ pub enum EdgeRole {
     End,
     /// Observation wave (integer); wave `k` is the spell `[k, k + 1)`.
     Wave,
-    /// Logical: `true` marks a dyad whose status was not observed.
-    /// Provisional.
+    /// Logical: `true` marks a pair whose status was not observed; the
+    /// row is kept and counted but is not a tie of the built graph.
     EdgeMissing,
+    /// The layer of the source endpoint in a multilayer network: any
+    /// discrete column, set together with [`EdgeRole::TargetLayer`].
+    SourceLayer,
+    /// The layer of the target endpoint.
+    TargetLayer,
+    /// The ego whose network the edge belongs to; optional alongside the
+    /// node role, and must agree with both endpoints.
+    Ego,
 }
 
 impl EdgeRole {
     /// Every edge role, in code order.
-    pub const ALL: [EdgeRole; 9] = [
+    pub const ALL: [EdgeRole; 12] = [
         EdgeRole::Source,
         EdgeRole::Target,
         EdgeRole::Weight,
@@ -98,6 +110,9 @@ impl EdgeRole {
         EdgeRole::End,
         EdgeRole::Wave,
         EdgeRole::EdgeMissing,
+        EdgeRole::SourceLayer,
+        EdgeRole::TargetLayer,
+        EdgeRole::Ego,
     ];
 
     /// The role's name, as bindings and messages use it.
@@ -112,6 +127,9 @@ impl EdgeRole {
             EdgeRole::End => "end",
             EdgeRole::Wave => "wave",
             EdgeRole::EdgeMissing => "edge_missing",
+            EdgeRole::SourceLayer => "source_layer",
+            EdgeRole::TargetLayer => "target_layer",
+            EdgeRole::Ego => "ego",
         }
     }
 
@@ -121,6 +139,96 @@ impl EdgeRole {
             .ok()
             .and_then(|i| EdgeRole::ALL.get(i).copied())
             .ok_or_else(|| Error::InvalidArgument(format!("unknown edge role code {code}")))
+    }
+}
+
+/// The role of a column of the optional layer table.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum LayerRole {
+    /// The layer identifier: any discrete column, unique and not missing.
+    Layer,
+}
+
+impl LayerRole {
+    /// Every layer role, in code order.
+    pub const ALL: [LayerRole; 1] = [LayerRole::Layer];
+
+    /// The role's name.
+    pub fn name(self) -> &'static str {
+        "layer"
+    }
+
+    /// Decodes the C interface codes, which are positions in [`Self::ALL`].
+    pub fn from_code(code: i32) -> Result<LayerRole> {
+        usize::try_from(code)
+            .ok()
+            .and_then(|i| LayerRole::ALL.get(i).copied())
+            .ok_or_else(|| Error::InvalidArgument(format!("unknown layer role code {code}")))
+    }
+}
+
+/// The roles of the optional node spells table (one row per presence
+/// spell of a node; several rows per node).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SpellRole {
+    /// The node identifier (same type as the node table's).
+    Id,
+    /// Start of the spell (double); missing means unbounded.
+    Start,
+    /// End of the spell (double); missing means unbounded.
+    End,
+}
+
+impl SpellRole {
+    /// Every spell role, in code order.
+    pub const ALL: [SpellRole; 3] = [SpellRole::Id, SpellRole::Start, SpellRole::End];
+
+    /// The role's name.
+    pub fn name(self) -> &'static str {
+        match self {
+            SpellRole::Id => "id",
+            SpellRole::Start => "start",
+            SpellRole::End => "end",
+        }
+    }
+
+    /// Decodes the C interface codes, which are positions in [`Self::ALL`].
+    pub fn from_code(code: i32) -> Result<SpellRole> {
+        usize::try_from(code)
+            .ok()
+            .and_then(|i| SpellRole::ALL.get(i).copied())
+            .ok_or_else(|| Error::InvalidArgument(format!("unknown node spell role code {code}")))
+    }
+}
+
+/// The roles of the optional node changes table (one row per change of
+/// a node attribute; the attribute columns stay with the binding).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ChangeRole {
+    /// The node identifier (same type as the node table's).
+    Id,
+    /// The time the change takes effect (double, finite).
+    Time,
+}
+
+impl ChangeRole {
+    /// Every change role, in code order.
+    pub const ALL: [ChangeRole; 2] = [ChangeRole::Id, ChangeRole::Time];
+
+    /// The role's name.
+    pub fn name(self) -> &'static str {
+        match self {
+            ChangeRole::Id => "id",
+            ChangeRole::Time => "time",
+        }
+    }
+
+    /// Decodes the C interface codes, which are positions in [`Self::ALL`].
+    pub fn from_code(code: i32) -> Result<ChangeRole> {
+        usize::try_from(code)
+            .ok()
+            .and_then(|i| ChangeRole::ALL.get(i).copied())
+            .ok_or_else(|| Error::InvalidArgument(format!("unknown node change role code {code}")))
     }
 }
 
@@ -228,6 +336,17 @@ pub struct Declarations {
     /// order of first appearance, rather than being errors. Implied when
     /// the frame has no node table.
     pub add_nodes: bool,
+    /// Whether every ego identifier is a node identifier (`Some(true)`:
+    /// an ego that is not a node is an error). Requires an ego role.
+    pub egos_are_nodes: Option<bool>,
+    /// Whether every interlayer edge joins one actor to itself
+    /// (`Some(true)`: the multiplex special case; an interlayer edge
+    /// between two actors is an error). Requires the layer roles.
+    pub couplings_only: Option<bool>,
+    /// Whether the presence spells of one node may overlap
+    /// (`Some(true)`); otherwise overlapping rows of the node spells
+    /// table are errors.
+    pub overlapping_spells: Option<bool>,
 }
 
 impl Default for Declarations {
@@ -238,6 +357,9 @@ impl Default for Declarations {
             multiple: None,
             between_modes_only: None,
             add_nodes: false,
+            egos_are_nodes: None,
+            couplings_only: None,
+            overlapping_spells: None,
         }
     }
 }
@@ -255,11 +377,18 @@ pub enum Declaration {
     BetweenModesOnly,
     /// [`Declarations::add_nodes`].
     AddNodes,
+    /// [`Declarations::egos_are_nodes`].
+    EgosAreNodes,
+    /// [`Declarations::couplings_only`].
+    CouplingsOnly,
+    /// [`Declarations::overlapping_spells`].
+    OverlappingSpells,
 }
 
 impl Declaration {
     /// Decodes the C interface codes: 0 = directed, 1 = loops,
-    /// 2 = multiple, 3 = between_modes_only, 4 = add_nodes.
+    /// 2 = multiple, 3 = between_modes_only, 4 = add_nodes,
+    /// 5 = egos_are_nodes, 6 = couplings_only, 7 = overlapping_spells.
     pub fn from_code(code: i32) -> Result<Declaration> {
         match code {
             0 => Ok(Declaration::Directed),
@@ -267,6 +396,9 @@ impl Declaration {
             2 => Ok(Declaration::Multiple),
             3 => Ok(Declaration::BetweenModesOnly),
             4 => Ok(Declaration::AddNodes),
+            5 => Ok(Declaration::EgosAreNodes),
+            6 => Ok(Declaration::CouplingsOnly),
+            7 => Ok(Declaration::OverlappingSpells),
             _ => Err(Error::InvalidArgument(format!(
                 "unknown declaration code {code}"
             ))),
@@ -285,6 +417,9 @@ impl Declarations {
             Declaration::Multiple => self.multiple = flag,
             Declaration::BetweenModesOnly => self.between_modes_only = flag,
             Declaration::AddNodes => self.add_nodes = value > 0,
+            Declaration::EgosAreNodes => self.egos_are_nodes = flag,
+            Declaration::CouplingsOnly => self.couplings_only = flag,
+            Declaration::OverlappingSpells => self.overlapping_spells = flag,
         }
     }
 }
@@ -310,7 +445,21 @@ mod tests {
             CoordinateKind::LonLat
         );
         assert!(CoordinateKind::from_code(3).is_err());
-        assert!(Declaration::from_code(5).is_err());
+        assert!(Declaration::from_code(8).is_err());
+        assert_eq!(LayerRole::from_code(0).unwrap(), LayerRole::Layer);
+        assert!(LayerRole::from_code(1).is_err());
+        assert_eq!(SpellRole::from_code(2).unwrap(), SpellRole::End);
+        assert!(SpellRole::from_code(3).is_err());
+        assert_eq!(ChangeRole::from_code(1).unwrap(), ChangeRole::Time);
+        assert!(ChangeRole::from_code(-1).is_err());
+        assert_eq!(
+            (
+                LayerRole::Layer.name(),
+                SpellRole::Id.name(),
+                ChangeRole::Time.name()
+            ),
+            ("layer", "id", "time")
+        );
     }
 
     #[test]
@@ -327,5 +476,12 @@ mod tests {
         d.set(Declaration::Multiple, 1);
         d.set(Declaration::BetweenModesOnly, 1);
         assert_eq!((d.multiple, d.between_modes_only), (Some(true), Some(true)));
+        d.set(Declaration::EgosAreNodes, 1);
+        d.set(Declaration::CouplingsOnly, 0);
+        d.set(Declaration::OverlappingSpells, -1);
+        assert_eq!(
+            (d.egos_are_nodes, d.couplings_only, d.overlapping_spells),
+            (Some(true), Some(false), None)
+        );
     }
 }

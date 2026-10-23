@@ -211,8 +211,8 @@ bridges below are the supported path meanwhile.
 
 ## Teaching data sets, with licences
 
-Every shipped data set needs a licence that allows redistribution under
-MIT and a `data-raw/` script that rebuilds it from its published source.
+Every shipped data set needs a licence that allows redistribution with the
+package and a `data-raw/` script that rebuilds it from its published source.
 
 | Data set | Taught in | Source and licence | Tier |
 |---|---|---|---|
@@ -224,7 +224,7 @@ MIT and a `data-raw/` script that rebuilds it from its published source.
 | Sampson monastery, Davis southern women (shipped), Zachary karate (shipped) | A, S4, NAR | `davis1941deep`; `zachary1977information` | next |
 | Les Misérables (Knuth), Game of Thrones season 1, Star Wars | S10, W4, W7 | Stanford GraphBase (`knuth1993stanford`), public; Beveridge and Shan 2016 and Gabasova 2016, redistributable with attribution | next |
 | Glasgow (Teenage Friends and Lifestyle) and s50 panels | R15, S19 | [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/) data page; check the stated terms before shipping | later |
-| igraphdata sets (UKfaculty, enron, yeast, macaque, immuno, USairports, Koenigsberg) | W, NAR | igraphdata is CC BY-SA 4.0: share-alike is incompatible with bundling in an MIT package; point to the package instead | out of scope |
+| igraphdata sets (UKfaculty, enron, yeast, macaque, immuno, USairports, Koenigsberg) | W, NAR | igraphdata is CC BY-SA 4.0: share-alike is incompatible with bundling; point to the package instead | out of scope |
 | Classroom and GSS egocentric data of Rawlings et al. | R3-R15 | companion repository under CC BY-NC-ND: not redistributable; document how to load them | out of scope |
 | UCNets, cowList, Senate cosponsorship | S7, S8 | restricted or large; document only | out of scope |
 
@@ -252,3 +252,140 @@ and are listed so they are not lost.
 - Validation against the books' own worked numbers on the shipped data
   sets, with `convention = "ucinet"`, documenting the cases where the
   book's figure is not reproducible and why.
+
+## State of the art: proposals from the October 2026 algorithm survey
+
+A survey of current graph algorithms and systems (traversal and centrality;
+cohesion, communities, and motifs; systems, scale, and dynamics) ranked
+the ideas below for knappnet. Citations are checked against Crossref
+before each item is implemented. Items marked † overlap with the
+optimization work under way (density-aware storage, push/pull and
+multi-source BFS, triangle kernels).
+
+**Now**
+
+1. Frontier layer with sparse/dense switching (Ligra/GBBS `edgeMap`;
+   push/pull BFS; bitset frontiers for dense networks; batched
+   multi-source searches) †.
+2. One ordered triangle kernel (degree ordering, merge/galloping/bitset
+   intersection) for triangle counts, clustering variants, and per-edge
+   support †.
+3. Deterministic parallel reductions (a fixed reduction tree independent
+   of the thread count) and compensated summation in dense linear algebra.
+4. Exact betweenness reductions: pendant, twin, and degree-2 compression
+   and decomposition at articulation points.
+5. Exact diameter, radius, and eccentricity by bounding (2-sweep, iFUB,
+   Takes and Kosters; SumSweep for directed networks).
+6. Degree-preserving null models: edge-switch MCMC with mixing
+   diagnostics, curveball for two-mode networks, sequential importance
+   sampling for small networks (fixes simple configuration-model draws).
+7. Maximum clique by branch and bound with bitset colouring bounds.
+8. k-truss and (r,s)-nucleus decompositions on the triangle kernel.
+9. Partition comparison and consensus clustering (ARI, NMI, VI, AMI,
+   reduced mutual information, element-centric similarity).
+10. Sparse-aware QAP with exact enumeration up to about 12 nodes and
+    Monte Carlo standard errors.
+
+**Next**
+
+- Approximate betweenness with error guarantees (Riondato and
+  Kornaropoulos; KADABRA), thread-count independent; top-k closeness
+  (Bergamini et al.); local personalized PageRank (push and Monte Carlo).
+- Lazy and stochastic greedy for group centrality and key players.
+- Information centrality through a Cholesky factorization.
+- Degree-corrected and nested stochastic block models with MCMC and
+  description-length model selection (Peixoto).
+- Exact 3- and 4-node motif counts (PGD and ESCAPE identities) with
+  degree-preserving null z-scores; then 5-node.
+- Deterministic parallel Leiden and Louvain.
+- Generalized cores (weighted, D-core, two-mode, multilayer) and
+  densest subgraph (Greedy++).
+- Overlapping and local communities (clique percolation, link
+  communities, conductance-guaranteed local clustering).
+- Core-periphery significance tests and extensions.
+- Temporal reachability for all pairs and the exact 3-edge temporal motif
+  census; sliding-window analysis of contact streams.
+- Compressed CSR and a borrowed-storage constructor so R or Python can
+  pass memory-mapped graphs.
+- Fast generators: Chung-Lu, parallel G(n, m) and R-MAT, LFR.
+- Balanced static scheduling by cost.
+
+**Later**
+
+- HyperBall/HyperANF sketches for distance distributions on very large
+  graphs; internal node reordering; radix and 4-ary heaps and stepping
+  algorithms for single-source paths.
+- Regular equivalence by partition refinement in O(m log n); canonical
+  labelling for larger motifs; Bethe-Hessian clustering with a sparse
+  eigensolver.
+- An optional GPU backend for O(nm) kernels on graphs with millions of
+  edges.
+
+**Considered and rejected**: the 2025 directed shortest-path algorithm
+that beats Dijkstra asymptotically (3-4 times slower in practice),
+contraction hierarchies and hub labels, exact modularity by integer
+programming, skip-gram and graph-neural-network embeddings, distributed
+implementations, and a promise of bitwise-identical results across
+platforms.
+
+## Statistical network modelling: primitives and model families
+
+From the October 2026 survey of statistical network modelling. ERGM,
+TERGM, and SAOM code lives on the `ergm-saom` branch until its interface
+is redesigned; the primitives below serve those models and the others
+listed. Citations are verified before implementation.
+
+**Engine primitives, in order**
+
+1. Network state with cached shared-partner and two-path counts, and
+   change statistics for many dyads at once (bitset popcounts or masked
+   sparse products).
+2. Streamed dyad design matrices with sparse logistic and Poisson IRLS,
+   rare-event corrections, and case-control subsampling.
+3. Samplers on independent seeded streams with block proposals and chain
+   diagnostics (effective sample size, R-hat, Hotelling convergence).
+4. Exact enumeration extended to isomorphism classes (ground truth for
+   larger tiny networks).
+5. Permutation machinery: indexed streams, sequential stopping,
+   Freedman-Lane and max-T procedures.
+6. High-dimensional sender and receiver fixed effects with dyadic-robust
+   (sandwich) variance.
+7. Cox and conditional-logit fitting for event data with sampled risk sets
+   (Borgan et al. 1995; Lerner and Lomi 2020).
+8. Alias tables, Fenwick-tree sampling, and Gillespie event simulation.
+9. Stochastic approximation, including equilibrium expectation (Byshkin
+   et al. 2018), and bridge, path, and annealed likelihood ratios.
+10. A sparse truncated eigensolver and randomized SVD (shared with the
+    spectral work).
+
+Close behind: log-determinants for large sparse matrices (sparse
+Cholesky, Chebyshev, stochastic Lanczos quadrature); batched simulation
+addressed by (seed, index) with export to npy/npz/Arrow, and calibration
+tooling (simulation-based calibration, coverage, exact posterior grids)
+for simulation-based and amortized neural inference.
+
+**Model families, in order**
+
+1. Dyadic regression (GLM, fixed effects, QAP/MRQAP, dyadic-robust
+   standard errors).
+2. ERGMs: MPLE with bootstrap, MCMC-MLE, equilibrium expectation and
+   contrastive divergence for large networks, tapered, valued,
+   multilayer, missing-data, and egocentric variants.
+3. Relational event models.
+4. Latent variable models: additive and multiplicative effects, latent
+   space with case-control likelihoods, random dot product graph
+   inference.
+5. Stochastic block models as statistical models (with the community
+   detection work).
+6. Network autocorrelation and peer-effects models.
+7. SAOMs and dynamic network actor models, with score tests.
+8. Temporal ERGMs (pooled pseudolikelihood, then separable temporal
+   ERGMs).
+9. Interference and diffusion inference (exposure mappings,
+   randomization tests, ALAAMs).
+10. Simulation-based and amortized inference support, with the learners
+    in Python.
+
+Not planned: neural networks or automatic differentiation inside the
+engine, GPU kernels before batched CPU code, full Bayesian ERGMs as the
+default estimator, rejection ABC, and hypergraph ERGMs.

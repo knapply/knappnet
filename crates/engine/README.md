@@ -53,4 +53,4 @@ validation manifest.
 
 ## License
 
-MIT
+All rights reserved. See the LICENSE file at the repository root.

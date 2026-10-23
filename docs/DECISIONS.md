@@ -377,3 +377,22 @@ one row per node.
 
 **Alternatives.** Repeated node rows keyed by identifier and time, which
 breaks the one-row-per-node rule every measure relies on.
+
+### 20. "Whole-network structure", not "topography"
+
+**Decision.** Measures of a network as a whole (density, centralization,
+fragmentation, compactness, core-periphery, small-world comparisons) are
+grouped as whole-network structure in the documentation, file names, and
+module names. The definitions article records that Everton (2012) and
+Cunningham, Everton, and Murphy (2016) call this "topography" and that
+network science speaks of "network topology".
+
+**Alternatives.** "Topography", as in the dark-networks books, which is a
+metaphor (the description of surface relief) used by few other sources;
+"topology", the network-science term, which in mathematics names
+properties preserved under continuous deformation rather than statistics
+such as density.
+
+**Reasoning.** "Whole-network" and "graph-level" are the terms of the
+general social network analysis literature (`wasserman1994social`); the
+alternatives are either idiosyncratic or loose.

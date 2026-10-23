@@ -143,7 +143,8 @@ no code with the engine) is expected wherever one is practical.
 
 ## Licensing
 
-The project is MIT. Implement every method from its published source
+The project is proprietary (all rights reserved; see LICENSE), and
+outside contributions are not accepted at present. Implement every method from its published source
 (papers, books, official documentation). Reference tools under the GPL or
 another copyleft license ([igraph](https://r.igraph.org/), [sna](https://cran.r-project.org/package=sna), network, [statnet](https://statnet.org/), [ergm](https://cran.r-project.org/package=ergm), [RSiena](https://www.stats.ox.ac.uk/~snijders/siena/),
 tsna, xucinet, and others) are used only as black-box oracles: run them,
