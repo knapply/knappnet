@@ -30,7 +30,7 @@
 //!   plus this bound cannot beat the best partition found so far is cut.
 //! - Starting incumbents: the suffix's first node alone beside the
 //!   optimum of the next suffix, and (undirected networks) the best of
-//!   five Leiden runs ([`super::leiden`]) restricted to the suffix. They
+//!   five Leiden runs ([`super::leiden()`]) restricted to the suffix. They
 //!   only speed the search; the result is optimal either way.
 //!
 //! With whole-number weights and gamma = 1 every quantity is an integer

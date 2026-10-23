@@ -11,9 +11,9 @@
 //! igraph's `cut_at()`.
 //!
 //! - [`merges_from_node_pairs`] converts a merge list whose groups are
-//!   named by any of their nodes (as [`super::fast_greedy`] reports them).
+//!   named by any of their nodes (as [`super::fast_greedy()`] reports them).
 //! - [`merges_from_edge_removals`] builds the dendrogram of a divisive
-//!   method from its edge removals (as [`super::girvan_newman`] reports
+//!   method from its edge removals (as [`super::girvan_newman()`] reports
 //!   them): the edges are put back in reverse order of removal, and every
 //!   edge that joins two components records a merge, which is how igraph
 //!   derives the merges of `cluster_edge_betweenness()`.

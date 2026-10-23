@@ -30,8 +30,8 @@
 //!   with S = sum_ij C(n_ij, 2), S_a = sum_i C(a_i, 2),
 //!   S_b = sum_j C(b_j, 2), and C = C(n, 2).
 //! - Adjusted mutual information (Vinh, Epps, and Bailey 2010,
-//!   `vinh2010information`): AMI = (I - E[I]) / (mean(H(A), H(B)) - E[I]),
-//!   with E[I] the expected mutual information under the hypergeometric
+//!   `vinh2010information`): AMI = (I - E(I)) / (mean(H(A), H(B)) - E(I)),
+//!   with E(I) the expected mutual information under the hypergeometric
 //!   model of their equation (24a) and the arithmetic mean of the two
 //!   entropies (the normalization that matches NMI above).
 //!
