@@ -537,7 +537,10 @@ test_that("GeoPackage files round-trip spatial networks", {
   expect_true(bb$directed)
   expect_equal(nrow(bb$edges), 12L)
   expect_equal(bb$roles$id, "id")
-  sf::st_write(roads$nodes, bare, layer = "points", quiet = TRUE, delete_dsn = TRUE)
+  # A file with neither layer (a new file: see above on Windows locks).
+  bare <- tempfile(fileext = ".gpkg")
+  on.exit(unlink(bare), add = TRUE)
+  sf::st_write(roads$nodes, bare, layer = "points", quiet = TRUE)
   expect_error(read_network(bare), "layer")
   # Writing a plain network to a GeoPackage gives aspatial tables.
   plain <- netframe(data.frame(from = c("a", "b"), to = c("b", "c")), directed = FALSE)
