@@ -102,9 +102,13 @@ use std::sync::OnceLock;
 
 use crate::error::{Error, Result};
 
+pub use events::{burstiness, inter_event_times, Burstiness, EventScope, InterEvents};
 pub use paths::{
     temporal_closeness, temporal_paths, temporal_reach_counts, Criterion, Direction, PathOptions,
     TemporalCloseness, Traversal,
+};
+pub use windows::{
+    aggregate, contacts_at, contacts_in_windows, regular_windows, Aggregate, WindowContacts,
 };
 
 /// A temporal network: contacts with start and end times.

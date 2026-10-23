@@ -538,3 +538,47 @@ fn results_do_not_depend_on_threads() {
         assert_eq!(a, b);
     }
 }
+
+/// The one-pass window sweep returns exactly the contacts active in each
+/// window, and aggregation conserves counts and durations.
+#[test]
+fn windows_and_aggregation_match_definitions() {
+    use engine::temporal::{aggregate, contacts_in_windows, regular_windows};
+    let mut rng = Rng(3);
+    for _ in 0..300 {
+        let c = random_case(&mut rng);
+        let net = c.net();
+        let width = 0.5 * (1 + rng.below(6)) as f64;
+        let step = 0.5 * (1 + rng.below(6)) as f64;
+        let (a, b) = regular_windows(-1.0, 7.0, width, step).unwrap();
+        let w = contacts_in_windows(&net, &a, &b).unwrap();
+        for k in 0..a.len() {
+            let want: Vec<usize> = (0..c.src.len())
+                .filter(|&e| {
+                    let (s, t) = (c.start[e], c.end[e]);
+                    if s == t {
+                        a[k] <= s && s < b[k]
+                    } else {
+                        s < b[k] && t > a[k]
+                    }
+                })
+                .collect();
+            assert_eq!(&w.indices[w.offsets[k]..w.offsets[k + 1]], &want[..]);
+        }
+        let agg = aggregate(&net, None).unwrap();
+        assert_eq!(agg.count.iter().sum::<f64>(), c.src.len() as f64);
+        let total: f64 = c.start.iter().zip(&c.end).map(|(s, e)| e - s).sum();
+        assert!(same(agg.duration.iter().sum::<f64>(), total));
+        // Clipped durations over a tumbling series add up to the total.
+        let (a, b) = regular_windows(0.0, 10.0, 1.0, 1.0).unwrap();
+        let mut clipped = 0.0;
+        for k in 0..a.len() {
+            clipped += aggregate(&net, Some((a[k], b[k])))
+                .unwrap()
+                .duration
+                .iter()
+                .sum::<f64>();
+        }
+        assert!(same(clipped, total));
+    }
+}
