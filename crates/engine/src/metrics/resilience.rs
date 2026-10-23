@@ -17,14 +17,14 @@
 //!     d_Sj is the distance from the nearest member of S and members count
 //!     as distance 1 ("regard all distances within the KP set to be
 //!     unity", p. 29).
-//!   The paper writes F and DF over unordered pairs of an undirected graph
-//!   with a factor 2; the ordered-pair forms above are identical there and
-//!   extend them to directed paths. Optimization is Borgatti's greedy swap
-//!   heuristic (Fig. 6): from a random set, make the single swap of a
-//!   member for a non-member that most improves the fit, until no swap
-//!   improves it; restarts run in parallel from independent random streams
-//!   and the best result wins. Exact enumeration of every set is available
-//!   for small problems.
+//!     The paper writes F and DF over unordered pairs of an undirected graph
+//!     with a factor 2; the ordered-pair forms above are identical there and
+//!     extend them to directed paths. Optimization is Borgatti's greedy swap
+//!     heuristic (Fig. 6): from a random set, make the single swap of a
+//!     member for a non-member that most improves the fit, until no swap
+//!     improves it; restarts run in parallel from independent random streams
+//!     and the best result wins. Exact enumeration of every set is available
+//!     for small problems.
 //! - Group degree, closeness, and betweenness (Everett and Borgatti 1999,
 //!   `everett1999centrality`). Group betweenness counts, for every pair of
 //!   non-members, the fraction of shortest paths that pass through at least
@@ -533,7 +533,7 @@ impl<'a> Scorer<'a> {
 }
 
 fn kpp_prepare(g: &Graph, opts: &KppOptions) -> Result<PathGraph> {
-    if opts.measure == KppMeasure::MReach && !(opts.m >= 0.0) {
+    if opts.measure == KppMeasure::MReach && (opts.m.is_nan() || opts.m < 0.0) {
         return Err(Error::InvalidArgument(
             "the m-reach distance limit must be a non-negative number".into(),
         ));

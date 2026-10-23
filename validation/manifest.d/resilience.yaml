@@ -1,0 +1,308 @@
+# Key players (Borgatti 2006), group centrality (Everett and Borgatti
+# 1999), and flow betweenness (Freeman, Borgatti, and White 1991). Format as
+# in ../manifest.yaml; engine runners in ../bindings/resilience.py.
+#
+# Undefined results (NaN) are written as -1 by the engine runner and by
+# every oracle, since none of these measures can be negative.
+#
+# Engine functions:
+#   kpp_single        the criterion for every single-node set {v}, as a
+#                     node-aligned vector
+#   kpp_optimum       the best value over all sets of size k (exact
+#                     enumeration); unique even when several sets attain it
+#   group             group centrality of the first min(3, max(1, n - 2))
+#                     nodes
+#   flow_betweenness  node-level flow betweenness
+#
+# The definition oracle evaluates every set by brute force and is limited
+# to fixtures small enough for that: KPP-Neg optima to n <= 40 nodes, and
+# flow betweenness (one maximum flow per pair and removed node, in exact
+# integer arithmetic) to n <= 25.
+
+kpp_fragmentation_single:
+  engine: {fn: kpp_single, measure: fragmentation}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "1 - reachable ordered pairs / (n'(n' - 1)) in G - v, from breadth-first search (resilience_definition_oracle.py)"
+
+kpp_fragmentation_single_all:
+  engine: {fn: kpp_single, measure: fragmentation, mode: all}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "as kpp_fragmentation_single, ignoring arc directions"
+
+kpp_distance_fragmentation_single:
+  engine: {fn: kpp_single, measure: distance_fragmentation}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "1 - sum over ordered pairs of 1/d / (n'(n' - 1)) in G - v (Borgatti 2006, eq. 9)"
+    keyplayer:
+      call: "keyplayer::fragment(adjacency, binary = TRUE): 1 - sum_{j,k != i} 1/d_jk / ((n - 1)(n - 2)) (An and Liu 2016)"
+      undefined_when: [directed]
+      undefined_on: [single_node, star8]
+      undefined_reason: >-
+        keyplayer's fragmentation is not directional, so it is compared on
+        undirected networks only. Its formula divides by the largest inverse
+        distance in the residual network, which is undefined when removing
+        a node leaves no ties (the centre of star8) or no pairs (one node).
+
+kpp_distance_fragmentation_single_weighted:
+  engine: {fn: kpp_single, measure: distance_fragmentation, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "eq. 9 with weights as path lengths (Floyd-Warshall in exact arithmetic)"
+
+kpp_distance_reach_single:
+  engine: {fn: kpp_single, measure: distance_reach}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "(1 + sum over other nodes of 1/d(v, j)) / n (Borgatti 2006, eq. 14)"
+
+kpp_distance_reach_single_in:
+  engine: {fn: kpp_single, measure: distance_reach, mode: in}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "eq. 14 with distances to v"
+
+kpp_distance_reach_single_weighted:
+  engine: {fn: kpp_single, measure: distance_reach, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "eq. 14 with weights as path lengths"
+
+kpp_m_reach_single:
+  engine: {fn: kpp_single, measure: m_reach, m: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "number of other nodes within 2 steps of v (Borgatti 2006, eq. 12)"
+
+kpp_fragmentation_optimum_k2:
+  engine: {fn: kpp_optimum, measure: fragmentation, k: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "maximum of F(G - S) over every pair S"
+      undefined_on: [les_miserables, gnp_dir_sparse, gnp_und_sparse, weighted_dir, weighted_und,
+                     real_weights_dir, real_weights_und]
+      undefined_reason: Brute force over every pair is limited to networks of at most 40 nodes.
+
+kpp_distance_fragmentation_optimum_k2:
+  engine: {fn: kpp_optimum, measure: distance_fragmentation, k: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "maximum of DF(G - S) over every pair S"
+      undefined_on: [les_miserables, gnp_dir_sparse, gnp_und_sparse, weighted_dir, weighted_und,
+                     real_weights_dir, real_weights_und]
+      undefined_reason: Brute force over every pair is limited to networks of at most 40 nodes.
+
+kpp_distance_reach_optimum_k2:
+  engine: {fn: kpp_optimum, measure: distance_reach, k: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "maximum of DR(S) over every pair S, from the all-pairs distance matrix"
+
+kpp_m_reach_optimum_k3:
+  engine: {fn: kpp_optimum, measure: m_reach, m: 1, k: 3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "maximum over every set of three nodes of the number of non-members adjacent to the set"
+
+group_degree:
+  engine: {fn: group, measure: degree, mode: out, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "non-members with an arc from a member / (n - k) (Everett and Borgatti 1999)"
+    networkx:
+      call: "nx.group_degree_centrality(G, C) (out-neighbours in directed graphs: nx.group_out_degree_centrality)"
+      undefined_on: [single_node]
+      undefined_reason: The group is the only node, so there are no non-members (division by zero).
+
+group_degree_in:
+  engine: {fn: group, measure: degree, mode: in, normalized: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "non-members with an arc to a member / (n - k)"
+    networkx:
+      call: "nx.group_in_degree_centrality(G, C)"
+
+group_degree_all:
+  engine: {fn: group, measure: degree, mode: all, normalized: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "non-members tied to a member either way / (n - k)"
+
+group_closeness:
+  engine: {fn: group, measure: closeness, mode: out, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "(n - k) / sum of distances from the group to the non-members it reaches; 0 if it reaches none"
+    networkx:
+      call: "nx.group_closeness_centrality(G.reverse(), C) for directed graphs (NetworkX measures distances to the group)"
+
+group_closeness_in:
+  engine: {fn: group, measure: closeness, mode: in, normalized: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "(n - k) / sum of distances to the group"
+    networkx:
+      call: "nx.group_closeness_centrality(G, C)"
+
+group_closeness_weighted:
+  engine: {fn: group, measure: closeness, mode: out, normalized: true, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 0}
+  oracles:
+    definition:
+      call: "as group_closeness with weights as path lengths"
+    networkx:
+      call: "nx.group_closeness_centrality(G (reversed if directed), C, weight = 'weight')"
+
+group_betweenness:
+  engine: {fn: group, measure: betweenness, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum over pairs of non-members of the share of shortest paths through a member, over the number of such pairs, with exact path counts"
+    networkx:
+      call: "nx.group_betweenness_centrality(G, C, normalized = True) on the simple graph"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX counts parallel edges as one path; the engine counts them
+        as distinct shortest paths, as igraph's betweenness does.
+      undefined_on: [single_node, pair]
+      undefined_reason: NetworkX requires at least two non-members.
+
+group_betweenness_raw:
+  engine: {fn: group, measure: betweenness, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-14}
+  oracles:
+    definition:
+      call: "sum over pairs of non-members of the share of shortest paths through a member"
+    networkx:
+      call: "nx.group_betweenness_centrality(G, C, normalized = False) on the simple graph"
+      differs_when: [multi_edges]
+      reason: NetworkX counts parallel edges as one path.
+      undefined_on: [single_node, pair]
+      undefined_reason: NetworkX requires at least two non-members.
+
+group_betweenness_weighted:
+  engine: {fn: group, measure: betweenness, normalized: false, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as group_betweenness_raw with weights as path lengths, in exact arithmetic"
+    networkx:
+      call: "nx.group_betweenness_centrality(G, C, normalized = False, weight = 'weight')"
+      differs_when: [multi_edges]
+      reason: NetworkX keeps one edge per pair of nodes.
+      undefined_on: [real_weights_dir, real_weights_und]
+      undefined_reason: >-
+        NetworkX compares floating-point path lengths exactly, so paths whose
+        non-integer lengths are equal in exact arithmetic can compare unequal
+        and be dropped (306 against 310 paths on real_weights_dir). The
+        definition oracle, in exact arithmetic, agrees with the engine there.
+
+flow_betweenness:
+  engine: {fn: flow_betweenness, scale: raw}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition: &flow_definition
+      call: "sum over pairs of other nodes of maxflow(G) - maxflow(G - v), Edmonds-Karp in integers for every pair and node"
+      undefined_on: &flow_large [karate, southern_women, davis_twomode, les_miserables, gnp_dir_sparse,
+                                 gnp_dir_dense, gnp_und_sparse, gnp_und_dense, weighted_dir, weighted_und,
+                                 uniform_weights, real_weights_dir, real_weights_und]
+      undefined_reason: The brute-force maximum flows are limited to networks of at most 25 nodes.
+    sna:
+      call: "sna::flowbet(m, gmode = 'digraph' | 'graph', cmode = 'rawflow', ignore.eval = TRUE)"
+      differs_when: [multi_edges]
+      reason: >-
+        sna reads an adjacency matrix, so parallel edges collapse into one
+        tie of capacity 1; the engine adds their capacities.
+
+flow_betweenness_normalized:
+  engine: {fn: flow_betweenness, scale: normalized}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "raw flow betweenness / total maximum flow between pairs not involving v"
+      undefined_on: *flow_large
+      undefined_reason: The brute-force maximum flows are limited to networks of at most 25 nodes.
+    sna:
+      call: "sna::flowbet(m, gmode, cmode = 'normflow', ignore.eval = TRUE)"
+      differs_when: [multi_edges]
+      reason: sna collapses parallel edges.
+      undefined_on: [empty, single_node, pair]
+      undefined_reason: >-
+        No flow passes between pairs of other nodes, so the normalized
+        score is 0/0; the engine reports NaN.
+
+flow_betweenness_fractional:
+  engine: {fn: flow_betweenness, scale: fractional}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over pairs with positive maximum flow of (maxflow(G) - maxflow(G - v)) / maxflow(G)"
+      undefined_on: *flow_large
+      undefined_reason: The brute-force maximum flows are limited to networks of at most 25 nodes.
+    sna:
+      call: "sna::flowbet(m, gmode, cmode = 'fracflow', ignore.eval = TRUE)"
+      differs_when: [multi_edges]
+      reason: sna collapses parallel edges.
+
+flow_betweenness_capacity:
+  engine: {fn: flow_betweenness, scale: raw, capacity: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "as flow_betweenness with edge weights as capacities"
+      undefined_on: *flow_large
+      undefined_reason: The brute-force maximum flows are limited to networks of at most 25 nodes.
+    sna:
+      call: "sna::flowbet(m, gmode, cmode = 'rawflow') with the weights in the matrix"
+      differs_when: [multi_edges]
+      reason: sna keeps one value per pair of nodes.
