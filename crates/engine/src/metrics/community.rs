@@ -175,37 +175,71 @@ impl Level {
     }
 
     fn from_graph(g: &Graph, w: Option<&[f64]>) -> Level {
-        let n = g.node_count();
-        let mut rows: Vec<Vec<(usize, f64)>> = vec![Vec::new(); n];
         let (src, tgt) = (g.edge_sources(), g.edge_targets());
-        for e in 0..g.edge_count() {
-            let x = w.map_or(1.0, |w| w[e]);
-            let (a, b) = (src[e] as usize, tgt[e] as usize);
-            if a == b {
-                rows[a].push((a, 2.0 * x));
-            } else {
-                rows[a].push((b, x));
-                rows[b].push((a, x));
-            }
-        }
-        Level::from_rows(rows)
-    }
-
-    /// Builds a level from unsorted rows, merging repeated targets.
-    fn from_rows(rows: Vec<Vec<(usize, f64)>>) -> Level {
-        let mut offsets = vec![0];
-        let mut targets = Vec::new();
-        let mut weights = Vec::new();
-        for mut row in rows {
-            row.sort_by_key(|&(t, _)| t);
-            for (t, x) in row {
-                if targets.len() > *offsets.last().unwrap() && targets.last() == Some(&t) {
-                    *weights.last_mut().unwrap() += x;
+        Level::from_entries(g.node_count(), |emit| {
+            for e in 0..g.edge_count() {
+                let x = w.map_or(1.0, |w| w[e]);
+                let (a, b) = (src[e] as usize, tgt[e] as usize);
+                if a == b {
+                    emit(a, a, 2.0 * x);
                 } else {
-                    targets.push(t);
-                    weights.push(x);
+                    emit(a, b, x);
+                    emit(b, a, x);
                 }
             }
+        })
+    }
+
+    /// Builds a level from entries (row, column, weight), merging repeated
+    /// entries; `entries` must emit the same sequence each time it is
+    /// called. The entries are bucketed by row with a stable counting sort
+    /// and each row is merged in a dense accumulator indexed by column (a
+    /// sparse accumulator, Gilbert, Moler, and Schreiber 1992,
+    /// `gilbert1992sparse`), so repeated entries are added in the order
+    /// they were emitted and no row is sorted except for its distinct
+    /// columns.
+    fn from_entries(n: usize, entries: impl Fn(&mut dyn FnMut(usize, usize, f64))) -> Level {
+        let mut start = vec![0usize; n + 1];
+        entries(&mut |r, _, _| start[r + 1] += 1);
+        for r in 0..n {
+            start[r + 1] += start[r];
+        }
+        let total = start[n];
+        let mut fill = start.clone();
+        let mut cols = vec![0usize; total];
+        let mut vals = vec![0.0f64; total];
+        entries(&mut |r, c, x| {
+            let i = fill[r];
+            cols[i] = c;
+            vals[i] = x;
+            fill[r] += 1;
+        });
+        drop(fill);
+        let mut offsets = Vec::with_capacity(n + 1);
+        offsets.push(0);
+        let mut targets = Vec::with_capacity(total);
+        let mut weights = Vec::with_capacity(total);
+        let mut acc = vec![0.0f64; n];
+        let mut seen = vec![false; n];
+        let mut row_cols: Vec<usize> = Vec::new();
+        for r in 0..n {
+            for i in start[r]..start[r + 1] {
+                let c = cols[i];
+                if seen[c] {
+                    acc[c] += vals[i];
+                } else {
+                    seen[c] = true;
+                    acc[c] = vals[i];
+                    row_cols.push(c);
+                }
+            }
+            row_cols.sort_unstable();
+            for &c in &row_cols {
+                targets.push(c);
+                weights.push(acc[c]);
+                seen[c] = false;
+            }
+            row_cols.clear();
             offsets.push(targets.len());
         }
         Level {
@@ -215,16 +249,18 @@ impl Level {
         }
     }
 
-    /// Merges each group into a single node.
+    /// Merges each group into a single node: the weights between groups
+    /// are S' A S for the n-by-k membership matrix S, accumulated row by
+    /// row.
     fn aggregate(&self, comm: &[usize], k: usize) -> Level {
-        let mut rows: Vec<Vec<(usize, f64)>> = vec![Vec::new(); k];
-        for v in 0..self.n() {
-            let (t, x) = self.row(v);
-            for (&u, &x) in t.iter().zip(x) {
-                rows[comm[v]].push((comm[u], x));
+        Level::from_entries(k, |emit| {
+            for v in 0..self.n() {
+                let (t, x) = self.row(v);
+                for (&u, &x) in t.iter().zip(x) {
+                    emit(comm[v], comm[u], x);
+                }
             }
-        }
-        Level::from_rows(rows)
+        })
     }
 }
 

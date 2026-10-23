@@ -31,8 +31,6 @@
 //!   source run in parallel; the tolerance for ties keeps the choice of
 //!   edge independent of the thread count.
 
-use std::collections::VecDeque;
-
 use super::{as_labels, relabel, require_undirected};
 use crate::error::Result;
 use crate::graph::Graph;
@@ -105,9 +103,13 @@ impl Remaining {
                 order.clear();
                 dist[s] = 0;
                 sigma[s] = 1.0;
-                let mut queue = VecDeque::from([s]);
-                while let Some(v) = queue.pop_front() {
-                    order.push(v);
+                // `order` doubles as the FIFO queue: nodes are appended
+                // when discovered and visited in that order.
+                order.push(s);
+                let mut head = 0;
+                while head < order.len() {
+                    let v = order[head];
+                    head += 1;
                     for &(w, e) in &self.rows[v] {
                         if !self.alive[e] {
                             continue;
@@ -115,7 +117,7 @@ impl Remaining {
                         let w = w as usize;
                         if dist[w] == usize::MAX {
                             dist[w] = dist[v] + 1;
-                            queue.push_back(w);
+                            order.push(w);
                         }
                         if dist[w] == dist[v] + 1 {
                             sigma[w] += sigma[v];
@@ -194,7 +196,8 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
 
     let q_of = |memb: &[usize]| modularity(&simple_graph, &as_labels(memb), 1.0, false);
     let mut current = partition_of(n, &edges, &rem.alive)?;
-    let mut best_q = q_of(&current)?;
+    let mut q_current = q_of(&current)?;
+    let mut best_q = q_current;
     let mut best = current.clone();
     let mut path = vec![best_q];
     let mut removed = Vec::with_capacity(m);
@@ -229,10 +232,13 @@ pub fn girvan_newman(g: &Graph, threads: usize) -> Result<GirvanNewman> {
             rem.betweenness(&affected, &mut eb, threads);
         }
         let _t = crate::linalg::phase::start("girvan-newman: components and modularity");
+        // Without a split the partition, and so its modularity, is
+        // unchanged.
         if split {
             current = partition_of(n, &edges, &rem.alive)?;
+            q_current = q_of(&current)?;
         }
-        let q = q_of(&current)?;
+        let q = q_current;
         path.push(q);
         if q > best_q || (best_q.is_nan() && !q.is_nan()) {
             best_q = q;

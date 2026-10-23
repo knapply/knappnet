@@ -603,10 +603,125 @@ impl Fit {
 /// Reusable buffers for [`ols`].
 #[derive(Default)]
 struct Workspace {
+    tol: f64,
     a: Vec<f64>,
     used: Vec<usize>,
     diag: Vec<f64>,
     rinv: Vec<f64>,
+}
+
+/// The Householder reflectors of the leading columns of a design, with
+/// those columns (and optionally the response) already transformed, for
+/// reuse across fits that share them. Householder QR transforms each
+/// column by the reflectors of the columns before it, one after the other,
+/// and the reflector of a column depends only on that column, so a fit
+/// that starts from this prefix performs exactly the operations of a fit
+/// from scratch on the same rows: in the permutation loops of MRQAP the
+/// fixed columns are factored once (as in Dekker, Krackhardt, and Snijders
+/// 2007, `dekker2007sensitivity`, only the permuted column changes between
+/// refits).
+struct QrPrefix {
+    /// Rows used (complete in every column of the prefix fit).
+    used: Vec<usize>,
+    /// Number of leading columns factored.
+    q: usize,
+    /// The q transformed columns, column-major over the used rows.
+    a: Vec<f64>,
+    diag: Vec<f64>,
+    /// The response after the q reflectors, when it is fixed.
+    y: Option<Vec<f64>>,
+}
+
+/// Factors the leading columns `cols` over the rows complete in `all` and
+/// `y` (the columns and response of the fits that will use the prefix),
+/// or `None` if they are rank deficient there (fits from scratch then
+/// report the deficiency themselves).
+fn qr_prefix(
+    cols: &[&[f64]],
+    all: &[&[f64]],
+    y: &[f64],
+    keep_y: bool,
+    tol: f64,
+) -> Option<QrPrefix> {
+    let mut ws = Workspace::default();
+    complete_rows(all, y, &mut ws.used);
+    let rows = ws.used.len();
+    let q = cols.len();
+    if rows <= all.len() {
+        return None;
+    }
+    load(cols, y, &mut ws);
+    if !householder(&mut ws, rows, 0, q, q) {
+        return None;
+    }
+    let y_t = keep_y.then(|| ws.a[q * rows..(q + 1) * rows].to_vec());
+    ws.a.truncate(q * rows);
+    Some(QrPrefix {
+        used: ws.used,
+        q,
+        a: ws.a,
+        diag: ws.diag,
+        y: y_t,
+    })
+}
+
+/// The rows where `y` and every column are observed.
+fn complete_rows(cols: &[&[f64]], y: &[f64], used: &mut Vec<usize>) {
+    used.clear();
+    for i in 0..y.len() {
+        if !y[i].is_nan() && cols.iter().all(|c| !c[i].is_nan()) {
+            used.push(i);
+        }
+    }
+}
+
+/// Copies [cols | y] at the used rows into `ws.a`, column-major.
+fn load(cols: &[&[f64]], y: &[f64], ws: &mut Workspace) {
+    ws.a.clear();
+    for c in cols.iter().copied().chain(std::iter::once(y)) {
+        ws.a.extend(ws.used.iter().map(|&i| c[i]));
+    }
+}
+
+/// Householder steps j = `from..to` on the column-major `ws.a` (columns
+/// 0..=p, the last being the response), each applied to every later
+/// column. Returns false at a rank-deficient column.
+fn householder(ws: &mut Workspace, rows: usize, from: usize, to: usize, p: usize) -> bool {
+    ws.diag.resize(to, 0.0);
+    let a = &mut ws.a;
+    for j in from..to {
+        let (left, right) = a.split_at_mut((j + 1) * rows);
+        let col = &mut left[j * rows..];
+        let orig = dot(col, col).sqrt();
+        let alpha = dot(&col[j..], &col[j..]).sqrt();
+        if orig == 0.0 || alpha <= tol_of(ws.tol) * orig {
+            return false;
+        }
+        // Reflector mapping col[j..] to s e1 with s = -sign(col[j]) alpha.
+        let s = if col[j] >= 0.0 { -alpha } else { alpha };
+        col[j] -= s;
+        let v = &col[j..];
+        let vv = dot(v, v);
+        for k in 0..(p - j) {
+            reflect(v, vv, &mut right[k * rows + j..(k + 1) * rows]);
+        }
+        ws.diag[j] = s;
+    }
+    true
+}
+
+#[inline]
+fn tol_of(t: f64) -> f64 {
+    t
+}
+
+/// Applies the reflector I - 2 v v' / (v'v) to `target`.
+#[inline]
+fn reflect(v: &[f64], vv: f64, target: &mut [f64]) {
+    let f = 2.0 * dot(v, target) / vv;
+    for (t, vi) in target.iter_mut().zip(v) {
+        *t -= f * vi;
+    }
 }
 
 /// Least squares of `y` on `cols` (all of the same length) by Householder
@@ -615,49 +730,65 @@ struct Workspace {
 /// fraction `tol` of its norm after the preceding columns are projected
 /// out) or has no residual degrees of freedom.
 fn ols(cols: &[&[f64]], y: &[f64], tol: f64, ws: &mut Workspace) -> Option<Fit> {
+    ols_with(cols, y, tol, ws, None, true)
+}
+
+/// [`ols`], starting from `prefix` when it was built on the same rows for
+/// the leading columns of `cols` (and for `y`, if it kept the response),
+/// and computing residuals and fitted values only if `residuals`.
+fn ols_with(
+    cols: &[&[f64]],
+    y: &[f64],
+    tol: f64,
+    ws: &mut Workspace,
+    prefix: Option<&QrPrefix>,
+    want_residuals: bool,
+) -> Option<Fit> {
     let p = cols.len();
     let len = y.len();
-    ws.used.clear();
-    for i in 0..len {
-        if !y[i].is_nan() && cols.iter().all(|c| !c[i].is_nan()) {
-            ws.used.push(i);
-        }
-    }
+    complete_rows(cols, y, &mut ws.used);
     let rows = ws.used.len();
     if rows <= p {
         return None;
     }
-    // Column-major [X | y], rows by (p + 1).
-    ws.a.clear();
-    for c in cols.iter().copied().chain(std::iter::once(y)) {
-        ws.a.extend(ws.used.iter().map(|&i| c[i]));
-    }
-    let a = &mut ws.a;
-    ws.diag.clear();
-    ws.diag.resize(p, 0.0);
-    let diag = &mut ws.diag;
-    for j in 0..p {
-        let (left, right) = a.split_at_mut((j + 1) * rows);
-        let col = &mut left[j * rows..];
-        let orig = dot(col, col).sqrt();
-        let alpha = dot(&col[j..], &col[j..]).sqrt();
-        if orig == 0.0 || alpha <= tol * orig {
-            return None;
-        }
-        // Reflector mapping col[j..] to s e1 with s = -sign(col[j]) alpha.
-        let s = if col[j] >= 0.0 { -alpha } else { alpha };
-        col[j] -= s;
-        let v = &col[j..];
-        let vv = dot(v, v);
-        for k in 0..(p - j) {
-            let target = &mut right[k * rows + j..(k + 1) * rows];
-            let f = 2.0 * dot(v, target) / vv;
-            for (t, vi) in target.iter_mut().zip(v) {
-                *t -= f * vi;
+    ws.tol = tol;
+    let start = match prefix {
+        Some(pre) if pre.q <= p && pre.used == ws.used => {
+            // The prefix columns as factored; the others (and the response
+            // unless kept) transformed by the prefix reflectors in order.
+            ws.a.clear();
+            ws.a.extend_from_slice(&pre.a);
+            for c in cols[pre.q..].iter().copied().chain(std::iter::once(y)) {
+                ws.a.extend(ws.used.iter().map(|&i| c[i]));
             }
+            let fixed_y = pre.y.as_ref().filter(|_| true);
+            if let Some(yt) = fixed_y {
+                ws.a[p * rows..].copy_from_slice(yt);
+            }
+            let last = if fixed_y.is_some() { p } else { p + 1 };
+            let (head, tail) = ws.a.split_at_mut(pre.q * rows);
+            for j in 0..pre.q {
+                let v = &head[j * rows + j..(j + 1) * rows];
+                let vv = dot(v, v);
+                for k in 0..(last - pre.q) {
+                    reflect(v, vv, &mut tail[k * rows + j..(k + 1) * rows]);
+                }
+            }
+            ws.diag.clear();
+            ws.diag.extend_from_slice(&pre.diag);
+            pre.q
         }
-        diag[j] = s;
+        _ => {
+            load(cols, y, ws);
+            ws.diag.clear();
+            0
+        }
+    };
+    if !householder(ws, rows, start, p, p) {
+        return None;
     }
+    let a = &ws.a;
+    let diag = &ws.diag;
     // R[i][j] is a[j * rows + i] above the diagonal and diag[i] on it.
     let r = |i: usize, j: usize| if i == j { diag[i] } else { a[j * rows + i] };
     let qty = &a[p * rows..(p + 1) * rows];
@@ -691,12 +822,16 @@ fn ols(cols: &[&[f64]], y: &[f64], tol: f64, ws: &mut Workspace) -> Option<Fit> 
             (v * sigma2).sqrt()
         })
         .collect();
-    let mut residuals = vec![f64::NAN; len];
-    let mut fitted_used = Vec::with_capacity(rows);
-    for &i in &ws.used {
-        let f: f64 = cols.iter().zip(&coef).map(|(c, b)| c[i] * b).sum();
-        fitted_used.push(f);
-        residuals[i] = y[i] - f;
+    let mut residuals = Vec::new();
+    let mut fitted_used = Vec::new();
+    if want_residuals {
+        residuals = vec![f64::NAN; len];
+        fitted_used.reserve(rows);
+        for &i in &ws.used {
+            let f: f64 = cols.iter().zip(&coef).map(|(c, b)| c[i] * b).sum();
+            fitted_used.push(f);
+            residuals[i] = y[i] - f;
+        }
     }
     Some(Fit {
         coef,

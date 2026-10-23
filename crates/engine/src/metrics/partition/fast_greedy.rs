@@ -64,10 +64,8 @@ pub struct FastGreedy {
 #[derive(Debug, Clone, Copy)]
 struct Candidate {
     gain: f64,
-    a: usize,
-    b: usize,
-    va: u64,
-    vb: u64,
+    a: u32,
+    b: u32,
 }
 
 impl PartialEq for Candidate {
@@ -87,8 +85,6 @@ impl Ord for Candidate {
             .total_cmp(&other.gain)
             .then_with(|| other.a.cmp(&self.a))
             .then_with(|| other.b.cmp(&self.b))
-            .then_with(|| self.va.cmp(&other.va))
-            .then_with(|| self.vb.cmp(&other.vb))
     }
 }
 
@@ -118,7 +114,6 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
     }
     let two_m: f64 = k.iter().sum();
     let gain = |wij: f64, ki: f64, kj: f64| two_m * wij - resolution * ki * kj;
-    let mut version = vec![0u64; n];
     let mut alive = vec![true; n];
     let mut heap = BinaryHeap::new();
     for (a, row) in nbrs.iter().enumerate() {
@@ -126,10 +121,8 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
             if b > a {
                 heap.push(Candidate {
                     gain: gain(wab, k[a], k[b]),
-                    a,
-                    b,
-                    va: 0,
-                    vb: 0,
+                    a: a as u32,
+                    b: b as u32,
                 });
             }
         }
@@ -142,10 +135,27 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
     let mut best_total = 0.0f64;
     let mut best_step = 0usize;
     while let Some(c) = heap.pop() {
-        if !alive[c.a] || !alive[c.b] || version[c.a] != c.va || version[c.b] != c.vb {
+        let (a, b) = (c.a as usize, c.b as usize);
+        if !alive[a] || !alive[b] {
             continue;
         }
-        let (a, b) = (c.a, c.b);
+        let wab = match nbrs[a].get(&b) {
+            Some(&w) => w,
+            None => continue,
+        };
+        // Lazy evaluation: a stored gain is an upper bound on the current
+        // one unless the tie weight changed, and every change of a tie
+        // weight pushes a fresh entry. An entry is used only when its gain
+        // is current; otherwise it is pushed again with the current gain.
+        let current = gain(wab, k[a], k[b]);
+        if current.to_bits() != c.gain.to_bits() {
+            heap.push(Candidate {
+                gain: current,
+                a: c.a,
+                b: c.b,
+            });
+            continue;
+        }
         merges.push((a as u32, b as u32));
         total += c.gain;
         if total > best_total {
@@ -156,28 +166,28 @@ pub fn fast_greedy(g: &Graph, resolution: f64, weighted: bool) -> Result<FastGre
         let mut from = std::mem::take(&mut nbrs[b]);
         from.remove(&a);
         nbrs[a].remove(&b);
+        let b_row: Vec<usize> = from.keys().copied().collect();
         if from.len() > nbrs[a].len() {
             std::mem::swap(&mut from, &mut nbrs[a]);
         }
         for (x, wx) in from {
             *nbrs[a].entry(x).or_insert(0.0) += wx;
         }
-        let row: Vec<(usize, f64)> = nbrs[a].iter().map(|(&x, &wx)| (x, wx)).collect();
-        for &(x, wx) in &row {
-            nbrs[x].remove(&b);
-            nbrs[x].insert(a, wx);
-        }
         k[a] += k[b];
         alive[b] = false;
-        version[a] += 1;
-        for (x, wx) in row {
+        // Only b's former neighbours see a tie weight change (their tie to
+        // b becomes, or is added to, their tie to a). The gains of a's
+        // other ties can only fall, as K_a grew, and are re-evaluated
+        // lazily.
+        for x in b_row {
+            let wx = nbrs[a][&x];
+            nbrs[x].remove(&b);
+            nbrs[x].insert(a, wx);
             let (lo, hi) = if x < a { (x, a) } else { (a, x) };
             heap.push(Candidate {
                 gain: gain(wx, k[lo], k[hi]),
-                a: lo,
-                b: hi,
-                va: version[lo],
-                vb: version[hi],
+                a: lo as u32,
+                b: hi as u32,
             });
         }
     }

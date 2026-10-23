@@ -342,26 +342,61 @@ fn column_correlations(m: &Dense, threads: usize) -> Dense {
         }
         *nc = ss.sqrt();
     }
-    let rows = parallel::for_each_item(b, threads, Vec::new, |out, i| {
-        let xi = centred.row(i);
-        let mut row = vec![0.0; b];
-        for (j, slot) in row.iter_mut().enumerate() {
-            if norm[i] > 0.0 && norm[j] > 0.0 {
-                let dot: f64 = xi.iter().zip(centred.row(j)).map(|(x, y)| x * y).sum();
-                *slot = (dot / (norm[i] * norm[j])).clamp(-1.0, 1.0);
+    // Correlation is symmetric and each dot product is the same sequence
+    // of exactly rounded products whichever column comes first, so only
+    // j >= i is computed and mirrored. Rows are taken four at a time and
+    // columns two at a time, so each column pair loaded serves eight
+    // running sums; every sum still adds its terms in order, starting from
+    // the value the standard library's sum starts from, so the result is
+    // that of one sum per pair.
+    const RB: usize = 4;
+    let zero: f64 = std::iter::empty::<f64>().sum();
+    let blocks = (b + RB - 1) / RB;
+    let rows = parallel::for_each_item(blocks, threads, Vec::new, |out, blk| {
+        let i0 = blk * RB;
+        let i1 = (i0 + RB).min(b);
+        let mut part: Vec<Vec<f64>> = (i0..i1).map(|i| vec![0.0; b - i]).collect();
+        let xs: Vec<&[f64]> = (i0..RB + i0)
+            .map(|i| centred.row(i.min(i1 - 1)))
+            .collect();
+        let mut j = i0;
+        while j < b {
+            let j2 = (j + 1).min(b - 1);
+            let (y0, y1) = (centred.row(j), centred.row(j2));
+            let mut acc = [[zero; 2]; RB];
+            for k in 0..b {
+                let (a0, a1) = (y0[k], y1[k]);
+                for r in 0..RB {
+                    let x = xs[r][k];
+                    acc[r][0] += x * a0;
+                    acc[r][1] += x * a1;
+                }
             }
+            for (r, i) in (i0..i1).enumerate() {
+                for (c, jj) in [j, j2].into_iter().enumerate() {
+                    if jj >= i && (c == 0 || j2 > j) && norm[i] > 0.0 && norm[jj] > 0.0 {
+                        part[r][jj - i] = (acc[r][c] / (norm[i] * norm[jj])).clamp(-1.0, 1.0);
+                    }
+                }
+            }
+            j += 2;
         }
-        out.push((i, row));
+        out.push((i0, part));
     });
-    let mut out = Dense::zeros(b, b);
-    for part in rows {
-        for (i, row) in part {
-            for (j, x) in row.into_iter().enumerate() {
-                out.set(i, j, x);
+    let mut out = vec![0.0; b * b];
+    for st in rows {
+        for (i0, part) in st {
+            for (r, row) in part.into_iter().enumerate() {
+                let i = i0 + r;
+                for (d, x) in row.into_iter().enumerate() {
+                    let j = i + d;
+                    out[i * b + j] = x;
+                    out[j * b + i] = x;
+                }
             }
         }
     }
-    out
+    Dense::from_row_major(b, b, out).expect("square")
 }
 
 /// Distinct ties without self-loops: out[v] holds (k, a_vk), inc[v] holds
@@ -681,6 +716,42 @@ mod tests {
         )
         .unwrap();
         assert!((c.get(1, 2) - 1.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn column_correlations_match_one_sum_per_pair() {
+        let mut r = crate::rng::Stream::new(5, 0);
+        for b in [1usize, 2, 3, 4, 5, 7, 9, 30] {
+            let mut m = Dense::zeros(b, b);
+            for i in 0..b {
+                for j in 0..b {
+                    // Some constant columns, which correlate 0 with all.
+                    let x = if j % 4 == 3 { 0.5 } else { r.uniform() };
+                    m.set(i, j, x);
+                }
+            }
+            for threads in [1, 2, 3] {
+                let fast = column_correlations(&m, threads);
+                for i in 0..b {
+                    for j in 0..b {
+                        let col = |c: usize| -> (Vec<f64>, f64) {
+                            let mean = (0..b).map(|r| m.get(r, c)).sum::<f64>() / b as f64;
+                            let x: Vec<f64> = (0..b).map(|r| m.get(r, c) - mean).collect();
+                            let ss: f64 = x.iter().map(|v| v * v).sum();
+                            (x, ss.sqrt())
+                        };
+                        let ((xi, ni), (xj, nj)) = (col(i), col(j));
+                        let want = if ni > 0.0 && nj > 0.0 {
+                            let dot: f64 = xi.iter().zip(&xj).map(|(x, y)| x * y).sum();
+                            (dot / (ni * nj)).clamp(-1.0, 1.0)
+                        } else {
+                            0.0
+                        };
+                        assert_eq!(fast.get(i, j).to_bits(), want.to_bits(), "{b} {i} {j}");
+                    }
+                }
+            }
+        }
     }
 
     #[test]

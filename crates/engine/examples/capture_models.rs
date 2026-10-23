@@ -378,7 +378,7 @@ fn main() {
             .collect();
         println!("sbm: {s:?}");
     }
-    for n in [1, 2, 3, 10, 40, 150] {
+    for n in [1, 2, 3, 10, 40, 150, 600] {
         let a = matrix(n, 21, true, false);
         let (vals, vecs) = symmetric_eigen(&a).unwrap();
         println!("eigen {n}: {} {}", bits(&vals), bits(vecs.as_slice()));

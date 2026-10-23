@@ -60,21 +60,42 @@ pub fn transpose(a: &Dense) -> Dense {
 }
 
 /// The product A B. Panics unless the inner dimensions agree.
+///
+/// The loops are blocked over columns of B and over the inner dimension
+/// so that a panel of B stays in cache while every row of A passes over
+/// it. Each entry still accumulates its terms in increasing order of the
+/// inner index, so the result is that of the plain row-by-row product.
 pub fn matmul(a: &Dense, b: &Dense) -> Dense {
     assert_eq!(a.cols(), b.rows(), "matmul: inner dimensions differ");
-    let mut out = Dense::zeros(a.rows(), b.cols());
-    for r in 0..a.rows() {
-        for k in 0..a.cols() {
-            let v = a.get(r, k);
-            if v == 0.0 {
-                continue;
+    const KB: usize = 64;
+    const CB: usize = 512;
+    let (rows, inner, cols) = (a.rows(), a.cols(), b.cols());
+    let (av, bv) = (a.as_slice(), b.as_slice());
+    let mut out = vec![0.0; rows * cols];
+    let mut c0 = 0;
+    while c0 < cols {
+        let c1 = (c0 + CB).min(cols);
+        let mut k0 = 0;
+        while k0 < inner {
+            let k1 = (k0 + KB).min(inner);
+            for r in 0..rows {
+                let orow = &mut out[r * cols + c0..r * cols + c1];
+                for k in k0..k1 {
+                    let v = av[r * inner + k];
+                    if v == 0.0 {
+                        continue;
+                    }
+                    let brow = &bv[k * cols + c0..k * cols + c1];
+                    for (o, x) in orow.iter_mut().zip(brow) {
+                        *o += v * x;
+                    }
+                }
             }
-            for c in 0..b.cols() {
-                out.set(r, c, out.get(r, c) + v * b.get(k, c));
-            }
+            k0 = k1;
         }
+        c0 = c1;
     }
-    out
+    Dense::from_row_major(rows, cols, out).expect("dimensions")
 }
 
 /// The product A x.
@@ -299,25 +320,32 @@ pub fn solve(a: &Dense, b: &[f64], tol: f64) -> Option<Vec<f64>> {
 pub fn symmetric_eigen(a: &Dense) -> Result<(Vec<f64>, Dense)> {
     let n = a.rows();
     assert_eq!(a.cols(), n, "symmetric_eigen: the matrix must be square");
-    let mut v = a.clone();
     let mut d = vec![0.0; n];
     let mut e = vec![0.0; n];
     if n == 0 {
-        return Ok((d, v));
+        return Ok((d, a.clone()));
     }
-    tred2(&mut v, &mut d, &mut e);
-    tql2(&mut v, &mut d, &mut e)?;
-    Ok((d, v))
+    // The reduction and the QL sweeps work on the transpose W = V' of the
+    // EISPACK working matrix V, so that the columns of V they traverse
+    // (Householder vectors, eigenvectors under rotation) are contiguous
+    // rows of W. Every arithmetic operation, and its order, is that of
+    // EISPACK; only the memory layout differs.
+    let mut w = transpose(a).as_slice().to_vec();
+    tred2(&mut w, &mut d, &mut e);
+    tql2(&mut w, &mut d, &mut e)?;
+    let w = Dense::from_row_major(n, n, w).expect("square");
+    Ok((d, transpose(&w)))
 }
 
 /// Householder reduction to tridiagonal form, accumulating the
-/// transformations in `v` (EISPACK `tred2`): on return `d` holds the
-/// diagonal and `e[1..]` the subdiagonal.
+/// transformations (EISPACK `tred2`) in `w`, which holds the transpose of
+/// the EISPACK working matrix V (row-major, so V(r, c) is `w[c * n + r]`):
+/// on return `d` holds the diagonal and `e[1..]` the subdiagonal.
 #[allow(clippy::needless_range_loop)]
-fn tred2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) {
+fn tred2(w: &mut [f64], d: &mut [f64], e: &mut [f64]) {
     let n = d.len();
     for j in 0..n {
-        d[j] = v.get(n - 1, j);
+        d[j] = w[j * n + n - 1];
     }
     for i in (1..n).rev() {
         let mut scale = 0.0;
@@ -328,9 +356,9 @@ fn tred2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) {
         if scale == 0.0 {
             e[i] = d[i - 1];
             for j in 0..i {
-                d[j] = v.get(i - 1, j);
-                v.set(i, j, 0.0);
-                v.set(j, i, 0.0);
+                d[j] = w[j * n + i - 1];
+                w[j * n + i] = 0.0;
+                w[i * n + j] = 0.0;
             }
         } else {
             for k in 0..i {
@@ -350,11 +378,12 @@ fn tred2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) {
             }
             for j in 0..i {
                 f = d[j];
-                v.set(j, i, f);
-                g = e[j] + v.get(j, j) * f;
+                w[i * n + j] = f;
+                let col = &w[j * n..j * n + i];
+                g = e[j] + col[j] * f;
                 for k in j + 1..i {
-                    g += v.get(k, j) * d[k];
-                    e[k] += v.get(k, j) * f;
+                    g += col[k] * d[k];
+                    e[k] += col[k] * f;
                 }
                 e[j] = g;
             }
@@ -370,50 +399,54 @@ fn tred2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) {
             for j in 0..i {
                 f = d[j];
                 g = e[j];
+                let col = &mut w[j * n..j * n + n];
                 for k in j..i {
-                    v.set(k, j, v.get(k, j) - (f * e[k] + g * d[k]));
+                    col[k] -= f * e[k] + g * d[k];
                 }
-                d[j] = v.get(i - 1, j);
-                v.set(i, j, 0.0);
+                d[j] = col[i - 1];
+                col[i] = 0.0;
             }
         }
         d[i] = h;
     }
     for i in 0..n - 1 {
-        v.set(n - 1, i, v.get(i, i));
-        v.set(i, i, 1.0);
+        w[i * n + n - 1] = w[i * n + i];
+        w[i * n + i] = 1.0;
         let h = d[i + 1];
         if h != 0.0 {
+            let (head, tail) = w.split_at_mut((i + 1) * n);
+            let hv = &tail[..=i];
             for k in 0..=i {
-                d[k] = v.get(k, i + 1) / h;
+                d[k] = hv[k] / h;
             }
             for j in 0..=i {
+                let col = &mut head[j * n..j * n + i + 1];
                 let mut g = 0.0;
                 for k in 0..=i {
-                    g += v.get(k, i + 1) * v.get(k, j);
+                    g += hv[k] * col[k];
                 }
                 for k in 0..=i {
-                    v.set(k, j, v.get(k, j) - g * d[k]);
+                    col[k] -= g * d[k];
                 }
             }
         }
         for k in 0..=i {
-            v.set(k, i + 1, 0.0);
+            w[(i + 1) * n + k] = 0.0;
         }
     }
     for j in 0..n {
-        d[j] = v.get(n - 1, j);
-        v.set(n - 1, j, 0.0);
+        d[j] = w[j * n + n - 1];
+        w[j * n + n - 1] = 0.0;
     }
-    v.set(n - 1, n - 1, 1.0);
+    w[(n - 1) * n + n - 1] = 1.0;
     e[0] = 0.0;
 }
 
 /// Implicit QL iterations on the tridiagonal matrix (d, e), accumulating
-/// the rotations in `v`, then sorting eigenvalues ascending (EISPACK
-/// `tql2`).
+/// the rotations in `w` (the transpose of the EISPACK matrix, as in
+/// [`tred2`]), then sorting eigenvalues ascending (EISPACK `tql2`).
 #[allow(clippy::needless_range_loop)]
-fn tql2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) -> Result<()> {
+fn tql2(w: &mut [f64], d: &mut [f64], e: &mut [f64]) -> Result<()> {
     let n = d.len();
     for i in 1..n {
         e[i - 1] = e[i];
@@ -474,10 +507,13 @@ fn tql2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) -> Result<()> {
                     c = p / r;
                     p = c * d[i] - s * g;
                     d[i + 1] = h + s * (c * g + s * d[i]);
-                    for k in 0..n {
-                        let hk = v.get(k, i + 1);
-                        v.set(k, i + 1, s * v.get(k, i) + c * hk);
-                        v.set(k, i, c * v.get(k, i) - s * hk);
+                    let (lo, hi) = w.split_at_mut((i + 1) * n);
+                    let vi = &mut lo[i * n..];
+                    let vi1 = &mut hi[..n];
+                    for (a, b) in vi.iter_mut().zip(vi1.iter_mut()) {
+                        let hk = *b;
+                        *b = s * *a + c * hk;
+                        *a = c * *a - s * hk;
                     }
                 }
                 p = -s * s2 * c3 * el1 * e[l] / dl1;
@@ -504,11 +540,8 @@ fn tql2(v: &mut Dense, d: &mut [f64], e: &mut [f64]) -> Result<()> {
         if k != i {
             d[k] = d[i];
             d[i] = p;
-            for j in 0..n {
-                let (x, y) = (v.get(j, i), v.get(j, k));
-                v.set(j, i, y);
-                v.set(j, k, x);
-            }
+            let (lo, hi) = w.split_at_mut(k * n);
+            lo[i * n..i * n + n].swap_with_slice(&mut hi[..n]);
         }
     }
     Ok(())
