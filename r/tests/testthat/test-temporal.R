@@ -259,3 +259,26 @@ test_that("inter-event times, burstiness, and memory", {
   expect_equal(burstiness(d, mode = "out")$events, c(4, 3, 0))
   expect_equal(burstiness(d, mode = "in")$events, c(0, 2, 5))
 })
+
+test_that("earliest arrival agrees with tsna on instantaneous contacts", {
+  skip_if_not_installed("tsna")
+  skip_if_not_installed("networkDynamic")
+  skip_if_not_installed("network")
+  # Simultaneous contacts chain, repeated contacts, a loop, and an isolate.
+  ev <- data.frame(from = c(1, 2, 3, 1, 4, 2), to = c(2, 3, 4, 2, 4, 1),
+                   time = c(1, 1, 3, 5, 5, 6))
+  g <- temporal_network(ev, nodes = data.frame(id = 1:5))
+  base <- network::network.initialize(5, directed = TRUE, loops = TRUE, multiple = FALSE)
+  nd <- networkDynamic::networkDynamic(
+    base.net = base,
+    edge.spells = data.frame(onset = ev$time, terminus = ev$time, tail = ev$from,
+                             head = ev$to),
+    verbose = FALSE)
+  ours <- temporal_distances(g, threads = 1)
+  for (v in 1:5) {
+    p <- tsna::tPath(nd, v = v, direction = "fwd", type = "earliest.arrive", start = 1,
+                     end = 7, graph.step.time = 0)
+    expect_equal(unname(ours[v, ]), ifelse(is.finite(p$tdist), 1 + p$tdist, Inf),
+                 info = sprintf("origin %d", v))
+  }
+})
