@@ -3,22 +3,9 @@
  * errors are raised only after the engine call has returned and every
  * engine-owned object has been released.
  */
-#define R_NO_REMAP
-#include <R.h>
-#include <Rinternals.h>
-#include <stdint.h>
 #include <stdlib.h>
 
-#include "netcapi.h"
-
-#define ERR_LEN 1024
-
-static GraphHandle *twomode_graph(SEXP ptr) {
-  if (TYPEOF(ptr) != EXTPTRSXP || R_ExternalPtrAddr(ptr) == NULL) {
-    Rf_error("Invalid network handle.");
-  }
-  return (GraphHandle *)R_ExternalPtrAddr(ptr);
-}
+#include "glue.h"
 
 /* 0-based node indices from an R integer vector, in R-managed memory. */
 static int64_t *ego_indices(SEXP egos, R_xlen_t *k) {
@@ -41,7 +28,7 @@ static const int32_t *node_types(SEXP types, GraphHandle *h) {
 
 /* egos: NULL for every node, or 0-based indices. */
 SEXP C_ego_sizes(SEXP ptr, SEXP egos, SEXP order, SEXP mode, SEXP mindist, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t k = 0;
   const int64_t *list = NULL;
   if (Rf_isNull(egos)) {
@@ -51,21 +38,16 @@ SEXP C_ego_sizes(SEXP ptr, SEXP egos, SEXP order, SEXP mode, SEXP mindist, SEXP 
   }
   SEXP out = PROTECT(Rf_allocVector(REALSXP, k));
   char err[ERR_LEN] = {0};
-  int status = net_ego_sizes(h, list, (int64_t)k, (int64_t)Rf_asInteger(order),
-                             Rf_asInteger(mode), (int64_t)Rf_asInteger(mindist),
-                             Rf_asInteger(threads), REAL(out), err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status =
+      net_ego_sizes(h, list, (int64_t)k, (int64_t)Rf_asInteger(order), Rf_asInteger(mode),
+                    (int64_t)Rf_asInteger(mindist), Rf_asInteger(threads), REAL(out), err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns a list with one integer vector of 1-based node positions per
  * ego, in ascending order. */
 SEXP C_ego_members(SEXP ptr, SEXP egos, SEXP order, SEXP mode, SEXP mindist, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t k = 0;
   const int64_t *list = ego_indices(egos, &k);
   int64_t ord = (int64_t)Rf_asInteger(order);
@@ -75,14 +57,14 @@ SEXP C_ego_members(SEXP ptr, SEXP egos, SEXP order, SEXP mode, SEXP mindist, SEX
   double *sizes = (double *)R_alloc(k > 0 ? (size_t)k : 1, sizeof(double));
   char err[ERR_LEN] = {0};
   int status = net_ego_sizes(h, list, (int64_t)k, ord, md, mind, thr, sizes, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
   double total = 0.0;
   for (R_xlen_t i = 0; i < k; i++) total += sizes[i];
   int64_t *offsets = (int64_t *)R_alloc((size_t)k + 1, sizeof(int64_t));
   int64_t *members = (int64_t *)R_alloc(total > 0 ? (size_t)total : 1, sizeof(int64_t));
   status = net_ego_members(h, list, (int64_t)k, ord, md, mind, thr, offsets, members,
                            (int64_t)total, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
 
   SEXP out = PROTECT(Rf_allocVector(VECSXP, k));
   for (R_xlen_t i = 0; i < k; i++) {
@@ -100,70 +82,57 @@ SEXP C_ego_members(SEXP ptr, SEXP egos, SEXP order, SEXP mode, SEXP mindist, SEX
 /* Returns list(size, ties, pairs, density, components, ego_betweenness);
  * the last is NULL unless betweenness is TRUE. */
 SEXP C_ego_summary(SEXP ptr, SEXP order, SEXP mode, SEXP betweenness, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int with_betweenness = Rf_asLogical(betweenness) == TRUE;
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 6));
   for (int i = 0; i < 5; i++) SET_VECTOR_ELT(out, i, Rf_allocVector(REALSXP, n));
   if (with_betweenness) SET_VECTOR_ELT(out, 5, Rf_allocVector(REALSXP, n));
   char err[ERR_LEN] = {0};
-  int status = net_ego_summary(
-      h, (int64_t)Rf_asInteger(order), Rf_asInteger(mode), Rf_asInteger(threads),
-      REAL(VECTOR_ELT(out, 0)), REAL(VECTOR_ELT(out, 1)), REAL(VECTOR_ELT(out, 2)),
-      REAL(VECTOR_ELT(out, 3)), REAL(VECTOR_ELT(out, 4)),
-      with_betweenness ? REAL(VECTOR_ELT(out, 5)) : NULL, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+  int status =
+      net_ego_summary(h, (int64_t)Rf_asInteger(order), Rf_asInteger(mode), Rf_asInteger(threads),
+                      REAL(VECTOR_ELT(out, 0)), REAL(VECTOR_ELT(out, 1)), REAL(VECTOR_ELT(out, 2)),
+                      REAL(VECTOR_ELT(out, 3)), REAL(VECTOR_ELT(out, 4)),
+                      with_betweenness ? REAL(VECTOR_ELT(out, 5)) : NULL, err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 SEXP C_twomode_density(SEXP ptr, SEXP types) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   const int32_t *t = node_types(types, h);
   double value = 0.0;
   char err[ERR_LEN] = {0};
   int status = net_twomode_density(h, t, &value, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  check_status(status, err, 0);
   return Rf_ScalarReal(value);
 }
 
 /* measure: 0 = degree, 1 = closeness, 2 = betweenness. unreachable:
  * 0 = ignore, 1 = Wasserman-Faust. */
-SEXP C_twomode_centrality(SEXP ptr, SEXP types, SEXP measure, SEXP normalized,
-                          SEXP unreachable, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+SEXP C_twomode_centrality(SEXP ptr, SEXP types, SEXP measure, SEXP normalized, SEXP unreachable,
+                          SEXP threads) {
+  GraphHandle *h = graph_from_ptr(ptr);
   const int32_t *t = node_types(types, h);
   SEXP out = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)net_graph_node_count(h)));
   char err[ERR_LEN] = {0};
   int status = net_twomode_centrality(h, t, Rf_asInteger(measure), Rf_asLogical(normalized),
-                                      Rf_asInteger(unreachable), Rf_asInteger(threads),
-                                      REAL(out), err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
-  UNPROTECT(1);
-  return out;
+                                      Rf_asInteger(unreachable), Rf_asInteger(threads), REAL(out),
+                                      err, ERR_LEN);
+  return vector_result(status, out, err);
 }
 
 /* Returns list(values, eigenvalue, connected). */
 SEXP C_twomode_eigenvector(SEXP ptr, SEXP types, SEXP tol, SEXP max_iter, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   const int32_t *t = node_types(types, h);
   SEXP values = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)net_graph_node_count(h)));
   double eigenvalue = 0.0;
   int32_t connected = 0;
   char err[ERR_LEN] = {0};
   int status = net_twomode_eigenvector(h, t, Rf_asReal(tol), (int64_t)Rf_asReal(max_iter),
-                                       Rf_asInteger(threads), REAL(values), &eigenvalue,
-                                       &connected, err, ERR_LEN);
-  if (status != 0) {
-    UNPROTECT(1);
-    Rf_error("%s", err);
-  }
+                                       Rf_asInteger(threads), REAL(values), &eigenvalue, &connected,
+                                       err, ERR_LEN);
+  check_status(status, err, 1);
   SEXP out = PROTECT(Rf_allocVector(VECSXP, 3));
   SET_VECTOR_ELT(out, 0, values);
   SET_VECTOR_ELT(out, 1, Rf_ScalarReal(eigenvalue));
@@ -176,13 +145,13 @@ SEXP C_twomode_eigenvector(SEXP ptr, SEXP types, SEXP tol, SEXP max_iter, SEXP t
  * edges are copied into malloc'd buffers and the engine handle is freed
  * before any R allocation, so an R error cannot leak the handle. */
 SEXP C_project(SEXP ptr, SEXP types, SEXP second, SEXP weight, SEXP loops, SEXP threads) {
-  GraphHandle *h = twomode_graph(ptr);
+  GraphHandle *h = graph_from_ptr(ptr);
   const int32_t *t = node_types(types, h);
   char err[ERR_LEN] = {0};
   ProjectionHandle *p = NULL;
-  int status = net_project(h, t, Rf_asLogical(second), Rf_asInteger(weight),
-                           Rf_asLogical(loops), Rf_asInteger(threads), &p, err, ERR_LEN);
-  if (status != 0) Rf_error("%s", err);
+  int status = net_project(h, t, Rf_asLogical(second), Rf_asInteger(weight), Rf_asLogical(loops),
+                           Rf_asInteger(threads), &p, err, ERR_LEN);
+  check_status(status, err, 0);
 
   int64_t m = net_projection_count(p);
   size_t cells = (size_t)(m > 0 ? m : 1);
