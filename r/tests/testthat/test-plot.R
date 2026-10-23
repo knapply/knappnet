@@ -159,3 +159,28 @@ test_that("two-mode networks are colored by mode by default", {
     expect_silent(plot(g, node_color = "red", seed = 1))
   })
 })
+
+test_that("spatial networks are drawn at their locations by default", {
+  nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
+                      lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
+                      lat = c(51.5072, 48.8566, 52.5200, 40.4168),
+                      region = c("north", "north", "north", "south"),
+                      stringsAsFactors = FALSE)
+  edges <- data.frame(from = c("London", "Paris", "Paris"), to = c("Paris", "Berlin", "Madrid"),
+                      stringsAsFactors = FALSE)
+  plain <- netframe(edges, nodes, directed = FALSE)
+  g <- spatial_network(plain, coords = c("lon", "lat"), radius = 6371.0088)
+  on_null_device({
+    # The default and "geo" hand over to plot_spatial(), which returns the
+    # network; a named layout method still draws an abstract layout.
+    expect_silent(out <- plot(g))
+    expect_identical(out, g)
+    expect_silent(out <- plot(g, layout = "geo", node_color = "region", main = "Cities"))
+    expect_identical(out, g)
+    expect_silent(xy <- plot(g, layout = "circle"))
+    expect_identical(xy, layout_network(g, "circle"))
+    expect_error(plot(plain, layout = "geo"), "node locations")
+    expect_silent(xy <- plot(plain, seed = 1))
+    expect_identical(dim(xy), c(4L, 2L))
+  })
+})
