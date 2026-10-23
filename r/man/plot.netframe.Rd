@@ -9,12 +9,13 @@
 \arguments{
 \item{x}{A \code{\link{netframe}}.}
 \item{layout}{Node positions: \code{NULL} for the default of
-\code{\link{layout_network}}, the name of a \code{layout_network()} method
-(such as \code{"fr"} or \code{"circle"}), the names of two numeric columns
-of \code{x$nodes} (for example \code{c("lon", "lat")}), a matrix or data
-frame with two columns and one row per node (as returned by
-\code{layout_network()}), or a function that takes the network and returns
-such a matrix.}
+\code{\link{layout_network}} (or the node locations of a spatial network;
+see Details), \code{"geo"} for the node locations, the name of a
+\code{layout_network()} method (such as \code{"fr"} or \code{"circle"}),
+the names of two numeric columns of \code{x$nodes} (for example
+\code{c("lon", "lat")}), a matrix or data frame with two columns and one
+row per node (as returned by \code{layout_network()}), or a function that
+takes the network and returns such a matrix.}
 \item{node_size, node_color, node_label, edge_width, edge_color}{Appearance
 of nodes and edges. Each can be the name of a column of \code{x$nodes} (for
 node arguments) or \code{x$edges} (for edge arguments), a vector with one
@@ -31,7 +32,9 @@ as \code{main}.}
 \code{layout} is \code{NULL} or a method name.}
 }
 \value{The layout used, invisibly: a matrix with columns \code{x} and
-\code{y} and one row per node, which can be passed back as \code{layout}.}
+\code{y} and one row per node, which can be passed back as \code{layout}.
+For a spatial network drawn at its locations, \code{x} invisibly, as
+\code{\link{plot_spatial}} returns.}
 \description{
 Draws a network with base R graphics. With no arguments beyond the
 network, nodes are placed by \code{\link{layout_network}}, sized by degree,
@@ -71,8 +74,19 @@ each other.
 
 The plot is reproducible for a given \code{seed} (or after
 \code{\link{set.seed}}).
+
+Spatial networks (those with sf node geometry, or coordinate columns
+recorded by \code{\link{spatial_network}} or
+\code{\link{proximity_network}}) are drawn at their node locations by
+\code{\link{plot_spatial}} when \code{layout} is \code{NULL} or
+\code{"geo"}, with the same appearance arguments; any other \code{layout}
+draws them like any network. \code{"geo"} is an error for a network without
+locations.
 }
-\seealso{\code{\link{layout_network}}}
+\seealso{\code{\link{layout_network}}, \code{\link{plot_spatial}}, and the
+other plotting functions: \code{\link{plot_matrix}},
+\code{\link{plot_centrality}}, \code{\link{plot_partition}},
+\code{\link{plot_degree_distribution}}.}
 \examples{
 g <- netframe(data.frame(from  = c("a", "a", "b", "c", "c", "d"),
                          to    = c("b", "c", "c", "d", "e", "e"),

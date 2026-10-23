@@ -49,6 +49,32 @@ difference.
   Y-permutation), with exact tests over all permutations for small
   networks and seeded, thread-independent random permutations otherwise.
 
+## Plotting
+
+* `plot()` draws a netframe with a stress layout and appearance mapped from
+  node and edge columns; spatial networks are drawn at their locations.
+* Overlays on the network: `plot_centrality()` (nodes sized and colored by
+  a score), `plot_partition()` (colored by a grouping, with modularity),
+  `plot_coreness()` (concentric k-core shells), and `plot_ego()`.
+* Matrices: `plot_matrix()` (adjacency or incidence matrix, sorted by a
+  partition with block boundaries), `plot_mixing_matrix()`, and a `plot()`
+  method for `blockmodel()` (permuted matrix and block densities with the
+  image outlined).
+* Distributions: `plot_degree_distribution()` (counts or a log-log CCDF),
+  `plot_component_sizes()`, `plot_triad_census()` against the counts
+  expected under Holland and Leinhardt's U|MAN model, and `plot_scores()`
+  (ranked dot plot).
+* Diagnostics: `plot()` methods for `qap_cor()` (permutation distribution
+  with the observed statistic), `mrqap()` (coefficient plot with
+  permutation intervals, or per-coefficient distributions), and
+  `classical_mds()` (configuration, Shepard diagram, scree plot; the result
+  now has class `"classical_mds"` with a `print()` method).
+* `plot_robustness()` tracks the largest component or fragmentation as
+  nodes are removed by degree, betweenness, at random, or in a given order
+  such as the key players.
+* Temporal networks: `plot_timeline()` of contacts and `plot_rolling()` for
+  measures over windows.
+
 ## Reliability
 
 * Results are reproducible for a given number of threads, and integer

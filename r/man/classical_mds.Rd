@@ -1,6 +1,7 @@
 \name{classical_mds}
 \alias{classical_mds}
 \alias{mds_stress}
+\alias{print.classical_mds}
 \title{Classical multidimensional scaling}
 \usage{
 classical_mds(d, k = 2)
@@ -15,11 +16,13 @@ of points.}
 \item{points}{A numeric matrix with one row per point and one column per
 dimension.}
 }
-\value{\code{classical_mds()} returns a list with \code{points} (a matrix
-with one row per point, rownames from \code{d}, and up to \code{k} columns
-\code{Dim1}, \code{Dim2}, ...), \code{eigenvalues} (all of them, in
-decreasing order), \code{gof} (the two goodness-of-fit ratios), and
-\code{stress}. \code{mds_stress()} returns a number.}
+\value{\code{classical_mds()} returns a list of class
+\code{"classical_mds"} with \code{points} (a matrix with one row per point,
+rownames from \code{d}, and up to \code{k} columns \code{Dim1},
+\code{Dim2}, ...), \code{eigenvalues} (all of them, in decreasing order),
+\code{gof} (the two goodness-of-fit ratios), and \code{stress}, with
+\code{print()} and \code{\link[=plot.classical_mds]{plot()}} methods.
+\code{mds_stress()} returns a number.}
 \description{
 Places points in \code{k} dimensions so that their Euclidean distances
 approximate a matrix of dissimilarities, by classical (metric) scaling
@@ -79,15 +82,16 @@ ed.). Johns Hopkins University Press.
 Everton, S. F. (2012). \emph{Disrupting Dark Networks}. Cambridge
 University Press. \doi{10.1017/CBO9781139136877}
 }
-\seealso{\code{\link{mds_distances}}, \code{\link{layout_network}} for
+\seealso{\code{\link{mds_distances}}, \code{\link{plot.classical_mds}}, \code{\link{layout_network}} for
 drawing networks.}
 \examples{
 g <- example_network("florentine")
-fit <- classical_mds(mds_distances(g), k = 2)
-fit$stress
+d <- mds_distances(g)
+fit <- classical_mds(d, k = 2)
+fit
 head(fit$points)
-plot(fit$points, type = "n")
-text(fit$points, labels = rownames(fit$points), cex = 0.7)
+plot(fit)
+plot(fit, which = "shepard", d = d)
 
 # The same configuration as stats::cmdscale(), up to the sign of each axis.
 cm <- stats::cmdscale(mds_distances(g), k = 2)

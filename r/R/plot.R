@@ -7,12 +7,13 @@
 #' from columns of `x$nodes` and `x$edges`.
 #'
 #' @param x A [netframe()].
-#' @param layout Node positions: `NULL` for [layout_network()]'s default,
-#'   the name of a [layout_network()] method (such as `"fr"` or `"circle"`),
-#'   the names of two numeric columns of `x$nodes` (for example
-#'   `c("lon", "lat")`), a matrix or data frame with two columns and one row
-#'   per node (as returned by [layout_network()]), or a function that takes
-#'   the network and returns such a matrix.
+#' @param layout Node positions: `NULL` for [layout_network()]'s default
+#'   (or the node locations of a spatial network; see Details), `"geo"` for
+#'   the node locations, the name of a [layout_network()] method (such as
+#'   `"fr"` or `"circle"`), the names of two numeric columns of `x$nodes`
+#'   (for example `c("lon", "lat")`), a matrix or data frame with two
+#'   columns and one row per node (as returned by [layout_network()]), or a
+#'   function that takes the network and returns such a matrix.
 #' @param node_size,node_color,node_label,edge_width,edge_color Appearance
 #'   of nodes and edges. Each can be the name of a column of `x$nodes` (for
 #'   node arguments) or `x$edges` (for edge arguments), a vector with one
@@ -60,9 +61,20 @@
 #'
 #' The plot is reproducible for a given `seed` (or after [set.seed()]).
 #'
+#' Spatial networks (those with sf node geometry, or coordinate columns
+#' recorded by [spatial_network()] or [proximity_network()]) are drawn at
+#' their node locations by [plot_spatial()] when `layout` is `NULL` or
+#' `"geo"`, with the same appearance arguments; any other `layout` draws
+#' them like any network. `"geo"` is an error for a network without
+#' locations.
+#'
 #' @return The layout used, invisibly: a matrix with columns `x` and `y`
-#'   and one row per node, which can be passed back as `layout`.
-#' @seealso [layout_network()]
+#'   and one row per node, which can be passed back as `layout`. For a
+#'   spatial network drawn at its locations, `x` invisibly, as
+#'   [plot_spatial()] returns.
+#' @seealso [layout_network()], [plot_spatial()], and the other plotting
+#'   functions: [plot_matrix()], [plot_centrality()], [plot_partition()],
+#'   [plot_degree_distribution()].
 #' @examples
 #' g <- netframe(data.frame(from  = c("a", "a", "b", "c", "c", "d"),
 #'                          to    = c("b", "c", "c", "d", "e", "e"),
@@ -82,6 +94,16 @@ plot.netframe <- function(x, layout = NULL, node_size = NULL, node_color = NULL,
                           node_label = NULL, edge_width = NULL, edge_color = NULL, ...,
                           legend = TRUE, seed = NULL) {
   check_netframe(x)
+  geo <- identical(layout, "geo")
+  if ((is.null(layout) || geo) && has_positions(x)) {
+    return(plot_spatial(x, node_color = node_color, node_size = node_size,
+                        node_label = node_label, edge_width = edge_width,
+                        edge_color = edge_color, ..., legend = legend))
+  }
+  if (geo) {
+    stop(paste0("`layout = \"geo\"` needs node locations: give sf nodes to netframe(), or ",
+                "record coordinate columns with spatial_network()."), call. = FALSE)
+  }
   n <- nrow(x$nodes)
   m <- nrow(x$edges)
   xy <- plot_layout(x, layout, seed)
