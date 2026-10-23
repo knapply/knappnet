@@ -123,6 +123,44 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `louvain_quality` |  |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |  |  |
 | `louvain_quality_weighted` |  |  | 0 / 0 / 0 / 5 | 5 / 0 / 0 / 0 |  |  |
 | `louvain_quality_resolution` |  |  | 0 / 0 / 0 / 19 | 18 / 1 / 0 / 0 |  |  |
+| `temporal_earliest_arrival` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_in` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_strict` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_duration` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_delay` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_earliest_arrival_window` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_latest_departure` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_latest_departure_out` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_latest_departure_duration_strict` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_latest_departure_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_fastest` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_fastest_in` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_fastest_duration_strict` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_fastest_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_shortest` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_shortest_in` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_shortest_strict` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_shortest_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_shortest_window` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_reach_out` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_reach_in` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_reach_out_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_reach_in_duration_strict` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_reachability_ratio` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_closeness` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_closeness_pan_saramaki` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_closeness_max_wait` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_average_distance` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_active` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_windows_sliding` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_windows_tumbling` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_aggregate` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_aggregate_window` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_burstiness_nodes` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_burstiness_nodes_out` | 9 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_burstiness_pairs` | 28 / 0 / 0 / 0 |  |  |  |  |  |
+| `temporal_inter_event_nodes` | 28 / 0 / 0 / 0 |  |  |  |  |  |
 | `degree_sna` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 28 |  |
 | `betweenness_networkx` | 28 / 0 / 0 / 0 |  |  | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |  |
 | `betweenness_networkx_weighted` |  |  |  | 7 / 0 / 0 / 0 |  |  |

@@ -57,7 +57,7 @@ pub struct WindowContacts {
     pub indices: Vec<usize>,
 }
 
-/// Contacts active in each window [from[k], to[k]).
+/// Contacts active in each window \[from\[k\], to\[k\]).
 pub fn contacts_in_windows(
     net: &TemporalNetwork,
     from: &[f64],

@@ -119,7 +119,6 @@ struct Arc {
 /// Brute force over walks: the graph whose nodes are arcs, with an edge
 /// from a to b when b can follow a. Shares no code with the engine.
 struct Brute {
-    n: usize,
     arcs: Vec<Arc>,
     next: Vec<Vec<usize>>,
     lo: f64,
@@ -190,13 +189,7 @@ impl Brute {
             })
             .fold(f64::NEG_INFINITY, f64::max);
         let hi = o.end.unwrap_or(if c.start.is_empty() { lo } else { last });
-        Brute {
-            n: c.n,
-            arcs,
-            next,
-            lo,
-            hi,
-        }
+        Brute { arcs, next, lo, hi }
     }
 
     /// Breadth-first search over arcs from `starts`: hop count of every
@@ -242,8 +235,8 @@ impl Brute {
             Criterion::EarliestArrival | Criterion::Shortest => {
                 let depth = self.bfs(&self.starts(i));
                 let mut best = f64::INFINITY;
-                for b in 0..self.arcs.len() {
-                    if let Some(d) = depth[b] {
+                for (b, d) in depth.iter().enumerate() {
+                    if let Some(d) = *d {
                         if ends(b) {
                             let v = if c == Criterion::Shortest {
                                 d as f64
@@ -264,8 +257,8 @@ impl Brute {
                 };
                 for s in self.starts(i) {
                     let depth = self.bfs(&[s]);
-                    for b in 0..self.arcs.len() {
-                        if depth[b].is_some() && ends(b) {
+                    for (b, d) in depth.iter().enumerate() {
+                        if d.is_some() && ends(b) {
                             if c == Criterion::Fastest {
                                 best = best.min(self.arcs[b].arr - self.arcs[s].dep);
                             } else {
@@ -285,8 +278,8 @@ impl Brute {
         let mut pairs = Vec::new();
         for s in self.starts(i) {
             let depth = self.bfs(&[s]);
-            for b in 0..self.arcs.len() {
-                if depth[b].is_some() && self.arcs[b].to == j && self.arcs[b].arr <= self.hi {
+            for (b, d) in depth.iter().enumerate() {
+                if d.is_some() && self.arcs[b].to == j && self.arcs[b].arr <= self.hi {
                     pairs.push((self.arcs[s].dep, self.arcs[b].arr));
                 }
             }
@@ -356,7 +349,7 @@ fn every_criterion_matches_brute_force() {
         }
         for dir in [Direction::Out, Direction::In] {
             let counts = temporal_reach_counts(&net, dir, &o).unwrap();
-            for r in 0..c.n {
+            for (r, &count) in counts.iter().enumerate() {
                 let want = (0..c.n)
                     .filter(|&j| {
                         j != r
@@ -367,7 +360,7 @@ fn every_criterion_matches_brute_force() {
                             .is_finite()
                     })
                     .count();
-                assert_eq!(counts[r], want as f64, "{dir:?} reach of {r}\n{c:?}\n{o:?}");
+                assert_eq!(count, want as f64, "{dir:?} reach of {r}\n{c:?}\n{o:?}");
             }
         }
         if brute.hi > brute.lo && c.n > 1 {
