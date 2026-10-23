@@ -121,7 +121,7 @@ pub fn logit(x: &Dense, y: &[f64], w: Option<&[f64]>, opts: LogitOptions) -> Res
             y[r]
         )));
     }
-    if let Some(r) = w.iter().position(|v| !(*v >= 0.0) || !v.is_finite()) {
+    if let Some(r) = w.iter().position(|v| *v < 0.0 || !v.is_finite()) {
         return Err(Error::InvalidArgument(format!(
             "weight {r} is {}, but weights must be finite and non-negative",
             w[r]

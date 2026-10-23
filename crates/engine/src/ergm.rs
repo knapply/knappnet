@@ -2,7 +2,9 @@
 //!
 //! An ERGM gives the probability of a network y with n nodes as
 //!
+//! ```text
 //!     P(Y = y) = exp(theta' g(y)) / c(theta),
+//! ```
 //!
 //! where g(y) is a vector of network statistics, theta their coefficients,
 //! and c(theta) the sum of exp(theta' g(y)) over every network on the same

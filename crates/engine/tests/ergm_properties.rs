@@ -368,8 +368,8 @@ fn sampler_respects_constraints_and_tracks_statistics() {
                     }
                 }
                 let stats = model.terms().stats(&z);
-                for k in 0..stats.len() {
-                    assert!(close(stats[k], sample.row(r)[k]), "row {r} stat {k}");
+                for (k, (a, b)) in stats.iter().zip(sample.row(r)).enumerate() {
+                    assert!(close(*a, *b), "row {r} stat {k}");
                 }
             }
         }

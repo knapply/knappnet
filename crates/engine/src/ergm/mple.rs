@@ -5,7 +5,9 @@
 //! The pseudolikelihood treats the conditional probabilities of the dyads
 //! as if they were independent:
 //!
+//! ```text
 //!     logit P(Y_ij = 1 | rest) = theta' delta_ij(y),
+//! ```
 //!
 //! so theta is the logistic regression of the observed dyad states on the
 //! change statistics. When every term is dyad independent the conditional

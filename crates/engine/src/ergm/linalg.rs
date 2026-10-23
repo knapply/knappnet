@@ -54,7 +54,7 @@ pub fn cholesky(a: &Dense) -> Option<Dense> {
         for k in 0..j {
             d -= l.get(j, k) * l.get(j, k);
         }
-        if !(d > 0.0) || !d.is_finite() {
+        if d <= 0.0 || !d.is_finite() {
             return None;
         }
         let d = d.sqrt();
@@ -77,16 +77,16 @@ pub fn solve_spd(a: &Dense, b: &[f64]) -> Option<Vec<f64>> {
     let mut z = vec![0.0; p];
     for i in 0..p {
         let mut s = b[i];
-        for k in 0..i {
-            s -= l.get(i, k) * z[k];
+        for (k, zk) in z.iter().enumerate().take(i) {
+            s -= l.get(i, k) * zk;
         }
         z[i] = s / l.get(i, i);
     }
     let mut x = vec![0.0; p];
     for i in (0..p).rev() {
         let mut s = z[i];
-        for k in i + 1..p {
-            s -= l.get(k, i) * x[k];
+        for (k, xk) in x.iter().enumerate().skip(i + 1) {
+            s -= l.get(k, i) * xk;
         }
         x[i] = s / l.get(i, i);
     }

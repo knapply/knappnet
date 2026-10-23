@@ -4,7 +4,9 @@
 //! random graph model P(Y = y) = exp(theta' g(y)) / c(theta). The change
 //! statistic of dyad (i, j) is
 //!
+//! ```text
 //!     delta_ij(y) = g(y with y_ij = 1) - g(y with y_ij = 0),
+//! ```
 //!
 //! the rest of the network held fixed (Wasserman and Pattison 1996,
 //! `wasserman1996logit`; Hunter et al. 2008, `hunter2008ergm`). Every
@@ -38,8 +40,10 @@
 //! Hunter 2007, `hunter2007curved`) use statnet's `fixed = TRUE` form with
 //! decay parameter alpha:
 //!
+//! ```text
 //!     gwesp(alpha) = exp(alpha) * sum_{k >= 1} (1 - (1 - exp(-alpha))^k) EP_k,
 //!     gwdegree(alpha) = exp(alpha) * sum_{k >= 1} (1 - (1 - exp(-alpha))^k) D_k,
+//! ```
 //!
 //! where EP_k is the number of ties with exactly k shared partners and D_k
 //! the number of nodes of degree k. Shared partners of a directed tie
