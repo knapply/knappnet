@@ -1,3 +1,9 @@
+# Conversion to and from other packages' objects (igraph, tidygraph,
+# network, dense and sparse adjacency matrices). Methods for sf and
+# sfnetworks are in sf.R. Methods for other packages' generics are
+# registered in NAMESPACE with S3method(pkg::generic, netframe) and take
+# effect when that package is loaded.
+
 # Convert networks to and from other packages (man/as_netframe.Rd).
 as_netframe <- function(x, ...) {
   UseMethod("as_netframe")

@@ -1,3 +1,9 @@
+# Descriptive statistics of a network as a whole and its paths:
+# reciprocity, transitivity and clustering, distances and their summaries,
+# reachability, cut points and bridges, and summary.netframe(). Other
+# whole-network measures (density, components, centralization, triads,
+# core-periphery, small worlds) are in topography.R.
+
 # Reciprocity (man/reciprocity.Rd).
 reciprocity <- function(x, mode = c("default", "ratio", "dyadic", "correlation")) {
   check_netframe(x)

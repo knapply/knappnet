@@ -1,3 +1,6 @@
+# Plots of temporal networks: contact timelines and measures over
+# windows.
+
 # Timeline of contacts in a temporal network (man/plot_timeline.Rd).
 plot_timeline <- function(x, by = c("pair", "node"), max_rows = 50, ...) {
   check_temporal(x)

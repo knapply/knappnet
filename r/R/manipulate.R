@@ -1,3 +1,9 @@
+# Transformations of a network's tables: combining relations,
+# dichotomizing and symmetrizing, subnetworks and node filters, and recoding
+# or joining attributes. Each returns a new netframe built through
+# with_tables() or induced_netframe() (utils-nodes.R), which keep the
+# roles and attributes of the input.
+
 # Combine the relations of a multiplex network (man/combine_relations.Rd).
 combine_relations <- function(x, relation = NULL,
                               method = c("union", "intersection", "sum", "difference", "select"),

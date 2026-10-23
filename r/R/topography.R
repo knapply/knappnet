@@ -1,3 +1,8 @@
+# Measures of the network as a whole: density, average degree and the
+# degree distribution, components and fragmentation, the triad census,
+# centralization, compactness, the small-world quotient, and core-periphery
+# structure, with the print and plot methods of the result classes.
+
 # Edge density (man/graph_density.Rd).
 graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx", "sna", "ucinet")) {
   check_netframe(x)
@@ -22,6 +27,32 @@ graph_density <- function(x, loops = FALSE, convention = c("igraph", "networkx",
   engine_call("graph_density", .Call(C_density, ptr, loops))
 }
 
+# Average degree and the degree distribution (man/average_degree.Rd).
+average_degree <- function(x, mode = c("all", "out", "in"), loops = TRUE) {
+  check_netframe(x)
+  mode <- match.arg(mode)
+  loops <- check_flag(loops, "loops")
+  d <- degree(x, mode = mode, loops = loops)
+  if (!length(d)) return(NaN)
+  mean(d)
+}
+
+# See man/average_degree.Rd.
+degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TRUE,
+                                cumulative = FALSE) {
+  check_netframe(x)
+  mode <- match.arg(mode)
+  loops <- check_flag(loops, "loops")
+  cumulative <- check_flag(cumulative, "cumulative")
+  d <- degree(x, mode = mode, loops = loops)
+  values <- sort(unique(d))
+  count <- vapply(values, function(v) sum(d == v), integer(1))
+  out <- data.frame(degree = values, count = count, proportion = count / length(d))
+  if (cumulative) out$at_least <- rev(cumsum(rev(out$proportion)))
+  rownames(out) <- NULL
+  out
+}
+
 # Connected components (man/components.Rd).
 components <- function(x, mode = c("weak", "strong")) {
   check_netframe(x)
@@ -41,90 +72,15 @@ fragmentation <- function(x, mode = c("weak", "strong")) {
   engine_call("fragmentation", .Call(C_fragmentation, ptr, if (mode == "strong") 1L else 0L))
 }
 
-# Closeness and harmonic centrality (man/closeness.Rd).
-closeness <- function(x, mode = NULL, weighted = NULL, normalized = NULL, threads = 0L,
-                      weights_as = NULL,
-                      convention = c("igraph", "networkx", "sna", "ucinet")) {
-  closeness_common(x, FALSE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention), "closeness")
-}
-
-# See man/closeness.Rd.
-harmonic_centrality <- function(x, mode = NULL, weighted = NULL, normalized = NULL,
-                                threads = 0L, weights_as = NULL,
-                                convention = c("igraph", "networkx", "sna", "ucinet")) {
-  closeness_common(x, TRUE, mode, weighted, normalized, threads, weights_as,
-                   match.arg(convention), "harmonic_centrality")
-}
-
-closeness_common <- function(x, harmonic, mode, weighted, normalized, threads, weights_as,
-                             convention, fn) {
+# Triad census (man/triad_census.Rd).
+triad_census <- function(x, threads = 0L) {
   check_netframe(x)
-  if (is.null(mode)) mode <- if (convention == "networkx") "in" else "out"
-  mode <- check_choice(mode, c("out", "in", "all"), "mode")
-  check_flag_or_null(weighted, "weighted")
-  check_flag_or_null(normalized, "normalized")
   threads <- resolve_threads(threads)
-  if (is.null(normalized)) {
-    normalized <- !(convention == "igraph" || (harmonic && convention == "networkx"))
-  }
-  binary <- convention %in% c("sna", "ucinet")
-  if (binary && isTRUE(weighted)) {
-    stop(sprintf("The %s convention computes closeness on binary ties; use `weighted = FALSE`.",
-                 convention), call. = FALSE)
-  }
-  w <- resolve_weighting(x, if (binary) FALSE else weighted, weights_as)
-  unreachable <- switch(convention, igraph = 0L, networkx = 1L, sna = 2L, ucinet = 3L)
-  ptr <- if (binary) engine_graph_simple(x) else engine_graph(x)
-  engine_call(fn, .Call(C_closeness, ptr, harmonic, mode_code(mode), w$weighted, w$code,
-                        normalized, unreachable, threads), edge_rows = !binary)
-}
-
-# Eigenvector centrality (man/eigenvector_centrality.Rd).
-eigenvector_centrality <- function(x, mode = NULL, weighted = NULL, scale = NULL,
-                                   convention = c("igraph", "networkx", "sna", "ucinet"),
-                                   tol = 1e-12, max_iter = 10000L, threads = 0L) {
-  check_netframe(x)
-  convention <- match.arg(convention)
-  if (is.null(mode)) {
-    mode <- switch(convention, igraph = "in", networkx = "in", sna = "out", ucinet = "all")
-  }
-  mode <- check_choice(mode, c("in", "out", "all"), "mode")
-  if (is.null(scale)) scale <- if (convention == "igraph") "max" else "unit"
-  scale <- check_choice(scale, c("max", "unit"), "scale")
-  threads <- resolve_threads(threads)
-  weighted <- resolve_additive_weights(x, weighted)
-  check_iteration(tol, max_iter)
-
-  loops <- switch(convention, igraph = 0L, networkx = 1L, sna = 2L, ucinet = 2L)
-  ptr <- switch(convention,
-    sna = engine_graph_simple(x),
-    ucinet = engine_graph_simple(x, undirected = TRUE),
-    engine_graph(x)
-  )
-  if (convention == "ucinet") {
-    csize <- components(x, "weak")$csize
-    if (sum(csize > 1L) > 1L) {
-      stop("More than one component has ties. UCINET then reports lambda-squared ",
-           "scores computed within components, which are not implemented; use ",
-           "another convention or analyse components separately.", call. = FALSE)
-    }
-  }
-  res <- engine_call("eigenvector_centrality",
-    .Call(C_eigenvector, ptr, mode_code(mode), weighted, if (scale == "max") 0L else 1L,
-          loops, as.double(tol), as.double(max_iter), threads),
-    edge_rows = convention %in% c("igraph", "networkx"))
-  if (!res[[3]] && length(res[[1]]) > 1L) {
-    if (convention == "networkx") {
-      stop("The network is not ", if (x$directed && mode != "all") "strongly ",
-           "connected; NetworkX does not compute eigenvector centrality for such networks.",
-           call. = FALSE)
-    }
-    warning("The network is not ", if (x$directed && mode != "all") "strongly ",
-            "connected, so eigenvector centrality is zero outside the dominant ",
-            "component(s) and may not be unique.", call. = FALSE)
-  }
-  res[[1]]
+  ptr <- engine_graph(x)
+  out <- engine_call("triad_census", .Call(C_triad_census, ptr, threads))
+  names(out) <- c("003", "012", "102", "021D", "021U", "021C", "111D", "111U",
+                  "030T", "030C", "201", "120D", "120U", "120C", "210", "300")
+  out
 }
 
 # Freeman centralization (man/centralization.Rd).
@@ -167,4 +123,216 @@ centralization <- function(x, measure = c("degree", "betweenness", "closeness", 
   }
   engine_call("centralization", .Call(C_centralization, ptr, code, mode_code(mode), loops,
                                       normalized, conv, threads))
+}
+
+# Centralization of any scores (man/centralize.Rd).
+centralize <- function(scores, theoretical_max = NULL) {
+  if (!is.numeric(scores)) {
+    stop("`scores` must be a numeric vector.", call. = FALSE)
+  }
+  if (!is.null(theoretical_max) &&
+      (!is.numeric(theoretical_max) || length(theoretical_max) != 1L ||
+       is.na(theoretical_max) || theoretical_max <= 0)) {
+    stop("`theoretical_max` must be a single positive number, or NULL.", call. = FALSE)
+  }
+  if (!length(scores) || anyNA(scores)) return(NaN)
+  raw <- sum(max(scores) - scores)
+  if (is.null(theoretical_max)) raw else raw / theoretical_max
+}
+
+# Compactness and distance-weighted fragmentation (man/compactness.Rd).
+compactness <- function(x, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
+                        threads = 0L) {
+  check_netframe(x)
+  mode <- match.arg(mode)
+  w <- resolve_weighting(x, weighted, weights_as)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  engine_call("compactness", .Call(C_compactness, ptr, mode_code(mode), w$weighted, w$code,
+                                   threads))
+}
+
+# See man/compactness.Rd.
+distance_weighted_fragmentation <- function(x, mode = c("out", "in", "all"), weighted = NULL,
+                                            weights_as = NULL, threads = 0L) {
+  check_netframe(x)
+  mode <- match.arg(mode)
+  w <- resolve_weighting(x, weighted, weights_as)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  1 - engine_call("distance_weighted_fragmentation",
+                  .Call(C_compactness, ptr, mode_code(mode), w$weighted, w$code, threads))
+}
+
+# Small-world quotient (man/small_world.Rd).
+small_world <- function(x, local = FALSE, reps = 100L, seed = NULL, threads = 0L) {
+  check_netframe(x)
+  local <- check_flag(local, "local")
+  reps <- check_count(reps, "reps", min = 1L)
+  seed <- check_seed(seed)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  v <- engine_call("small_world", .Call(C_small_world, ptr, local, reps, seed, threads))
+  structure(list(clustering = v[[1L]], mean_distance = v[[2L]], random_clustering = v[[3L]],
+                 random_mean_distance = v[[4L]], quotient = v[[5L]], reps = reps,
+                 local = local, n = nrow(x$nodes)),
+            class = "small_world")
+}
+
+# See man/small_world.Rd.
+print.small_world <- function(x, ...) {
+  cat(sprintf("Small-world quotient: %s\n", format(x$quotient, digits = 4)))
+  cat(sprintf("  %s: %s observed, %s in %d random networks (ratio %s)\n",
+              if (x$local) "mean local clustering" else "transitivity",
+              format(x$clustering, digits = 4), format(x$random_clustering, digits = 4),
+              x$reps, format(x$clustering / x$random_clustering, digits = 4)))
+  cat(sprintf("  mean distance: %s observed, %s in random networks (ratio %s)\n",
+              format(x$mean_distance, digits = 4), format(x$random_mean_distance, digits = 4),
+              format(x$mean_distance / x$random_mean_distance, digits = 4)))
+  invisible(x)
+}
+
+# See man/small_world.Rd.
+plot.small_world <- function(x, ...) {
+  pal <- plot_qualitative(8L)
+  dots <- list(...)
+  old <- graphics::par(mfrow = c(1L, 2L), mar = c(3, 4, 4, 1), oma = c(0, 0, 2, 0))
+  on.exit(graphics::par(old), add = TRUE)
+  panel <- function(obs, rnd, ylab) {
+    v <- c(observed = obs, random = rnd)
+    graphics::barplot(v, col = pal[c(2L, 1L)], border = NA, ylab = ylab,
+                      ylim = c(0, max(v[is.finite(v)], 0) * 1.15))
+    graphics::text(c(0.7, 1.9), v, format(v, digits = 3), pos = 3, cex = 0.8, xpd = NA)
+  }
+  panel(x$clustering, x$random_clustering,
+        if (x$local) "mean local clustering" else "transitivity")
+  panel(x$mean_distance, x$random_mean_distance, "mean distance")
+  main <- if (is.null(dots$main)) {
+    sprintf("Small-world quotient %s (%d random networks)", format(x$quotient, digits = 3),
+            x$reps)
+  } else {
+    dots$main
+  }
+  graphics::mtext(main, outer = TRUE, cex = 1.1, font = 2)
+  invisible(x)
+}
+
+# Core-periphery structure (man/core_periphery.Rd).
+core_periphery <- function(x, method = c("discrete", "continuous"),
+                           links = c("missing", "ones", "zeros"),
+                           fit = c("minres", "correlation"), weighted = NULL,
+                           starts = 20L, max_stall = 200L, tenure = NULL, max_iter = 1000L,
+                           tol = 1e-10, seed = NULL, threads = 0L) {
+  check_netframe(x)
+  method <- match.arg(method)
+  links <- match.arg(links)
+  fit <- match.arg(fit)
+  weighted <- resolve_additive_weights(x, weighted)
+  starts <- check_count(starts, "starts")
+  max_stall <- check_count(max_stall, "max_stall")
+  tenure <- if (is.null(tenure)) 0L else check_count(tenure, "tenure")
+  max_iter <- check_count(max_iter, "max_iter")
+  tol <- check_number(tol, "tol", lower = 0)
+  seed <- check_seed(seed)
+  threads <- resolve_threads(threads)
+  ptr <- engine_graph(x)
+  if (method == "discrete") {
+    code <- switch(links, missing = 0L, ones = 1L, zeros = 2L)
+    res <- engine_call("core_periphery",
+                       .Call(C_core_periphery, ptr, code, weighted, starts, max_stall, tenure,
+                             seed, threads))
+    out <- list(method = "discrete", links = links, core = res[[1L]], correlation = res[[2L]],
+                network = x)
+  } else {
+    res <- engine_call("core_periphery",
+                       .Call(C_core_periphery_continuous, ptr,
+                             if (fit == "minres") 0L else 1L, weighted, max_iter,
+                             tol, starts, seed, threads))
+    out <- list(method = "continuous", fit = fit, coreness = res[[1L]],
+                correlation = res[[2L]], residual = res[[3L]], iterations = res[[4L]],
+                network = x)
+  }
+  structure(out, class = "core_periphery")
+}
+
+# See man/core_periphery.Rd.
+print.core_periphery <- function(x, ...) {
+  if (x$method == "discrete") {
+    cat(sprintf("Discrete core-periphery fit (core-periphery pairs %s): %d core, %d periphery\n",
+                switch(x$links, missing = "left out", ones = "expected tied",
+                       zeros = "expected untied"),
+                sum(x$core), sum(!x$core)))
+  } else {
+    cat(sprintf("Continuous core-periphery fit (%s): coreness of %d nodes (unit norm)\n",
+                if (x$fit == "minres") "MINRES" else "maximum correlation",
+                length(x$coreness)))
+    if (x$fit == "minres") {
+      cat(sprintf("Residual sum of squares: %s\n", format(x$residual, digits = 4)))
+    }
+  }
+  cat(sprintf("Correlation with the ideal pattern: %s\n", format(x$correlation, digits = 4)))
+  invisible(x)
+}
+
+# See man/core_periphery.Rd.
+plot.core_periphery <- function(x, what = NULL, layout = NULL, ..., seed = NULL) {
+  if (is.null(what)) what <- if (x$method == "discrete") "matrix" else "network"
+  what <- check_choice(what, c("matrix", "network"), "what")
+  g <- x$network
+  pal <- plot_qualitative(8L)
+  if (what == "network") {
+    if (x$method == "discrete") {
+      plot(g, layout = layout, node_color = I(ifelse(x$core, pal[[5L]], pal[[1L]])), ...,
+           legend = FALSE, seed = seed)
+      graphics::legend("topleft", legend = c("core", "periphery"), pch = 21,
+                       pt.bg = pal[c(5L, 1L)], col = "white", pt.cex = 1.6, bty = "n",
+                       cex = 0.8)
+    } else {
+      plot(g, layout = layout, node_color = x$coreness, node_size = x$coreness, ..., seed = seed)
+    }
+    return(invisible(x))
+  }
+  n <- nrow(g$nodes)
+  if (n == 0L) stop("The network has no nodes; nothing to plot.", call. = FALSE)
+  order <- if (x$method == "discrete") {
+    order(!x$core, seq_len(n))
+  } else {
+    order(-x$coreness, seq_len(n))
+  }
+  weighted <- !is.null(g$roles$weight)
+  a <- as.matrix(g, attr = g$roles$weight)[order, order, drop = FALSE]
+  diag(a) <- 0
+  if (!weighted) a <- (a > 0) * 1
+  dots <- list(...)
+  if (is.null(dots$main)) {
+    dots$main <- sprintf("%s core-periphery fit (correlation %s)",
+                         if (x$method == "discrete") "Discrete" else "Continuous",
+                         format(x$correlation, digits = 3))
+  }
+  labelled <- n <= 40
+  old <- graphics::par(mar = c(0.5, if (labelled) 5 else 1, if (labelled) 6.5 else 3, 1),
+                       xpd = NA)
+  on.exit(graphics::par(old), add = TRUE)
+  # Row i at the top, as a matrix is printed.
+  colors <- if (weighted) {
+    plot_matrix_palette(64L)
+  } else {
+    c("white", pal[[2L]])
+  }
+  graphics::image(seq_len(n), seq_len(n), t(a)[, n:1, drop = FALSE], col = colors,
+                  axes = FALSE, xlab = "", ylab = "", useRaster = FALSE)
+  graphics::box(col = "gray50")
+  if (labelled) {
+    labels <- as.character(g$nodes[[g$roles$id]])[order]
+    graphics::axis(2, at = n:1, labels = labels, las = 2, tick = FALSE, cex.axis = 0.7,
+                   line = -0.5)
+    graphics::axis(3, at = seq_len(n), labels = labels, las = 2, tick = FALSE,
+                   cex.axis = 0.7, line = -0.5)
+  }
+  boundary <- if (x$method == "discrete") sum(x$core) else sum(x$coreness > mean(x$coreness))
+  if (boundary > 0 && boundary < n) {
+    graphics::abline(v = boundary + 0.5, h = n - boundary + 0.5, col = pal[[5L]], lwd = 2)
+  }
+  do.call(graphics::title, c(dots, list(line = if (labelled) 5 else 1.5)))
+  invisible(x)
 }

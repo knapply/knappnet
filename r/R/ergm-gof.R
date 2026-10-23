@@ -1,3 +1,5 @@
+# Goodness of fit and Markov chain diagnostics for ergm_fit() results.
+
 # Goodness of fit of an exponential random graph model (man/ergm_gof.Rd).
 ergm_gof <- function(object, nsim = 100, seed = NULL,
                      stats = c("degree", "esp", "dsp", "distance", "triad", "model"),

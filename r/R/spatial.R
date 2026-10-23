@@ -1,3 +1,8 @@
+# Geospatial networks with coordinate columns: recording coordinates,
+# edge lengths, distance decay, group geometry, and proximity networks.
+# Networks whose tables are sf data frames are handled in sf.R, and the
+# map plot in plot-spatial.R.
+
 # Geospatial networks (man/spatial_network.Rd).
 spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                             radius = 6371008.7714,

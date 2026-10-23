@@ -1,3 +1,6 @@
+# Conditional uniform graph tests: the test, its print, summary, and plot
+# methods.
+
 # Conditional uniform graph tests (man/cug_test.Rd).
 cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
                      reps = 1000L, ..., seed = NULL, threads = 0L) {
@@ -113,5 +116,28 @@ print.summary.cug_test <- function(x, ...) {
   cat("\nNull distribution:\n")
   cat(sprintf("  mean %s, sd %s\n", format(x$mean, digits = 6), format(x$sd, digits = 6)))
   print(x$quantiles, digits = 6)
+  invisible(x)
+}
+
+# See man/cug_test.Rd.
+plot.cug_test <- function(x, ..., breaks = "Sturges") {
+  pal <- plot_qualitative(8L)
+  null <- x$null
+  if (!length(null)) stop("The null distribution is empty; nothing to plot.", call. = FALSE)
+  dots <- list(...)
+  if (is.null(dots$main)) dots$main <- sprintf("CUG test of %s (conditioning on %s)",
+                                               x$statistic, x$conditioning)
+  if (is.null(dots$xlab)) dots$xlab <- x$statistic
+  xlim <- range(c(null, x$observed), finite = TRUE)
+  xlim <- xlim + c(-1, 1) * 0.05 * max(diff(xlim), 1e-8)
+  h <- graphics::hist(null, breaks = breaks, plot = FALSE)
+  do.call(graphics::plot, c(list(h, col = pal[[2L]], border = "white", xlim = xlim), dots))
+  graphics::abline(v = x$observed, col = pal[[5L]], lwd = 2.5)
+  graphics::legend(if (x$observed > stats::median(null)) "topleft" else "topright",
+                   bty = "n", cex = 0.85, lty = c(1, NA, NA), lwd = c(2.5, NA, NA),
+                   col = c(pal[[5L]], NA, NA),
+                   legend = c(sprintf("observed = %s", format(x$observed, digits = 4)),
+                              sprintf("Pr(X >= obs) = %s", format(x$p_greater, digits = 3)),
+                              sprintf("Pr(X <= obs) = %s", format(x$p_less, digits = 3))))
   invisible(x)
 }

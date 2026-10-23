@@ -1,3 +1,5 @@
+# Ego networks and egocentric measures.
+
 # Ego networks (man/ego_network.Rd).
 ego_network <- function(x, node, order = 1L, mode = c("all", "out", "in"),
                         include_ego = TRUE) {

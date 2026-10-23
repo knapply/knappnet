@@ -1,3 +1,6 @@
+# Heat maps of adjacency, incidence, and mixing matrices, drawn by
+# draw_heatmap() in utils-plot.R.
+
 # Plot an adjacency or incidence matrix (man/plot_matrix.Rd).
 plot_matrix <- function(x, order = NULL, attr = NULL, values = FALSE, key = NULL,
                         labels = NULL, ...) {
@@ -91,47 +94,4 @@ plot_mixing_matrix <- function(x, dim1 = NULL, dim2 = NULL, direction = c("all",
   top <- if (length(finite)) max(1, finite) else 1
   draw_heatmap(m, values = values, digits = 0L, range = c(0, top), ...)
   invisible(m)
-}
-
-# Plot a blockmodel (man/plot.blockmodel.Rd).
-plot.blockmodel <- function(x, network = NULL, which = c("both", "density", "matrix"),
-                            values = TRUE, ...) {
-  which <- match.arg(which)
-  values <- check_flag(values, "values")
-  if (!is.null(network)) {
-    check_netframe(network)
-    if (nrow(network$nodes) != length(x$membership)) {
-      stop("`network` must have one node per element of `x$membership`.", call. = FALSE)
-    }
-  } else if (which != "density") {
-    if (which == "matrix") {
-      stop("The permuted adjacency matrix needs `network`.", call. = FALSE)
-    }
-    which <- "density"
-  }
-  if (which == "both") {
-    old <- graphics::par(mfrow = c(1, 2))
-    on.exit(graphics::par(old), add = TRUE)
-  }
-  dots <- list(...)
-  if (which != "density") {
-    args <- c(list(x = network, order = x$membership, key = FALSE), dots)
-    if (is.null(args$main)) args$main <- "Permuted adjacency matrix"
-    do.call(plot_matrix, args)
-  }
-  if (which != "matrix") {
-    d <- x$density
-    finite <- d[is.finite(d)]
-    top <- if (length(finite)) max(1, finite) else 1
-    args <- c(list(m = d, values = values, range = c(0, top), digits = 2L), dots)
-    if (is.null(args$main)) args$main <- "Block densities"
-    do.call(draw_heatmap, args)
-    k <- nrow(d)
-    ones <- which(is.finite(x$image) & x$image == 1, arr.ind = TRUE)
-    if (nrow(ones)) {
-      graphics::rect(ones[, 2] - 0.5, k - ones[, 1] + 0.5, ones[, 2] + 0.5,
-                     k - ones[, 1] + 1.5, border = plot_accent, lwd = 2.5)
-    }
-  }
-  invisible(x)
 }

@@ -1,3 +1,6 @@
+# Node coordinates: the layouts computed by the engine, the stress of a
+# layout, and the checks on layouts given by hand.
+
 # Node coordinates for drawing a network (man/layout_network.Rd).
 layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
                                          "star", "grid", "tree", "twomode"),

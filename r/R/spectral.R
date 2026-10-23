@@ -1,3 +1,7 @@
+# Centrality from matrix iterations: PageRank, Katz, Bonacich power, and
+# hub and authority scores. Eigenvector centrality itself is in
+# centrality.R.
+
 # PageRank (man/pagerank.Rd).
 pagerank <- function(x, damping = 0.85, personalized = NULL, directed = TRUE, weighted = NULL,
                      dangling = c("personalized", "uniform"),

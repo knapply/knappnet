@@ -1,3 +1,9 @@
+# Exponential random graph models: estimation (pseudolikelihood, Monte
+# Carlo maximum likelihood, exact enumeration), the model formula and its
+# terms, simulation, prediction, and the fit's methods. Goodness of fit and
+# MCMC diagnostics are in ergm-gof.R and temporal models in
+# ergm-temporal.R.
+
 # Exponential random graph models (man/ergm_fit.Rd).
 ergm_fit <- function(formula, estimate = c("MCMLE", "MPLE", "exact"), constraints = NULL,
                      control = ergm_control(), start = NULL) {

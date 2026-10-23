@@ -1,3 +1,5 @@
+# Key players, group centrality, and flow betweenness.
+
 # Key players (man/key_players.Rd).
 key_players <- function(x, k, measure = c("fragmentation", "distance_fragmentation",
                                           "m_reach", "distance_reach"),

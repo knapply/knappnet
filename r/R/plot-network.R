@@ -1,3 +1,7 @@
+# Plots that overlay a measure on the network drawn by plot.netframe():
+# scores, partitions, k-core shells, ego networks, and the robustness
+# curve.
+
 # Draw a network with nodes sized and colored by a score (man/plot_centrality.Rd).
 plot_centrality <- function(x, scores, title = "score", color = TRUE, ...) {
   check_netframe(x)

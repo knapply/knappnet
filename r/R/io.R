@@ -1,3 +1,6 @@
+# Reading and writing network files. Text formats and CSV are handled
+# here; GeoPackage files need sf and live in sf.R.
+
 # Read and write network files (man/read_network.Rd).
 read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
                          weight = NULL, weight_type = c("distance", "strength")) {

@@ -1,3 +1,6 @@
+# Mixing by node attributes: mixing matrices, assortativity coefficients,
+# the E-I index, and within-group tie shares.
+
 # Mixing matrices (man/mixing_matrix.Rd).
 mixing_matrix <- function(x, dim1, dim2 = NULL, direction = c("all", "out", "in")) {
   check_netframe(x)

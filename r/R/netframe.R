@@ -1,3 +1,8 @@
+# The netframe class: the constructor, which checks the tables and builds
+# the edge index, and its print method. The argument checks it uses are in
+# utils-checks.R, the engine handle in utils-engine.R, and summary() in
+# descriptive.R.
+
 # Create a network from node and edge data frames (man/netframe.Rd).
 netframe <- function(edges, nodes = NULL, directed = TRUE,
                      from = 1L, to = 2L, id = 1L, weight = NULL,

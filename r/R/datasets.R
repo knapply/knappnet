@@ -1,3 +1,5 @@
+# Example networks shipped in inst/extdata, read on demand.
+
 # Example networks (man/example_network.Rd).
 example_network <- function(name = c("noordin", "noordin_affiliations", "jemaah_islamiyah",
                                      "karate", "florentine", "southern_women"),

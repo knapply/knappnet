@@ -1,3 +1,6 @@
+# Temporal exponential random graph models by pooled pseudolikelihood with a
+# bootstrap over transitions. The terms are parsed by ergm.R.
+
 # Temporal exponential random graph models by pooled pseudolikelihood (man/tergm_fit.Rd).
 tergm_fit <- function(formula, boot = 200, seed = NULL, level = 0.95, threads = 0L,
                       control = ergm_control()) {

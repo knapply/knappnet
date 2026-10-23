@@ -1,3 +1,8 @@
+# Plots of distributions and rankings: degrees, component sizes, the triad
+# census against its expectation, and ranked scores. Plots of a network's
+# nodes and edges are in plot-netframe.R and plot-network.R, matrices in
+# plot-matrix.R, and plot methods for result classes next to their class.
+
 # Plot the degree distribution (man/plot_degree_distribution.Rd).
 plot_degree_distribution <- function(x, mode = c("all", "out", "in"), loops = TRUE,
                                      type = c("histogram", "ccdf"), log = FALSE,

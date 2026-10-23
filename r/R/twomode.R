@@ -1,3 +1,6 @@
+# Two-mode (bipartite) networks: construction, incidence matrices,
+# projections, and two-mode centrality and density.
+
 # Two-mode networks (man/twomode.Rd).
 twomode <- function(edges, nodes = NULL, type = "type", first = NULL, directed = FALSE,
                     from = 1L, to = 2L, id = 1L, weight = NULL,

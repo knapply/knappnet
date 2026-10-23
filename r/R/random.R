@@ -1,3 +1,7 @@
+# Random network models drawn by the engine: G(n, p), G(n, m), the
+# configuration model, U|MAN, small worlds, preferential attachment, and
+# stochastic block models.
+
 # Random networks (man/random_gnp.Rd).
 random_gnp <- function(n, p, directed = FALSE, loops = FALSE, reps = 1L, seed = NULL,
                        threads = 0L) {

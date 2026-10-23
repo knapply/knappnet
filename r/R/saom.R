@@ -1,3 +1,7 @@
+# Stochastic actor-oriented models: panel data, effects, estimation by the
+# method of moments, simulation, goodness of fit, and the methods of the
+# fit.
+
 # Network panel data for stochastic actor-oriented models (man/saom_data.Rd).
 saom_data <- function(networks, covariates = NULL, dyadic = NULL) {
   if (!is.list(networks) || length(networks) < 2L ||

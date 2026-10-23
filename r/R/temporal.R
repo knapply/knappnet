@@ -1,3 +1,7 @@
+# Temporal networks: the constructor, slices and windows, aggregation,
+# time-respecting paths and reachability, temporal closeness, rolling
+# measures, and burstiness. Plots are in plot-temporal.R.
+
 # Temporal networks (man/temporal_network.Rd).
 temporal_network <- function(edges, nodes = NULL, start = "time", end = NULL,
                              duration = NULL, directed = TRUE, from = 1L, to = 2L, id = 1L,
