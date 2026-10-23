@@ -37,10 +37,12 @@
 //! - Groups are named as in igraph's `merges` (leaves 0..n, merge i creates
 //!   group n + i); see [`super::dendrogram`]. Among merges with equal
 //!   delta sigma the pair with the smaller group names is made first (the
-//!   smaller lower name, then the smaller higher name). In symmetric
-//!   networks distances that are equal in exact arithmetic can differ in
-//!   the last bits, so such ties fall to rounding, and igraph may merge in
-//!   a different order.
+//!   smaller lower name, then the smaller higher name). Networks with
+//!   symmetries (structurally equivalent nodes) have many such ties, and
+//!   values equal in exact arithmetic can differ in the last bits of
+//!   floating point, so values within a relative 1e-9 of the smallest
+//!   are taken as tied. igraph documents no tie rule and may merge tied
+//!   pairs in a different order.
 //! - Only adjacent groups merge, so a network with c components gets
 //!   n - c merges (an incomplete dendrogram).
 //! - Modularity along the merges is [`crate::metrics::community::modularity`]
@@ -99,6 +101,12 @@ impl Ord for Candidate {
             .then_with(|| other.a.cmp(&self.a))
             .then_with(|| other.b.cmp(&self.b))
     }
+}
+
+/// Two values of delta sigma equal to a relative 1e-9 (or both below
+/// 1e-18) are tied.
+fn tied(x: f64, y: f64) -> bool {
+    (x - y).abs() <= 1e-9 * x.abs().max(y.abs()) + 1e-18
 }
 
 fn squared_distance(x: &[f64], y: &[f64]) -> f64 {
@@ -220,9 +228,31 @@ pub fn walktrap(g: &Graph, steps: usize, weighted: bool, threads: usize) -> Resu
     let mut alive = vec![false; 2 * n];
     alive[..n].iter_mut().for_each(|s| *s = true);
     let mut merges: Vec<(usize, usize)> = Vec::new();
+    let mut near: Vec<Candidate> = Vec::new();
     while let Some(c) = heap.pop() {
         if !alive[c.a] || !alive[c.b] {
             continue;
+        }
+        // Among the live candidates whose delta sigma equals the smallest
+        // to a relative 1e-9, take the one with the smallest names.
+        near.clear();
+        while let Some(top) = heap.peek() {
+            if !tied(top.delta, c.delta) {
+                break;
+            }
+            let top = heap.pop().expect("peeked");
+            if alive[top.a] && alive[top.b] {
+                near.push(top);
+            }
+        }
+        let mut c = c;
+        for x in near.iter_mut() {
+            if (x.a, x.b) < (c.a, c.b) {
+                std::mem::swap(x, &mut c);
+            }
+        }
+        for x in near.drain(..) {
+            heap.push(x);
         }
         let (a, b) = (c.a, c.b);
         let new = n + merges.len();

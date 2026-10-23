@@ -43,11 +43,16 @@
 //!   independent, as in igraph. Self-loops are left out of strengths.
 //! - Ties: generators are taken in decreasing density, ties going to the
 //!   lower node index; a node at equal distance from several generators
-//!   joins the one taken first (the paper chooses at random). A node with
-//!   no edges has density 0 (0/0 is taken as 0).
+//!   joins the one taken first (the paper chooses at random). Distances
+//!   are sums of floating-point lengths, so two distances (and two
+//!   modularities) within a relative 1e-9 of each other are taken as
+//!   equal: a node at distance r from a generator (to that precision) is
+//!   not excluded, and ties to that precision follow the rules above. A
+//!   node with no edges has density 0 (0/0 is taken as 0).
 //! - Choice of radius: the generator set changes only where r crosses a
 //!   shortest-path distance, so the candidates are every distinct finite
-//!   distance between two nodes (and infinity); when there are more than
+//!   distance between two nodes (and infinity, which leaves one generator
+//!   per set of nodes it reaches); when there are more than
 //!   1,000 distinct distances, 1,000 of them evenly spaced by rank are
 //!   tried. The candidate of highest modularity is used, ties going to the
 //!   smallest radius. The paper (and igraph) instead search with Brent's
@@ -170,43 +175,84 @@ impl Arcs {
     }
 }
 
-fn evaluate(g: &Graph, arcs: &Arcs, order: &[usize], radius: f64, weighted: bool) -> Result<Cells> {
+/// Relative tolerance under which two distances (or modularities) are
+/// taken as equal.
+const TOL: f64 = 1e-9;
+
+fn same(a: f64, b: f64) -> bool {
+    a == b || (a.is_finite() && b.is_finite() && (a - b).abs() <= TOL * a.abs().max(b.abs()))
+}
+
+fn evaluate(
+    g: &Graph,
+    arcs: &Arcs,
+    rev: &Arcs,
+    order: &[usize],
+    radius: f64,
+    weighted: bool,
+) -> Result<Cells> {
     let n = g.node_count();
     let mut excluded = vec![false; n];
     let mut dist = vec![f64::INFINITY; n];
     let mut generators = Vec::new();
+    let reach = if radius.is_finite() {
+        radius * (1.0 + 2.0 * TOL)
+    } else {
+        radius
+    };
     for &v in order {
         if excluded[v] {
             continue;
         }
         generators.push(v);
         excluded[v] = true;
-        arcs.search(v, radius, &mut dist, &mut |u, _| excluded[u] = true);
+        arcs.search(v, reach, &mut dist, &mut |u, d| {
+            if d < radius && !same(d, radius) {
+                excluded[u] = true;
+            }
+        });
     }
-    // Multi-source search keyed on (distance, generator rank).
-    let mut best = vec![(f64::INFINITY, usize::MAX); n];
+    // Distance to the nearest generator, then the first generator (in the
+    // order taken) among those at that distance, through the shortest-path
+    // arcs.
+    let mut near = vec![f64::INFINITY; n];
     let mut heap = BinaryHeap::new();
-    for (rank, &s) in generators.iter().enumerate() {
-        best[s] = (0.0, rank);
-        heap.push(Item(0.0, rank, s));
+    for &s in &generators {
+        near[s] = 0.0;
+        heap.push(Item(0.0, 0, s));
     }
-    let mut done = vec![false; n];
-    while let Some(Item(d, rank, v)) = heap.pop() {
-        if done[v] || (d, rank) != best[v] {
+    while let Some(Item(d, _, v)) = heap.pop() {
+        if d > near[v] {
             continue;
         }
-        done[v] = true;
         for (u, l) in arcs.row(v) {
-            let nd = d + l;
-            let (bd, br) = best[u];
-            if !done[u] && (nd < bd || (nd == bd && rank < br)) {
-                best[u] = (nd, rank);
-                heap.push(Item(nd, rank, u));
+            if d + l < near[u] {
+                near[u] = d + l;
+                heap.push(Item(d + l, 0, u));
             }
         }
     }
-    let cells: Vec<usize> = best.iter().map(|&(_, r)| r).collect();
-    let membership = relabel(&cells);
+    let mut rank = vec![usize::MAX; n];
+    for (r, &s) in generators.iter().enumerate() {
+        rank[s] = r;
+    }
+    let mut by_distance: Vec<usize> = (0..n).collect();
+    by_distance.sort_by(|&a, &b| near[a].total_cmp(&near[b]).then(a.cmp(&b)));
+    loop {
+        let mut changed = false;
+        for &v in &by_distance {
+            for (u, l) in rev.row(v) {
+                if rank[u] < rank[v] && same(near[u] + l, near[v]) {
+                    rank[v] = rank[u];
+                    changed = true;
+                }
+            }
+        }
+        if !changed {
+            break;
+        }
+    }
+    let membership = relabel(&rank);
     let memb: Vec<i64> = membership.iter().map(|&c| c as i64).collect();
     let q = modularity(g, &memb, 1.0, weighted)?;
     Ok((membership, generators, q))
@@ -356,8 +402,26 @@ pub fn voronoi(
         fill[u] += 1;
     }
     let arcs = Arcs { offsets, to, len };
+    let rev = {
+        let mut offsets = vec![0usize; n + 1];
+        for &(_, v, _) in &arcs_list {
+            offsets[v + 1] += 1;
+        }
+        for i in 0..n {
+            offsets[i + 1] += offsets[i];
+        }
+        let mut fill = offsets.clone();
+        let mut to = vec![0usize; arcs_list.len()];
+        let mut len = vec![0.0f64; arcs_list.len()];
+        for &(u, v, l) in &arcs_list {
+            to[fill[v]] = u;
+            len[fill[v]] = l;
+            fill[v] += 1;
+        }
+        Arcs { offsets, to, len }
+    };
     if let Some(r) = radius {
-        let (membership, generators, q) = evaluate(g, &arcs, &order, r, weighted)?;
+        let (membership, generators, q) = evaluate(g, &arcs, &rev, &order, r, weighted)?;
         return Ok(Voronoi {
             membership,
             generators,
@@ -384,7 +448,7 @@ pub fn voronoi(
     );
     let mut values: Vec<f64> = parts.into_iter().flat_map(|(_, v)| v).collect();
     values.sort_by(f64::total_cmp);
-    values.dedup();
+    values.dedup_by(|b, a| same(*a, *b));
     if values.len() > MAX_CANDIDATES {
         let k = values.len();
         values = (0..MAX_CANDIDATES)
@@ -397,7 +461,7 @@ pub fn voronoi(
         threads,
         Vec::new,
         |out: &mut Vec<(usize, Result<Cells>)>, i| {
-            out.push((i, evaluate(g, &arcs, &order, values[i], weighted)));
+            out.push((i, evaluate(g, &arcs, &rev, &order, values[i], weighted)));
         },
     );
     let mut all: Vec<(usize, Result<Cells>)> = results.into_iter().flatten().collect();
@@ -408,7 +472,7 @@ pub fn voronoi(
         let better = match &best {
             None => true,
             // NaN (no edges) never beats the first candidate.
-            Some(b) => q > b.0,
+            Some(b) => q > b.0 && !same(q, b.0),
         };
         if better {
             best = Some((q, membership, generators, values[i]));
