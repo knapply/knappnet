@@ -13,7 +13,8 @@ static const int64_t *descriptive_sources(SEXP sources, int64_t *count) {
     *count = -1;
     return NULL;
   }
-  if (TYPEOF(sources) != INTSXP) Rf_error("Source nodes must be an integer vector.");
+  if (TYPEOF(sources) != INTSXP)
+    Rf_error("source nodes must be an integer vector (internal error)");
   R_xlen_t k = XLENGTH(sources);
   int64_t *out = (int64_t *)R_alloc(k > 0 ? (size_t)k : 1, sizeof(int64_t));
   const int *src = INTEGER(sources);

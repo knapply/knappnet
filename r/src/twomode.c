@@ -9,7 +9,7 @@
 
 /* 0-based node indices from an R integer vector, in R-managed memory. */
 static int64_t *ego_indices(SEXP egos, R_xlen_t *k) {
-  if (TYPEOF(egos) != INTSXP) Rf_error("Node indices must be an integer vector.");
+  if (TYPEOF(egos) != INTSXP) Rf_error("node indices must be an integer vector (internal error)");
   *k = XLENGTH(egos);
   int64_t *out = (int64_t *)R_alloc(*k > 0 ? (size_t)*k : 1, sizeof(int64_t));
   const int *src = INTEGER(egos);
@@ -19,9 +19,9 @@ static int64_t *ego_indices(SEXP egos, R_xlen_t *k) {
 
 /* Node types (0 or 1 per node) from an R integer vector. */
 static const int32_t *node_types(SEXP types, GraphHandle *h) {
-  if (TYPEOF(types) != INTSXP) Rf_error("Node types must be an integer vector.");
+  if (TYPEOF(types) != INTSXP) Rf_error("node types must be an integer vector (internal error)");
   if ((int64_t)XLENGTH(types) != net_graph_node_count(h)) {
-    Rf_error("There must be one node type per node.");
+    Rf_error("node types must have one value per node (internal error)");
   }
   return (const int32_t *)INTEGER(types);
 }
@@ -163,7 +163,7 @@ SEXP C_project(SEXP ptr, SEXP types, SEXP second, SEXP weight, SEXP loops, SEXP 
     free(to);
     free(w);
     net_projection_free(p);
-    Rf_error("Not enough memory for a projection with %.0f edges.", (double)m);
+    Rf_error("not enough memory for a projection with %.0f edges", (double)m);
   }
   status = net_projection_copy(p, from, to, w, err, ERR_LEN);
   net_projection_free(p);

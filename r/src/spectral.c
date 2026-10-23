@@ -8,8 +8,10 @@
 
 /* Category codes (an R integer vector) as 64-bit integers; NA becomes -1. */
 static int64_t *spectral_codes(SEXP codes, R_xlen_t want) {
-  if (TYPEOF(codes) != INTSXP) Rf_error("Category codes must be an integer vector.");
-  if (XLENGTH(codes) != want) Rf_error("Category codes must have one value per node.");
+  if (TYPEOF(codes) != INTSXP)
+    Rf_error("category codes must be an integer vector (internal error)");
+  if (XLENGTH(codes) != want)
+    Rf_error("category codes must have one value per node (internal error)");
   int64_t *out = (int64_t *)R_alloc(want > 0 ? (size_t)want : 1, sizeof(int64_t));
   const int *src = INTEGER(codes);
   for (R_xlen_t i = 0; i < want; i++) {
@@ -22,7 +24,7 @@ static int64_t *spectral_codes(SEXP codes, R_xlen_t want) {
 static const double *spectral_optional(SEXP x, R_xlen_t n) {
   if (Rf_isNull(x)) return NULL;
   if (TYPEOF(x) != REALSXP || XLENGTH(x) != n) {
-    Rf_error("Expected a numeric vector with one value per node.");
+    Rf_error("expected a numeric vector with one value per node (internal error)");
   }
   return REAL(x);
 }
@@ -45,7 +47,7 @@ SEXP C_katz(SEXP ptr, SEXP alpha, SEXP beta, SEXP mode, SEXP weighted, SEXP loop
             SEXP tol, SEXP max_iter, SEXP threads) {
   GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
-  if (TYPEOF(beta) != REALSXP) Rf_error("`beta` must be numeric.");
+  if (TYPEOF(beta) != REALSXP) Rf_error("beta must be a double vector (internal error)");
   SEXP out = PROTECT(Rf_allocVector(REALSXP, n));
   char err[ERR_LEN] = {0};
   int status = net_katz(h, Rf_asReal(alpha), REAL(beta), (int64_t)XLENGTH(beta), Rf_asInteger(mode),
@@ -110,7 +112,7 @@ SEXP C_assortativity_values(SEXP ptr, SEXP values, SEXP values_in, SEXP directed
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   const double *v = spectral_optional(values, n);
   const double *vin = spectral_optional(values_in, n);
-  if (v == NULL) Rf_error("`values` must be numeric.");
+  if (v == NULL) Rf_error("values must be a double vector (internal error)");
   double value = 0.0;
   char err[ERR_LEN] = {0};
   int status = net_assortativity_values(h, v, vin, Rf_asLogical(directed), Rf_asInteger(loops),
@@ -137,7 +139,7 @@ SEXP C_mixing_matrix(SEXP ptr, SEXP dim1, SEXP k1, SEXP dim2, SEXP k2, SEXP same
   int a = Rf_asInteger(k1);
   int b = Rf_asInteger(k2);
   if (a == NA_INTEGER || b == NA_INTEGER || a < 0 || b < 0) {
-    Rf_error("Invalid number of categories.");
+    Rf_error("the number of categories must be a non-negative integer (internal error)");
   }
   SEXP counts = PROTECT(Rf_allocVector(REALSXP, (R_xlen_t)a * (R_xlen_t)b));
   int32_t transposed = 0;
@@ -159,7 +161,8 @@ SEXP C_ei_index(SEXP ptr, SEXP groups, SEXP k, SEXP scope, SEXP direction, SEXP 
   int64_t *g = spectral_codes(groups, n);
   int kk = Rf_asInteger(k);
   int sc = Rf_asInteger(scope);
-  if (kk == NA_INTEGER || kk < 0) Rf_error("Invalid number of groups.");
+  if (kk == NA_INTEGER || kk < 0)
+    Rf_error("the number of groups must be a non-negative integer (internal error)");
   R_xlen_t size = sc == 0 ? 1 : (sc == 1 ? (R_xlen_t)kk : n);
   SEXP index = PROTECT(Rf_allocVector(REALSXP, size));
   SEXP external = PROTECT(Rf_allocVector(REALSXP, size));
@@ -181,7 +184,8 @@ SEXP C_group_shares(SEXP ptr, SEXP groups, SEXP k, SEXP direction) {
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   int64_t *g = spectral_codes(groups, n);
   int kk = Rf_asInteger(k);
-  if (kk == NA_INTEGER || kk < 0) Rf_error("Invalid number of groups.");
+  if (kk == NA_INTEGER || kk < 0)
+    Rf_error("the number of groups must be a non-negative integer (internal error)");
   SEXP out = PROTECT(Rf_allocVector(REALSXP, 5 * (R_xlen_t)kk));
   char err[ERR_LEN] = {0};
   int status =

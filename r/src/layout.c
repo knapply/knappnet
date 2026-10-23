@@ -61,7 +61,7 @@ SEXP C_layout_simple(SEXP ptr, SEXP kind, SEXP param) {
 /* roots: 0-based node indices as doubles (possibly empty). */
 SEXP C_layout_tree(SEXP ptr, SEXP roots) {
   GraphHandle *h = graph_from_ptr(ptr);
-  if (TYPEOF(roots) != REALSXP) Rf_error("Roots must be a double vector.");
+  if (TYPEOF(roots) != REALSXP) Rf_error("roots must be a double vector (internal error)");
   R_xlen_t k = XLENGTH(roots);
   int64_t *r = (int64_t *)R_alloc(k > 0 ? (size_t)k : 1, sizeof(int64_t));
   for (R_xlen_t i = 0; i < k; i++) r[i] = (int64_t)REAL(roots)[i];
@@ -77,13 +77,13 @@ SEXP C_layout_tree(SEXP ptr, SEXP roots) {
 /* types: integer vector of 0 (top row) and 1 (bottom row), one per node. */
 SEXP C_layout_twomode(SEXP ptr, SEXP types, SEXP sweeps) {
   GraphHandle *h = graph_from_ptr(ptr);
-  if (TYPEOF(types) != INTSXP) Rf_error("Types must be an integer vector.");
+  if (TYPEOF(types) != INTSXP) Rf_error("node types must be an integer vector (internal error)");
   int64_t sw = as_count(sweeps, "sweeps");
   R_xlen_t n = 0;
   SEXP out = PROTECT(layout_alloc(h, &n));
   if (XLENGTH(types) != n) {
     UNPROTECT(1);
-    Rf_error("Types must have one value per node.");
+    Rf_error("node types must have one value per node (internal error)");
   }
   char err[ERR_LEN] = {0};
   int status = net_layout_twomode(h, INTEGER(types), sw, REAL(out), REAL(out) + n, err, ERR_LEN);
@@ -97,7 +97,7 @@ SEXP C_layout_stress_value(SEXP ptr, SEXP xy, SEXP weighted, SEXP weights_as, SE
   GraphHandle *h = graph_from_ptr(ptr);
   R_xlen_t n = (R_xlen_t)net_graph_node_count(h);
   if (TYPEOF(xy) != REALSXP || XLENGTH(xy) != 2 * n) {
-    Rf_error("The layout must have two numeric coordinates per node.");
+    Rf_error("the layout must have two numeric coordinates per node (internal error)");
   }
   double value = 0.0;
   char err[ERR_LEN] = {0};
