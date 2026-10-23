@@ -14,7 +14,9 @@
 //!   computed with Brandes' accumulation for edges (Brandes 2008,
 //!   `brandes2008variants`, section 3.4): after a single-source search from
 //!   s, an arc (v, w) on a shortest path from s receives
-//!   (sigma_sv / sigma_sw)(1 + delta_s(w)).
+//!   (sigma_sv / sigma_sw)(1 + delta_s(w)). Sources are summed in fixed
+//!   groups merged in group order ([`crate::parallel::sum_in_order`]), so
+//!   results are the same for every thread count.
 //! - **Information centrality** (Stephenson and Zelen 1989,
 //!   `stephenson1989rethinking`): with A the symmetric (possibly valued)
 //!   adjacency matrix and B the matrix with b_ij = 1 - a_ij off the
@@ -175,25 +177,31 @@ pub fn edge_betweenness(g: &Graph, opts: EdgeBetweennessOptions) -> Result<Vec<f
     let lengths = path_lengths(g, opts.weighted, opts.weights_as, opts.algorithm)?;
     let arc_edge = arc_edges(g);
 
-    let partials = parallel::for_each_item(
+    // Sources are summed in fixed groups merged in group order, so the
+    // result does not depend on the thread count.
+    let mut eb = vec![0.0; m];
+    parallel::sum_in_order(
         n,
         opts.threads,
-        || EdgeWorkspace::new(n, m),
-        |ws, s| {
+        || EdgeWorkspace::new(n),
+        || vec![0.0; m],
+        |ws, acc: &mut Vec<f64>, s| {
+            std::mem::swap(&mut ws.eb, acc);
             match &lengths {
                 Lengths::Uniform => ws.search_bfs(g, s),
                 Lengths::Integer(lens, max) => ws.search_dial(g, lens, *max, s),
                 Lengths::Real(lens) => ws.search_dijkstra(g, lens, s),
             }
             ws.accumulate(g, &lengths, &arc_edge);
+            std::mem::swap(&mut ws.eb, acc);
+        },
+        |acc| {
+            for (b, x) in eb.iter_mut().zip(acc.iter_mut()) {
+                *b += *x;
+                *x = 0.0;
+            }
         },
     );
-    let mut eb = vec![0.0; m];
-    for ws in partials {
-        for (b, x) in eb.iter_mut().zip(ws.eb) {
-            *b += x;
-        }
-    }
     let mut scale = if g.is_directed() { 1.0 } else { 0.5 };
     if opts.normalized {
         let pairs = n as f64 * (n as f64 - 1.0);
@@ -245,6 +253,8 @@ fn approx_eq(a: f64, b: f64) -> bool {
 
 /// Per-thread scratch space for edge betweenness.
 struct EdgeWorkspace {
+    /// The accumulator of the current group of sources, lent by the
+    /// caller for each search (see `parallel::sum_in_order`).
     eb: Vec<f64>,
     sigma: Vec<f64>,
     delta: Vec<f64>,
@@ -258,9 +268,9 @@ struct EdgeWorkspace {
 }
 
 impl EdgeWorkspace {
-    fn new(n: usize, m: usize) -> EdgeWorkspace {
+    fn new(n: usize) -> EdgeWorkspace {
         EdgeWorkspace {
-            eb: vec![0.0; m],
+            eb: Vec::new(),
             sigma: vec![0.0; n],
             delta: vec![0.0; n],
             hops: vec![u32::MAX; n],

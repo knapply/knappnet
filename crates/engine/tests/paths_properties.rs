@@ -15,7 +15,7 @@ use engine::metrics::descriptive::{
     distances, eccentricity, path_summary, reachability, PathOptions,
 };
 use engine::metrics::ego::{neighborhood_sizes, NeighborhoodOptions};
-use engine::metrics::reach::{reach, ReachOptions};
+use engine::metrics::reach::{edge_betweenness, reach, EdgeBetweennessOptions, ReachOptions};
 use engine::{generate, Graph, PathAlgorithm};
 
 /// Random networks of awkward sizes (not multiples of 64, several
@@ -249,5 +249,63 @@ fn batched_searches_do_not_depend_on_thread_count() {
         let one = run(1);
         assert_eq!(one, run(2));
         assert_eq!(one, run(3));
+    }
+}
+
+#[test]
+fn betweenness_does_not_depend_on_thread_count() {
+    // Large enough for every source group to hold several sources, and
+    // weighted so that every search kernel runs.
+    let mut graphs = cases();
+    for (n, m, directed) in [(300usize, 1500u64, false), (257, 2000, true)] {
+        let l = generate::gnm(n, m, directed, false, 1, 99, 1)
+            .unwrap()
+            .remove(0);
+        let from: Vec<i64> = l.from.iter().map(|&v| v as i64).collect();
+        let to: Vec<i64> = l.to.iter().map(|&v| v as i64).collect();
+        graphs.push(Graph::from_edges(n, &from, &to, None, directed).unwrap());
+    }
+    for g in graphs {
+        let m = g.edge_count();
+        let integer: Vec<f64> = (0..m).map(|e| (1 + e % 5) as f64).collect();
+        let real: Vec<f64> = (0..m).map(|e| 0.5 + (e % 7) as f64 * 0.37).collect();
+        let reweighted = |w: &[f64]| {
+            let from: Vec<i64> = g.edge_sources().iter().map(|&v| v as i64).collect();
+            let to: Vec<i64> = g.edge_targets().iter().map(|&v| v as i64).collect();
+            Graph::from_edges(g.node_count(), &from, &to, Some(w), g.is_directed()).unwrap()
+        };
+        for (h, weighted) in [
+            (g.clone(), false),
+            (reweighted(&integer), true),
+            (reweighted(&real), true),
+        ] {
+            let run = |t: usize| {
+                let mut v = betweenness(
+                    &h,
+                    BetweennessOptions {
+                        weighted,
+                        threads: t,
+                        ..Default::default()
+                    },
+                )
+                .unwrap();
+                v.extend(
+                    edge_betweenness(
+                        &h,
+                        EdgeBetweennessOptions {
+                            weighted,
+                            threads: t,
+                            ..Default::default()
+                        },
+                    )
+                    .unwrap(),
+                );
+                v.into_iter().map(f64::to_bits).collect::<Vec<u64>>()
+            };
+            let one = run(1);
+            for t in [2, 3, 7] {
+                assert_eq!(one, run(t), "{t} threads");
+            }
+        }
     }
 }

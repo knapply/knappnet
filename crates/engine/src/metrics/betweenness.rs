@@ -31,6 +31,9 @@
 //! - Normalization divides by the number of ordered (directed) or unordered
 //!   (undirected) pairs of nodes other than the focal node:
 //!   (n - 1)(n - 2) or (n - 1)(n - 2) / 2.
+//! - The per-source dependencies are summed in fixed groups of sources
+//!   merged in group order ([`crate::parallel::sum_in_order`]), so results
+//!   are bit-for-bit the same for every thread count.
 
 use crate::error::Result;
 use crate::graph::Graph;
@@ -63,25 +66,31 @@ pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
     let lengths = path_lengths(g, opts.weighted, opts.weights_as, opts.algorithm)?;
     clock.mark("setup");
 
-    let partials = parallel::for_each_item(
+    // Sources are summed in fixed groups merged in group order, so the
+    // result does not depend on the thread count.
+    let mut bc = vec![0.0; n];
+    parallel::sum_in_order(
         n,
         opts.threads,
         || Workspace::new(n),
-        |ws, s| match &lengths {
-            Lengths::Uniform => ws.single_source_bfs(g, s),
-            Lengths::Integer(lens, max) => ws.single_source_dial(g, lens, *max, s),
-            Lengths::Real(lens) => ws.single_source_dijkstra(g, lens, s),
+        || vec![0.0; n],
+        |ws, acc: &mut Vec<f64>, s| {
+            std::mem::swap(&mut ws.bc, acc);
+            match &lengths {
+                Lengths::Uniform => ws.single_source_bfs(g, s),
+                Lengths::Integer(lens, max) => ws.single_source_dial(g, lens, *max, s),
+                Lengths::Real(lens) => ws.single_source_dijkstra(g, lens, s),
+            }
+            std::mem::swap(&mut ws.bc, acc);
+        },
+        |acc| {
+            for (b, x) in bc.iter_mut().zip(acc.iter_mut()) {
+                *b += *x;
+                *x = 0.0;
+            }
         },
     );
     clock.mark("search");
-
-    let mut bc = vec![0.0; n];
-    for ws in partials {
-        for (b, x) in bc.iter_mut().zip(ws.bc) {
-            *b += x;
-        }
-    }
-    clock.mark("merge");
 
     let mut scale = if g.is_directed() { 1.0 } else { 0.5 };
     if opts.normalized && n > 2 {
@@ -107,6 +116,8 @@ fn approx_eq(a: f64, b: f64) -> bool {
 
 /// Per-thread scratch space, reused across sources.
 struct Workspace {
+    /// The accumulator of the current group of sources, lent by the
+    /// caller for each search (see `parallel::sum_in_order`).
     bc: Vec<f64>,
     sigma: Vec<f64>,
     /// (1 + dependency) / path count of every settled node, the share each
@@ -128,7 +139,7 @@ struct Workspace {
 impl Workspace {
     fn new(n: usize) -> Workspace {
         Workspace {
-            bc: vec![0.0; n],
+            bc: Vec::new(),
             sigma: vec![0.0; n],
             coef: vec![0.0; n],
             touched: Vec::new(),
