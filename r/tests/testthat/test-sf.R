@@ -341,12 +341,15 @@ test_that("contiguity agrees with spdep::poly2nb", {
   skip_if_not_installed("sf")
   skip_if_not_installed("spdep")
   set.seed(4)
-  # An irregular tiling: Voronoi cells of random points, clipped to a box.
-  pts <- sf::st_sfc(sf::st_multipoint(cbind(runif(25), runif(25))))
-  box <- sf::st_sfc(square(0, 0))
-  cells <- sf::st_collection_extract(sf::st_voronoi(pts, box), "POLYGON")
-  cells <- sf::st_intersection(cells, box)
-  tiles <- sf::st_sf(id = seq_along(cells), geometry = sf::st_set_crs(cells, 32633))
+  # An irregular map with exact coordinates: a 6-by-6 grid of unit squares
+  # with a third of the cells removed, so regions meet along edges, at
+  # corners only, or not at all. Shared boundaries have shared vertices, the
+  # case in which spdep's vertex rule and the DE-9IM rule agree.
+  cells <- expand.grid(x = 0:5, y = 0:5)
+  cells <- cells[sort(sample(nrow(cells), 24)), ]
+  geom <- sf::st_sfc(lapply(seq_len(nrow(cells)), function(i) square(cells$x[i], cells$y[i])),
+                     crs = 32633)
+  tiles <- sf::st_sf(id = seq_along(geom), geometry = geom)
   for (contiguity in c("queen", "rook")) {
     g <- from_polygons(tiles, contiguity = contiguity, id = "id")
     nb <- spdep::poly2nb(tiles, queen = contiguity == "queen")

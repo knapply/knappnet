@@ -2,7 +2,7 @@
 # (pebesma2018sf). All geometry work is delegated to sf; the engine receives
 # derived numbers only. Polygon contiguity uses the DE-9IM relations of
 # egenhofer1991pointset and clementini1993smallset with the queen and rook
-# definitions of anselin1988spatial, matching spdep::poly2nb
+# definitions of anselin1988spatial, compared with spdep::poly2nb
 # (bivand2013applied, bivand2018comparing). Line snapping at tolerance 0
 # matches sfnetworks (vandermeer2026sfnetworks); the two-table layout of
 # nodes and edges follows OSMnx's graph_to_gdfs (boeing2017osmnx) and
@@ -618,10 +618,12 @@ spatial_summary <- function(x) {
 #' exactly by [sf::st_relate()] with the DE-9IM patterns `F***T****`
 #' (queen) and `F***1****` (rook) of Egenhofer and Franzosa (1991) and
 #' Clementini, Di Felice, and van Oosterom (1993): interiors disjoint,
-#' boundaries intersecting in anything (queen) or in a line (rook). That
-#' is the definition of `spdep::poly2nb()` with `snap = 0`; polygons whose
-#' shared boundaries are drawn with slightly different coordinates do not
-#' touch, and should be snapped first ([sf::st_snap()], or rounding with
+#' boundaries intersecting in anything (queen) or in a line (rook).
+#' `spdep::poly2nb()` compares vertices within `snap` instead (one shared
+#' vertex for queen, more than one for rook); the rules agree when shared
+#' boundaries have shared vertices and differ at T-junctions and for
+#' boundaries drawn with slightly different coordinates. Such polygons do
+#' not touch here, and should be snapped first ([sf::st_snap()], or rounding with
 #' [sf::st_set_precision()]). Overlapping polygons, whose interiors
 #' intersect, are not neighbours under either rule. Coordinates are
 #' treated as planar, also for longitude and latitude (as sf and spdep
@@ -959,9 +961,15 @@ to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
   }
   net <- sfnetworks::sfnetwork(nodes, edge_df, directed = x$directed, node_key = "name",
                                edges_as_lines = inherits(edge_df, "sf"), ...)
-  if (length(x$graph)) {
+  attrs <- x$graph
+  if (!is.null(x$roles$weight)) {
+    # Recorded so that as_netframe() restores the weight role.
+    attrs$knappnet_weight <- x$roles$weight
+    attrs$knappnet_weight_type <- x$roles$weight_type
+  }
+  if (length(attrs)) {
     cls <- class(net)
-    for (a in names(x$graph)) net <- igraph::set_graph_attr(net, a, x$graph[[a]])
+    for (a in names(attrs)) net <- igraph::set_graph_attr(net, a, attrs[[a]])
     class(net) <- cls
   }
   net
@@ -991,11 +999,20 @@ as_netframe.sfnetwork <- function(x, ...) {
   edges <- strip_unit_columns(edges)
   edges$from <- ids[edges$from]
   edges$to <- ids[edges$to]
-  weight <- if (is.numeric(edges$weight)) "weight"
   # sfnetworks keeps its own bookkeeping in graph attributes; carry over scalars only.
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, igraph::graph_attr(x))
+  # to_sfnetwork() records the weight column and its type; otherwise a
+  # numeric column called `weight` is the weight, as in igraph.
+  weight <- graph[["knappnet_weight"]]
+  weight_type <- graph[["knappnet_weight_type"]]
+  graph[c("knappnet_weight", "knappnet_weight_type")] <- NULL
+  if (is.null(weight) || !weight %in% names(edges) || !is.numeric(edges[[weight]])) {
+    weight <- if ("weight" %in% names(edges) && is.numeric(edges[["weight"]])) "weight"
+    weight_type <- NULL
+  }
+  if (is.null(weight_type) || !weight_type %in% c("distance", "strength")) weight_type <- "distance"
   netframe(edges, nodes, directed = igraph::is_directed(x), from = "from", to = "to",
-           id = "name", weight = weight, graph = graph)
+           id = "name", weight = weight, weight_type = weight_type, graph = graph)
 }
 
 strip_unit_columns <- function(df) {
@@ -1027,6 +1044,9 @@ as_sfnetwork.netframe <- function(x, ...) to_sfnetwork(x, ...)
 # A spatial network as a GeoPackage: layers `nodes` and `edges` (either
 # may be an aspatial table) and a small aspatial layer `network` holding
 # the direction, the column roles, and network-level attributes as text.
+# A role recorded in the GeoPackage metadata layer: "" when unset.
+role_text <- function(v) if (is.null(v)) "" else as.character(v)
+
 write_gpkg <- function(x, file, weight) {
   require_sf("Writing a GeoPackage")
   nodes <- if (has_node_geometry(x)) node_table_sf(x) else as.data.frame(x$nodes)
@@ -1036,7 +1056,8 @@ write_gpkg <- function(x, file, weight) {
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, x$graph)
   meta <- data.frame(
     key = c("directed", "id", "from", "to", "weight", "weight_type", paste0("graph.", names(graph))),
-    value = c(if (x$directed) "true" else "false", x$roles$id, x$roles$from, x$roles$to,
+    value = c(if (x$directed) "true" else "false", role_text(x$roles$id),
+              role_text(x$roles$from), role_text(x$roles$to),
               if (is.null(weight)) "" else weight,
               if (is.null(weight)) "" else if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type,
               vapply(graph, function(v) as.character(v), "")),

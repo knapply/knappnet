@@ -68,10 +68,15 @@ move on a chessboard (Anselin 1988). The relations are evaluated exactly by
 \code{\link[sf]{st_relate}} with the DE-9IM patterns \code{F***T****}
 (queen) and \code{F***1****} (rook) of Egenhofer and Franzosa (1991) and
 Clementini, Di Felice, and van Oosterom (1993): interiors disjoint,
-boundaries intersecting in anything (queen) or in a line (rook). That is
-the definition of \code{spdep::poly2nb()} with \code{snap = 0}; polygons
-whose shared boundaries are drawn with slightly different coordinates do
-not touch, and should be snapped first (\code{\link[sf]{st_snap}}, or
+boundaries intersecting in anything (queen) or in a line (rook).
+\code{spdep::poly2nb()} instead compares vertices: polygons are queen
+neighbours when a vertex of one lies within \code{snap} (by default
+\code{sqrt(.Machine$double.eps)}) of a vertex of the other, and rook
+neighbours when more than one does. The two rules agree when shared
+boundaries have shared vertices, as in most maps; they differ when a
+shared boundary line ends at a vertex of only one polygon (a T-junction,
+rook here but not in spdep) and when boundaries are drawn with slightly
+different coordinates. Such polygons do not touch here, and should be snapped first (\code{\link[sf]{st_snap}}, or
 rounding with \code{\link[sf]{st_set_precision}}). Overlapping polygons,
 whose interiors intersect, are not neighbours under either rule.
 Coordinates are treated as planar, also for longitude and latitude (as sf

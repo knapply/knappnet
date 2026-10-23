@@ -23,6 +23,11 @@ object of the sfnetworks package (van der Meer et al. 2026);
 network-level attributes are carried across.
 }
 \details{
+The weight column and its type are stored in the graph attributes
+\code{knappnet_weight} and \code{knappnet_weight_type}, so that
+\code{as_netframe()} restores them; without them a numeric edge column
+called \code{weight} is taken as the weight.
+
 sfnetworks represents nodes as POINT features, so node geometries of other
 types are replaced by their representative points (see \code{\link{to_sf}})
 with a message. Node identifiers become the \code{name} node column that
