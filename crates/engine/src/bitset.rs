@@ -163,11 +163,7 @@ impl MultiBfs {
         let mut level = 0;
         while !self.active.is_empty() && level < max_level {
             level += 1;
-            let frontier_arcs: usize = self
-                .active
-                .iter()
-                .map(|&v| out.degree(v as usize))
-                .sum();
+            let frontier_arcs: usize = self.active.iter().map(|&v| out.degree(v as usize)).sum();
             let bottom_up = frontier_arcs > arcs / PULL_SHARE;
             self.touched.clear();
             if bottom_up {

@@ -945,8 +945,19 @@ pub fn within_distance(g: &Graph, limit: f64, opts: PathOptions) -> Result<Vec<u
     let h = p.h.as_ref();
     if let Lengths::Uniform = p.lengths {
         // Levels whose distance, level times the common length, is within
-        // the limit.
-        let mut max_level = 0u32;
+        // the limit: start from the quotient (clamped; an infinite limit
+        // means no limit) and correct it for rounding.
+        let q = (limit / p.unit).floor();
+        let mut max_level = if q >= u32::MAX as f64 {
+            u32::MAX
+        } else if q >= 0.0 {
+            q as u32
+        } else {
+            0
+        };
+        while max_level > 0 && max_level < u32::MAX && max_level as f64 * p.unit > limit {
+            max_level -= 1;
+        }
         while max_level < u32::MAX && (max_level + 1) as f64 * p.unit <= limit {
             max_level += 1;
         }

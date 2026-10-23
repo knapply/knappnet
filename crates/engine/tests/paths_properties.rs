@@ -82,7 +82,7 @@ fn multi_source_search_equals_plain_search() {
         sources.extend(0..(n as u32).min(5));
         for chunk in sources.chunks(37).chain(sources.chunks(64)) {
             let mut got = vec![vec![u32::MAX; n]; chunk.len()];
-            ms.run(g.out(), chunk, u32::MAX, |step| {
+            ms.run(&g, chunk, u32::MAX, |step| {
                 if let Step::Reached {
                     level,
                     node,
@@ -128,6 +128,14 @@ fn distances_and_reach_match_plain_search() {
             },
         )
         .unwrap();
+        let reach_all = reach(
+            &g,
+            ReachOptions {
+                k: f64::INFINITY,
+                ..Default::default()
+            },
+        )
+        .unwrap();
         for s in 0..n {
             let want = plain_bfs(&g, s);
             for t in 0..n {
@@ -145,6 +153,7 @@ fn distances_and_reach_match_plain_search() {
             let within2 = want.iter().filter(|&&x| x <= 2).count();
             assert_eq!(sizes[s], within2, "neighborhood of {s}");
             assert_eq!(reach2[s], (within2 - 1) as f64, "reach of {s}");
+            assert_eq!(reach_all[s], reached as f64, "unlimited reach of {s}");
         }
     }
 }
