@@ -86,6 +86,17 @@ Mechanik}, 9(2), 152-164. \doi{10.1002/zamm.19290090206}
 }
 \examples{
 g <- netframe(data.frame(from = c(1, 1, 1, 2), to = c(2, 3, 4, 3)), directed = FALSE)
-eigenvector_centrality(g)
-eigenvector_centrality(g, convention = "networkx")
+eigenvector_centrality(g)                          # igraph: largest score 1
+eigenvector_centrality(g, convention = "networkx") # NetworkX: unit length
+eigenvector_centrality(g, convention = "sna")      # sna: unit length
+eigenvector_centrality(g, convention = "ucinet")   # UCINET: unit length
+
+# In directed networks the tools follow different ties: igraph and
+# NetworkX use incoming ties, sna outgoing ties, and UCINET ignores
+# direction.
+d <- netframe(data.frame(from = c(1, 2, 3, 1, 4), to = c(2, 3, 1, 4, 1)))
+eigenvector_centrality(d)                          # igraph
+eigenvector_centrality(d, convention = "networkx") # NetworkX
+eigenvector_centrality(d, convention = "sna")      # sna
+eigenvector_centrality(d, convention = "ucinet")   # UCINET
 }
