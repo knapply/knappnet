@@ -84,7 +84,9 @@ the edge columns are \code{from} and \code{to}, the network is directed
 unless \code{directed} says otherwise, and the weight is found as for other
 formats. Geometries and their CRS round-trip; attribute types follow GDAL's
 GeoPackage driver (logical columns come back as integers). Requires the sf
-package.
+package. \code{write_network()} replaces an existing file; on Windows a
+GeoPackage that GDAL still holds open (for example one read earlier in the
+session) cannot be replaced, so write to a new file name instead.
 }
 \section{DyNetML}{
 DyNetML (Tsvetovat, Reminga, and Carley 2004) is the XML format of ORA for
