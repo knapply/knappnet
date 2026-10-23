@@ -52,6 +52,12 @@ net_twomode <- function(edges, nodes = NULL, mode = "mode", first = NULL, direct
   x <- new_net_frame(edges, nodes, check_flag(directed, "directed"), roles,
                     list(between_modes_only = TRUE), check_graph(graph))
   x <- build_net_frame(x, check_flag(quiet, "quiet"), "net_twomode")
+  k <- length(mode_labels(x))
+  if (k != 2L) {
+    stop(sprintf(paste0("A two-mode network needs exactly two modes; column `%s` of `nodes` ",
+                        "has %d. For k modes use net_frame(mode = , between_modes_only = TRUE)."),
+                 mode, k), call. = FALSE)
+  }
   set_first_mode(x, first)
 }
 

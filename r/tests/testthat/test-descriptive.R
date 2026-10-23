@@ -15,14 +15,14 @@ test_that("reciprocity indices count dyads", {
   # an isolate d: M = 1, A = 1, N = 4.
   g <- net_frame(data.frame(source = c("a", "b", "b", "c", "a"),
                            target   = c("b", "a", "c", "c", "b")),
-                nodes = data.frame(name = c("a", "b", "c", "d")))
+                nodes = data.frame(id = c("a", "b", "c", "d")))
   expect_equal(net_reciprocity(g), 2 / 3)
   expect_equal(net_reciprocity(g, "ratio"), 1 / 2)
   expect_equal(net_reciprocity(g, "dyadic"), 5 / 6)
   # p = 3 / 12 and r = 2 / 3, so rho = (2/3 - 1/4) / (3/4).
   expect_equal(net_reciprocity(g, "correlation"), 5 / 9)
   empty <- net_frame(data.frame(source = character(0), target = character(0)),
-                    nodes = data.frame(name = c("a", "b")))
+                    nodes = data.frame(id = c("a", "b")))
   expect_true(is.nan(net_reciprocity(empty)))
   expect_equal(net_reciprocity(empty, "dyadic"), 1)
   expect_equal(net_reciprocity(pieces()), 1)

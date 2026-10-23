@@ -7,7 +7,7 @@ office <- function() {
     data.frame(source = c("ann", "bob", "cat", "dan", "eve", "bob", "fay", "ann"),
                target   = c("bob", "cat", "dan", "eve", "cat", "fay", "dan", "cat"),
                calls = c(1, 5, 2, 8, 3, 1, 4, 2)),
-    nodes = data.frame(name = c("ann", "bob", "cat", "dan", "eve", "fay", "gus"),
+    nodes = data.frame(id = c("ann", "bob", "cat", "dan", "eve", "fay", "gus"),
                        dept = c("sales", "sales", "eng", "eng", "eng", "legal", NA),
                        tenure = c(1, 4, 2, 9, 3, NA, 5))
   )
@@ -143,7 +143,7 @@ test_that("two-mode networks are colored by mode by default", {
   pal <- plot_qualitative(2)
   expect_identical(fill$col, pal[g$nodes[[g$roles$type]] + 1L])
   expect_identical(fill$legend$labels, c("first", "second"))
-  nodes <- data.frame(name = c("ann", "bob", "gala"), kind = c("person", "person", "event"))
+  nodes <- data.frame(id = c("ann", "bob", "gala"), kind = c("person", "person", "event"))
   labelled <- net_twomode(data.frame(source = c("ann", "bob"), target = c("gala", "gala")), nodes,
                       type = "kind", first = "person")
   expect_identical(twomode_fill(labelled)$legend$labels, c("person", "event"))
@@ -155,7 +155,7 @@ test_that("two-mode networks are colored by mode by default", {
 })
 
 test_that("spatial networks are drawn at their locations by default", {
-  nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
+  nodes <- data.frame(id = c("London", "Paris", "Berlin", "Madrid"),
                       lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
                       lat = c(51.5072, 48.8566, 52.5200, 40.4168),
                       region = c("north", "north", "north", "south"),

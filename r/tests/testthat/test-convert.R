@@ -1,5 +1,5 @@
 sample_net <- function(directed = TRUE) {
-  nodes <- data.frame(name = c("ann", "bob", "cy", "dee"),
+  nodes <- data.frame(id = c("ann", "bob", "cy", "dee"),
                       age = c(31L, 45L, NA, 22L),
                       member = c(TRUE, FALSE, TRUE, NA),
                       stringsAsFactors = FALSE)
@@ -46,7 +46,7 @@ test_that("igraph round trip keeps structure and attributes", {
 test_that("unnamed igraph graphs use vertex positions", {
   skip_if_not_installed("igraph")
   g <- as_net_frame(igraph::make_ring(5))
-  expect_equal(g$nodes$name, 1:5)
+  expect_equal(g$nodes$id, 1:5)
   expect_false(g$directed)
 })
 

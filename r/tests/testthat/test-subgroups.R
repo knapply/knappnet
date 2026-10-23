@@ -221,7 +221,7 @@ test_that("subgroups match igraph", {
   g <- net_frame(e, directed = FALSE)
   ig <- igraph::graph_from_data_frame(e, directed = FALSE, vertices = g$nodes)
   expect_equal(net_coreness(g), unname(as.numeric(igraph::coreness(ig))))
-  ours <- lapply(net_max_cliques(g), function(c) sort(match(c, g$nodes$name)))
+  ours <- lapply(net_max_cliques(g), function(c) sort(match(c, g$nodes$id)))
   theirs <- lapply(igraph::max_cliques(ig), function(c) sort(as.integer(c)))
   key <- function(l) sort(vapply(l, paste, character(1), collapse = " "))
   expect_equal(key(ours), key(theirs))
@@ -253,7 +253,7 @@ test_that("results match igraph", {
   g <- net_example("karate")
   ig <- igraph::graph_from_data_frame(g$edges, directed = FALSE, vertices = g$nodes)
   theirs <- vapply(igraph::biconnected_components(ig)$components,
-                   function(c) paste(sort(g$nodes$name[as.integer(c)]), collapse = "|"),
+                   function(c) paste(sort(g$nodes$id[as.integer(c)]), collapse = "|"),
                    character(1))
   ours <- vapply(net_bicomponents(g), function(b) paste(sort(b), collapse = "|"), character(1))
   expect_setequal(ours, theirs)

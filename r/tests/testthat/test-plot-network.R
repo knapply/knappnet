@@ -15,7 +15,7 @@ test_that("network overlays draw centrality, partitions, cores, and egos", {
     expect_error(net_plot_centrality(g, 1:3), "one value per node")
     expect_error(net_plot_centrality(g, net_degree(g), title = 1), "single string")
     # The temporary legend column never touches the caller's network.
-    expect_identical(names(g$nodes), c("name", "faction"))
+    expect_identical(names(g$nodes), c("id", "faction"))
 
     groups <- net_louvain(g, seed = 1)
     expect_silent(xy <- net_plot_partition(g, groups, seed = 1))
@@ -39,7 +39,7 @@ test_that("network overlays draw centrality, partitions, cores, and egos", {
     f <- net_example("florentine")
     expect_silent(e <- net_plot_ego(f, "Medici", seed = 1))
     expect_s3_class(e, "net_frame")
-    expect_identical(sort(e$nodes$name), sort(net_ego(f, "Medici")$nodes$name))
+    expect_identical(sort(e$nodes$id), sort(net_ego(f, "Medici")$nodes$id))
     expect_silent(net_plot_ego(f, "Medici", order = 2, seed = 1, main = "Two steps"))
     expect_error(net_plot_ego(f, "Nobody"), "not in the network")
   })
@@ -68,11 +68,11 @@ test_that("net_plot_robustness() tracks the largest component as nodes are remov
     expect_true(all(first$value == max(net_components(g)$csize) / n))
     expect_true(all(out$value >= 0 & out$value <= 1))
     # Removing the top-degree node by hand gives the same value as the curve.
-    top <- g$nodes$name[which.max(net_degree(g))]
+    top <- g$nodes$id[which.max(net_degree(g))]
     expect_silent(by_hand <- net_plot_robustness(g, nodes = top, strategy = NULL, threads = 1))
     expect_identical(by_hand$curve, rep("selected nodes", 2))
     rest <- net_frame(g$edges[g$edges$source != top & g$edges$target != top, ],
-                     g$nodes[g$nodes$name != top, ], directed = FALSE)
+                     g$nodes[g$nodes$id != top, ], directed = FALSE)
     expect_equal(by_hand$value[2], max(net_components(rest)$csize) / n)
     kp <- net_key_players(g, 2, "fragmentation", seed = 1, threads = 1)
     expect_silent(out <- net_plot_robustness(g, nodes = kp$set, strategy = "degree",

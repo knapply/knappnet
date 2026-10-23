@@ -3,7 +3,7 @@
 # formula and plain Euclidean distances.
 
 cities <- function() {
-  nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
+  nodes <- data.frame(id = c("London", "Paris", "Berlin", "Madrid"),
                       lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
                       lat = c(51.5072, 48.8566, 52.5200, 40.4168),
                       region = c("north", "north", "north", "south"),
@@ -31,7 +31,7 @@ test_that("net_spatial() records coordinates and checks them", {
   expect_error(net_edge_lengths(plain), "spatial_network")
   expect_error(net_spatial(plain, coords = c("lon", "height")), "coords\\[2\\]")
   expect_error(net_spatial(plain, coords = "lon"), "two columns")
-  expect_error(net_spatial(plain, coords = c("name", "lat")), "numeric")
+  expect_error(net_spatial(plain, coords = c("id", "lat")), "numeric")
   bad <- plain
   bad$nodes$lat[2] <- 95
   expect_error(net_spatial(bad, coords = c("lon", "lat")), "outside")

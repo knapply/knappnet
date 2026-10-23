@@ -7,7 +7,7 @@ multiplex <- function() {
                   target = c("b", "c", "c", "b", "d", "b"),
                   relation = c("friend", "friend", "friend", "work", "work", "friend"),
                   stringsAsFactors = FALSE)
-  net_frame(e, nodes = data.frame(name = c("a", "b", "c", "d")), directed = FALSE)
+  net_frame(e, nodes = data.frame(id = c("a", "b", "c", "d")), directed = FALSE)
 }
 
 test_that("combine_relations by union, intersection, sum, difference, and select", {
@@ -110,9 +110,9 @@ test_that("subnetworks, isolates, pendants, and the largest component", {
   expect_equal(net_largest_component(g)$nodes$id, 1:6)
   # A self-loop does not make a node non-isolated.
   loop <- net_frame(data.frame(source = c(1, 2), target = c(1, 3)), directed = FALSE)
-  expect_equal(net_remove_isolates(loop)$nodes$name, c(2, 3))
+  expect_equal(net_remove_isolates(loop)$nodes$id, c(2, 3))
   d <- net_frame(data.frame(source = c(1, 2, 3, 4), target = c(2, 3, 1, 1)))
-  expect_equal(net_largest_component(d, "strong")$nodes$name, 1:3)
+  expect_equal(net_largest_component(d, "strong")$nodes$id, 1:3)
   expect_equal(nrow(net_largest_component(d, "weak")$nodes), 4)
 })
 
@@ -126,21 +126,21 @@ test_that("recode_attribute and join_attributes", {
   f <- net_recode(g, "role", toupper)
   expect_equal(f$nodes$role, toupper(g$nodes$role))
   # Recoding identifiers rewrites the endpoints.
-  ids <- net_recode(g, "name", function(v) paste0("p", seq_along(v)))
-  expect_equal(ids$nodes$name[1], "p1")
+  ids <- net_recode(g, "id", function(v) paste0("p", seq_along(v)))
+  expect_equal(ids$nodes$id[1], "p1")
   expect_equal(nrow(ids$edges), nrow(g$edges))
   expect_equal(net_degree(ids), net_degree(g))
   expect_error(net_recode(g, "role", c(1, 2)), "named")
   e <- net_recode(g, "strength", function(v) v * 2, table = "edges")
   expect_equal(e$edges$strength, g$edges$strength * 2)
 
-  extra <- data.frame(name = g$nodes$name[c(3, 1)], arrested = c(TRUE, FALSE), role = "x")
+  extra <- data.frame(id = g$nodes$id[c(3, 1)], arrested = c(TRUE, FALSE), role = "x")
   j <- net_join(g, extra)
   expect_equal(j$nodes$arrested, c(FALSE, NA, TRUE, rep(NA, nrow(g$nodes) - 3)))
   expect_equal(j$nodes$role[1:3], c("x", NA, "x"))
-  expect_equal(j$nodes$name, g$nodes$name)
-  j2 <- net_join(g, data.frame(who = g$nodes$name[2], score = 7), by = "who")
+  expect_equal(j$nodes$id, g$nodes$id)
+  j2 <- net_join(g, data.frame(who = g$nodes$id[2], score = 7), by = "who")
   expect_equal(j2$nodes$score[2], 7)
-  expect_error(net_join(g, data.frame(name = rep("Muklas", 2), v = 1:2)), "duplicated")
+  expect_error(net_join(g, data.frame(id = rep("Muklas", 2), v = 1:2)), "duplicated")
   expect_error(net_join(g, 1), "data frame")
 })

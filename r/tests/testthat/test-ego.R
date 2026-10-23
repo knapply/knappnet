@@ -12,11 +12,11 @@ small <- function() {
 
 test_that("ego_summary gives hand-checked values", {
   g <- small()
-  expect_equal(g$nodes$name, c("a", "b", "d", "c", "e"))
+  expect_equal(g$nodes$id, c("a", "b", "d", "c", "e"))
   s <- net_ego_summary(g)
   expect_equal(names(s), c("node", "size", "ties", "pairs", "density", "components",
                            "ego_betweenness"))
-  expect_equal(s$node, g$nodes$name)
+  expect_equal(s$node, g$nodes$id)
   expect_equal(s$size, c(3, 2, 2, 2, 1))
   expect_equal(s$ties, c(1, 1, 0, 1, 0))
   expect_equal(s$pairs, c(3, 1, 1, 1, 0))
@@ -58,7 +58,7 @@ test_that("weights, parallel edges, and loops do not change the measures", {
   g <- small()
   plain <- net_frame(rbind(g$edges[, 1:2], data.frame(source = c("a", "c"), target = c("b", "c"))),
                     directed = FALSE)
-  expect_equal(plain$nodes$name, g$nodes$name)
+  expect_equal(plain$nodes$id, g$nodes$id)
   expect_equal(net_ego_summary(g)[, -1], net_ego_summary(plain)[, -1])
 })
 
@@ -67,18 +67,18 @@ test_that("ego_network returns the induced subgraph with its attributes", {
   g$nodes$age <- c(30, 40, 50, 60, 70)
   e <- net_ego(g, "a")
   expect_s3_class(e, "net_frame")
-  expect_equal(e$nodes$name, c("a", "b", "d", "c"))
+  expect_equal(e$nodes$id, c("a", "b", "d", "c"))
   expect_equal(e$nodes$age, c(30, 40, 50, 60))
   expect_equal(e$edges$w, c(1, 2, 3, 4))
   expect_equal(e$roles$weight, "w")
   expect_equal(e$roles$weight_type, "strength")
   expect_false(e$directed)
   alters <- net_ego(g, "a", include_ego = FALSE)
-  expect_equal(alters$nodes$name, c("b", "d", "c"))
+  expect_equal(alters$nodes$id, c("b", "d", "c"))
   expect_equal(nrow(alters$edges), 1L)
   expect_equal(nrow(net_ego(g, "e", order = 2)$nodes), 3L)
   all <- net_egos(g)
-  expect_equal(names(all), g$nodes$name)
+  expect_equal(names(all), g$nodes$id)
   expect_equal(unname(vapply(all, function(x) as.numeric(nrow(x$nodes)), 0)), net_ego_size(g))
   some <- net_egos(g, c("e", "a"))
   expect_equal(names(some), c("e", "a"))
@@ -124,6 +124,6 @@ test_that("results match igraph", {
   expect_equal(net_ego_size(d, mode = "out"), igraph::ego_size(dg, mode = "out"))
   expect_equal(net_ego_size(d, mode = "in"), igraph::ego_size(dg, mode = "in"))
   e <- net_ego(d, "1", mode = "in")
-  expect_equal(sort(e$nodes$name),
+  expect_equal(sort(e$nodes$id),
                sort(names(igraph::ego(dg, order = 1, nodes = "1", mode = "in")[[1]])))
 })

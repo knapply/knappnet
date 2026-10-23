@@ -18,7 +18,7 @@ test_that("temporal networks are net_frames with time roles", {
   expect_false(net_is_temporal(data.frame(time = 1)))
   expect_equal(g$roles$start, "time")
   expect_equal(g$roles$time_class, "numeric")
-  expect_equal(g$nodes$name, c("a", "b", "c"))
+  expect_equal(g$nodes$id, c("a", "b", "c"))
   expect_output(print(g), "temporal: contacts from 1 to 6")
   expect_output(print(g), "all instantaneous")
   # Static measures see every contact as an edge.
@@ -71,22 +71,22 @@ test_that("slicing follows half-open intervals", {
   expect_equal(nrow(net_at(g, 3)$edges), 1L)
   w <- net_window(g, 3, 5, nodes = "active")
   expect_equal(w$edges$source, "b")
-  expect_equal(w$nodes$name, c("b", "c"))
+  expect_equal(w$nodes$id, c("b", "c"))
   expect_equal(nrow(net_window(g, 0, 10)$edges), 4L)
   expect_error(net_window(g, 5, 5), "earlier")
   expect_error(net_at(g, as.Date("2024-01-01")), "single time")
 })
 
 test_that("node presence intervals select nodes", {
-  nodes <- data.frame(name = c("a", "b", "c"), joined = c(0, 5, NA))
+  nodes <- data.frame(id = c("a", "b", "c"), joined = c(0, 5, NA))
   g <- net_temporal(data.frame(source = c("a", "b", "b", "a"), target = c("b", "c", "c", "c"),
                                    time = c(1, 1, 3, 6)),
                         nodes = nodes, node_start = "joined")
-  expect_equal(net_at(g, 2, nodes = "present")$nodes$name, c("a", "c"))
+  expect_equal(net_at(g, 2, nodes = "present")$nodes$id, c("a", "c"))
   expect_equal(nrow(net_at(g, 2, nodes = "active")$nodes), 0L)
-  expect_equal(net_at(g, 2)$nodes$name, c("a", "b", "c"))
+  expect_equal(net_at(g, 2)$nodes$id, c("a", "b", "c"))
   # An endpoint of an active contact is always kept.
-  expect_equal(net_at(g, 1, nodes = "present")$nodes$name, c("a", "b", "c"))
+  expect_equal(net_at(g, 1, nodes = "present")$nodes$id, c("a", "b", "c"))
 })
 
 test_that("snapshots and rolling measures", {

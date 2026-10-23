@@ -10,56 +10,62 @@ party <- function() {
     person = c("ann", "ann", "bob", "bob", "cat", "dan", "eve", "eve"),
     event  = c("gala", "fair", "gala", "show", "show", "fair", "gala", "show"),
     hours  = c(1, 2, 3, 4, 5, 6, 7, 8)
-  ), weight = "hours", weight_type = "strength")
+  ), source = "person", target = "event", weight = "hours", weight_type = "strength")
 }
+
+# 0 for nodes of the first mode, 1 for the second.
+types <- function(g) knappnet:::twomode_types(g)
 
 test_that("net_twomode() builds the node table from the two edge columns", {
   g <- party()
   expect_true(net_is_twomode(g))
   expect_false(g$directed)
-  expect_equal(g$nodes$name, c("ann", "bob", "cat", "dan", "eve", "gala", "fair", "show"))
-  expect_equal(g$nodes$type, rep(c(FALSE, TRUE), c(5, 3)))
-  expect_equal(g$roles$type, "type")
-  expect_equal(g$roles$type_labels, c("FALSE", "TRUE"))
+  expect_equal(g$nodes$id, c("ann", "bob", "cat", "dan", "eve", "gala", "fair", "show"))
+  expect_equal(g$nodes$mode, rep(c("person", "event"), c(5, 3)))
+  expect_equal(g$roles$mode, "mode")
+  expect_equal(g$roles$mode_levels, c("person", "event"))
+  expect_true(g$declared$between_modes_only)
+  expect_equal(types(g), rep(0:1, c(5, 3)))
   expect_false(net_is_twomode(net_frame(data.frame(source = 1, target = 2))))
-  expect_error(net_twomode(data.frame(a = c("x", "y"), b = c("y", "z"))), "both")
+  expect_error(net_twomode(data.frame(source = c("x", "y"), target = c("y", "z"))), "both")
+  # Endpoint columns are never guessed.
+  expect_error(net_twomode(data.frame(a = "p", b = "x")), "source")
 })
 
-test_that("node types from two-valued columns", {
+test_that("modes from a node column", {
   nodes <- data.frame(id = c("p", "q", "x", "y"), kind = c("person", "person", "club", "club"))
   edges <- data.frame(source = c("p", "q", "q"), target = c("x", "x", "y"))
-  g <- net_twomode(edges, nodes, type = "kind")
-  # "club" sorts first, so clubs are the first mode.
-  expect_equal(g$nodes$type, c(TRUE, TRUE, FALSE, FALSE))
-  expect_equal(g$roles$type_labels, c("club", "person"))
+  g <- net_twomode(edges, nodes, mode = "kind")
+  # The first mode is the first to appear in the node table, unless `first`
+  # says otherwise.
+  expect_equal(g$roles$mode_levels, c("person", "club"))
+  expect_equal(types(g), c(0L, 0L, 1L, 1L))
   expect_equal(g$nodes$kind, nodes$kind)
-  h <- net_twomode(edges, nodes, type = "kind", first = "person")
-  expect_equal(h$nodes$type, c(FALSE, FALSE, TRUE, TRUE))
-  f <- net_twomode(edges, transform(nodes, kind = factor(kind, levels = c("person", "club"))),
-               type = "kind")
-  expect_equal(f$nodes$type, c(FALSE, FALSE, TRUE, TRUE))
-  # A `type` column that is not logical is kept; the new column is named
-  # after the second mode.
-  dyn <- data.frame(id = nodes$id, class = c("agent", "agent", "event", "event"),
-                    type = c("Agent", "Agent", "Event", "Event"))
-  d <- net_as_twomode(net_frame(edges, dyn))
-  expect_equal(d$roles$type, "is_event")
-  expect_equal(d$nodes$is_event, c(FALSE, FALSE, TRUE, TRUE))
-  expect_equal(d$nodes$type, dyn$type)
-  expect_error(net_twomode(edges, nodes, type = "kind", first = "robot"), "one of")
-  expect_error(net_twomode(edges, nodes, type = "nope"), "not found")
+  h <- net_twomode(edges, nodes, mode = "kind", first = "club")
+  expect_equal(h$roles$mode_levels, c("club", "person"))
+  expect_equal(types(h), c(1L, 1L, 0L, 0L))
+  # igraph's logical `type` column is accepted as the mode column.
+  lg <- net_twomode(edges, data.frame(id = nodes$id, type = c(FALSE, FALSE, TRUE, TRUE)))
+  expect_equal(lg$roles$mode, "type")
+  expect_equal(types(lg), c(0L, 0L, 1L, 1L))
+  dyn <- data.frame(id = nodes$id, class = c("agent", "agent", "event", "event"))
+  d <- net_as_twomode(net_frame(edges, dyn), mode = "class")
+  expect_true(net_is_twomode(d))
+  expect_equal(d$roles$mode_levels, c("agent", "event"))
+  expect_error(net_twomode(edges, nodes, mode = "kind", first = "robot"), "one of")
+  expect_error(net_twomode(edges, nodes, mode = "nope"), "not found")
   three <- transform(nodes, kind = c("a", "b", "c", "c"))
-  expect_error(net_twomode(edges, three, type = "kind"), "exactly two")
+  expect_error(net_twomode(edges, three, mode = "kind"), "exactly two")
   within <- data.frame(source = c("p", "p"), target = c("x", "q"))
-  expect_error(net_twomode(within, nodes, type = "kind"), "same mode")
+  expect_error(net_twomode(within, nodes, mode = "kind"), "same mode")
 })
 
 test_that("net_as_twomode() converts matrices, data frames, and net_frames", {
   m <- matrix(c(1, 0, 1,
                 1, 1, 0), 2, byrow = TRUE, dimnames = list(c("p", "q"), c("x", "y", "z")))
   g <- net_as_twomode(m)
-  expect_equal(g$nodes$name, c("p", "q", "x", "y", "z"))
-  expect_equal(g$nodes$type, c(FALSE, FALSE, TRUE, TRUE, TRUE))
+  expect_equal(g$nodes$id, c("p", "q", "x", "y", "z"))
+  expect_equal(types(g), c(0L, 0L, 1L, 1L, 1L))
   expect_equal(nrow(g$edges), 4L)
   expect_null(g$roles$weight)
   expect_equal(unname(net_incidence(g)), unname(m))
@@ -67,25 +73,25 @@ test_that("net_as_twomode() converts matrices, data frames, and net_frames", {
   w <- net_as_twomode(m)
   expect_equal(w$roles$weight, "weight")
   expect_equal(net_incidence(w, attr = "weight"), m)
-  expect_equal(net_as_twomode(unname(m))$nodes$name, c("r1", "r2", "c1", "c2", "c3"))
-  e <- net_as_twomode(data.frame(a = c("p", "q"), b = c("x", "x")))
-  expect_equal(e$nodes$type, c(FALSE, FALSE, TRUE))
+  expect_equal(net_as_twomode(unname(m))$nodes$id, c("r1", "r2", "c1", "c2", "c3"))
+  e <- net_as_twomode(data.frame(source = c("p", "q"), target = c("x", "x")))
+  expect_equal(types(e), c(0L, 0L, 1L))
   expect_identical(net_as_twomode(e), e)
-  expect_error(net_as_twomode(net_frame(data.frame(source = 1, target = 2))), "Cannot tell")
+  expect_error(net_as_twomode(net_frame(data.frame(source = 1, target = 2))), "mode")
 })
 
 test_that("a DyNetML file with two node classes becomes two-mode in one call", {
-  nodes <- data.frame(name = c("ann", "bob", "gala", "fair"),
+  nodes <- data.frame(id = c("ann", "bob", "gala", "fair"),
                       class = c("agent", "agent", "event", "event"),
                       type = c("Agent", "Agent", "Event", "Event"))
   g <- net_frame(data.frame(source = c("ann", "bob", "ann"), target = c("gala", "gala", "fair")),
-                nodes, directed = FALSE)
+                 nodes, directed = FALSE)
   path <- tempfile(fileext = ".xml")
   net_write(g, path, format = "dynetml")
-  h <- net_as_twomode(net_read(path))
+  h <- net_as_twomode(net_read(path), mode = "class")
   expect_true(net_is_twomode(h))
-  expect_equal(h$nodes[[h$roles$type]], c(FALSE, FALSE, TRUE, TRUE))
-  expect_equal(h$roles$type_labels, c("agent", "event"))
+  expect_equal(types(h), c(0L, 0L, 1L, 1L))
+  expect_equal(h$roles$mode_levels, c("agent", "event"))
   expect_equal(net_twomode_density(h), 3 / 4)
 })
 
@@ -109,7 +115,7 @@ test_that("projections count shared partners", {
   p <- net_project(g)
   expect_s3_class(p, "net_frame")
   expect_false(p$directed)
-  expect_equal(p$nodes$name, c("ann", "bob", "cat", "dan", "eve"))
+  expect_equal(p$nodes$id, c("ann", "bob", "cat", "dan", "eve"))
   expect_equal(p$edges$source, c("ann", "ann", "ann", "bob", "bob", "cat"))
   expect_equal(p$edges$target, c("bob", "dan", "eve", "cat", "eve", "eve"))
   expect_equal(p$edges$weight, c(1, 1, 1, 1, 2, 1))
@@ -130,13 +136,13 @@ test_that("projections count shared partners", {
   expect_equal(nrow(both$second$edges), 2L)
   expect_error(net_project(g, method = "newman", loops = TRUE), "diagonal")
   expect_error(net_project(net_frame(data.frame(source = 1, target = 2))), "two-mode")
-  plain <- net_twomode(data.frame(a = "p", b = "x"))
+  plain <- net_twomode(data.frame(source = "p", target = "x"))
   expect_error(net_project(plain, method = "product"), "weights")
   expect_equal(nrow(net_project(plain)$edges), 0L)
   b <- net_incidence(g)
   full <- b %*% t(b)
   pf <- net_project(g, loops = TRUE)
-  ids <- p$nodes$name
+  ids <- p$nodes$id
   expect_equal(pf$edges$weight, full[cbind(match(pf$edges$source, ids),
                                            match(pf$edges$target, ids))])
 })
@@ -165,14 +171,14 @@ test_that("two-mode centrality uses Borgatti and Everett's normalizations", {
 })
 
 test_that("disconnected two-mode networks", {
-  g <- net_twomode(data.frame(a = c("p", "q"), b = c("x", "y")))
+  g <- net_twomode(data.frame(source = c("p", "q"), target = c("x", "y")))
   # Each node reaches one other at distance 1: (2 + 2 * 1) / 1, times 1/3
   # under the Wasserman-Faust rule.
   expect_equal(net_twomode_closeness(g), rep(4 / 3, 4))
   expect_equal(net_twomode_closeness(g, unreachable = "ignore"), rep(4, 4))
   expect_warning(net_twomode_eigen(g), "not connected")
-  lone <- net_twomode(data.frame(a = "p", b = "x"),
-                  data.frame(name = c("p", "x", "z"), type = c(FALSE, TRUE, FALSE)))
+  lone <- net_twomode(data.frame(source = "p", target = "x"),
+                      data.frame(id = c("p", "x", "z"), type = c(FALSE, TRUE, FALSE)))
   expect_equal(net_twomode_closeness(lone)[3], 0)
   expect_true(is.nan(net_twomode_closeness(lone, unreachable = "ignore")[3]))
 })
@@ -195,11 +201,12 @@ test_that("results match igraph", {
                unname(igraph::betweenness(ig, weights = NA)))
   expect_equal(net_twomode_closeness(g, normalized = FALSE, unreachable = "ignore"),
                unname(igraph::closeness(ig, weights = NA)))
+  expect_equal(igraph::V(ig)$type, types(g) == 1L)
   back <- net_as_twomode(ig)
   expect_true(net_is_twomode(back))
-  expect_equal(back$nodes$type, g$nodes$type)
+  expect_equal(back$nodes$type, types(g) == 1L)
   bip <- igraph::make_bipartite_graph(c(FALSE, FALSE, TRUE), c(1, 3, 2, 3))
-  expect_equal(net_as_twomode(bip)$nodes$type, c(FALSE, FALSE, TRUE))
+  expect_equal(types(net_as_twomode(bip)), c(0L, 0L, 1L))
 })
 
 test_that("bipartite networks from the network package", {
@@ -209,6 +216,5 @@ test_that("bipartite networks from the network package", {
   network::set.vertex.attribute(net, "vertex.names", c("p", "q", "x", "y"))
   g <- net_as_twomode(net)
   expect_true(net_is_twomode(g))
-  expect_equal(g$roles$type_labels, c("1", "2"))
-  expect_equal(g$nodes$type, c(FALSE, FALSE, TRUE, TRUE))
+  expect_equal(types(g), c(0L, 0L, 1L, 1L))
 })

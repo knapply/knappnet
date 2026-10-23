@@ -9,7 +9,7 @@
 # Four points in UTM zone 33N (metres): a unit right triangle plus a point
 # 10 m away.
 utm_points <- function() {
-  sf::st_as_sf(data.frame(name = c("a", "b", "c", "d"), x = c(0, 3, 0, 10), y = c(0, 0, 4, 0),
+  sf::st_as_sf(data.frame(id = c("a", "b", "c", "d"), x = c(0, 3, 0, 10), y = c(0, 0, 4, 0),
                           kind = c("u", "u", "v", "v"), stringsAsFactors = FALSE),
                coords = c("x", "y"), crs = 32633, remove = FALSE)
 }
@@ -21,7 +21,7 @@ utm_network <- function(directed = FALSE) {
 }
 
 city_points <- function() {
-  sf::st_as_sf(data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
+  sf::st_as_sf(data.frame(id = c("London", "Paris", "Berlin", "Madrid"),
                           lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
                           lat = c(51.5072, 48.8566, 52.5200, 40.4168),
                           stringsAsFactors = FALSE),
@@ -63,8 +63,8 @@ test_that("sf node tables record geometry roles and keep every column", {
   expect_s3_class(g$roles$crs, "crs")
   expect_equal(g$roles$crs$epsg, 32633L)
   expect_null(g$roles$x)
-  expect_equal(names(g$nodes), c("name", "x", "y", "kind", "geometry"))
-  expect_output(print(g), "spatial: nodes POINT; CRS")
+  expect_equal(names(g$nodes), c("id", "x", "y", "kind", "geometry"))
+  expect_output(print(g), "space: +node points")
   # Measures run as usual; the engine never sees the geometry.
   expect_equal(unname(net_degree(g)), c(3L, 2L, 2L, 1L))
   # as_net_frame() on sf works both ways round.
@@ -155,7 +155,7 @@ test_that("edge lengths come from sf when edges have geometry", {
   # Mixed: edges without geometry get the distance between representative points.
   sf::st_geometry(edges)[2] <- sf::st_sfc(sf::st_linestring(), crs = 32633)
   mixed <- net_frame(edges, utm_points(), directed = FALSE)
-  expect_output(print(mixed), "edges LINESTRING, 1 without geometry")
+  expect_output(print(mixed), "node points, edge lines")
   ml <- net_edge_lengths(mixed)
   expect_equal(as.vector(ml), c(11, 5, 4, 10))
   pts <- sf::st_geometry(utm_points())
@@ -184,10 +184,10 @@ test_that("net_to_sf() returns sf tables, with implicit edges when asked", {
   g <- utm_network()
   nodes <- net_to_sf(g, "nodes")
   expect_s3_class(nodes, "sf")
-  expect_equal(nodes$name, c("a", "b", "c", "d"))
+  expect_equal(nodes$id, c("a", "b", "c", "d"))
   edges <- net_to_sf(g, "edges")
   expect_s3_class(edges, "sf")
-  expect_equal(names(edges), c("from", "to", "geometry"))
+  expect_equal(names(edges), c("source", "target", "geometry"))
   expect_equal(as.character(sf::st_geometry_type(edges, by_geometry = TRUE)),
                rep("LINESTRING", 4))
   expect_equal(sf::st_crs(edges), sf::st_crs(32633))
@@ -198,7 +198,7 @@ test_that("net_to_sf() returns sf tables, with implicit edges when asked", {
   # Coordinate columns become points too: WGS 84 for lon/lat, no CRS for planar.
   plain <- net_spatial(net_frame(g$edges, sf::st_drop_geometry(g$nodes), directed = FALSE),
                            coords = c("x", "y"), crs = "planar")
-  expect_output(print(plain), "spatial: coordinates in `x`, `y` \\(planar\\)")
+  expect_output(print(plain), "node coordinates `x`, `y` \\(planar\\)")
   ps <- net_to_sf(plain, "nodes")
   expect_s3_class(ps, "sf")
   expect_true(is.na(sf::st_crs(ps)))
@@ -246,7 +246,7 @@ test_that("net_from_lines() snaps endpoints into shared nodes", {
   expect_s3_class(g$nodes, "sf")
   expect_s3_class(g$edges, "sf")
   expect_equal(g$nodes$id, 1:9)
-  expect_equal(names(g$edges), c("from", "to", "street", "length", "geometry"))
+  expect_equal(names(g$edges), c("source", "target", "street", "length", "geometry"))
   expect_equal(g$roles$weight, "length")
   expect_equal(g$roles$weight_type, "distance")
   expect_equal(g$edges$length, rep(1, 12))
@@ -264,14 +264,15 @@ test_that("net_from_lines() snaps endpoints into shared nodes", {
   expect_equal(d$edges$source[1], 1L)
   expect_equal(d$edges$target[1], 2L)
   # Reserved column names are kept as attributes; a ring is a self-loop.
-  ring <- sf::st_sf(from = "x", length = 9,
+  ring <- sf::st_sf(source = "x", length = 9,
                     geometry = sf::st_sfc(sf::st_linestring(rbind(c(0, 0), c(1, 0), c(1, 1), c(0, 0))),
                                           crs = 32633))
   r <- net_from_lines(ring)
   expect_equal(nrow(r$nodes), 1L)
-  expect_equal(names(r$edges), c("from", "to", "from_attr", "length_attr", "length", "geometry"))
+  expect_equal(names(r$edges),
+               c("source", "target", "source_attr", "length_attr", "length", "geometry"))
   expect_equal(r$edges$length, 2 + sqrt(2))
-  expect_output(print(r), "1 self-loop")
+  expect_output(print(r), "1 loop")
   # Tolerance: nearly touching ends become one node, and not without it.
   gap <- sf::st_sf(geometry = sf::st_sfc(segment(0, 0, 1, 0), segment(1.05, 0, 2, 0),
                                          segment(2, 0, 3, 0), crs = 32633))
@@ -404,17 +405,17 @@ test_that("spatial filters, transforms, and joins keep the network consistent", 
   g$edges$kind <- c("p", "q", "r", "s")
   box <- sf::st_bbox(c(xmin = -1, ymin = -1, xmax = 5, ymax = 5), crs = sf::st_crs(32633))
   f <- net_spatial_filter(g, box)
-  expect_equal(f$nodes$name, c("a", "b", "c"))
+  expect_equal(f$nodes$id, c("a", "b", "c"))
   expect_equal(f$edges$kind, c("p", "q", "r"))
   expect_equal(f$roles$node_geometry, "geometry")
   expect_equal(length(f$index$src), 3L)
   expect_equal(unname(net_degree(f)), c(2L, 2L, 2L))
   circle <- sf::st_sf(geometry = sf::st_sfc(sf::st_buffer(sf::st_point(c(10, 0)), 1), crs = 32633))
-  expect_equal(net_spatial_filter(g, circle)$nodes$name, "d")
+  expect_equal(net_spatial_filter(g, circle)$nodes$id, "d")
   expect_equal(nrow(net_spatial_filter(g, circle)$edges), 0L)
   near <- net_spatial_filter(g, circle, predicate = sf::st_is_within_distance, dist = 7)
-  expect_equal(near$nodes$name, c("b", "d"))
-  expect_equal(net_spatial_filter(g, g)$nodes$name, g$nodes$name)
+  expect_equal(near$nodes$id, c("b", "d"))
+  expect_equal(net_spatial_filter(g, g)$nodes$id, g$nodes$id)
   expect_error(net_spatial_filter(g, 1:3), "sf")
   expect_error(net_spatial_filter(net_frame(g$edges, directed = FALSE), box), "node geometries")
 
@@ -434,7 +435,7 @@ test_that("spatial filters, transforms, and joins keep the network consistent", 
                      geometry = sf::st_sfc(rect(-1, -1, 2, 5), rect(2, -1, 5, 5)), crs = 32633)
   j <- net_spatial_join(g, zones)
   expect_equal(j$nodes$zone, c("west", "east", "west", NA))
-  expect_setequal(names(j$nodes), c("name", "x", "y", "kind", "kind_y", "zone", "geometry"))
+  expect_setequal(names(j$nodes), c("id", "x", "y", "kind", "kind_y", "zone", "geometry"))
   expect_equal(j$nodes$kind, g$nodes$kind)
   expect_equal(j$nodes$kind_y, c("z1", "z2", "z1", NA))
   expect_equal(nrow(j$nodes), 4L)
@@ -495,7 +496,7 @@ test_that("GeoPackage files round-trip spatial networks", {
   expect_true(back$directed)
   expect_s3_class(back$nodes, "sf")
   expect_false(inherits(back$edges, "sf"))
-  expect_equal(back$nodes$name, g$nodes$name)
+  expect_equal(back$nodes$id, g$nodes$id)
   expect_equal(back$nodes$kind, g$nodes$kind)
   expect_equal(back$edges$source, g$edges$source)
   expect_equal(back$edges$target, g$edges$target)
@@ -549,7 +550,7 @@ test_that("GeoPackage files round-trip spatial networks", {
   net_write(plain, path)
   pb <- net_read(path)
   expect_false(pb$directed)
-  expect_equal(pb$nodes$name, c("a", "b", "c"))
+  expect_equal(pb$nodes$id, c("a", "b", "c"))
   expect_null(pb$roles$node_geometry)
 })
 
@@ -568,7 +569,7 @@ test_that("sfnetworks objects convert both ways", {
   expect_equal(igraph::edge_attr(net, "kind"), c("p", "q", "r", "s"))
   back <- as_net_frame(net)
   expect_true(back$directed)
-  expect_equal(back$nodes$name, g$nodes$name)
+  expect_equal(back$nodes$id, g$nodes$id)
   expect_equal(back$nodes$kind, g$nodes$kind)
   expect_equal(back$edges$source, g$edges$source)
   expect_equal(back$edges$target, g$edges$target)
@@ -585,7 +586,7 @@ test_that("sfnetworks objects convert both ways", {
   expect_message(rn <- net_to_sfnetwork(regions), "representative points")
   expect_equal(as.character(sf::st_geometry_type(sf::st_as_sf(rn, active = "nodes"),
                                                  by_geometry = TRUE)), rep("POINT", 4))
-  expect_equal(as_net_frame(rn)$nodes$name, c("w", "x", "y", "z"))
+  expect_equal(as_net_frame(rn)$nodes$id, c("w", "x", "y", "z"))
   expect_s3_class(sfnetworks::as_sfnetwork(g), "sfnetwork")
   # Columns with units come back as plain numbers.
   roads <- net_from_lines(lattice_lines())

@@ -12,7 +12,7 @@ test_that("net_plot_matrix() draws adjacency and incidence matrices in any order
     expect_setequal(rownames(m2), rownames(m))
     # Rows are sorted by group in order of first appearance, stably.
     fac <- g$nodes$faction
-    expect_identical(rownames(m2), as.character(g$nodes$name[order(match(fac, unique(fac)))]))
+    expect_identical(rownames(m2), as.character(g$nodes$id[order(match(fac, unique(fac)))]))
     expect_silent(net_plot_matrix(g, order = net_louvain(g, seed = 1), labels = FALSE))
     expect_silent(net_plot_matrix(g, values = TRUE, key = TRUE, labels = TRUE))
     expect_restores_par(net_plot_matrix(g))
@@ -38,7 +38,7 @@ test_that("net_plot_mixing() draws the mixing matrix of a network or a matrix", 
     expect_silent(m <- net_plot_mixing(g, "faction"))
     expect_identical(m, net_mixing(g, "faction"))
     expect_silent(net_plot_mixing(net_mixing(g, "faction"), main = "Factions"))
-    expect_silent(net_plot_mixing(g, "faction", "name", values = FALSE))
+    expect_silent(net_plot_mixing(g, "faction", "id", values = FALSE))
     expect_error(net_plot_mixing(g), "dim1")
     expect_error(net_plot_mixing(list()), "net_frame or a numeric matrix")
   })

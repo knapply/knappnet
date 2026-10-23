@@ -2,7 +2,7 @@
 # columns (R/plot-spatial.R); sf geometries are drawn in test-sf.R.
 
 test_that("net_plot_spatial() draws point-based networks without sf", {
-  nodes <- data.frame(name = c("London", "Paris", "Berlin", "Madrid"),
+  nodes <- data.frame(id = c("London", "Paris", "Berlin", "Madrid"),
                       lon = c(-0.1276, 2.3522, 13.4050, -3.7038),
                       lat = c(51.5072, 48.8566, 52.5200, 40.4168),
                       region = c("north", "north", "north", "south"),

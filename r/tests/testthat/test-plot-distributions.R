@@ -110,7 +110,7 @@ test_that("net_plot_scores() ranks scores and labels them", {
     expect_identical(out$score, sort(b)[1:3])
     expect_silent(net_plot_scores(c(a = 1, b = 3, c = 2)))
     expect_silent(net_plot_scores(c(1, NA, NaN, 4)))
-    expect_silent(net_plot_scores(b, g$nodes$name))
+    expect_silent(net_plot_scores(b, g$nodes$id))
     expect_restores_par(net_plot_scores(b, g))
     expect_error(net_plot_scores(b, c("x", "y")), "one label per score")
     expect_error(net_plot_scores("x"), "numeric")

@@ -18,7 +18,7 @@ jemaah <- function() {
           10, 11, 12, 13, 14, 15, 17, 6, 8, 9, 15, 16, 17, 7, 8, 9, 15, 17, 9, 15, 16, 17,
           15, 16, 17, 11, 12, 13, 14, 12, 13, 14, 13, 14, 14, 16, 17, 17)
   net_frame(data.frame(source = names[from], target = names[to]),
-           nodes = data.frame(name = names, role = roles), directed = FALSE)
+           nodes = data.frame(id = names, role = roles), directed = FALSE)
 }
 
 # Interaction strengths of Koschade's Table 2, in the edge order of jemaah().
@@ -47,9 +47,9 @@ test_that("mixing matrix of the Jemaah Islamiyah network matches homophily", {
                      dimnames = list(roles, roles))
   expect_identical(m, expected)
   expect_equal(sum(m), 2 * 63)
-  by_node <- net_mixing(g, "name", "role")
+  by_node <- net_mixing(g, "id", "role")
   expect_identical(dim(by_node), c(17L, 5L))
-  expect_identical(rowSums(by_node), setNames(net_degree(g), g$nodes$name))
+  expect_identical(rowSums(by_node), setNames(net_degree(g), g$nodes$id))
 })
 
 test_that("E-I index of the Jemaah Islamiyah network matches homophily", {
@@ -101,19 +101,19 @@ test_that("strength assortativity of the weighted Jemaah Islamiyah network", {
 test_that("directed mixing matrices follow homophily's layout", {
   # a -> b, a -> c, b -> c, c -> a; groups x, x, y.
   g <- net_frame(data.frame(source = c("a", "a", "b", "c"), target = c("b", "c", "c", "a")),
-                nodes = data.frame(name = c("a", "b", "c"), grp = c("x", "x", "y")))
+                nodes = data.frame(id = c("a", "b", "c"), grp = c("x", "x", "y")))
   m <- net_mixing(g, "grp")
   expect_identical(m, matrix(c(1, 2, 1, 0), 2, byrow = TRUE,
                              dimnames = list(c("x", "y"), c("x", "y"))))
   expect_identical(net_mixing(g, "grp", direction = "in"), t(m))
-  out <- net_mixing(g, "name", "grp", direction = "out")
+  out <- net_mixing(g, "id", "grp", direction = "out")
   expect_identical(out, matrix(c(1, 1, 0, 1, 1, 0), 3, byrow = TRUE,
                                dimnames = list(c("a", "b", "c"), c("x", "y"))))
-  inn <- net_mixing(g, "name", "grp", direction = "in")
+  inn <- net_mixing(g, "id", "grp", direction = "in")
   # Rows: the sender's group; columns: the receiving node.
   expect_identical(inn, matrix(c(0, 1, 2, 1, 0, 0), 2, byrow = TRUE,
                                dimnames = list(c("x", "y"), c("a", "b", "c"))))
-  all <- net_mixing(g, "name", "grp")
+  all <- net_mixing(g, "id", "grp")
   expect_identical(all, matrix(c(1, 2, 1, 1, 3, 0), 3, byrow = TRUE,
                                dimnames = list(c("a", "b", "c"), c("x", "y"))))
 })
@@ -139,7 +139,7 @@ test_that("assortativity coefficients", {
 
 test_that("within-group tie shares", {
   g <- net_frame(data.frame(source = c("a", "a", "b", "c"), target = c("b", "c", "d", "d")),
-                nodes = data.frame(name = c("a", "b", "c", "d"), grp = c("x", "x", "y", "y")),
+                nodes = data.frame(id = c("a", "b", "c", "d"), grp = c("x", "x", "y", "y")),
                 directed = FALSE)
   h <- net_homophily(g, "grp")
   expect_identical(h$group, c("x", "y"))

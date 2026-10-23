@@ -611,7 +611,7 @@ net_to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
   eattrs <- if (inherits(edges, "sf")) sf::st_drop_geometry(edges) else as.data.frame(edges)
   eattrs <- eattrs[setdiff(names(eattrs), c(x$roles$source, x$roles$target))]
   names(eattrs) <- rename_reserved(names(eattrs), c("from", "to"))
-  edge_df <- cbind(data.frame(source = x$index$src + 1L, target = x$index$tgt + 1L), eattrs)
+  edge_df <- cbind(data.frame(from = x$index$src + 1L, to = x$index$tgt + 1L), eattrs)
   if (inherits(edges, "sf")) {
     edge_df <- sf::st_sf(edge_df, geometry = sf::st_geometry(edges))
   }

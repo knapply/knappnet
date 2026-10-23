@@ -117,7 +117,7 @@ test_that("tree layouts are layered", {
 test_that("two-mode layouts put the modes in two rows", {
   g <- net_frame(data.frame(source = c("p1", "p1", "p2", "p3"), target = c("e2", "e1", "e1", "e2")),
                 directed = FALSE)
-  g$nodes$kind <- ifelse(startsWith(g$nodes$name, "p"), "person", "event")
+  g$nodes$kind <- ifelse(startsWith(g$nodes$id, "p"), "person", "event")
   xy <- net_layout(g, "twomode", types = "kind")
   # "event" sorts first, so events form the top row.
   events <- g$nodes$kind == "event"

@@ -203,9 +203,9 @@ test_that("the example networks give the published key players", {
   expect_equal(ex$set, kp$set)
   expect_equal(ex$evaluations, choose(17, 2))
   expect_equal(net_key_players(ji, 1, "distance_reach", method = "exact", threads = 2)$set, "Samudra")
-  command <- ji$nodes$name[ji$nodes$role == "command team"]
+  command <- ji$nodes$id[ji$nodes$role == "command team"]
   expect_equal(net_group_centrality(ji, command, "degree"), 13 / 14)
   fb <- net_flow_betweenness(ji, threads = 2)
-  expect_equal(ji$nodes$name[which.max(fb)], "Samudra")
-  expect_equal(fb[ji$nodes$name == "Samudra"], 317)
+  expect_equal(ji$nodes$id[which.max(fb)], "Samudra")
+  expect_equal(fb[ji$nodes$id == "Samudra"], 317)
 })
