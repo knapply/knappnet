@@ -98,7 +98,7 @@ def _declare() -> ctypes.CDLL:
         "net_voterank": [h, i64, i64p, i64p, cp, sz],
         "net_laplacian_centrality": [h, i32, i32, f64p, cp, sz],
         "net_trophic": [h, i32, i32, i32, f64p, cp, sz],
-        "net_reaching_centrality": [h, i32, i32, f64p, f64p, cp, sz],
+        "net_reaching_centrality": [h, i32, i32, i32, f64p, f64p, cp, sz],
     }
     for name, args in sig.items():
         fn = getattr(lib, name)
@@ -371,7 +371,8 @@ def _reaching(g, spec, fx):
     glob = ctypes.c_double()
     err = ctypes.create_string_buffer(ERR_LEN)
     if lib.net_reaching_centrality(g.handle, int(spec.get("weighted", False)),
-                                   int(spec.get("normalized", True)), local, ctypes.byref(glob),
+                                   int(spec.get("normalized", True)), 0, local,
+                                   ctypes.byref(glob),
                                    err, ERR_LEN):
         raise EngineError(err.value.decode())
     if spec.get("what", "local") == "global":

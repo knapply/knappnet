@@ -1725,8 +1725,9 @@ int32_t net_trophic(const GraphHandle *h, int32_t what, int32_t weighted,
 /* Local (n values; may be NULL) and global (one value; may be NULL)
  * reaching centrality. */
 int32_t net_reaching_centrality(const GraphHandle *h, int32_t weighted,
-                                int32_t normalized, double *local,
-                                double *global, char *err, size_t err_len);
+                                int32_t normalized, int32_t threads,
+                                double *local, double *global, char *err,
+                                size_t err_len);
 
 /* ---- Distance measures ---------------------------------------------------
  * mode 1 = out, 2 = in, 3 = all; reachable 0 = require a (strongly)

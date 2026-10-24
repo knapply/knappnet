@@ -645,6 +645,7 @@ pub unsafe extern "C" fn net_reaching_centrality(
     h: *const GraphHandle,
     weighted: i32,
     normalized: i32,
+    threads: i32,
     local: *mut f64,
     global: *mut f64,
     err: *mut c_char,
@@ -655,6 +656,7 @@ pub unsafe extern "C" fn net_reaching_centrality(
         let opts = ReachingOptions {
             weighted: weighted != 0,
             normalized: normalized != 0,
+            threads: thread_count(threads),
         };
         if !local.is_null() {
             slice_mut(local, g.node_count()).copy_from_slice(&local_reaching_centrality(g, opts)?);

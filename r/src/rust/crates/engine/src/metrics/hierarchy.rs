@@ -46,6 +46,7 @@ use crate::graph::Graph;
 use crate::linalg;
 use crate::matrix::Dense;
 use crate::metrics::degree::DegreeMode;
+use crate::parallel;
 use crate::paths::search::{SearchOptions, Searcher};
 use crate::paths::{ArcLengths, PathGraph, PathGraphOptions, NO_NODE};
 
@@ -197,6 +198,9 @@ pub struct ReachingOptions {
     pub weighted: bool,
     /// Divide by the mean edge weight (weighted only).
     pub normalized: bool,
+    /// Worker threads; 0 uses all available cores. Each node's value is
+    /// computed by one thread, so results do not depend on the count.
+    pub threads: usize,
 }
 
 /// Local reaching centrality of every node. See the module documentation.
@@ -226,37 +230,41 @@ pub fn local_reaching_centrality(g: &Graph, opts: ReachingOptions) -> Result<Vec
         1.0
     };
     let nm1 = (n - 1) as f64;
-    let mut ws = Searcher::new(n);
-    let mut sum_w = vec![0.0; n];
-    let mut hops = vec![0.0; n];
-    let mut out = Vec::with_capacity(n);
-    for v in 0..n {
-        ws.run(&pg, &[v as u32], SearchOptions::default())?;
-        let reached = ws.order().len();
-        if w.is_none() && g.is_directed() {
-            out.push((reached - 1) as f64 / nm1);
-            continue;
-        }
-        let mut total = 0.0;
-        for &u in ws.order() {
-            let u = u as usize;
-            let p = ws.parent(u);
-            if p == NO_NODE {
-                sum_w[u] = 0.0;
-                hops[u] = 0.0;
-                continue;
+    let threads =
+        parallel::threads_for(opts.threads, n, parallel::search_work(n, n, pg.arc_count()));
+    let directed_reach = w.is_none() && g.is_directed();
+    let values = parallel::map_items(
+        n,
+        threads,
+        || (Searcher::new(n), vec![0.0; n], vec![0.0; n]),
+        |(ws, sum_w, hops), v| {
+            // The source and lengths are valid, so the search cannot fail.
+            let _ = ws.run(&pg, &[v as u32], SearchOptions::default());
+            let reached = ws.order().len();
+            if directed_reach {
+                return (reached - 1) as f64 / nm1;
             }
-            let e = pg.edge(ws.parent_arc(u) as usize) as usize;
-            sum_w[u] = sum_w[p as usize] + w.map_or(1.0, |w| w[e]);
-            hops[u] = hops[p as usize] + 1.0;
-            total += match w {
-                Some(_) => sum_w[u] / hops[u],
-                None => 1.0 / hops[u],
-            };
-        }
-        out.push(total / norm / nm1);
-    }
-    Ok(out)
+            let mut total = 0.0;
+            for &u in ws.order() {
+                let u = u as usize;
+                let p = ws.parent(u);
+                if p == NO_NODE {
+                    sum_w[u] = 0.0;
+                    hops[u] = 0.0;
+                    continue;
+                }
+                let e = pg.edge(ws.parent_arc(u) as usize) as usize;
+                sum_w[u] = sum_w[p as usize] + w.map_or(1.0, |w| w[e]);
+                hops[u] = hops[p as usize] + 1.0;
+                total += match w {
+                    Some(_) => sum_w[u] / hops[u],
+                    None => 1.0 / hops[u],
+                };
+            }
+            total / norm / nm1
+        },
+    );
+    Ok(values)
 }
 
 /// Global reaching centrality. See the module documentation.
