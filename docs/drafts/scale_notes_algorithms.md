@@ -266,9 +266,11 @@ on main in the same job; "t=8" is 8 threads.
 - CONCOR column correlations: now 64 x 64 tiles of pairs per task (packed
   rows and columns stay in cache), column centring and the symmetric
   assembly in parallel too, sums in their old order (identical results).
-  Dense n = 1k depth 3: see the table in the round-3 report; the remaining
-  limit is the number of splits with small b at depth 3 and per-iteration
-  serial checks.
+  Dense n = 1k depth 3: 0.24 s -> 0.22 s at 8 threads (2.3x -> 2.6x over
+  one thread), one thread unchanged (0.56-0.57 s). Most of the remaining
+  serial time is outside the correlations: the initial profile
+  correlations and the per-split bookkeeping, and the splits at depth 3
+  have small b, below the work threshold.
 - Remaining: PageRank, eigenvector (Lanczos), Katz, and HITS still start
   threads once per matrix-vector product. With the work threshold they no
   longer slow down (x0.3-0.5 at 16 threads on n = 1k-10k before, x1.0
