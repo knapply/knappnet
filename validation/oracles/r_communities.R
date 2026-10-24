@@ -171,11 +171,19 @@ igraph_values <- function(spec, g, gu, meta) {
     },
     voronoi = {
       if (out != "modularity") return(NULL)
-      if (!exists("cluster_voronoi", envir = asNamespace("igraph"), inherits = FALSE)) {
-        stop("this igraph version has no cluster_voronoi()")
+      ns <- asNamespace("igraph")
+      if (exists("cluster_voronoi", envir = ns, inherits = FALSE)) {
+        memb <- igraph::membership(get("cluster_voronoi", envir = ns)(gu))
+      } else if (exists("community_voronoi_impl", envir = ns, inherits = FALSE)) {
+        # igraph 2.3 has the C library's Voronoi communities only as an
+        # internal wrapper; a radius of -1 selects it automatically.
+        res <- get("community_voronoi_impl", envir = ns)(gu, mode = "out", radius = -1)
+        memb <- as.integer(res$membership)
+        if (length(memb) && min(memb) == 0L) memb <- memb + 1L
+      } else {
+        stop("this igraph version has no Voronoi communities")
       }
-      cl <- igraph::cluster_voronoi(gu)
-      modq(gu, igraph::membership(cl))
+      modq(gu, memb)
     },
     compare_partitions = {
       a <- blocks(n)

@@ -135,8 +135,11 @@ walktrap_cut2:
       call: "cut_at(cluster_walktrap(g, weights = NULL, steps = 4), no = 2)"
       differs_on: *walktrap_ties
       reason: *walktrap_tie_reason
+      undefined_on: [single_node]
       undefined_when: [loops, multi_edges, disconnected]
-      undefined_reason: as for walktrap_merges
+      undefined_reason: >-
+        as for walktrap_merges; igraph's cut_at() raises an error when asked
+        for two groups of a single node
 
 girvan_newman_cut3:
   engine: {fn: girvan_newman_cut, groups: 3}
@@ -215,7 +218,9 @@ label_prop_fixed_point_weighted:
 # single group), so 100 seeds are used and the tolerance of 0.05 only
 # asserts that neither implementation is meaningfully better. Against
 # NetworkX 3.7 over 200 seeds the means agree within 0.025 except on
-# uniform_weights (fast variant, 0.04).
+# uniform_weights (fast variant, 0.04). The retention and fast variants
+# are compared with NetworkX only: igraph's C library has them, but its R
+# package (2.3.4, the current CRAN release) has no lpa_variant argument.
 label_prop_quality:
   engine: {fn: label_propagation, variant: dominance, output: quality, seeds: 100}
   applies_to: undirected
@@ -243,10 +248,6 @@ label_prop_quality_retention:
         NetworkX runs on the simple graph here, while the engine counts
         parallel edges with their multiplicity; without edges modularity
         is undefined (the engine reports -1, NetworkX 0)
-    igraph:
-      call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'retention'))"
-      differs_when: [loops]
-      reason: *lpa_igraph_loops
 
 label_prop_quality_fast:
   engine: {fn: label_propagation, variant: fast, output: quality, seeds: 100}
@@ -257,10 +258,6 @@ label_prop_quality_fast:
       call: "mean over seeds of modularity(G, fast_label_propagation_communities(simple graph, seed = s))"
       differs_when: [edge_case, loops, multi_edges]
       reason: *lpa_simple
-    igraph:
-      call: "mean over set.seed(1..100) of modularity(g, cluster_label_prop(g, weights = NA, lpa_variant = 'fast'))"
-      differs_when: [loops]
-      reason: *lpa_igraph_loops
 
 # ---- Infomap ----------------------------------------------------------------
 
@@ -373,6 +370,8 @@ leiden_quality:
       reason: *lpa_simple
     igraph:
       call: "mean over set.seed(1..20) of modularity(g, cluster_leiden(g, objective_function = 'modularity', n_iterations = -1, weights = NA))"
+      undefined_on: [single_node]
+      undefined_reason: igraph's cluster_leiden() raises an error for a single node.
 
 leiden_cpm_quality:
   engine: {fn: leiden, objective: cpm, resolution: 0.1, output: mean_quality, seeds: 20}
