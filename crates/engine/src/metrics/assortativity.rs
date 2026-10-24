@@ -204,7 +204,7 @@ pub fn attribute_pairs(
 pub struct MixingCounts {
     /// Distinct values of either end, increasing.
     pub values: Vec<f64>,
-    /// `counts[i * k + j]`: pairs with x = values[i] and y = values[j].
+    /// `counts[i * k + j]`: pairs with x = `values[i]` and y = `values[j]`.
     pub counts: Vec<f64>,
 }
 
