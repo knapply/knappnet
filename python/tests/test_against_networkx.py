@@ -281,6 +281,13 @@ def test_components(G):
                nx.is_strongly_connected, nx.weakly_connected_components,
                nx.number_weakly_connected_components, nx.is_weakly_connected):
         run(fn, G)
+    if G.is_directed():
+        # Components come in NetworkX's order (condensation numbers by it).
+        got = list(nx.strongly_connected_components(G, backend="knappnet"))
+        assert got == list(nx.strongly_connected_components(G, backend="networkx"))
+    elif len(G):
+        got = list(nx.connected_components(G, backend="knappnet"))
+        assert got == list(nx.connected_components(G, backend="networkx"))
 
 
 @pytest.mark.parametrize("G", GRAPHS)

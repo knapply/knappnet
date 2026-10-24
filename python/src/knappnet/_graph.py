@@ -63,7 +63,9 @@ def convert_from_nx(G, edge_attrs=None, node_attrs=None, preserve_edge_attrs=Fal
     """Converts a NetworkX graph, reading at most one numeric edge attribute."""
     if isinstance(G, BackendGraph):
         return G
-    if not isinstance(G, nx.Graph):
+    from ._checks import plain_storage
+
+    if not isinstance(G, nx.Graph) or not plain_storage(G):
         raise NotImplementedError(f"cannot convert {type(G).__name__}")
     weight, default = None, 1.0
     if isinstance(edge_attrs, dict) and edge_attrs:

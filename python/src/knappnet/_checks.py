@@ -20,6 +20,35 @@ def graph_of(a, name="G"):
     return G
 
 
+# Methods through which a subclass could present a graph other than the one
+# stored in its adjacency dicts (NetworkX's approximation module has such a
+# class for the complement graph). Subclasses overriding any are declined.
+_STORAGE_METHODS = ("__getitem__", "__iter__", "__len__", "__contains__", "adj", "succ",
+                    "pred", "neighbors", "successors", "predecessors", "edges", "degree",
+                    "nodes", "has_edge", "has_node", "number_of_edges", "_adj", "_succ",
+                    "_pred", "_node")
+_BASES = None
+
+
+def plain_storage(G):
+    """True if G's graph is exactly what its adjacency dicts hold."""
+    global _BASES
+    if _BASES is None:
+        _BASES = (nx.Graph, nx.DiGraph, nx.MultiGraph, nx.MultiDiGraph)
+    cls = type(G)
+    if cls in _BASES:
+        return True
+    base = next((b for b in cls.__mro__ if b in _BASES), None)
+    if base is None:
+        return False
+    for klass in cls.__mro__:
+        if klass is base:
+            break
+        if any(name in vars(klass) for name in _STORAGE_METHODS):
+            return False
+    return True
+
+
 def all_of(*checks):
     def check(a):
         for c in checks:

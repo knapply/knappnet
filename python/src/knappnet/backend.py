@@ -12,6 +12,7 @@ from __future__ import annotations
 import networkx as nx
 
 from . import _algorithms  # noqa: F401  (registers the implementations)
+from ._checks import plain_storage
 from ._graph import (
     BACKEND_NAME,
     CHECKS,
@@ -44,6 +45,8 @@ def can_run(name, args, kwargs):
         G = G.graph
     if G is None or not isinstance(G, nx.Graph):
         return "the graph argument is not a NetworkX graph"
+    if not plain_storage(G):
+        return "graph classes that override NetworkX's storage are left to NetworkX"
     check = CHECKS.get(name)
     reason = check(arguments) if check is not None else None
     return reason if reason else True

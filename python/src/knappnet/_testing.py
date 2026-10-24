@@ -7,7 +7,16 @@ partition NetworkX's random number stream produces for a seed. Each entry
 maps a test node id suffix to the reason.
 """
 
-KNOWN_DIFFERENCES = {}
+_LOUVAIN = ("expects the partition NetworkX's random number stream gives for a seed; "
+            "the backend uses the engine's stream")
+
+KNOWN_DIFFERENCES = {
+    "community/tests/test_louvain.py::test_karate_club_partition": _LOUVAIN,
+    "community/tests/test_louvain.py::test_undirected_selfloops": _LOUVAIN,
+    "community/tests/test_louvain.py::test_none_weight_param": _LOUVAIN,
+    "community/tests/test_louvain.py::test_multigraph": _LOUVAIN,
+    "community/tests/test_louvain.py::test_petersen": _LOUVAIN,
+}
 
 
 def mark_known_differences(items):

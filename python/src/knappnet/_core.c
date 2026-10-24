@@ -1041,6 +1041,105 @@ static PyObject *py_components(PyObject *mod, PyObject *args) {
     return res;
 }
 
+/* strong_components(g): the strongly connected components (engine) listed
+ * in the order NetworkX's strongly_connected_components() yields them.
+ * NetworkX runs Tarjan's algorithm from each unvisited node in node order,
+ * visiting successors in adjacency order, and yields a component when the
+ * search finishes its first-visited node. A depth-first search in that
+ * order, run here on the edge list (stored grouped by source in adjacency
+ * order), gives the same finishing order. */
+static PyObject *py_strong_components(PyObject *mod, PyObject *args) {
+    (void)mod;
+    PyObject *go;
+    if (!PyArg_ParseTuple(args, "O", &go)) return NULL;
+    GraphObject *g = as_graph(go);
+    if (!g) return NULL;
+    if (!g->directed) {
+        PyErr_SetString(PyExc_ValueError, "the graph is undirected");
+        return NULL;
+    }
+    int64_t n = g->n, m = g->m;
+    int32_t *memb = malloc((size_t)(n > 0 ? n : 1) * sizeof(int32_t));
+    int64_t *off = alloc_int64(n + 1);
+    int64_t *stack = alloc_int64(n);
+    int64_t *pos = alloc_int64(n);
+    int64_t *order = alloc_int64(n);      /* components in emission order */
+    int64_t *root = alloc_int64(n);       /* first-visited node per component */
+    char *seen = calloc((size_t)(n > 0 ? n : 1), 1);
+    PyObject *res = NULL;
+    int64_t count = 0;
+    if (!memb || !off || !stack || !pos || !order || !root || !seen) {
+        PyErr_NoMemory();
+        goto done;
+    }
+    {
+        BEGIN_CALL
+        status = net_components(g->h, 1, memb, &count, err, ERR_LEN);
+        END_CALL
+        if (status) {
+            engine_error(err);
+            goto done;
+        }
+    }
+    for (int64_t v = 0; v <= n; v++) off[v] = 0;
+    for (int64_t e = 0; e < m; e++) off[g->src[e] + 1]++;
+    for (int64_t v = 0; v < n; v++) off[v + 1] += off[v];
+    for (int64_t c = 0; c < count; c++) root[c] = -1;
+    int64_t emitted = 0;
+    for (int64_t s = 0; s < n; s++) {
+        if (seen[s]) continue;
+        int64_t top = 0;
+        stack[top++] = s;
+        seen[s] = 1;
+        pos[s] = off[s];
+        if (root[memb[s]] < 0) root[memb[s]] = s;
+        while (top > 0) {
+            int64_t v = stack[top - 1];
+            if (pos[v] < off[v + 1]) {
+                int64_t w = g->tgt[pos[v]++];
+                if (!seen[w]) {
+                    seen[w] = 1;
+                    pos[w] = off[w];
+                    if (root[memb[w]] < 0) root[memb[w]] = w;
+                    stack[top++] = w;
+                }
+            } else {
+                top--;
+                if (root[memb[v]] == v) order[emitted++] = memb[v];
+            }
+        }
+    }
+    {
+        /* Members of each component, then the components in emission order. */
+        int64_t *sizes = calloc((size_t)(count + 1), sizeof(int64_t));
+        int64_t *members = alloc_int64(n);
+        int64_t *fill = alloc_int64(count + 1);
+        int64_t *offs = alloc_int64(count + 1);
+        int64_t *outm = alloc_int64(n);
+        if (!sizes || !members || !fill || !offs || !outm) {
+            free(sizes); free(members); free(fill); free(offs); free(outm);
+            if (!PyErr_Occurred()) PyErr_NoMemory();
+            goto done;
+        }
+        for (int64_t v = 0; v < n; v++) sizes[memb[v] + 1]++;
+        for (int64_t c = 0; c < count; c++) sizes[c + 1] += sizes[c];
+        memcpy(fill, sizes, (size_t)(count + 1) * sizeof(int64_t));
+        for (int64_t v = 0; v < n; v++) members[fill[memb[v]]++] = v;
+        offs[0] = 0;
+        for (int64_t i = 0; i < count; i++) {
+            int64_t c = order[i];
+            int64_t len = sizes[c + 1] - sizes[c];
+            memcpy(outm + offs[i], members + sizes[c], (size_t)len * sizeof(int64_t));
+            offs[i + 1] = offs[i] + len;
+        }
+        res = groups_to_labels(g, offs, outm, count);
+        free(sizes); free(members); free(fill); free(offs); free(outm);
+    }
+done:
+    free(memb); free(off); free(stack); free(pos); free(order); free(root); free(seen);
+    return res;
+}
+
 static PyObject *py_component_count(PyObject *mod, PyObject *args) {
     (void)mod;
     PyObject *go;
@@ -1566,6 +1665,7 @@ static PyMethodDef methods[] = {
     {"information_centrality", py_information_centrality, METH_VARARGS, NULL},
     {"density", py_density, METH_VARARGS, NULL},
     {"components", py_components, METH_VARARGS, NULL},
+    {"strong_components", py_strong_components, METH_VARARGS, NULL},
     {"component_count", py_component_count, METH_VARARGS, NULL},
     {"compactness", py_compactness, METH_VARARGS, NULL},
     {"reciprocity", py_reciprocity, METH_VARARGS, NULL},

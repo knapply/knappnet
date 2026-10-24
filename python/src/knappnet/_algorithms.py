@@ -621,9 +621,9 @@ def is_connected(G):
 
 
 @implements("strongly_connected_components", chk.all_of(ANY, chk.directed),
-            "Multigraphs included.")
+            "Multigraphs included; components in NetworkX's order.")
 def strongly_connected_components(G):
-    return _components(G, 1)
+    return (set(c) for c in _core.strong_components(G.core))
 
 
 @implements("number_strongly_connected_components", chk.all_of(ANY, chk.directed),
