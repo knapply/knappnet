@@ -41,12 +41,15 @@ const TRICODES: [u8; 64] = [
     14, 13, 15, 11, 15, 15, 16,
 ];
 
-/// Simplified adjacency: sorted, de-duplicated, loop-free.
+/// Simplified adjacency: sorted, de-duplicated, loop-free, each kind of
+/// list stored flat with offsets.
 struct Simple {
-    /// Out-neighbors of each node.
-    succ: Vec<Vec<u32>>,
-    /// Union of in- and out-neighbors of each node.
-    nbrs: Vec<Vec<u32>>,
+    /// Out-neighbors of node v: `succ[succ_at[v]..succ_at[v + 1]]`.
+    succ: Vec<u32>,
+    succ_at: Vec<usize>,
+    /// Union of in- and out-neighbors of node v, stored the same way.
+    nbrs: Vec<u32>,
+    nbrs_at: Vec<usize>,
     /// Arc membership as bits, for dense networks.
     bits: Option<BitMatrix>,
 }
@@ -54,42 +57,73 @@ struct Simple {
 impl Simple {
     fn new(g: &Graph, use_bits: Option<bool>) -> Simple {
         let n = g.node_count();
-        let clean = |v: usize, xs: &[u32]| -> Vec<u32> {
-            let mut out: Vec<u32> = xs.iter().copied().filter(|&x| x as usize != v).collect();
-            out.dedup(); // input rows are sorted
-            out
+        // Input rows are sorted, so dropping loops and repeats keeps them
+        // sorted and distinct.
+        let clean = |v: usize, xs: &[u32], out: &mut Vec<u32>| {
+            let start = out.len();
+            for &x in xs {
+                if x as usize != v && (out.len() == start || out[out.len() - 1] != x) {
+                    out.push(x);
+                }
+            }
         };
-        let succ: Vec<Vec<u32>> = (0..n).map(|v| clean(v, g.out().neighbors(v))).collect();
-        let nbrs = if g.is_directed() {
-            (0..n)
-                .map(|v| {
-                    let pred = clean(v, g.inc().neighbors(v));
-                    merge_union(&succ[v], &pred)
-                })
-                .collect()
+        let mut succ = Vec::with_capacity(g.out().arc_count());
+        let mut succ_at = Vec::with_capacity(n + 1);
+        succ_at.push(0);
+        for v in 0..n {
+            clean(v, g.out().neighbors(v), &mut succ);
+            succ_at.push(succ.len());
+        }
+        let (nbrs, nbrs_at) = if g.is_directed() {
+            let mut nbrs = Vec::with_capacity(2 * succ.len());
+            let mut nbrs_at = Vec::with_capacity(n + 1);
+            nbrs_at.push(0);
+            let mut pred = Vec::new();
+            for v in 0..n {
+                pred.clear();
+                clean(v, g.inc().neighbors(v), &mut pred);
+                merge_union_into(&succ[succ_at[v]..succ_at[v + 1]], &pred, &mut nbrs);
+                nbrs_at.push(nbrs.len());
+            }
+            (nbrs, nbrs_at)
         } else {
-            succ.clone()
+            (succ.clone(), succ_at.clone())
         };
-        let arcs: usize = succ.iter().map(Vec::len).sum();
         let bits = use_bits
-            .unwrap_or_else(|| BitMatrix::worthwhile(n, arcs))
+            .unwrap_or_else(|| BitMatrix::worthwhile(n, succ.len()))
             .then(|| {
                 let mut m = BitMatrix::new(n);
-                for (v, row) in succ.iter().enumerate() {
-                    for &w in row {
+                for v in 0..n {
+                    for &w in &succ[succ_at[v]..succ_at[v + 1]] {
                         m.set(v, w as usize);
                     }
                 }
                 m
             });
-        Simple { succ, nbrs, bits }
+        Simple {
+            succ,
+            succ_at,
+            nbrs,
+            nbrs_at,
+            bits,
+        }
+    }
+
+    #[inline]
+    fn succ(&self, v: usize) -> &[u32] {
+        &self.succ[self.succ_at[v]..self.succ_at[v + 1]]
+    }
+
+    #[inline]
+    fn nbrs(&self, v: usize) -> &[u32] {
+        &self.nbrs[self.nbrs_at[v]..self.nbrs_at[v + 1]]
     }
 
     #[inline]
     fn arc(&self, a: usize, b: u32) -> bool {
         match &self.bits {
             Some(m) => m.get(a, b as usize),
-            None => self.succ[a].binary_search(&b).is_ok(),
+            None => self.succ(a).binary_search(&b).is_ok(),
         }
     }
 
@@ -97,13 +131,13 @@ impl Simple {
     fn adjacent(&self, a: usize, b: u32) -> bool {
         match &self.bits {
             Some(m) => m.get(a, b as usize) || m.get(b as usize, a),
-            None => self.nbrs[a].binary_search(&b).is_ok(),
+            None => self.nbrs(a).binary_search(&b).is_ok(),
         }
     }
 }
 
-fn merge_union(a: &[u32], b: &[u32]) -> Vec<u32> {
-    let mut out = Vec::with_capacity(a.len() + b.len());
+/// Appends the sorted union of the sorted lists `a` and `b` to `out`.
+fn merge_union_into(a: &[u32], b: &[u32], out: &mut Vec<u32>) {
     let (mut i, mut j) = (0, 0);
     while i < a.len() && j < b.len() {
         match a[i].cmp(&b[j]) {
@@ -124,7 +158,6 @@ fn merge_union(a: &[u32], b: &[u32]) -> Vec<u32> {
     }
     out.extend_from_slice(&a[i..]);
     out.extend_from_slice(&b[j..]);
-    out
 }
 
 /// Returns the 16 triad counts in MAN order. Counts are exact; the 003 count
@@ -138,23 +171,28 @@ fn census_impl(g: &Graph, threads: usize, use_bits: Option<bool>) -> [f64; 16] {
     let n = g.node_count();
     let s = Simple::new(g, use_bits);
 
-    let partials = parallel::for_each_item(
+    // Each pair of neighbors merges two neighbor lists. Counts are integer
+    // sums, so threads can claim nodes as they go (hubs cost far more).
+    let pairs = s.nbrs.len() as u64;
+    let threads = parallel::threads_for(
+        threads,
+        n,
+        pairs.saturating_mul(1 + pairs / n.max(1) as u64),
+    );
+    let partials = parallel::for_each_claimed(
         n,
         threads,
         || ([0u64; 16], Vec::<u32>::new()),
         |(census, union), v| {
-            for &u in &s.nbrs[v] {
+            for &u in s.nbrs(v) {
                 let u_idx = u as usize;
                 if u_idx <= v {
                     continue;
                 }
-                // S = N(u) ∪ N(v) \ {u, v}
+                // S = N(u) ∪ N(v) \ {u, v}, built in a reused buffer.
                 union.clear();
-                union.extend(
-                    merge_union(&s.nbrs[v], &s.nbrs[u_idx])
-                        .into_iter()
-                        .filter(|&x| x as usize != v && x != u),
-                );
+                merge_union_into(s.nbrs(v), s.nbrs(u_idx), union);
+                union.retain(|&x| x as usize != v && x != u);
                 let dyad = if s.arc(v, u) && s.arc(u_idx, v as u32) {
                     2
                 } else {

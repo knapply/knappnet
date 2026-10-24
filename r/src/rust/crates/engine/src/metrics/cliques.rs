@@ -215,7 +215,10 @@ fn setup(g: &Graph) -> (Csr, Vec<u32>, Vec<usize>) {
 /// `threads == 0` uses all available cores.
 pub fn max_cliques(g: &Graph, min_size: usize, threads: usize) -> Vec<Vec<u32>> {
     let (adj, order, rank) = setup(g);
-    let parts = parallel::for_each_item(
+    // Subproblems differ widely in size, so threads claim them; the cliques
+    // are sorted below.
+    let threads = clique_threads(threads, &adj);
+    let parts = parallel::for_each_claimed(
         order.len(),
         threads,
         || Collect {
@@ -229,13 +232,25 @@ pub fn max_cliques(g: &Graph, min_size: usize, threads: usize) -> Vec<Vec<u32>> 
     all
 }
 
+/// Threads for the subproblems of [`max_cliques`] and [`clique_number`]:
+/// each scans at least the forward neighbourhood of its node and the
+/// neighbourhoods of those neighbours.
+fn clique_threads(threads: usize, adj: &Csr) -> usize {
+    let n = adj.node_count();
+    let work: u64 = (0..n)
+        .map(|v| (adj.neighbors(v).len() as u64).pow(2) + 1)
+        .sum();
+    parallel::threads_for(threads, n, work)
+}
+
 /// Size of the largest clique (0 for a graph with no nodes).
 pub fn clique_number(g: &Graph, threads: usize) -> usize {
     let (adj, order, rank) = setup(g);
     // Later nodes in the ordering have smaller forward neighborhoods, so a
     // sequential pass benefits most from the bound; threads each keep their
     // own bound.
-    let parts = parallel::for_each_item(
+    let threads = clique_threads(threads, &adj);
+    let parts = parallel::for_each_claimed(
         order.len(),
         threads,
         || Largest(0),

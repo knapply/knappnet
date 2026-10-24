@@ -251,13 +251,18 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
     let n = h.node_count();
     let lengths = path_lengths(h, opts.weighted, opts.weights_as, opts.algorithm)?;
     clock.mark("setup");
+    let threads = parallel::threads_for(
+        opts.threads,
+        n,
+        parallel::search_work(n, n, view.arc_count()),
+    );
     let partials = match &lengths {
         // Unweighted: breadth-first search from 64 sources at a time
         // (`crate::bitset::MultiBfs`); one batch is one work item, so the
         // result does not depend on the thread count.
         Lengths::Uniform => parallel::for_each_item(
             (n + BATCH - 1) / BATCH,
-            opts.threads,
+            threads,
             || (MultiBfs::new(n), Vec::new()),
             |(ms, found), b| {
                 let lo = b * BATCH;
@@ -295,7 +300,7 @@ pub(crate) fn distance_profiles(g: &Graph, opts: &ClosenessOptions) -> Result<Ve
         .collect::<Vec<_>>(),
         _ => parallel::for_each_item(
             n,
-            opts.threads,
+            threads,
             || Search::new(n),
             |ws, s| {
                 let p = match &lengths {
