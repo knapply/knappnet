@@ -40,7 +40,11 @@ nx.config.backend_priority.algos = ["knappnet"]
 NetworkX then tries knappnet first and falls back to its own implementation
 whenever knappnet declines: for functions knappnet does not implement, for
 arguments or inputs it does not handle, and for graphs too small to
-benefit (see `min_nodes` below). Results are the same either way.
+benefit (see `min_nodes` below). Linear-time functions (components,
+degree centrality, core numbers, single-source path lengths, and the
+like), which NetworkX runs in about the time a conversion takes, run on
+the engine only once the graph has been converted by an earlier call.
+Results are the same either way.
 
 `backend=` on a call still overrides the priority list, so
 `backend="networkx"` forces NetworkX's own implementation.
