@@ -4,3 +4,4 @@ from . import _algorithms  # noqa: F401
 from . import _paths  # noqa: F401
 from . import _centrality  # noqa: F401
 from . import _distance  # noqa: F401
+from . import _mixing  # noqa: F401

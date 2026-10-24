@@ -27,6 +27,7 @@ from . import _core
 from ._graph import implements, threads
 
 OUT, IN, ALL = 1, 2, 3
+_KIND = {"out": OUT, "in": IN}
 LOOPS_ONCE = 1
 UNREACHABLE_IGNORE, UNREACHABLE_WF = 0, 1
 
@@ -958,24 +959,32 @@ def periphery(G, e=None, usebounds=False, weight=None):
 
 def _check_degree_xy(a):
     G = chk.graph_of(a)
-    if G.is_directed() and (a.get("x"), a.get("y")) != ("out", "in"):
-        return "only x='out', y='in' is supported for directed graphs"
-    if a.get("nodes") is not None:
-        return "nodes is left to NetworkX"
+    if G.is_directed() and (a.get("x") not in ("in", "out") or a.get("y") not in ("in", "out")):
+        return "x and y must be 'in' or 'out' for directed graphs"
     return None
 
 
-_DEG_ASSORT = chk.all_of(SIMPLE, chk.weight_attr(), _check_degree_xy)
+_NODE_SUBSET = chk.optional_nodes("nodes")
+_DEG_ASSORT = chk.all_of(SIMPLE, chk.weight_attr(), _check_degree_xy, _NODE_SUBSET)
+
+
+def _subset_indices(G, nodes):
+    index = G.index
+    return None if nodes is None else [index[v] for v in nodes]
 
 
 @implements(
     "degree_assortativity_coefficient", _DEG_ASSORT,
-    declined="x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights.",
+    declined="x, y other than 'in' and 'out' on directed graphs; multigraphs; negative weights.",
 )
 def degree_assortativity_coefficient(G, x="out", y="in", weight=None, nodes=None):
     w = _weighted(G, weight)
     _nonnegative_weights(G, w)
-    r = _core.assortativity_degree(G.core, w, int(G.core.directed), LOOPS_ONCE, 1)
+    if nodes is None and (not G.core.directed or (x, y) == ("out", "in")):
+        r = _core.assortativity_degree(G.core, w, int(G.core.directed), LOOPS_ONCE, 1)
+    else:
+        kx, ky = (_KIND[x], _KIND[y]) if G.core.directed else (ALL, ALL)
+        r = _core.assort_subset(G.core, 0, kx, ky, w, None, _subset_indices(G, nodes))
     if math.isnan(r):
         raise NotImplementedError("undefined; left to NetworkX")
     return r
@@ -983,7 +992,7 @@ def degree_assortativity_coefficient(G, x="out", y="in", weight=None, nodes=None
 
 @implements(
     "degree_pearson_correlation_coefficient", _DEG_ASSORT,
-    declined="x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights.",
+    declined="x, y other than 'in' and 'out' on directed graphs; multigraphs; negative weights.",
 )
 def degree_pearson_correlation_coefficient(G, x="out", y="in", weight=None, nodes=None):
     return degree_assortativity_coefficient(G, x, y, weight, nodes)
@@ -999,8 +1008,8 @@ def _node_values(G, attribute):
 
 @implements(
     "attribute_assortativity_coefficient",
-            chk.all_of(SIMPLE, chk.is_none("nodes")),
-    declined="nodes; multigraphs.",
+    chk.all_of(SIMPLE, _NODE_SUBSET),
+    declined="multigraphs; nodes without the attribute.",
 )
 def attribute_assortativity_coefficient(G, attribute, nodes=None):
     values = _node_values(G, attribute)
@@ -1009,8 +1018,12 @@ def attribute_assortativity_coefficient(G, attribute, nodes=None):
         types = [codes.setdefault(v, len(codes)) for v in values]
     except TypeError as err:
         raise NotImplementedError("attribute values must be hashable") from err
-    r = _core.assortativity_nominal(G.core, types, len(codes), int(G.core.directed),
-                                    LOOPS_ONCE, 1)
+    if nodes is None:
+        r = _core.assortativity_nominal(G.core, types, len(codes), int(G.core.directed),
+                                        LOOPS_ONCE, 1)
+    else:
+        r = _core.assort_subset(G.core, 1, ALL, ALL, 0, [float(t) for t in types],
+                                _subset_indices(G, nodes))
     if math.isnan(r):
         raise NotImplementedError("undefined; left to NetworkX")
     return r
@@ -1018,8 +1031,8 @@ def attribute_assortativity_coefficient(G, attribute, nodes=None):
 
 @implements(
     "numeric_assortativity_coefficient",
-            chk.all_of(SIMPLE, chk.is_none("nodes")),
-    declined="nodes; multigraphs.",
+    chk.all_of(SIMPLE, _NODE_SUBSET),
+    declined="multigraphs; nodes without the attribute.",
 )
 def numeric_assortativity_coefficient(G, attribute, nodes=None):
     values = _node_values(G, attribute)
@@ -1027,7 +1040,10 @@ def numeric_assortativity_coefficient(G, attribute, nodes=None):
         x = [float(v) for v in values]
     except (TypeError, ValueError) as err:
         raise NotImplementedError("attribute values must be numbers") from err
-    r = _core.assortativity_values(G.core, x, None, int(G.core.directed), LOOPS_ONCE, 1)
+    if nodes is None:
+        r = _core.assortativity_values(G.core, x, None, int(G.core.directed), LOOPS_ONCE, 1)
+    else:
+        r = _core.assort_subset(G.core, 2, ALL, ALL, 0, x, _subset_indices(G, nodes))
     if math.isnan(r):
         raise NotImplementedError("undefined; left to NetworkX")
     return r

@@ -1658,6 +1658,7 @@ static PyObject *py_twomode_centrality(PyObject *mod, PyObject *args) {
 #include "_core_util.inc"
 #include "_core_paths.inc"
 #include "_core_cx.inc"
+#include "_core_mix.inc"
 
 /* ---- Module ------------------------------------------------------------- */
 
@@ -1706,6 +1707,7 @@ static PyMethodDef methods[] = {
     UTIL_METHODS
     PATHS_METHODS
     CX_METHODS
+    MIX_METHODS
     {NULL, NULL, 0, NULL},
 };
 

@@ -10,6 +10,8 @@ types it does not handle, and inputs on which NetworkX raises an exception
 
 from __future__ import annotations
 
+from collections.abc import Collection
+
 import networkx as nx
 
 
@@ -169,10 +171,10 @@ def nodes_all_in_graph(param, name="G", allow_empty=False):
 
     def check(a):
         G = graph_of(a, name)
-        try:
-            items = list(a.get(param))
-        except TypeError:
+        value = a.get(param)
+        if not isinstance(value, Collection) or isinstance(value, (str, bytes)):
             return f"{param} must be a collection of nodes"
+        items = list(value)
         if not items and not allow_empty:
             return f"{param} is empty"
         try:
@@ -191,5 +193,56 @@ def numeric_or_none(param):
         if v is None or (isinstance(v, (int, float)) and not isinstance(v, bool)):
             return None
         return f"{param} must be a number or None"
+
+    return check
+
+
+def optional_nodes(param, name="G"):
+    """None, or a non-empty collection of distinct nodes of the graph."""
+    inner = nodes_all_in_graph(param, name)
+
+    def check(a):
+        value = a.get(param)
+        if value is None:
+            return None
+        reason = inner(a)
+        if reason:
+            return reason
+        if len(set(value)) != len(value):
+            return f"{param} repeats a node"
+        return None
+
+    return check
+
+
+def choice(param, *values):
+    """The argument is one of the given strings."""
+
+    def check(a):
+        v = a.get(param)
+        if isinstance(v, str) and v in values:
+            return None
+        return f"{param} is not one of {', '.join(values)}"
+
+    return check
+
+
+def integer(param, minimum=None):
+    """The argument is an int (not a bool), at least ``minimum`` if given."""
+
+    def check(a):
+        v = a.get(param)
+        if isinstance(v, int) and not isinstance(v, bool) and (minimum is None or v >= minimum):
+            return None
+        return f"{param} must be an integer" + (f" of at least {minimum}" if minimum is not None else "")
+
+    return check
+
+
+def optional_integer(param, minimum=None):
+    inner = integer(param, minimum)
+
+    def check(a):
+        return None if a.get(param) is None else inner(a)
 
     return check
