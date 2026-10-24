@@ -175,7 +175,19 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   the benchmark's 763 MB peak is that matrix plus the benchmark's own copy
   of it for fingerprinting. Scaling is bounded by writing the 400 MB
   (first-touch page faults and memory bandwidth), not by the searches.
-- Dijkstra settles nodes from a radix heap (Ahuja, Mehlhorn, Orlin and
-  Tarjan 1990) keyed by the 128-bit integer (order-preserving distance
-  bits, node index), which removes nodes in exactly the order of the
-  former indexed 4-ary heap, so results are unchanged. Measured below.
+- Dijkstra with a radix heap (Ahuja, Mehlhorn, Orlin and Tarjan 1990)
+  keyed by the 128-bit integer (order-preserving distance bits, node
+  index), which removes nodes in exactly the order of the indexed 4-ary
+  heap (identical results), was tried and dropped: sparse10k weighted
+  betweenness 19.6 s (indexed heap) vs 20.7 s (radix heap), dir10k 14.4 s
+  vs 14.6 s. Comparing keys as integers instead of `f64::total_cmp` gained
+  nothing either. Instruction counts put about half of Dijkstra's time in
+  heap operations, but the heap (at most n entries, 10k here) is
+  cache-resident; the rest is the relaxation and the tolerance tests of
+  the accumulation (`approx_eq` per arc in both passes), which Dial and BFS
+  avoid with exact integer distances. Remaining options that stay exact:
+  run Dial on real lengths that are integer multiples of a common unit
+  (detected at setup), and for betweenness keep the forward pass's
+  predecessor arcs (a flag per arc) so the backward pass skips the
+  tolerance tests. Delta-stepping buckets only pay with parallelism inside
+  one search, which all-sources measures do not need.
