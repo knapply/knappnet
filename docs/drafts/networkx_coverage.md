@@ -435,7 +435,7 @@ value; "weight functions" means a callable passed as `weight`.
 | `eccentricity` | `algorithms.distance_measures.eccentricity` | partial | Left to NetworkX: v; sp; weight functions; weights <= 0. |
 | `effective_graph_resistance` | `algorithms.distance_measures.effective_graph_resistance` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0. |
 | `harmonic_diameter` | `algorithms.distance_measures.harmonic_diameter` | partial | Left to NetworkX: sp; weight functions; weights <= 0. |
-| `kemeny_constant` | `algorithms.distance_measures.kemeny_constant` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; disconnected graphs; negative weights. |
+| `kemeny_constant` | `algorithms.distance_measures.kemeny_constant` | partial | Left to NetworkX: directed graphs; multigraphs; any weight other than the attribute 'weight' (NetworkX reads that attribute for the transition matrix whatever the argument); disconnected graphs; negative weights. |
 | `periphery` | `algorithms.distance_measures.periphery` | partial | Left to NetworkX: e; weight functions; weights <= 0. |
 | `radius` | `algorithms.distance_measures.radius` | partial | Left to NetworkX: e; weight functions; weights <= 0. |
 | `resistance_distance` | `algorithms.distance_measures.resistance_distance` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs. |

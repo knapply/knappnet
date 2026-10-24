@@ -393,8 +393,10 @@ def effective_graph_resistance(G, weight=None, invert_weight=True):
 
 @implements(
     "kemeny_constant",
-    chk.all_of(SIMPLE, chk.undirected, chk.nonempty, _WEIGHT),
-    declined="directed graphs; multigraphs; weight functions; disconnected graphs; negative weights.",
+    chk.all_of(SIMPLE, chk.undirected, chk.nonempty, chk.equals("weight", "weight")),
+    declined="directed graphs; multigraphs; any weight other than the attribute 'weight' "
+             "(NetworkX reads that attribute for the transition matrix whatever the argument); "
+             "disconnected graphs; negative weights.",
 )
 def kemeny_constant(G, *, weight=None):
     w = _weighted(G, weight)

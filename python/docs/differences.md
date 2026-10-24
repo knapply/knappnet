@@ -104,6 +104,27 @@ NetworkX, in a different order inside the lists. `transitive_closure`
 inserts the new edges in node order, so the edge order of the returned
 graph can differ (nodes, edges, and attributes are the same).
 
+## Changing a graph while iterating
+
+`topological_sort` and `lexicographical_topological_sort` compute the whole
+order before yielding the first node, so a change to the graph made during
+iteration is not detected (NetworkX raises `RuntimeError` or
+`NetworkXUnfeasible`).
+
+## Ties in current-flow edge betweenness
+
+Edges whose current-flow betweenness is equal in exact arithmetic differ in
+the last digits, differently in knappnet and NetworkX. Procedures that pick
+the largest value (`edge_current_flow_betweenness_partition`) can then pick
+a different one of the tied edges.
+
+## Second-order centrality weights
+
+`second_order_centrality` runs on the engine only with the default
+`weight="weight"`: NetworkX reads the attribute named `weight` for the
+transition matrix whatever the argument says, which the engine does not
+reproduce.
+
 ## Functions left to NetworkX
 
 These families depend on the iteration order of sets or on NetworkX's own
