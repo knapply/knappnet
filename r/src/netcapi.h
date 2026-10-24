@@ -1596,6 +1596,178 @@ int32_t net_shortest_path_avoiding(const PathGraphHandle *pg, int64_t s,
                                    int64_t n_edges, PathListsHandle **out,
                                    char *err, size_t err_len);
 
+/* ---- Centrality: path variants, current flow, walks ---------------------
+ * weights_as: path-based measures read 0 = distance / 1 = strength as path
+ * lengths w / 1/w; current-flow measures read a distance as a resistance
+ * (conductance 1/w) and a strength as a conductance. rescale: 0 =
+ * unordered pairs (igraph), 1 = NetworkX's betweenness_centrality (sampled
+ * sources passed as sources), 2 = NetworkX's *_subset functions.
+ * parallel: 0 = parallel edges are distinct paths (igraph), 1 = adjacent
+ * nodes are joined once (NetworkX). edge_split: 0 = proportional to path
+ * counts, 1 = NetworkX's subset edge betweenness. tie: 0 = relative
+ * tolerance 1e-10, 1 = exact (NetworkX). Node lists: NULL or a negative
+ * count means every node. Pairs are flat arrays s0, t0, s1, t1, ...
+ * Matrices are n-by-n and column-major. Undefined values are NaN. */
+
+/* Betweenness for sources and targets: nodes n values, edges (may be NULL)
+ * m values. endpoints != 0 counts the endpoints of each path. */
+int32_t net_betweenness_subset(const GraphHandle *h, const int64_t *sources,
+                               int64_t n_sources, const int64_t *targets,
+                               int64_t n_targets, int32_t weighted,
+                               int32_t weights_as, int32_t endpoints,
+                               int32_t normalized, int32_t rescale,
+                               int32_t parallel, int32_t edge_split,
+                               int32_t tie, int32_t threads, double *nodes,
+                               double *edges, char *err, size_t err_len);
+
+/* Percolation centrality with percolation states (n doubles). */
+int32_t net_percolation_centrality(const GraphHandle *h, const double *states,
+                                   int32_t weighted, int32_t weights_as,
+                                   int32_t parallel, int32_t tie,
+                                   int32_t threads, double *out, char *err,
+                                   size_t err_len);
+
+/* Load centrality; cutoff bounds path lengths (Inf for none);
+ * networkx_ties != 0 reproduces NetworkX's handling of the source among
+ * several predecessors. */
+int32_t net_load_centrality(const GraphHandle *h, int32_t weighted,
+                            int32_t weights_as, int32_t normalized,
+                            double cutoff, int32_t networkx_ties,
+                            int32_t tie, int32_t threads, double *out,
+                            char *err, size_t err_len);
+
+/* NetworkX's edge load: out holds 2m values, per edge the ordered pairs
+ * (source, target) and (target, source). Weights are ignored. */
+int32_t net_edge_load(const GraphHandle *h, double cutoff, int32_t threads,
+                      double *out, char *err, size_t err_len);
+
+/* Current-flow betweenness: nodes n values, edges (may be NULL) m values;
+ * NaN when the network is disconnected. */
+int32_t net_current_flow_betweenness(const GraphHandle *h, int32_t weighted,
+                                     int32_t weights_as, int32_t normalized,
+                                     int32_t threads, double *nodes,
+                                     double *edges, char *err,
+                                     size_t err_len);
+
+/* Current-flow betweenness for sources and targets; networkx != 0 uses
+ * NetworkX's formula (which adds 1/(2 - n) to node values). */
+int32_t net_current_flow_betweenness_subset(
+    const GraphHandle *h, const int64_t *sources, int64_t n_sources,
+    const int64_t *targets, int64_t n_targets, int32_t networkx,
+    int32_t weighted, int32_t weights_as, int32_t normalized, int32_t threads,
+    double *nodes, double *edges, char *err, size_t err_len);
+
+/* Approximate current-flow betweenness from n_pairs pairs, or, when
+ * n_pairs < 0, from random pairs drawn with seed (as many as epsilon and
+ * sample_weight require; an error beyond kmax). */
+int32_t net_current_flow_betweenness_approx(
+    const GraphHandle *h, const int64_t *pairs, int64_t n_pairs,
+    double epsilon, int64_t kmax, double sample_weight, uint64_t seed,
+    int32_t weighted, int32_t weights_as, int32_t normalized, int32_t threads,
+    double *out, char *err, size_t err_len);
+
+/* Current-flow closeness (1 / sum of resistance distances). */
+int32_t net_current_flow_closeness(const GraphHandle *h, int32_t weighted,
+                                   int32_t weights_as, double *out, char *err,
+                                   size_t err_len);
+
+/* Resistance distances, n * n values (Inf between components). */
+int32_t net_resistance_distance(const GraphHandle *h, int32_t weighted,
+                                int32_t weights_as, double *out, char *err,
+                                size_t err_len);
+
+/* Effective graph resistance (one double; Inf when disconnected). */
+int32_t net_effective_graph_resistance(const GraphHandle *h, int32_t weighted,
+                                       int32_t weights_as, double *out,
+                                       char *err, size_t err_len);
+
+/* Kemeny's constant of the random walk (one double). */
+int32_t net_kemeny_constant(const GraphHandle *h, int32_t weighted,
+                            double *out, char *err, size_t err_len);
+
+/* Second-order centrality (n doubles). */
+int32_t net_second_order_centrality(const GraphHandle *h, int32_t weighted,
+                                    double *out, char *err, size_t err_len);
+
+/* Communicability matrix e^A of the binary undirected reading, n * n. */
+int32_t net_communicability(const GraphHandle *h, double *out, char *err,
+                            size_t err_len);
+
+/* Communicability betweenness (n doubles). */
+int32_t net_communicability_betweenness(const GraphHandle *h, int32_t threads,
+                                        double *out, char *err,
+                                        size_t err_len);
+
+/* Dispersion of n_pairs ties (u, v); normalized != 0 gives
+ * (dispersion + b)^alpha / (embeddedness + c). */
+int32_t net_dispersion(const GraphHandle *h, const int64_t *pairs,
+                       int64_t n_pairs, int32_t normalized, double alpha,
+                       double b, double c, double *out, char *err,
+                       size_t err_len);
+
+/* VoteRank: up to count nodes (all when count < 0) in the order chosen;
+ * out holds n values and *n_out receives how many were chosen. */
+int32_t net_voterank(const GraphHandle *h, int64_t count, int64_t *out,
+                     int64_t *n_out, char *err, size_t err_len);
+
+/* Laplacian centrality of the undirected reading (n doubles). */
+int32_t net_laplacian_centrality(const GraphHandle *h, int32_t weighted,
+                                 int32_t normalized, double *out, char *err,
+                                 size_t err_len);
+
+/* Trophic measures of a directed network: what 0 = levels (n values),
+ * 1 = differences (m values), 2 = incoherence parameter (one value;
+ * cannibalism != 0 keeps self-loops). */
+int32_t net_trophic(const GraphHandle *h, int32_t what, int32_t weighted,
+                    int32_t cannibalism, double *out, char *err,
+                    size_t err_len);
+
+/* Local (n values; may be NULL) and global (one value; may be NULL)
+ * reaching centrality. */
+int32_t net_reaching_centrality(const GraphHandle *h, int32_t weighted,
+                                int32_t normalized, double *local,
+                                double *global, char *err, size_t err_len);
+
+/* ---- Distance measures ---------------------------------------------------
+ * mode 1 = out, 2 = in, 3 = all; reachable 0 = require a (strongly)
+ * connected network (NetworkX; empty result otherwise), 1 = eccentricity
+ * over the nodes reached (igraph). index: 0 = Wiener, 1 = Schultz,
+ * 2 = Gutman, 3 = hyper-Wiener (published, half NetworkX's), 4 =
+ * hyper-Wiener (NetworkX), 5 = harmonic diameter, 6 = global efficiency.
+ * Node sets are written to out (n values) with their size in *count. */
+
+/* Center (which 0) or periphery (which 1). */
+int32_t net_center_periphery(const GraphHandle *h, int32_t which,
+                             int32_t reachable, int32_t mode,
+                             int32_t weighted, int32_t weights_as,
+                             int32_t threads, int64_t *out, int64_t *count,
+                             char *err, size_t err_len);
+
+/* Barycenter; totals (may be NULL) receives every node's total distance. */
+int32_t net_barycenter(const GraphHandle *h, int32_t mode, int32_t weighted,
+                       int32_t weights_as, int32_t tie, int32_t threads,
+                       int64_t *out, int64_t *count, double *totals,
+                       char *err, size_t err_len);
+
+/* A distance index (one double; Inf for the Wiener family on disconnected
+ * networks). */
+int32_t net_distance_index(const GraphHandle *h, int32_t index, int32_t mode,
+                           int32_t weighted, int32_t weights_as,
+                           int32_t threads, double *out, char *err,
+                           size_t err_len);
+
+/* Local efficiency (one double); loop_is_neighbor != 0 counts a looped
+ * node among its own neighbors (NetworkX). */
+int32_t net_local_efficiency(const GraphHandle *h, int32_t loop_is_neighbor,
+                             int32_t threads, double *out, char *err,
+                             size_t err_len);
+
+/* Closeness vitality: W(G) - W(G - v) (n doubles). */
+int32_t net_closeness_vitality(const GraphHandle *h, int32_t mode,
+                               int32_t weighted, int32_t weights_as,
+                               int32_t threads, double *out, char *err,
+                               size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

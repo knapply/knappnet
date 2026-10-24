@@ -24,6 +24,7 @@ mod centrality;
 mod communities;
 mod cyber;
 mod descriptive;
+mod distance;
 mod files;
 mod frame;
 mod groups;

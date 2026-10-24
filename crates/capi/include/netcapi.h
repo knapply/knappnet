@@ -1728,6 +1728,46 @@ int32_t net_reaching_centrality(const GraphHandle *h, int32_t weighted,
                                 int32_t normalized, double *local,
                                 double *global, char *err, size_t err_len);
 
+/* ---- Distance measures ---------------------------------------------------
+ * mode 1 = out, 2 = in, 3 = all; reachable 0 = require a (strongly)
+ * connected network (NetworkX; empty result otherwise), 1 = eccentricity
+ * over the nodes reached (igraph). index: 0 = Wiener, 1 = Schultz,
+ * 2 = Gutman, 3 = hyper-Wiener (published, half NetworkX's), 4 =
+ * hyper-Wiener (NetworkX), 5 = harmonic diameter, 6 = global efficiency.
+ * Node sets are written to out (n values) with their size in *count. */
+
+/* Center (which 0) or periphery (which 1). */
+int32_t net_center_periphery(const GraphHandle *h, int32_t which,
+                             int32_t reachable, int32_t mode,
+                             int32_t weighted, int32_t weights_as,
+                             int32_t threads, int64_t *out, int64_t *count,
+                             char *err, size_t err_len);
+
+/* Barycenter; totals (may be NULL) receives every node's total distance. */
+int32_t net_barycenter(const GraphHandle *h, int32_t mode, int32_t weighted,
+                       int32_t weights_as, int32_t tie, int32_t threads,
+                       int64_t *out, int64_t *count, double *totals,
+                       char *err, size_t err_len);
+
+/* A distance index (one double; Inf for the Wiener family on disconnected
+ * networks). */
+int32_t net_distance_index(const GraphHandle *h, int32_t index, int32_t mode,
+                           int32_t weighted, int32_t weights_as,
+                           int32_t threads, double *out, char *err,
+                           size_t err_len);
+
+/* Local efficiency (one double); loop_is_neighbor != 0 counts a looped
+ * node among its own neighbors (NetworkX). */
+int32_t net_local_efficiency(const GraphHandle *h, int32_t loop_is_neighbor,
+                             int32_t threads, double *out, char *err,
+                             size_t err_len);
+
+/* Closeness vitality: W(G) - W(G - v) (n doubles). */
+int32_t net_closeness_vitality(const GraphHandle *h, int32_t mode,
+                               int32_t weighted, int32_t weights_as,
+                               int32_t threads, double *out, char *err,
+                               size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif
