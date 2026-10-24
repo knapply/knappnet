@@ -9,3 +9,4 @@
 ci-logs/
 bench/results/*-quick.csv
 docs/map.json
+check-logs/

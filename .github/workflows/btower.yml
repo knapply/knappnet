@@ -8,7 +8,7 @@ on:
       command:
         description: Shell command to run from the repository root
         required: true
-        default: cargo build --release --workspace && nproc && free -g
+        default: tools/local_check.sh
       artifact:
         description: Optional path (file or directory) to upload as an artifact
         required: false
