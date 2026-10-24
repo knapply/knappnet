@@ -103,6 +103,14 @@ def _membership(G, communities):
     return memb
 
 
+def _nx_version():
+    parts = []
+    for x in nx.__version__.split(".")[:2]:
+        digits = "".join(c for c in x if c.isdigit())
+        parts.append(int(digits or 0))
+    return tuple(parts)
+
+
 def _hashable(v):
     try:
         hash(v)
@@ -483,7 +491,14 @@ def _structural_holes(G, measure, nodes, weight):
     declined="self-loops; multigraphs; weights <= 0.",
 )
 def constraint(G, nodes=None, weight=None):
-    return _structural_holes(G, 0, nodes, weight)
+    result = _structural_holes(G, 0, nodes, weight)
+    if G.core.directed and _nx_version() < (3, 5):
+        # NetworkX 3.4 gives NaN to nodes without successors.
+        succ = G.graph._succ
+        for v in result:
+            if len(succ[v]) == 0:
+                result[v] = math.nan
+    return result
 
 
 def _check_effective_size(a):
@@ -749,7 +764,11 @@ def single_source_shortest_path_length(G, source, cutoff=None):
             chk.all_of(ANY, chk.node_in_graph("target")))
 def single_target_shortest_path_length(G, target, cutoff=None):
     _check_cutoff(cutoff)
-    return _one_source(G, target, IN, 0, cutoff)
+    d = _one_source(G, target, IN, 0, cutoff)
+    if _nx_version() < (3, 5):
+        # NetworkX 3.4 returns an iterator of (node, length) pairs.
+        return iter(sorted(d.items(), key=lambda kv: kv[1]))
+    return d
 
 
 @implements("all_pairs_shortest_path_length", ANY)
