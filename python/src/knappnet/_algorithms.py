@@ -346,10 +346,19 @@ def pagerank(G, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstar
     return _node_dict(G, vals)
 
 
+def _check_hits_version(a):
+    # Before NetworkX 3.6 (no `method` argument), hits used SciPy's sparse
+    # SVD and returned unscaled singular vectors with arbitrary signs when
+    # normalized=False.
+    if "method" not in a and not a.get("normalized", True):
+        return "normalized=False is left to NetworkX before 3.6"
+    return None
+
+
 @implements(
     "hits",
     chk.all_of(SIMPLE, chk.is_none("nstart"), chk.at_least("max_iter", 100),
-             chk.equals("method", None, "power_iteration")),
+             chk.equals("method", None, "power_iteration"), _check_hits_version),
     declined="nstart; max_iter below 100; graphs whose leading singular value is repeated (scores not unique); multigraphs; negative weights.",
 )
 def hits(G, max_iter=100, tol=1e-08, nstart=None, normalized=True, *,
