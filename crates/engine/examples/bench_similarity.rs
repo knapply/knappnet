@@ -9,10 +9,12 @@
 //! names), `REPS` (runs per measurement, default 3; the median is
 //! reported), `SCALE` (multiplies the sizes, default 1). Prints one line
 //! per workload: size, time on one thread, time on every core, and the
-//! peak of live heap bytes during the one-thread run.
+//! peak of live heap bytes during the one-thread run. Allocations are
+//! counted only during the one-thread runs, so the shared counter does
+//! not slow the parallel ones.
 
 use std::alloc::{GlobalAlloc, Layout, System};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::time::Instant;
 
 use knappnet::generate::{gnm, preferential};
@@ -35,11 +37,12 @@ use knappnet::Graph;
 struct Counting;
 static LIVE: AtomicUsize = AtomicUsize::new(0);
 static PEAK: AtomicUsize = AtomicUsize::new(0);
+static COUNT: AtomicBool = AtomicBool::new(false);
 
 unsafe impl GlobalAlloc for Counting {
     unsafe fn alloc(&self, l: Layout) -> *mut u8 {
         let p = System.alloc(l);
-        if !p.is_null() {
+        if !p.is_null() && COUNT.load(Ordering::Relaxed) {
             let now = LIVE.fetch_add(l.size(), Ordering::Relaxed) + l.size();
             PEAK.fetch_max(now, Ordering::Relaxed);
         }
@@ -47,7 +50,9 @@ unsafe impl GlobalAlloc for Counting {
     }
     unsafe fn dealloc(&self, p: *mut u8, l: Layout) {
         System.dealloc(p, l);
-        LIVE.fetch_sub(l.size(), Ordering::Relaxed);
+        if COUNT.load(Ordering::Relaxed) {
+            LIVE.fetch_sub(l.size(), Ordering::Relaxed);
+        }
     }
 }
 
@@ -107,7 +112,9 @@ fn main() {
         if !want(name) {
             return;
         }
+        COUNT.store(true, Ordering::Relaxed);
         let (t1, peak) = time(reps, || f(1));
+        COUNT.store(false, Ordering::Relaxed);
         let (tn, _) = time(reps, || f(0));
         println!(
             "| {name} | {size} | {t1:.4} | {tn:.4} | {:.1} |",

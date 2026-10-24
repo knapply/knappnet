@@ -333,26 +333,32 @@ impl Hasher<'_> {
     /// The text a node's next label is the hash of.
     fn aggregate(&self, v: usize, labels: &[String]) -> String {
         let edge = self.opts.edge_labels;
-        let part = |rows: &[(u32, u32)], prefix: &str| -> String {
-            let mut items: Vec<String> = rows
+        let mut s = labels[v].clone();
+        // Each item is the text prefix + label, compared without building
+        // it (byte order is Python's string order for ASCII).
+        let mut part = |rows: &[(u32, u32)], prefix: &str| {
+            let mut items: Vec<(&str, &str)> = rows
                 .iter()
                 .map(|&(u, e)| {
                     let p = edge.map_or(prefix, |l| l[e as usize].as_str());
-                    let mut s = String::with_capacity(p.len() + labels[u as usize].len());
-                    s.push_str(p);
-                    s.push_str(&labels[u as usize]);
-                    s
+                    (p, labels[u as usize].as_str())
                 })
                 .collect();
-            items.sort_unstable();
-            items.concat()
+            items.sort_unstable_by(|a, b| {
+                a.0.bytes()
+                    .chain(a.1.bytes())
+                    .cmp(b.0.bytes().chain(b.1.bytes()))
+            });
+            for (p, l) in items {
+                s.push_str(p);
+                s.push_str(l);
+            }
         };
-        let mut s = labels[v].clone();
         if self.directed {
-            s.push_str(&part(self.adj.succ(v), "s_"));
-            s.push_str(&part(self.adj.pred(v), "p_"));
+            part(self.adj.succ(v), "s_");
+            part(self.adj.pred(v), "p_");
         } else {
-            s.push_str(&part(self.adj.succ(v), ""));
+            part(self.adj.succ(v), "");
         }
         s
     }
