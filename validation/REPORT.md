@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 10720 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1633 undefined for the oracle.
+Totals: 11475 match, 57 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1678 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -449,6 +449,41 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `centralization_closeness_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
 | `centralization_closeness_ucinet` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 
+## trees
+
+| Measure | definition | networkx |
+|---|---|---|
+| `tree_mst_weight` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `tree_mst_weight_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `tree_maxst_weight_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `tree_mst_edges_kruskal` |  | 19 / 0 / 0 / 0 |
+| `tree_mst_edges_prim` |  | 19 / 0 / 0 / 0 |
+| `tree_mst_edges_boruvka` |  | 19 / 0 / 0 / 0 |
+| `tree_maxst_edges_kruskal` |  | 19 / 0 / 0 / 0 |
+| `tree_max_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_min_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_minimal_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_max_arborescence` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_min_arborescence` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_topological_sort` |  | 28 / 0 / 0 / 0 |
+| `dag_generations` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_lexicographic` |  | 28 / 0 / 0 / 0 |
+| `dag_all_topological` |  | 28 / 0 / 0 / 0 |
+| `dag_is_dag` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_closure_cycles` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_closure_never` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_closure_always` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_reduction` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_longest_path` |  | 28 / 0 / 0 / 0 |
+| `dag_longest_path_weighted` |  | 7 / 0 / 0 / 0 |
+| `dag_longest_length` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_longest_length_weighted` | 1 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dag_immediate_dominators` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_dominance_frontiers` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_lca` |  | 17 / 11 / 0 / 0 |
+| `dag_lca_check` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_tree_lca` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+
 ## twomode
 
 | Measure | definition | igraph | networkx |
@@ -488,11 +523,15 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 
 ## Documented convention differences
 
+- `dag_lca` vs networkx on `davis_twomode` (listed): index 509: engine 13.0, networkx 16.0
 - `assortativity_nominal_networkx` vs networkx on `empty` (edge_case): item 0: engine (), networkx 0.0
 - `modularity` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
 - `modularity_resolution` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity_resolution` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
+- `dag_lca` vs networkx on `gnp_dir_sparse` (listed): index 1129: engine 4.0, networkx 9.0
+- `dag_lca` vs networkx on `gnp_und_sparse` (listed): index 3007: engine 4.0, networkx 48.0
+- `dag_lca` vs networkx on `karate` (listed): index 552: engine 23.0, networkx 24.0
 - `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.56233570351218, networkx 53.91666666666667
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.1390711570278134, networkx 0.15765107212475635
 - `constraint` vs networkx on `multi_loops_dir` (loops): index 18: engine 0.375, networkx 0.6613136574074073
@@ -517,6 +556,8 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `edge_betweenness` vs networkx on `multi_loops_und` (multi_edges): index 42: engine 6.757435545415085, networkx 8.586904761904762
 - `edge_betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 42: engine 0.03556545023902676, networkx 0.04519423558897243
 - `coreness_all` vs networkx on `multi_loops_und` (loops, multi_edges): index 3: engine 5.0, networkx 3.0
+- `dag_lca` vs networkx on `real_weights_dir` (listed): index 702: engine 5.0, networkx 8.0
+- `dag_lca` vs networkx on `real_weights_und` (listed): index 705: engine 3.0, networkx 18.0
 - `assortativity_nominal_networkx` vs networkx on `single_node` (edge_case): item 0: engine (), networkx 0.0
 - `modularity` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
 - `modularity` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
@@ -530,7 +571,12 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `louvain_quality_resolution` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
 - `density` vs networkx on `single_node` (edge_case): index 0: engine -1.0, networkx 0.0
 - `density_simple` vs networkx on `single_node` (edge_case): index 0: engine -1.0, networkx 0.0
+- `dag_lca` vs networkx on `southern_women` (listed): index 509: engine 13.0, networkx 16.0
+- `dag_lca` vs networkx on `twomode_random` (listed): index 220: engine 5.0, networkx 12.0
+- `dag_lca` vs networkx on `uniform_weights` (listed): index 797: engine 2.0, networkx 9.0
 - `betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 13: engine 328.5, networkx 331.0
 - `edge_betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 38: engine 49.5, networkx 47.5
+- `dag_lca` vs networkx on `weighted_dir` (listed): index 1018: engine 5.0, networkx 12.0
 - `betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 37: engine 114.16666666666666, networkx 115.25
 - `edge_betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 68: engine 45.5, networkx 46.75
+- `dag_lca` vs networkx on `weighted_und` (listed): index 969: engine 1.0, networkx 11.0

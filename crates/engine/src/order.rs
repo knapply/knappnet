@@ -65,6 +65,8 @@ pub struct Rows {
     offsets: Vec<usize>,
     nodes: Vec<u32>,
     edges: Vec<u32>,
+    /// With deduplication, how many entries each kept entry stands for.
+    counts: Vec<u32>,
 }
 
 impl Rows {
@@ -78,6 +80,13 @@ impl Rows {
     #[inline]
     pub fn edges(&self, v: usize) -> &[u32] {
         &self.edges[self.offsets[v]..self.offsets[v + 1]]
+    }
+
+    /// Multiplicities aligned with `neighbors(v)`: the number of parallel
+    /// entries each one stands for (all 1 without deduplication).
+    #[inline]
+    pub fn counts(&self, v: usize) -> &[u32] {
+        &self.counts[self.offsets[v]..self.offsets[v + 1]]
     }
 
     /// Number of rows.
@@ -94,7 +103,8 @@ impl Rows {
 
 /// Rows of `g` in `order`. Self-loops appear once in their node's row;
 /// with `skip_loops` they are left out. With `dedupe`, a neighbour appears
-/// only at its first position (in `order`).
+/// only at its first position (in `order`), and [`Rows::counts`] records
+/// how many entries it stands for.
 pub fn rows(
     g: &Graph,
     direction: Direction,
@@ -134,20 +144,25 @@ pub fn rows(
     let mut offsets = vec![0usize; n + 1];
     let mut nodes = Vec::with_capacity(entries.len());
     let mut edges = Vec::with_capacity(entries.len());
-    let mut mark = vec![u32::MAX; if dedupe { n } else { 0 }];
+    let mut counts = Vec::with_capacity(entries.len());
+    // For deduplication: the row that last saw each neighbour, and where.
+    let mut mark = vec![(u32::MAX, 0usize); if dedupe { n } else { 0 }];
     let mut i = 0;
     for v in 0..n {
         while i < entries.len() && entries[i].0 as usize == v {
             let (_, w, e) = entries[i];
             i += 1;
             if dedupe {
-                if mark[w as usize] == v as u32 {
+                let (row, at) = mark[w as usize];
+                if row == v as u32 {
+                    counts[at] += 1;
                     continue;
                 }
-                mark[w as usize] = v as u32;
+                mark[w as usize] = (v as u32, nodes.len());
             }
             nodes.push(w);
             edges.push(e);
+            counts.push(1);
         }
         offsets[v + 1] = nodes.len();
     }
@@ -155,6 +170,7 @@ pub fn rows(
         offsets,
         nodes,
         edges,
+        counts,
     }
 }
 
@@ -188,6 +204,7 @@ mod tests {
         assert_eq!(s.edges(0), &[1, 0, 2]);
         let i = rows(&g, Direction::Out, NeighborOrder::Input, false, true);
         assert_eq!(i.neighbors(0), &[2, 1]);
+        assert_eq!(i.counts(0), &[2, 1]);
         assert_eq!(i.neighbors(1), &[0, 1]);
         let i = rows(&g, Direction::Out, NeighborOrder::Input, true, true);
         assert_eq!(i.neighbors(1), &[0]);

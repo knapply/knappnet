@@ -74,6 +74,51 @@ static int connectivity_smoke(void) {
   return 0;
 }
 
+/* Trees and DAGs: a weighted square with a diagonal, and a diamond DAG. */
+static int trees_smoke(void) {
+  char err[256];
+  int64_t src[] = {0, 1, 2, 3, 0};
+  int64_t tgt[] = {1, 2, 3, 0, 2};
+  double w[] = {1.0, 2.0, 1.0, 2.0, 1.0};
+  GraphHandle *u = NULL, *d = NULL;
+  if (net_graph_new(4, src, tgt, w, 5, 0, &u, err, sizeof err) != 0) return 1;
+  int64_t edges[4], size = 0, nodes[4], gen[4], path[4], dom[4];
+  double weight = 0.0, length = 0.0;
+  if (net_spanning_tree(u, 1, 0, 1, edges, &size, &weight, err, sizeof err) != 0 ||
+      size != 3 || weight != 3.0)
+    return 1;
+  int64_t ds[] = {0, 0, 1, 2};
+  int64_t dt[] = {1, 2, 3, 3};
+  if (net_graph_new(4, ds, dt, NULL, 4, 1, &d, err, sizeof err) != 0) return 1;
+  if (net_branching(d, 0, 3, -1, edges, &size, &weight, err, sizeof err) != 0 || size != 3)
+    return 1;
+  if (net_topological_sort(d, 1, nodes, gen, err, sizeof err) != 0 || gen[3] != 2) return 1;
+  if (net_lexicographical_topological_sort(d, nodes, err, sizeof err) != 0) return 1;
+  ListsHandle *l = NULL;
+  if (net_all_topological_sorts(d, 1, 0, &l, err, sizeof err) != 0 || net_lists_count(l) != 2)
+    return 1;
+  net_lists_free(l);
+  int32_t dag = 0;
+  if (net_is_dag(d, &dag, err, sizeof err) != 0 || dag != 1) return 1;
+  if (net_transitive_closure(d, 0, &l, err, sizeof err) != 0 || net_lists_total(l) != 5)
+    return 1;
+  net_lists_free(l);
+  if (net_transitive_reduction(d, &l, err, sizeof err) != 0) return 1;
+  net_lists_free(l);
+  if (net_dag_longest_path(d, 0, 0, path, &size, &length, err, sizeof err) != 0 ||
+      length != 2.0)
+    return 1;
+  if (net_immediate_dominators(d, 0, dom, err, sizeof err) != 0 || dom[3] != 0) return 1;
+  if (net_dominance_frontiers(d, 0, &l, err, sizeof err) != 0) return 1;
+  net_lists_free(l);
+  int64_t a[] = {1}, b[] = {2}, anc[1];
+  if (net_lowest_common_ancestors(d, a, b, 1, -2, 0, anc, err, sizeof err) != 0 || anc[0] != 0)
+    return 1;
+  net_graph_free(u);
+  net_graph_free(d);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -133,6 +178,10 @@ int main(void) {
   }
   if (connectivity_smoke() != 0) {
     fprintf(stderr, "connectivity functions failed\n");
+    return 1;
+  }
+  if (trees_smoke() != 0) {
+    fprintf(stderr, "tree and DAG functions failed\n");
     return 1;
   }
   puts("C ABI smoke test passed");

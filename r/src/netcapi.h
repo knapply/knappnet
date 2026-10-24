@@ -1620,6 +1620,91 @@ int32_t net_attracting_components(const GraphHandle *h, int32_t order,
 int32_t net_is_semiconnected(const GraphHandle *h, int32_t *out, char *err,
                              size_t err_len);
 
+/* ---- Trees and directed acyclic graphs -----------------------------------
+ * weighted != 0 uses edge weights, otherwise every edge weighs 1;
+ * self-loops never belong to a tree or branching. algorithm (spanning
+ * trees): 0 = Kruskal, 1 = Prim, 2 = Boruvka; all return the same forest,
+ * the unique optimum when edges are compared by (weight, position).
+ * kind (branchings): 0 = maximum branching, 1 = minimum branching,
+ * 2 = minimal branching (NetworkX's minimal_branching), 3 = maximum
+ * spanning arborescence, 4 = minimum spanning arborescence. order: 0 =
+ * sorted neighbours, 1 = input order (NetworkX's results for a graph
+ * built from the same edges in the same order). reflexive: 0 = (v, v)
+ * for nodes on cycles (NetworkX's default), 1 = never, 2 = always. The
+ * DAG functions fail on a network with a cycle (a self-loop included). */
+
+/* Minimum (maximum == 0) or maximum spanning forest of an undirected
+ * network: edge positions in increasing (weight, position) order to edges
+ * (allocate n), their number to *size, their total weight to *weight. */
+int32_t net_spanning_tree(const GraphHandle *h, int32_t weighted,
+                          int32_t maximum, int32_t algorithm, int64_t *edges,
+                          int64_t *size, double *weight, char *err,
+                          size_t err_len);
+
+/* Optimum branching or spanning arborescence of a directed network (root
+ * >= 0 fixes the arborescence's root, -1 for none; Edmonds' algorithm):
+ * edge positions (increasing) to edges (allocate n), their number to
+ * *size, their total weight to *weight. */
+int32_t net_branching(const GraphHandle *h, int32_t weighted, int32_t kind,
+                      int64_t root, int64_t *edges, int64_t *size,
+                      double *weight, char *err, size_t err_len);
+
+/* A topological order of a DAG, generation by generation, to nodes (n),
+ * and each node's generation (0 for roots) to generation (n, may be
+ * NULL). */
+int32_t net_topological_sort(const GraphHandle *h, int32_t order,
+                             int64_t *nodes, int64_t *generation, char *err,
+                             size_t err_len);
+
+/* The topological order that always takes the smallest available node, to
+ * nodes (n). */
+int32_t net_lexicographical_topological_sort(const GraphHandle *h,
+                                             int64_t *nodes, char *err,
+                                             size_t err_len);
+
+/* Every topological order of a DAG (at most limit; 0 = all), one list
+ * each, in NetworkX's sequence for the input order. */
+int32_t net_all_topological_sorts(const GraphHandle *h, int32_t order,
+                                  int64_t limit, ListsHandle **out, char *err,
+                                  size_t err_len);
+
+/* Whether the network is a directed acyclic graph: 1 or 0 to *out. */
+int32_t net_is_dag(const GraphHandle *h, int32_t *out, char *err,
+                   size_t err_len);
+
+/* Transitive closure of a directed network: list u holds every v with
+ * (u, v) in the closure, sorted. */
+int32_t net_transitive_closure(const GraphHandle *h, int32_t reflexive,
+                               ListsHandle **out, char *err, size_t err_len);
+
+/* Transitive reduction of a DAG: list u holds the v with u -> v kept. */
+int32_t net_transitive_reduction(const GraphHandle *h, ListsHandle **out,
+                                 char *err, size_t err_len);
+
+/* A longest path of a DAG: its nodes to path (allocate n), their number to
+ * *size, its length to *length (negative arcs never extend a path). */
+int32_t net_dag_longest_path(const GraphHandle *h, int32_t weighted,
+                             int32_t order, int64_t *path, int64_t *size,
+                             double *length, char *err, size_t err_len);
+
+/* Immediate dominators from start (Cooper, Harvey, and Kennedy) to out (n
+ * values; the start's is itself, -1 for nodes unreachable from it). */
+int32_t net_immediate_dominators(const GraphHandle *h, int64_t start,
+                                 int64_t *out, char *err, size_t err_len);
+
+/* Dominance frontiers from start: one sorted list per node, value 1 for
+ * nodes reachable from the start and 0 (empty list) otherwise. */
+int32_t net_dominance_frontiers(const GraphHandle *h, int64_t start,
+                                ListsHandle **out, char *err, size_t err_len);
+
+/* Lowest common ancestor of each of k pairs (a[i], b[i]) to out (k values;
+ * -1 when a DAG pair has no common ancestor). root: -2 for a DAG, -1 for a
+ * tree with its own root, otherwise the tree's root. */
+int32_t net_lowest_common_ancestors(const GraphHandle *h, const int64_t *a,
+                                    const int64_t *b, int64_t k, int64_t root,
+                                    int32_t order, int64_t *out, char *err,
+                                    size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

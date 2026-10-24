@@ -36,6 +36,7 @@ mod spectral;
 mod subgroups;
 mod temporal;
 mod topography;
+mod trees;
 mod twomode;
 pub use files::*;
 
