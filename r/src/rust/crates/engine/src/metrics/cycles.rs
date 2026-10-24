@@ -15,8 +15,9 @@
 //!   S_i for each, the i-th cycle is a shortest cycle meeting S_i in an odd
 //!   number of edges, found as a shortest path between the two copies of a
 //!   node in the graph doubled over S_i, and later witnesses are updated
-//!   to stay orthogonal to the cycles found. The shortest paths for the
-//!   different start nodes run in parallel.
+//!   to stay orthogonal to the cycles found. Such a cycle contains an edge
+//!   of S_i, so the searches start only from the lower endpoint of each
+//!   edge of S_i, and run in parallel.
 //! - Simple cycles by Johnson's (1975, `johnson1975finding`) algorithm,
 //!   which spends O(n + m) per cycle: from each start node, in increasing
 //!   order, cycles are searched in its strongly connected component among
@@ -335,16 +336,22 @@ pub fn minimum_cycle_basis(g: &Graph, weighted: bool, threads: usize) -> Result<
     let mut weights = Vec::with_capacity(chords.len());
     for i in 0..chords.len() {
         let s = witness[i].clone();
-        // Shortest path from (v, 0) to (v, 1) in the doubled graph, for
-        // every v, in parallel; the best (length, v) wins.
+        // A cycle meeting S_i oddly contains an edge of S_i, and so its
+        // lower endpoint: shortest paths from (v, 0) to (v, 1) are needed
+        // only from those nodes. They run in parallel; the best
+        // (length, v) wins.
+        let mut starts: Vec<usize> = (0..m)
+            .filter(|&e| bit(&s, e))
+            .map(|e| src[e].min(tgt[e]) as usize)
+            .collect();
+        starts.sort_unstable();
+        starts.dedup();
         let parts = parallel::for_each_item(
-            n,
+            starts.len(),
             threads,
             || (f64::INFINITY, usize::MAX, Vec::<usize>::new()),
-            |best, v| {
-                if adj[v].is_empty() {
-                    return;
-                }
+            |best, k| {
+                let v = starts[k];
                 if let Some((d, path)) = lifted_path(&adj, &w, &s, v, best.0) {
                     if d < best.0 || (d == best.0 && v < best.1) {
                         *best = (d, v, path);
