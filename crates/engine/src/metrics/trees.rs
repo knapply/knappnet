@@ -326,21 +326,24 @@ impl std::ops::Sub for Cost {
 }
 
 struct Arc {
-    from: usize,
-    to: usize,
+    from: u32,
+    to: u32,
+    /// Input position, or `ARTIFICIAL` for an arc from the added root.
+    edge: u32,
     cost: Cost,
-    /// Input position, or `usize::MAX` for an artificial arc.
-    edge: usize,
 }
 
+const ARTIFICIAL: u32 = u32::MAX;
 const NIL: usize = usize::MAX;
+const NIL32: u32 = u32::MAX;
 
-/// Leftist heaps of arcs with lazy cost additions, in one arena.
+/// Leftist heaps of arcs with lazy cost additions, in one arena; node `i`
+/// holds arc `i` (32-bit links keep the arena small).
 struct Heaps {
     key: Vec<Cost>,
-    arc: Vec<usize>,
-    left: Vec<usize>,
-    right: Vec<usize>,
+    arc: Vec<u32>,
+    left: Vec<u32>,
+    right: Vec<u32>,
     rank: Vec<u32>,
     delta: Vec<Cost>,
 }
@@ -359,12 +362,20 @@ impl Heaps {
 
     fn single(&mut self, arc: usize, key: Cost) -> usize {
         self.key.push(key);
-        self.arc.push(arc);
-        self.left.push(NIL);
-        self.right.push(NIL);
+        self.arc.push(arc as u32);
+        self.left.push(NIL32);
+        self.right.push(NIL32);
         self.rank.push(1);
         self.delta.push(Cost::default());
         self.key.len() - 1
+    }
+
+    fn link(x: u32) -> usize {
+        if x == NIL32 {
+            NIL
+        } else {
+            x as usize
+        }
     }
 
     fn settle(&mut self, a: usize) {
@@ -374,7 +385,8 @@ impl Heaps {
         }
         self.key[a] = self.key[a] + d;
         for c in [self.left[a], self.right[a]] {
-            if c != NIL {
+            if c != NIL32 {
+                let c = c as usize;
                 self.delta[c] = self.delta[c] + d;
             }
         }
@@ -392,7 +404,7 @@ impl Heaps {
     /// Whether `a` should be above `b`: smaller cost, then earlier arc.
     fn before(&self, a: usize, b: usize, arcs: &[Arc]) -> bool {
         let (ka, kb) = (self.key[a], self.key[b]);
-        ka < kb || (ka == kb && arcs[self.arc[a]].edge < arcs[self.arc[b]].edge)
+        ka < kb || (ka == kb && arcs[self.arc[a] as usize].edge < arcs[self.arc[b] as usize].edge)
     }
 
     fn merge(&mut self, a: usize, b: usize, arcs: &[Arc]) -> usize {
@@ -409,18 +421,19 @@ impl Heaps {
         } else {
             (a, b)
         };
-        let r = self.merge(self.right[a], b, arcs);
-        self.right[a] = r;
-        if self.rank_of(self.left[a]) < self.rank_of(self.right[a]) {
-            std::mem::swap(&mut self.left[a], &mut self.right[a]);
+        let r = self.merge(Self::link(self.right[a]), b, arcs);
+        self.right[a] = r as u32;
+        if self.rank_of(Self::link(self.left[a])) < self.rank_of(r) {
+            self.right[a] = self.left[a];
+            self.left[a] = r as u32;
         }
-        self.rank[a] = self.rank_of(self.right[a]) + 1;
+        self.rank[a] = self.rank_of(Self::link(self.right[a])) + 1;
         a
     }
 
     fn pop(&mut self, a: usize, arcs: &[Arc]) -> usize {
         self.settle(a);
-        self.merge(self.left[a], self.right[a], arcs)
+        self.merge(Self::link(self.left[a]), Self::link(self.right[a]), arcs)
     }
 }
 
@@ -481,11 +494,11 @@ fn min_arborescence(nodes: usize, root: usize, arcs: &[Arc]) -> Option<Vec<usize
     let mut heaps = Heaps::new(arcs.len());
     let mut heap = vec![NIL; nodes];
     for (i, a) in arcs.iter().enumerate() {
-        if a.from == a.to || a.to == root {
+        if a.from == a.to || a.to as usize == root {
             continue;
         }
         let h = heaps.single(i, a.cost);
-        heap[a.to] = heaps.merge(heap[a.to], h, arcs);
+        heap[a.to as usize] = heaps.merge(heap[a.to as usize], h, arcs);
     }
     let mut uf = Rollback::new(nodes);
     const NONE: usize = usize::MAX;
@@ -506,10 +519,10 @@ fn min_arborescence(nodes: usize, root: usize, arcs: &[Arc]) -> Option<Vec<usize
                     return None;
                 }
                 heaps.settle(h);
-                let a = heaps.arc[h];
+                let a = heaps.arc[h] as usize;
                 let cost = heaps.key[h];
                 heap[u] = heaps.pop(h, arcs);
-                if uf.find(arcs[a].from) == u {
+                if uf.find(arcs[a].from as usize) == u {
                     continue;
                 }
                 // Reprice the remaining incoming arcs relative to this one.
@@ -521,7 +534,7 @@ fn min_arborescence(nodes: usize, root: usize, arcs: &[Arc]) -> Option<Vec<usize
             };
             path.push((u, a));
             seen[u] = s;
-            u = uf.find(arcs[a].from);
+            u = uf.find(arcs[a].from as usize);
             if seen[u] == s {
                 // A cycle: contract it into one node.
                 let t = uf.time();
@@ -542,7 +555,7 @@ fn min_arborescence(nodes: usize, root: usize, arcs: &[Arc]) -> Option<Vec<usize
             }
         }
         for &(_, a) in &path {
-            let v = uf.find(arcs[a].to);
+            let v = uf.find(arcs[a].to as usize);
             in_arc[v] = a;
         }
     }
@@ -550,10 +563,10 @@ fn min_arborescence(nodes: usize, root: usize, arcs: &[Arc]) -> Option<Vec<usize
         uf.rollback(t);
         let into = in_arc[u];
         for a in cycle {
-            let v = uf.find(arcs[a].to);
+            let v = uf.find(arcs[a].to as usize);
             in_arc[v] = a;
         }
-        let v = uf.find(arcs[into].to);
+        let v = uf.find(arcs[into].to as usize);
         in_arc[v] = into;
     }
     Some(in_arc)
@@ -625,10 +638,10 @@ pub fn optimum_branching(
         }
         if let Some(c) = cost_of(e) {
             arcs.push(Arc {
-                from: src[e] as usize,
-                to: tgt[e] as usize,
+                from: src[e],
+                to: tgt[e],
+                edge: e as u32,
                 cost: Cost { roots: 0, w: c },
-                edge: e,
             });
         }
     }
@@ -641,10 +654,10 @@ pub fn optimum_branching(
             };
             for v in 0..n {
                 arcs.push(Arc {
-                    from: n,
-                    to: v,
+                    from: n as u32,
+                    to: v as u32,
+                    edge: ARTIFICIAL,
                     cost: extra,
-                    edge: usize::MAX,
                 });
             }
             (n + 1, n)
@@ -663,10 +676,10 @@ pub fn optimum_branching(
             continue;
         }
         let a = &arcs[chosen[v]];
-        if a.edge == usize::MAX {
+        if a.edge == ARTIFICIAL {
             roots += 1;
         } else {
-            edges.push(a.edge);
+            edges.push(a.edge as usize);
         }
     }
     if arborescence && root.is_none() && roots > 1 {

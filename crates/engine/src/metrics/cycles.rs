@@ -541,10 +541,17 @@ pub fn simple_cycles(
         if full(&cycles) {
             break;
         }
-        let comp = component_from(&out, &inc, s);
-        if comp.iter().filter(|&&x| x).count() < 2 {
-            continue;
-        }
+        // Johnson's search needs the strong component of s among the
+        // nodes >= s; the bounded search only needs nodes above s.
+        let comp = if length_bound.is_none() {
+            let comp = component_from(&out, &inc, s);
+            if comp.iter().filter(|&&x| x).count() < 2 {
+                continue;
+            }
+            comp
+        } else {
+            (0..n).map(|v| v > s).collect()
+        };
         let keep = |path: &[u32]| -> bool {
             path.len() >= min_len && (directed || path[1] < path[path.len() - 1])
         };

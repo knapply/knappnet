@@ -24,12 +24,16 @@
 //! and K its degree, it is the least of K and kappa over the pairs (v, w)
 //! with w not adjacent to v (both orders if directed) and the
 //! non-adjacent pairs of v's neighbours (Esfahanian 2013,
-//! `esfahanian2013connectivity`). Global edge connectivity is the least
-//! of lambda(v_0, w) over every other node w of an undirected network
-//! (any minimum cut separates v_0 from some node), and of
-//! lambda(v_i, v_{i+1}) around the cycle v_0, ..., v_{n-1}, v_0 of a
-//! directed one (a minimum cut separates some consecutive pair; Esfahanian
-//! 2013). Every flow stops once it reaches the best value found so far.
+//! `esfahanian2013connectivity`). Global edge connectivity of an
+//! undirected network is the least of its least degree and lambda(v, w)
+//! over the members w of a dominating set D, v being D's first member:
+//! when lambda is below the least degree, both sides of a minimum cut hold
+//! a node all of whose neighbours are on its side, so D meets both sides
+//! (Esfahanian and Hakimi 1984, `esfahanian1984computing`; D is built
+//! greedily in node order). For a directed network it is the least of
+//! lambda(v_i, v_{i+1}) around the cycle v_0, ..., v_{n-1}, v_0 (a minimum
+//! cut separates some consecutive pair; Esfahanian 2013). Every flow stops
+//! once it reaches the best value found so far.
 //!
 //! Conventions (see also [`super`]): simple graph, directions kept. The
 //! values equal NetworkX's `node_connectivity`, `edge_connectivity`,
@@ -161,6 +165,28 @@ pub fn node_connectivity(g: &Graph, threads: usize) -> Result<u64> {
     Ok(parts.into_iter().map(|p| p.1).min().unwrap_or(k as u64))
 }
 
+/// The ordered pairs whose local edge connectivity, with the least degree,
+/// decides lambda(G): around the node cycle if directed, from the first
+/// member of a greedy dominating set to the others if undirected.
+pub(crate) fn edge_pairs(simple: &Simple) -> Vec<(usize, usize)> {
+    let n = simple.n;
+    if simple.directed {
+        return (0..n).map(|i| (i, (i + 1) % n)).collect();
+    }
+    let mut dominated = vec![false; n];
+    let mut set = Vec::new();
+    for v in 0..n {
+        if !dominated[v] {
+            set.push(v);
+            dominated[v] = true;
+            for &w in &simple.out[v] {
+                dominated[w as usize] = true;
+            }
+        }
+    }
+    set.iter().skip(1).map(|&w| (set[0], w)).collect()
+}
+
 /// Global edge connectivity lambda(G). See the module documentation.
 pub fn edge_connectivity(g: &Graph, threads: usize) -> Result<u64> {
     nonempty(g)?;
@@ -179,11 +205,7 @@ pub fn edge_connectivity(g: &Graph, threads: usize) -> Result<u64> {
         })
         .min()
         .unwrap_or(0) as u64;
-    let pairs: Vec<(usize, usize)> = if simple.directed {
-        (0..n).map(|i| (i, (i + 1) % n)).collect()
-    } else {
-        (1..n).map(|w| (0, w)).collect()
-    };
+    let pairs = edge_pairs(&simple);
     let base = simple.edge_network();
     let parts = parallel::for_each_item(
         pairs.len(),

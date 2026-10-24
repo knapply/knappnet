@@ -6,7 +6,8 @@
 //! cuts are read off maximum flows in the edge network and the split
 //! network (Even and Tarjan 1975, `even1975network`), and the global cuts
 //! are searched over the same pairs as the global connectivities in
-//! [`super::values`] (Even 1975, `even1975algorithm`; Esfahanian 2013,
+//! [`super::values`] (Even 1975, `even1975algorithm`; Esfahanian and
+//! Hakimi 1984, `esfahanian1984computing`; Esfahanian 2013,
 //! `esfahanian2013connectivity`).
 //!
 //! Minimum cuts are generally not unique. Two conventions are offered
@@ -38,7 +39,7 @@
 //! Edge cuts are reported as node pairs (u, v) of the simple graph, u on
 //! the source side (for an undirected network, one pair per edge), sorted.
 
-use super::values::even_pairs;
+use super::values::{edge_pairs, even_pairs};
 use super::{check_pair, Simple};
 use crate::error::{Error, Result};
 use crate::flow::FlowNetwork;
@@ -253,11 +254,7 @@ pub fn minimum_edge_cut(g: &Graph, threads: usize) -> Result<Vec<(u32, u32)>> {
     if n == 1 {
         return Ok(best);
     }
-    let pairs: Vec<(usize, usize)> = if simple.directed {
-        (0..n).map(|i| (i, (i + 1) % n)).collect()
-    } else {
-        (1..n).map(|w| (0, w)).collect()
-    };
+    let pairs = edge_pairs(&simple);
     let base = simple.edge_network();
     let parts = parallel::for_each_item(
         pairs.len(),
