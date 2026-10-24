@@ -1056,3 +1056,11 @@ Notes:
 8. **Several aspects.** Layers are one categorical column; a layer that
    is a combination of aspects (relation by time) is one label with
    attributes in the layer table.
+9. **Structural zeros and ones.** Pairs that cannot be tied (a person
+   cannot advise someone outside their unit) or must be tied (a
+   reporting line) are distinct from unobserved pairs. RSiena codes them
+   10 and 11 in adjacency matrices; ERGM fitting treats them as
+   constraints. Proposed: an edge-level `fixed` role (`"zero"`, `"one"`)
+   plus a pair-rule form for whole blocks (e.g. no ties across modes or
+   outside a group), carried to models as constraints and excluded from
+   descriptive denominators where a measure documents that.
