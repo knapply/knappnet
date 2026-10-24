@@ -65,7 +65,19 @@ LINEAR_TIME = frozenset({
     "single_target_shortest_path_length", "single_source_dijkstra_path_length",
     "has_path", "descendants", "ancestors", "articulation_points", "bridges",
     "has_bridges", "biconnected_components", "is_biconnected", "overall_reciprocity",
-    "reciprocity",
+    "reciprocity", "topological_sort", "topological_generations",
+    "lexicographical_topological_sort", "is_directed_acyclic_graph", "has_cycle",
+    "maximal_matching", "k_core", "k_shell", "k_crust", "k_corona", "onion_layers",
+    "degree_mixing_dict", "attribute_mixing_dict", "cut_size", "volume", "find_cycle",
+    "cycle_basis", "condensation", "attracting_components",
+    "number_attracting_components", "is_attracting_component", "is_semiconnected",
+    "minimum_spanning_tree", "maximum_spanning_tree", "minimum_spanning_edges",
+    "maximum_spanning_edges", "kruskal_mst_edges", "average_neighbor_degree",
+    "is_matching", "is_maximal_matching", "is_perfect_matching", "girth",
+    "single_source_shortest_path", "single_target_shortest_path", "predecessor",
+    "bidirectional_shortest_path", "dijkstra_path_length", "dijkstra_path",
+    "single_source_dijkstra_path", "local_bridges", "dag_longest_path",
+    "dag_longest_path_length",
 })
 
 
