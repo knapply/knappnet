@@ -1,0 +1,37 @@
+# Runs heavy jobs (benchmarks, thread scaling, large inputs) on the owner's
+# self-hosted runner. Manual dispatch only: pushes and pull requests never
+# reach this runner.
+name: btower
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Shell command to run from the repository root
+        required: true
+        default: cargo build --release --workspace && nproc && free -g
+      artifact:
+        description: Optional path (file or directory) to upload as an artifact
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: [self-hosted, btower]
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        run: |
+          set -o pipefail
+          bash -c "${{ inputs.command }}" 2>&1 | tee btower.log
+      - name: Annotate
+        if: always()
+        run: LEVEL=notice tools/ci_annotate.sh btower btower.log || true
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.artifact != ''
+        with:
+          name: btower-output
+          path: ${{ inputs.artifact }}
