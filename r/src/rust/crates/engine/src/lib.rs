@@ -10,7 +10,7 @@
 //!
 //! | Area | Modules |
 //! |---|---|
-//! | Storage and shared machinery | [`graph`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
+//! | Storage and shared machinery | [`graph`], [`order`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
 //! | Data model and validation | [`frame`] (typed node and edge tables, roles, declared properties, diagnostics, graph construction) |
 //! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
 //! | Flows and cuts | [`flow`] (maximum flow, minimum cuts, minimum-cost flow, Gomory-Hu trees) |
@@ -30,6 +30,7 @@ pub mod frame;
 pub mod graph;
 pub mod linalg;
 pub mod matrix;
+pub mod order;
 pub mod parallel;
 pub mod rng;
 pub mod union_find;

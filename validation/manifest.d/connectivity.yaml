@@ -1,0 +1,301 @@
+# Node and edge connectivity, minimum cuts, disjoint paths (Menger 1927;
+# Even and Tarjan 1975), k-components (Moody and White 2003),
+# k-edge-components, local bridges (Granovetter 1973), condensation,
+# attracting components, and semiconnectedness. Format: see ../README.md;
+# engine runners and encodings in ../bindings/connectivity.py.
+#
+# Every function reads the simple graph (parallel edges once, self-loops
+# ignored, directions kept); the NetworkX oracle builds NetworkX's simple
+# graph from the fixture (nodes 0..n - 1, then the edges in file order).
+# Pairs are source 0 and target n - 1. Results that do not exist are -1.
+# Minimum cuts and disjoint paths are not unique: where the engine and
+# NetworkX may choose differently, both are compared through [size, valid],
+# the engine's validity being checked by the runner itself.
+#
+# The definition oracle evaluates the definitions by brute force on
+# fixtures of at most 20 nodes (all-pairs node connectivity at most 12,
+# k-components at most 10).
+
+conn_local_node:
+  engine: {fn: local_connectivity, kind: node}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "smallest node set separating 0 from n - 1, plus 1 if 0 -> n - 1 is an arc (connectivity_definition_oracle.py)"
+      undefined_on: &large [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                            gnp_und_sparse, karate, les_miserables, real_weights_dir,
+                            real_weights_und, southern_women, twomode_random,
+                            uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the brute-force search over node subsets is limited to fixtures of
+        at most 20 nodes
+    networkx:
+      call: "nx.connectivity.local_node_connectivity(G, 0, n - 1)"
+
+conn_local_edge:
+  engine: {fn: local_connectivity, kind: edge}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest edges leaving a node set that holds 0 and not n - 1, over every subset"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "nx.connectivity.local_edge_connectivity(G, 0, n - 1)"
+
+conn_node:
+  engine: {fn: connectivity, kind: node}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "smallest node set whose removal leaves a network that is not strongly connected (n - 1 if complete)"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "nx.node_connectivity(G)"
+
+conn_edge:
+  engine: {fn: connectivity, kind: edge}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest edges leaving a non-empty proper node subset, over every subset"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "nx.edge_connectivity(G)"
+
+conn_all_pairs_node:
+  engine: {fn: all_pairs_node}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "local node connectivity of every ordered pair by brute force (n <= 12)"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                     gnp_und_sparse, karate, les_miserables, real_weights_dir,
+                     real_weights_und, southern_women, twomode_random,
+                     uniform_weights, weighted_dir, weighted_und, florentine,
+                     multi_loops_dir, multi_loops_und, twomode_weighted]
+      undefined_reason: >-
+        the brute-force search for every pair is limited to fixtures of at
+        most 12 nodes
+    networkx:
+      call: "nx.all_pairs_node_connectivity(G), with 0 on the diagonal"
+
+conn_average_node:
+  engine: {fn: average_node}
+  applies_to: any
+  tolerance: {rel: 1.0e-14, abs: 0}
+  oracles:
+    definition:
+      call: "mean of the brute-force local node connectivities over pairs (n <= 12)"
+      undefined_on: [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                     gnp_und_sparse, karate, les_miserables, real_weights_dir,
+                     real_weights_und, southern_women, twomode_random,
+                     uniform_weights, weighted_dir, weighted_und, florentine,
+                     multi_loops_dir, multi_loops_und, twomode_weighted]
+      undefined_reason: as for conn_all_pairs_node
+    networkx:
+      call: "nx.average_node_connectivity(G)"
+
+conn_st_edge_cut:
+  engine: {fn: st_edge_cut}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.connectivity.minimum_st_edge_cut(G, 0, n - 1), as pairs (u, v)"
+
+conn_st_node_cut_networkx:
+  engine: {fn: st_node_cut, convention: networkx}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "sorted(nx.connectivity.minimum_st_node_cut(G, 0, n - 1))"
+
+conn_st_node_cut:
+  engine: {fn: st_node_cut_check, convention: engine}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[smallest node set separating 0 from n - 1, 1]; -1 if 0 -> n - 1 is an arc"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "[len(nx.connectivity.minimum_st_node_cut(G, 0, n - 1)), 1]; -1 if G.has_edge(0, n - 1)"
+
+conn_node_cut:
+  engine: {fn: node_cut_check, convention: engine}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[node connectivity by brute force, 1]"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "[len(nx.minimum_node_cut(G)), 1]"
+      undefined_when: [disconnected]
+      undefined_reason: >-
+        NetworkX raises an error for a network that is not connected; the
+        engine returns the empty cut.
+
+conn_node_cut_networkx:
+  engine: {fn: node_cut_check, convention: networkx}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "[len(nx.minimum_node_cut(G)), 1]"
+      undefined_when: [disconnected]
+      undefined_reason: as for conn_node_cut
+
+conn_edge_cut:
+  engine: {fn: edge_cut_check}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[edge connectivity by brute force, 1]"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "[len(nx.minimum_edge_cut(G)), 1]"
+      undefined_when: [disconnected]
+      undefined_reason: as for conn_node_cut
+
+conn_node_disjoint_paths:
+  engine: {fn: disjoint_paths_check, kind: node}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[local node connectivity by brute force, 1] (Menger's theorem)"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "[len(list(nx.node_disjoint_paths(G, 0, n - 1))), 1], 0 paths on NetworkXNoPath"
+
+conn_edge_disjoint_paths:
+  engine: {fn: disjoint_paths_check, kind: edge}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[local edge connectivity by brute force, 1] (Menger's theorem)"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "[len(list(nx.edge_disjoint_paths(G, 0, n - 1))), 1], 0 paths on NetworkXNoPath"
+
+conn_k_components:
+  engine: {fn: k_components}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "maximal node sets of more than k nodes whose induced subgraph has node connectivity >= k, over every subset (n <= 10)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, karate, les_miserables,
+                     real_weights_und, southern_women, twomode_random, uniform_weights,
+                     weighted_und, florentine, multi_loops_und, twomode_weighted]
+      undefined_reason: >-
+        the search over every node subset is limited to fixtures of at most
+        10 nodes
+    networkx:
+      call: "nx.k_components(G), each component of k as k * 1000 + node"
+
+conn_k_edge_components_2:
+  engine: {fn: k_edge_components, k: 2}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "classes of pairwise edge connectivity >= 2 (both ways), from brute-force cuts"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "nx.k_edge_components(G, k = 2)"
+
+conn_k_edge_components_3:
+  engine: {fn: k_edge_components, k: 3}
+  applies_to: any
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "classes of pairwise edge connectivity >= 3 (both ways), from brute-force cuts"
+      undefined_on: *large
+      undefined_reason: as for conn_local_node
+    networkx:
+      call: "nx.k_edge_components(G, k = 3)"
+
+conn_local_bridges:
+  engine: {fn: local_bridges}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "edges whose endpoints share no neighbour, with the breadth-first distance between them without the edge"
+    networkx:
+      call: "nx.local_bridges(G, with_span = True), mapped to the fixture's edges"
+
+conn_condensation_input:
+  engine: {fn: condensation, order: input}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.condensation(G).graph['mapping']"
+
+conn_condensation_sorted:
+  engine: {fn: condensation, order: sorted}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.condensation(H).graph['mapping'], H built from the edges in increasing order"
+
+conn_strong_partition:
+  engine: {fn: strong_partition}
+  applies_to: directed
+  compare: partition
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "classes of mutual reachability by breadth-first search"
+
+conn_attracting:
+  engine: {fn: attracting, order: input}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.attracting_components(G), labelled by nx.condensation(G).graph['mapping'], -1 elsewhere"
+
+conn_attracting_flags:
+  engine: {fn: attracting_flags}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "1 if every node reachable from v reaches v back"
+
+conn_semiconnected:
+  engine: {fn: semiconnected}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "1 if of every pair one node reaches the other"
+    networkx:
+      call: "nx.is_semiconnected(G)"

@@ -34,6 +34,46 @@ static int flow_smoke(void) {
   return 0;
 }
 
+/* Connectivity on two triangles 0-1-2 and 3-4-5 joined by 2-3. */
+static int connectivity_smoke(void) {
+  char err[256];
+  int64_t src[] = {0, 1, 2, 3, 4, 5, 2};
+  int64_t tgt[] = {1, 2, 0, 4, 5, 3, 3};
+  GraphHandle *g = NULL;
+  if (net_graph_new(6, src, tgt, NULL, 7, 0, &g, err, sizeof err) != 0) return 1;
+  int64_t value = 0, size = 0, from[7], to[7], nodes[6];
+  if (net_local_connectivity(g, 0, 5, 0, &value, err, sizeof err) != 0 || value != 1) return 1;
+  if (net_connectivity(g, 1, 1, &value, err, sizeof err) != 0 || value != 1) return 1;
+  double pairs[36], average = 0.0;
+  if (net_all_pairs_node_connectivity(g, 1, pairs, &average, err, sizeof err) != 0) return 1;
+  if (net_min_edge_cut(g, -1, -1, 1, from, to, &size, err, sizeof err) != 0 || size != 1)
+    return 1;
+  if (net_min_node_cut(g, 0, 5, 1, 1, nodes, &size, err, sizeof err) != 0 || size != 1)
+    return 1;
+  ListsHandle *paths = NULL;
+  if (net_disjoint_paths(g, 0, 5, 1, &paths, err, sizeof err) != 0) return 1;
+  if (net_lists_count(paths) != 1) return 1;
+  int64_t offsets[2], items[8];
+  double values[1];
+  if (net_lists_total(paths) > 8) return 1;
+  if (net_lists_copy(paths, offsets, items, values, err, sizeof err) != 0) return 1;
+  net_lists_free(paths);
+  ListsHandle *kc = NULL;
+  if (net_k_components(g, 1, &kc, err, sizeof err) != 0 || net_lists_count(kc) != 3) return 1;
+  net_lists_free(kc);
+  int32_t labels[7], flags[7];
+  double span[7];
+  if (net_k_edge_components(g, 2, 1, labels, err, sizeof err) != 0 || labels[3] != 1) return 1;
+  if (net_local_bridges(g, flags, span, err, sizeof err) != 0 || flags[6] != 1) return 1;
+  int32_t semi = 0;
+  /* Directed-only functions refuse an undirected network. */
+  if (net_is_semiconnected(g, &semi, err, sizeof err) == 0) return 1;
+  if (net_condensation(g, 0, labels, &value, err, sizeof err) == 0) return 1;
+  if (net_attracting_components(g, 1, labels, err, sizeof err) == 0) return 1;
+  net_graph_free(g);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -89,6 +129,10 @@ int main(void) {
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
   if (flow_smoke() != 0) {
     fprintf(stderr, "flow functions failed\n");
+    return 1;
+  }
+  if (connectivity_smoke() != 0) {
+    fprintf(stderr, "connectivity functions failed\n");
     return 1;
   }
   puts("C ABI smoke test passed");

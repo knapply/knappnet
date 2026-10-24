@@ -1531,6 +1531,95 @@ int32_t net_gomory_hu_tree(const GraphHandle *h, const double *capacity,
                            int64_t *parent, double *weight, char *err,
                            size_t err_len);
 
+/* ---- Connectivity -------------------------------------------------------
+ * Connectivity uses the simple graph (parallel edges once, self-loops
+ * ignored, weights unused) with directions kept. kind: 0 = node (vertex)
+ * connectivity, 1 = edge connectivity. convention (node cuts): 0 = engine
+ * (the cut nearest the source; adjacent nodes are an error), 1 = NetworkX
+ * (minimum_st_node_cut; empty for adjacent nodes). order: 0 = sorted
+ * neighbours, 1 = input order (NetworkX's numbering for a graph built from
+ * the same edges in the same order). In the cut functions s = t = -1 asks
+ * for a global cut, which is empty for a network that is not connected
+ * (NetworkX raises an error). Bridges, cut points, and blocks are under
+ * "Structure and description" and "Cohesion and groups". */
+
+/* Local node or edge connectivity between s and t (s != t) to *out: the
+ * largest number of internally node-disjoint (an edge s-t counts as one)
+ * or edge-disjoint paths. */
+int32_t net_local_connectivity(const GraphHandle *h, int64_t s, int64_t t,
+                               int32_t kind, int64_t *out, char *err,
+                               size_t err_len);
+
+/* Global node or edge connectivity to *out (0 if not connected, n - 1 for
+ * a complete graph's node connectivity). */
+int32_t net_connectivity(const GraphHandle *h, int32_t kind, int32_t threads,
+                         int64_t *out, char *err, size_t err_len);
+
+/* Local node connectivity of every ordered pair to out (n * n doubles,
+ * column-major, zero diagonal) and its mean over pairs to *average (may be
+ * NULL; NetworkX's average_node_connectivity). */
+int32_t net_all_pairs_node_connectivity(const GraphHandle *h, int32_t threads,
+                                        double *out, double *average,
+                                        char *err, size_t err_len);
+
+/* A minimum edge cut between s and t (or global): its node pairs (u, v),
+ * u on the source side, to from and to (m values each, allocated by the
+ * caller) and their number to *size. The s-t cut leaves the largest source
+ * side of a minimum cut, as NetworkX's minimum_st_edge_cut. */
+int32_t net_min_edge_cut(const GraphHandle *h, int64_t s, int64_t t,
+                         int32_t threads, int64_t *from, int64_t *to,
+                         int64_t *size, char *err, size_t err_len);
+
+/* A minimum node cut between s and t (or global): its nodes to nodes (n
+ * values allocated by the caller) and their number to *size. */
+int32_t net_min_node_cut(const GraphHandle *h, int64_t s, int64_t t,
+                         int32_t convention, int32_t threads, int64_t *nodes,
+                         int64_t *size, char *err, size_t err_len);
+
+/* Node-disjoint (kind 0) or edge-disjoint (kind 1) paths from s to t, as
+ * many as possible, each a node sequence (value 0); none if t is
+ * unreachable. */
+int32_t net_disjoint_paths(const GraphHandle *h, int64_t s, int64_t t,
+                           int32_t kind, ListsHandle **out, char *err,
+                           size_t err_len);
+
+/* k-components of an undirected network (maximal node sets inducing a
+ * k-connected subgraph): one sorted list per component carrying its k,
+ * for k = 1, 2, ... in turn. */
+int32_t net_k_components(const GraphHandle *h, int32_t threads,
+                         ListsHandle **out, char *err, size_t err_len);
+
+/* k-edge-connected components (k >= 1; classes of nodes joined by k
+ * edge-disjoint paths, both ways if directed): a label per node (0-based,
+ * in order of each class's lowest node) to membership. */
+int32_t net_k_edge_components(const GraphHandle *h, int64_t k, int32_t threads,
+                              int32_t *membership, char *err, size_t err_len);
+
+/* Local bridges of an undirected network (edges whose endpoints share no
+ * neighbour): 1/0 per edge to flags (m) and each local bridge's span to
+ * span (m, may be NULL; INFINITY without another path, NaN otherwise). */
+int32_t net_local_bridges(const GraphHandle *h, int32_t *flags, double *span,
+                          char *err, size_t err_len);
+
+/* Strongly connected components of a directed network, numbered as the
+ * nodes of its condensation (completion order of Tarjan's algorithm, a
+ * reverse topological order), to membership (n) and their number to
+ * *count. */
+int32_t net_condensation(const GraphHandle *h, int32_t order,
+                         int32_t *membership, int64_t *count, char *err,
+                         size_t err_len);
+
+/* Attracting components of a directed network: the component label (as
+ * in net_condensation) of each node in one, else -1, to membership (n). */
+int32_t net_attracting_components(const GraphHandle *h, int32_t order,
+                                  int32_t *membership, char *err,
+                                  size_t err_len);
+
+/* Whether a directed network is semiconnected (every pair joined by a
+ * path in at least one direction): 1 or 0 to *out. */
+int32_t net_is_semiconnected(const GraphHandle *h, int32_t *out, char *err,
+                             size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

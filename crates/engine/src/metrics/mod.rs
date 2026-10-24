@@ -4,6 +4,7 @@
 //! |---|---|
 //! | Centrality | [`degree`], [`betweenness`], [`closeness`], [`eigenvector`], [`spectral`] (PageRank, Katz, power, HITS), [`reach`] (reach, edge betweenness, information, bridging), [`brokerage`] |
 //! | Structure and description | [`descriptive`] (reciprocity, transitivity, distances), [`topography`] (density, components, centralization), [`triad`], [`mixing`], [`ego`], [`bipartite`] |
+//! | Connectivity | [`connectivity`] (node and edge connectivity, minimum cuts, disjoint paths, k-components, k-edge-components, condensation, local bridges) |
 //! | Cohesion and groups | [`cores`], [`cliques`], [`factions`] (bicomponents, n-cliques, k-plexes, lambda sets), [`community`] (modularity, Louvain), [`partition`] (Girvan-Newman, leading eigenvector, fast greedy), [`resilience`] (key players, flow betweenness) |
 //! | Positions and roles | [`equivalence`] (structural equivalence, CONCOR), [`regular`], [`blockmodel`], [`coreperiphery`], [`scaling`] |
 
@@ -23,6 +24,9 @@ pub mod ego;
 pub mod mixing;
 pub mod topography;
 pub mod triad;
+
+// Connectivity.
+pub mod connectivity;
 
 // Cohesion and groups.
 pub mod cliques;

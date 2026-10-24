@@ -38,7 +38,6 @@ pub struct ListsHandle {
 ///
 /// # Safety
 /// `out` must be null or writable.
-#[allow(dead_code)] // used by the connectivity functions
 pub(crate) unsafe fn give_lists(
     out: *mut *mut ListsHandle,
     lists: Vec<Vec<i64>>,

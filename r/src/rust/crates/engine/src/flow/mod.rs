@@ -5,8 +5,9 @@
 //! serves every flow and cut computation in the engine's newer modules:
 //! the graph-level functions in [`maxflow`] build it with edge
 //! capacities, super-sources and super-sinks for several terminals, or
-//! split nodes for node capacities, and Gomory-Hu trees ([`gomory_hu`])
-//! reuse it. Minimum-cost flows use the network simplex
+//! split nodes for node capacities; Gomory-Hu trees ([`gomory_hu`]) and
+//! connectivity, cuts, disjoint paths, and k-components
+//! ([`crate::metrics::connectivity`]) reuse it. Minimum-cost flows use the network simplex
 //! method ([`mincost`]).
 //!
 //! Each module cites its sources and states its conventions; all of them

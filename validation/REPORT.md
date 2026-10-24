@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 9984 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1418 undefined for the oracle.
+Totals: 10720 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1633 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -59,6 +59,35 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `compare_rand` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 27 |  |
 | `compare_adjusted_rand` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 27 |  |
 | `compare_ami` | 28 / 0 / 0 / 0 |  |  |
+
+## connectivity
+
+| Measure | definition | networkx |
+|---|---|---|
+| `conn_local_node` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_local_edge` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_node` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_edge` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_all_pairs_node` | 10 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_average_node` | 10 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_st_edge_cut` |  | 28 / 0 / 0 / 0 |
+| `conn_st_node_cut_networkx` |  | 28 / 0 / 0 / 0 |
+| `conn_st_node_cut` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_node_cut` | 14 / 0 / 0 / 0 | 24 / 0 / 0 / 0 |
+| `conn_node_cut_networkx` |  | 24 / 0 / 0 / 0 |
+| `conn_edge_cut` | 14 / 0 / 0 / 0 | 24 / 0 / 0 / 0 |
+| `conn_node_disjoint_paths` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_edge_disjoint_paths` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_k_components` | 6 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `conn_k_edge_components_2` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_k_edge_components_3` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_local_bridges` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `conn_condensation_input` |  | 9 / 0 / 0 / 0 |
+| `conn_condensation_sorted` |  | 9 / 0 / 0 / 0 |
+| `conn_strong_partition` | 9 / 0 / 0 / 0 |  |
+| `conn_attracting` |  | 9 / 0 / 0 / 0 |
+| `conn_attracting_flags` | 9 / 0 / 0 / 0 |  |
+| `conn_semiconnected` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
 
 ## core
 

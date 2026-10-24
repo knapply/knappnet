@@ -21,6 +21,7 @@ use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
 mod communities;
+mod connectivity;
 mod cyber;
 mod descriptive;
 mod files;
