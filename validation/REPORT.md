@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 11475 match, 57 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1678 undefined for the oracle.
+Totals: 11817 match, 59 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1765 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -103,6 +103,24 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `betweenness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |
 | `betweenness_weighted_strength` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 5 / 2 / 0 / 0 |  |
 | `triad_census` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
+
+## cycles
+
+| Measure | definition | networkx |
+|---|---|---|
+| `cyc_basis` |  | 18 / 1 / 0 / 0 |
+| `cyc_basis_check` | 19 / 0 / 0 / 0 |  |
+| `cyc_min_basis_weights` | 19 / 0 / 0 / 0 | 18 / 1 / 0 / 0 |
+| `cyc_min_basis_weights_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cyc_min_basis_check` | 19 / 0 / 0 / 0 |  |
+| `cyc_simple` | 12 / 0 / 0 / 0 | 14 / 0 / 0 / 0 |
+| `cyc_simple_bound4` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_chordless` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_chordless_bound5` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_girth` | 28 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `cyc_find_cycle` |  | 28 / 0 / 0 / 0 |
+| `cyc_find_cycle_reverse` |  | 9 / 0 / 0 / 0 |
+| `cyc_find_cycle_ignore` |  | 9 / 0 / 0 / 0 |
 
 ## descriptive
 
@@ -548,6 +566,8 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `leiden_quality` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.3554398148148148, networkx 0.31441454475308644
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909125, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.1211123145959598, networkx 0.14763297131718187
+- `cyc_basis` vs networkx on `multi_loops_und` (multi_edges): length 54 vs 34
+- `cyc_min_basis_weights` vs networkx on `multi_loops_und` (multi_edges): length 54 vs 34
 - `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
 - `effective_size` vs networkx on `multi_loops_und` (loops): item 0: engine 3.1666666666666665, networkx 3.0416666666666665
 - `efficiency` vs networkx on `multi_loops_und` (loops): item 0: engine 0.7916666666666666, networkx 0.7604166666666666

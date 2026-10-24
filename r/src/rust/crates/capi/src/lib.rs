@@ -23,6 +23,7 @@ use engine::{Error, Graph, WeightKind};
 mod communities;
 mod connectivity;
 mod cyber;
+mod cycles;
 mod descriptive;
 mod files;
 mod flow;

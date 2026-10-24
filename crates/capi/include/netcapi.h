@@ -1705,6 +1705,53 @@ int32_t net_lowest_common_ancestors(const GraphHandle *h, const int64_t *a,
                                     int32_t order, int64_t *out, char *err,
                                     size_t err_len);
 
+/* ---- Cycles -------------------------------------------------------------
+ * Cycles are node sequences; a self-loop is the cycle [v] and parallel
+ * undirected edges the cycle [u, v]. order: 0 = sorted neighbours, 1 =
+ * input order (NetworkX's results for a graph built from the same edges in
+ * the same order). length_bound: the longest cycle to report in nodes, -1
+ * for none; limit: the most cycles to report, 0 for all. orientation
+ * (find_cycle, directed networks): 0 = original, 1 = reverse, 2 = ignore.
+ * Cycle bases are for undirected networks and use every edge, so they have
+ * m - n + c cycles. */
+
+/* A cycle basis of an undirected network (NetworkX's cycle_basis for the
+ * same neighbour order; root >= 0 starts the first search there, -1 as
+ * NetworkX), one list per cycle. */
+int32_t net_cycle_basis(const GraphHandle *h, int32_t order, int64_t root,
+                        ListsHandle **out, char *err, size_t err_len);
+
+/* A minimum cycle basis of an undirected network (de Pina's algorithm),
+ * one list per cycle carrying its weight. */
+int32_t net_minimum_cycle_basis(const GraphHandle *h, int32_t weighted,
+                                int32_t threads, ListsHandle **out, char *err,
+                                size_t err_len);
+
+/* Every simple cycle (Johnson's algorithm), one list each. */
+int32_t net_simple_cycles(const GraphHandle *h, int64_t length_bound,
+                          int64_t limit, ListsHandle **out, char *err,
+                          size_t err_len);
+
+/* Every chordless (induced) cycle, one list each. */
+int32_t net_chordless_cycles(const GraphHandle *h, int64_t length_bound,
+                             int64_t limit, ListsHandle **out, char *err,
+                             size_t err_len);
+
+/* Length of a shortest cycle to *out (INFINITY without one; 1 for a
+ * self-loop, 2 for parallel undirected edges). */
+int32_t net_girth(const GraphHandle *h, double *out, char *err,
+                  size_t err_len);
+
+/* A cycle found by depth-first search over edges (NetworkX's find_cycle)
+ * from source (-1: every node in turn): edge positions to edges and 1 for
+ * an edge traversed against its direction to reversed (m values each,
+ * allocated by the caller), the number of edges to *size (0 without a
+ * cycle). */
+int32_t net_find_cycle(const GraphHandle *h, int64_t source,
+                       int32_t orientation, int32_t order, int64_t *edges,
+                       int32_t *reversed, int64_t *size, char *err,
+                       size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

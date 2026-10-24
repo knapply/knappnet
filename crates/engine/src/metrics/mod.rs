@@ -6,6 +6,7 @@
 //! | Structure and description | [`descriptive`] (reciprocity, transitivity, distances), [`topography`] (density, components, centralization), [`triad`], [`mixing`], [`ego`], [`bipartite`] |
 //! | Connectivity | [`connectivity`] (node and edge connectivity, minimum cuts, disjoint paths, k-components, k-edge-components, condensation, local bridges) |
 //! | Trees and DAGs | [`trees`] (spanning trees, branchings, arborescences), [`dag`] (topological orders, transitive closure and reduction, longest paths, dominators, lowest common ancestors) |
+//! | Cycles | [`cycles`] (cycle bases, minimum cycle bases, simple and chordless cycles, girth, finding a cycle) |
 //! | Cohesion and groups | [`cores`], [`cliques`], [`factions`] (bicomponents, n-cliques, k-plexes, lambda sets), [`community`] (modularity, Louvain), [`partition`] (Girvan-Newman, leading eigenvector, fast greedy), [`resilience`] (key players, flow betweenness) |
 //! | Positions and roles | [`equivalence`] (structural equivalence, CONCOR), [`regular`], [`blockmodel`], [`coreperiphery`], [`scaling`] |
 
@@ -32,6 +33,9 @@ pub mod connectivity;
 // Trees and DAGs.
 pub mod dag;
 pub mod trees;
+
+// Cycles.
+pub mod cycles;
 
 // Cohesion and groups.
 pub mod cliques;
