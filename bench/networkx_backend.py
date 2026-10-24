@@ -1,27 +1,34 @@
 #!/usr/bin/env python3
-"""Times NetworkX functions in NetworkX itself and with backend="knappnet".
+"""Times NetworkX functions in NetworkX itself and with each NetworkX backend.
 
     python3 bench/networkx_backend.py              # full run
     python3 bench/networkx_backend.py --quick      # small graphs, short budget
     python3 bench/networkx_backend.py --budget 60  # seconds per NetworkX call
+    python3 bench/networkx_backend.py --backends knappnet cugraph
 
-Needs the Python package installed (python -m pip install ./python). For
-each function and graph it reports:
+Needs the Python package installed (python -m pip install ./python); the
+other backends are optional (tools/bench_backends.sh installs them): knappnet,
+parallel (nx-parallel), graphblas (graphblas-algorithms), and cugraph
+(nx-cugraph, needs a GPU). One table row per function, graph, and backend:
 
-- nx: NetworkX's own implementation (backend="networkx");
-- first: backend="knappnet" on a graph that has not been converted yet
-  (conversion plus the engine call);
+- networkx: NetworkX's own implementation (backend="networkx");
+- first: the backend on a graph that has not been converted yet (conversion
+  plus the call);
 - cached: the same call again, reusing the conversion NetworkX caches in
   G.__networkx_cache__;
-- convert: the conversion alone;
-- speedup: nx / cached and nx / first.
+- convert: the backend's conversion alone, where it exposes one;
+- x cached, x first: NetworkX's time divided by the backend's;
+- agree: the backend's result matches NetworkX's.
+
+A backend that is not installed, does not implement the function, or does
+not take the arguments is reported as n/a.
 
 Graphs are G(n, m) random graphs (largest connected component, so path
 measures are defined), from small to large and sparse to dense, with
 uniform random weights in [1, 10); directed functions use a directed graph
-with the same n and m. A NetworkX call that exceeds the budget is stopped
-(Unix only), and larger graphs are then skipped for that function. Results
-of the two implementations are compared, and a mismatch is flagged.
+with the same n and m. A call that exceeds the budget is stopped (Unix
+only), and larger graphs are then skipped for NetworkX. Results are
+compared with NetworkX's, and a mismatch is flagged.
 """
 
 from __future__ import annotations
@@ -259,21 +266,74 @@ def fmt(t):
     return f"{t:.3g}"
 
 
+EXTRA_BACKENDS = ("knappnet", "parallel", "graphblas", "cugraph")
+
+
+def dispatchable(name):
+    """NetworkX's dispatchable function a benchmark entry exercises."""
+    base = name.split(" (")[0]
+    return getattr(nx, base, None) or getattr(nx.community, base, None)
+
+
+def implements(backend, name):
+    """Whether the backend registers an implementation of the function."""
+    if backend == "knappnet":
+        return True
+    f = dispatchable(name)
+    return f is not None and backend in getattr(f, "backends", {})
+
+
+def backend_converter(backend):
+    """The backend's convert_from_nx, where it exposes one."""
+    try:
+        return nx.utils.backends.backends[backend].load().convert_from_nx
+    except Exception:  # not installed, or no conversion exposed
+        return None
+
+
+def installed(backend):
+    try:
+        return backend in nx.utils.backends.backends and (
+            nx.utils.backends.backends[backend].load() is not None)
+    except Exception:
+        return False
+
+
+def conversion_time(convert, G, weight):
+    if convert is None:
+        return None
+    try:
+        def once():
+            G.__networkx_cache__.clear()
+            convert(G, edge_attrs={weight: 1} if weight else None)
+
+        return median_time(once)
+    except Exception:
+        return None
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--quick", action="store_true")
     parser.add_argument("--budget", type=float, default=None)
     parser.add_argument("--only", nargs="*", default=None)
+    parser.add_argument("--backends", nargs="*", default=list(EXTRA_BACKENDS),
+                        help="backends to time next to NetworkX itself "
+                             f"(default: {' '.join(EXTRA_BACKENDS)}); one that is not "
+                             "installed, or does not implement a function, is reported n/a")
     args = parser.parse_args()
     budget = args.budget or (5.0 if args.quick else 60.0)
     import knappnet  # noqa: F401  (fails early if the package is missing)
-    from knappnet._graph import convert_from_nx
 
-    print(f"# NetworkX {nx.__version__} vs backend='knappnet' ({platform.platform()}, "
+    versions = []
+    for b in args.backends:
+        status = "installed" if installed(b) else "not installed"
+        versions.append(f"{b} ({status})")
+    print(f"# NetworkX {nx.__version__} ({platform.platform()}, "
           f"Python {platform.python_version()}, {os.cpu_count()} CPUs, "
-          f"threads={nx.config.backends.knappnet.threads or 'all'}); "
-          f"NetworkX budget {budget:g} s")
-    print("| function | graph | n | m | nx s | first s | cached s | convert s | "
+          f"knappnet threads={nx.config.backends.knappnet.threads or 'all'}); "
+          f"NetworkX budget {budget:g} s; backends: {', '.join(versions)}")
+    print("| function | graph | n | m | backend | first s | cached s | convert s | "
           "x cached | x first | agree |")
     print("|" + "---|" * 11)
     graphs = {}
@@ -289,16 +349,10 @@ def main():
             if graphs.get(key) is None:
                 graphs[key] = make_graph(n, deg, directed, seed=n + deg)
             G = graphs[key]
-            G.__networkx_cache__.clear()
-            weight = "weight" if "weighted" in name or name == "pagerank" else None
-            t_conv = median_time(lambda: convert_from_nx(
-                G, edge_attrs={weight: 1} if weight else None))
-            G.__networkx_cache__.clear()
-            t0 = time.perf_counter()
-            res_kn = materialize(fn(G, "knappnet"))
-            t_first = time.perf_counter() - t0
-            t_cached = median_time(lambda: materialize(fn(G, "knappnet")))
             size = (G.number_of_nodes(), G.number_of_edges())
+            weight = "weight" if "weighted" in name or name == "pagerank" else None
+            head = f"| {name} | {kind}{' dir.' if directed else ''} | {size[0]} | {size[1]} |"
+            G.__networkx_cache__.clear()
             fail = timed_out.get(name)
             if fail and size[0] >= fail[0] and size[1] >= fail[1]:
                 t_nx, res_nx = None, None  # larger than a graph NetworkX could not finish
@@ -306,24 +360,40 @@ def main():
                 t_nx, res_nx = run_limited(lambda: materialize(fn(G, "networkx")), budget)
                 if t_nx is None and not fail:
                     timed_out[name] = size
-            if t_nx is None:
-                ok = "-"
-                nx_s = f">{budget:g}"
-                sp_c = f">{budget / t_cached:,.0f}x" if t_cached < budget else "-"
-                sp_f = f">{budget / t_first:,.0f}x" if t_first < budget else "-"
-            else:
-                if name in LOOSE:
-                    good = abs(res_kn - res_nx) <= LOOSE[name]
+            print(f"{head} networkx | {f'{t_nx:.3g}' if t_nx else f'>{budget:g}'} | - | - "
+                  f"| 1x | 1x | - |", flush=True)
+            for backend in args.backends:
+                if not installed(backend) or not implements(backend, name):
+                    print(f"{head} {backend} | n/a | n/a | n/a | n/a | n/a | n/a |", flush=True)
+                    continue
+                t_conv = conversion_time(backend_converter(backend), G, weight)
+                G.__networkx_cache__.clear()
+                try:
+                    t_first, res = run_limited(lambda: materialize(fn(G, backend)), budget)
+                    if t_first is None:
+                        print(f"{head} {backend} | >{budget:g} | - | "
+                              f"{fmt(t_conv) if t_conv else '-'} | - | - | - |", flush=True)
+                        continue
+                    t_cached = median_time(lambda: materialize(fn(G, backend)))
+                except Exception:  # an argument or input the backend does not take
+                    print(f"{head} {backend} | n/a | n/a | n/a | n/a | n/a | n/a |", flush=True)
+                    continue
+                if t_nx is None:
+                    ok = "-"
+                    sp_c = f">{budget / t_cached:,.0f}x" if t_cached < budget else "-"
+                    sp_f = f">{budget / t_first:,.0f}x" if t_first < budget else "-"
                 else:
-                    good = agree(res_kn, res_nx)
-                ok = "yes" if good else "NO"
-                failures += not good
-                nx_s = f"{t_nx:.3g}"
-                sp_c = f"{t_nx / t_cached:,.1f}x"
-                sp_f = f"{t_nx / t_first:,.1f}x"
-            print(f"| {name} | {kind}{' dir.' if directed else ''} | {size[0]} | {size[1]} "
-                  f"| {nx_s} | {fmt(t_first)} | {fmt(t_cached)} | {fmt(t_conv)} | {sp_c} "
-                  f"| {sp_f} | {ok} |", flush=True)
+                    if name in LOOSE:
+                        good = abs(res - res_nx) <= LOOSE[name]
+                    else:
+                        good = agree(res, res_nx)
+                    ok = "yes" if good else "NO"
+                    failures += not good
+                    sp_c = f"{t_nx / t_cached:,.1f}x"
+                    sp_f = f"{t_nx / t_first:,.1f}x"
+                print(f"{head} {backend} | {fmt(t_first)} | {fmt(t_cached)} | "
+                      f"{fmt(t_conv) if t_conv else '-'} | {sp_c} | {sp_f} | {ok} |",
+                      flush=True)
     return 1 if failures else 0
 
 
