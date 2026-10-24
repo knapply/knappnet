@@ -524,6 +524,26 @@ static PyObject *py_could_be_isomorphic(PyObject *mod, PyObject *args) {
     return PyBool_FromLong(out);
 }
 
+/* edit_distance(g1, g2, root1, root2, upper_bound, max_steps) -> float or None */
+static PyObject *py_edit_distance(PyObject *mod, PyObject *args) {
+    (void)mod;
+    PyObject *go1, *go2;
+    long long root1, root2, steps;
+    double upper;
+    PARSE("OOLLdL", &go1, &go2, &root1, &root2, &upper, &steps);
+    GRAPH(g1, go1);
+    GRAPH(g2, go2);
+    double out = 0;
+    int32_t found = 0;
+    BEGIN_CALL
+    status = net_graph_edit_distance(g1->h, g2->h, NULL, NULL, NULL, NULL, NULL, root1, root2,
+                                     upper, steps, &out, &found, err, ERR_LEN);
+    END_CALL
+    if (status) return engine_error(err);
+    if (!found) Py_RETURN_NONE;
+    return PyFloat_FromDouble(out);
+}
+
 #define MIX_METHODS                                                                              \
     {"core_subset", py_core_subset, METH_VARARGS, NULL},                                         \
     {"onion_layers", py_onion_layers, METH_VARARGS, NULL},                                       \
@@ -542,4 +562,5 @@ static PyObject *py_could_be_isomorphic(PyObject *mod, PyObject *args) {
     {"wl_hash", py_wl_hash, METH_VARARGS, NULL},                                                 \
     {"simrank", py_simrank, METH_VARARGS, NULL},                                                 \
     {"vf2pp_count", py_vf2pp_count, METH_VARARGS, NULL},                                         \
-    {"could_be_isomorphic", py_could_be_isomorphic, METH_VARARGS, NULL},
+    {"could_be_isomorphic", py_could_be_isomorphic, METH_VARARGS, NULL},                         \
+    {"edit_distance", py_edit_distance, METH_VARARGS, NULL},
