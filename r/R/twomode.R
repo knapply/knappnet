@@ -1,74 +1,137 @@
-# Two-mode (bipartite) networks: construction, incidence matrices,
-# projections, and two-mode centrality and density.
+# Two-mode (affiliation) networks: construction through the mode role with
+# edges declared to join different modes only, the bipartite test,
+# incidence matrices, projections, and two-mode centrality and density.
+# A mode is a declared, disjoint set of nodes (wasserman1994social, ch. 8;
+# borgatti1997network); being bipartite (2-colourable) is a property of
+# the structure (newman2018networks, ch. 6), tested separately.
 
-# Two-mode networks (man/twomode.Rd).
-twomode <- function(edges, nodes = NULL, type = "type", first = NULL, directed = FALSE,
-                    from = 1L, to = 2L, id = 1L, weight = NULL,
-                    weight_type = c("distance", "strength"), graph = list()) {
-  weight_type <- match.arg(weight_type)
-  if (!is.data.frame(edges)) {
-    stop("`edges` must be a data frame.", call. = FALSE)
-  }
-  if (!is.character(type) || length(type) != 1L || is.na(type)) {
-    stop("`type` must be a single column name.", call. = FALSE)
-  }
+# Two-mode networks (man/net_twomode.Rd).
+net_twomode <- function(edges, nodes = NULL, mode = "mode", first = NULL, directed = FALSE,
+                        source = "source", target = "target", id = "id", weight = NULL,
+                        weight_type = NULL, quiet = FALSE, graph = list()) {
+  check_tables(edges, nodes)
+  mode <- check_string(mode, "mode")
+  id <- check_string(id, "id")
+  src <- resolve_column(edges, source, "source", "edges")
+  tgt <- resolve_column(edges, target, "target", "edges")
   if (is.null(nodes)) {
-    if (type == "name") {
-      stop("Without `nodes`, identifiers go in a column called `name`; choose another `type`.",
-           call. = FALSE)
+    a <- edges[[src]]
+    b <- edges[[tgt]]
+    if (is.factor(a) || is.factor(b)) {
+      a <- as.character(a)
+      b <- as.character(b)
     }
-    from_col <- resolve_column(edges, from, "from", "edges")
-    to_col <- resolve_column(edges, to, "to", "edges")
-    a <- unique(as.vector(edges[[from_col]]))
-    b <- unique(as.vector(edges[[to_col]]))
+    a <- unique(a)
+    b <- unique(b)
     both <- intersect(a, b)
     if (length(both)) {
       stop(sprintf(paste0(
         "%d identifier(s) appear in both `%s` and `%s`, for example %s; in a two-mode ",
-        "network every node belongs to one mode. Supply `nodes` with a type column."),
-        length(both), from_col, to_col, paste(format(utils::head(both, 3L)), collapse = ", ")),
+        "network every node belongs to one mode. Supply `nodes` with a mode column."),
+        length(both), src, tgt, paste(format(utils::head(both, 3L)), collapse = ", ")),
         call. = FALSE)
     }
-    nodes <- data.frame(name = c(a, b), stringsAsFactors = FALSE)
-    nodes[[type]] <- rep(c(FALSE, TRUE), c(length(a), length(b)))
-    id <- "name"
+    if (mode == id) {
+      stop("`mode` and `id` must name different columns of the node table.", call. = FALSE)
+    }
+    nodes <- data.frame(c(a, b), stringsAsFactors = FALSE)
+    names(nodes) <- id
+    # The modes are labelled by the endpoint columns they came from.
+    nodes[[mode]] <- rep(c(src, tgt), c(length(a), length(b)))
     if (!is.null(first)) {
-      stop("`first` applies only when `nodes` is given; without it the `from` column ",
+      stop("`first` applies only when `nodes` is given; without it the `source` column ",
            "is the first mode.", call. = FALSE)
     }
+  } else {
+    id <- resolve_column(nodes, id, "id", "nodes")
+    mode <- resolve_mode_column(nodes, mode)
   }
-  x <- netframe(edges, nodes, directed = directed, from = from, to = to, id = id,
-                weight = weight, weight_type = weight_type, graph = graph)
-  set_twomode(x, type, first)
+  roles <- list(id = id, source = src, target = tgt,
+                weight = resolve_optional(edges, weight, "weight", "edges"),
+                weight_type = check_weight_type(weight, weight_type), mode = mode)
+  x <- new_net_frame(edges, nodes, check_flag(directed, "directed"), roles,
+                    list(between_modes_only = TRUE), check_graph(graph))
+  x <- build_net_frame(x, check_flag(quiet, "quiet"), "net_twomode")
+  k <- length(mode_labels(x))
+  if (k != 2L) {
+    stop(sprintf(paste0("A two-mode network needs exactly two modes; column `%s` of `nodes` ",
+                        "has %d. For k modes use net_frame(mode = , between_modes_only = TRUE)."),
+                 mode, k), call. = FALSE)
+  }
+  set_first_mode(x, first)
 }
 
-# See man/twomode.Rd.
-as_twomode <- function(x, type = NULL, first = NULL, weighted = NULL) {
+# The mode column: `mode` when present, else igraph's logical `type`
+# column, which is accepted as an alias.
+resolve_mode_column <- function(nodes, mode) {
+  if (mode %in% names(nodes)) return(mode)
+  if (mode == "mode" && "type" %in% names(nodes) && is.logical(nodes$type)) return("type")
+  resolve_column(nodes, mode, "mode", "nodes")
+}
+
+# See man/net_twomode.Rd.
+net_as_twomode <- function(x, mode = NULL, first = NULL, weighted = NULL, quiet = FALSE) {
   if (is.matrix(x) || (isS4(x) && methods::is(x, "Matrix"))) {
-    return(incidence_to_twomode(x, weighted))
+    return(incidence_to_twomode(x, weighted, quiet))
   }
-  if (is.data.frame(x) && !inherits(x, "netframe")) {
-    return(twomode(x, type = if (is.null(type)) "type" else type, first = first))
+  if (is.data.frame(x) && !inherits(x, "net_frame")) {
+    return(net_twomode(x, mode = if (is.null(mode)) "mode" else mode, first = first,
+                       quiet = quiet))
   }
-  x <- as_netframe(x)
-  if (is.null(type)) {
-    if (is_twomode(x)) return(x)
-    type <- find_type_column(x$nodes)
+  x <- as_net_frame(x)
+  if (is.null(mode)) {
+    if (net_is_twomode(x)) return(set_first_mode(x, first))
+    mode <- if (!is.null(x$roles$mode)) x$roles$mode else "mode"
   }
-  set_twomode(x, type, first)
+  mode <- resolve_mode_column(x$nodes, mode)
+  declared <- x$declared
+  declared$between_modes_only <- TRUE
+  out <- rebuild_net_frame(x, x$edges, x$nodes, mode = mode, declared = declared,
+                          quiet = quiet, fn = "net_as_twomode")
+  set_first_mode(out, first)
 }
 
-# See man/twomode.Rd.
-is_twomode <- function(x) {
-  if (!inherits(x, "netframe") || is.null(x$roles$type)) return(FALSE)
-  v <- x$nodes[[x$roles$type]]
-  is.logical(v) && !anyNA(v)
+# See man/net_twomode.Rd.
+net_is_twomode <- function(x) {
+  if (!inherits(x, "net_frame") || is.null(x$roles$mode)) return(FALSE)
+  isTRUE(x$declared$between_modes_only) && length(mode_labels(x)) == 2L
 }
 
-# See man/twomode.Rd.
-incidence_matrix <- function(x, attr = NULL, sparse = FALSE) {
+# See man/net_twomode.Rd.
+net_is_bipartite <- function(x) {
+  check_net_frame(x)
+  require_resolved(x)
+  n <- nrow(x$nodes)
+  src <- x$index$src + 1L
+  tgt <- x$index$tgt + 1L
+  if (any(src == tgt)) return(FALSE)
+  # Breadth-first 2-colouring over the undirected adjacency lists.
+  adj <- split(c(tgt, src), factor(c(src, tgt), levels = seq_len(n)))
+  color <- integer(n)
+  for (root in seq_len(n)) {
+    if (color[[root]] != 0L) next
+    color[[root]] <- 1L
+    queue <- root
+    while (length(queue)) {
+      v <- queue[[1L]]
+      queue <- queue[-1L]
+      for (u in adj[[v]]) {
+        if (color[[u]] == 0L) {
+          color[[u]] <- 3L - color[[v]]
+          queue <- c(queue, u)
+        } else if (color[[u]] == color[[v]]) {
+          return(FALSE)
+        }
+      }
+    }
+  }
+  TRUE
+}
+
+# See man/net_twomode.Rd.
+net_incidence <- function(x, attr = NULL, sparse = FALSE) {
   check_twomode(x)
-  second <- x$nodes[[x$roles$type]]
+  second <- twomode_types(x) == 1L
   m <- as.matrix(x, attr = attr, sparse = sparse)
   rows <- which(!second)
   cols <- which(second)
@@ -81,16 +144,17 @@ incidence_matrix <- function(x, attr = NULL, sparse = FALSE) {
   }
 }
 
-# One-mode projections of a two-mode network (man/project.Rd).
-project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
-                    method = c("count", "newman", "product"), loops = FALSE, threads = 0L) {
+# One-mode projections of a two-mode network (man/net_project.Rd).
+net_project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
+                        method = c("count", "newman", "product"), loops = FALSE,
+                        threads = 0L) {
   check_twomode(x)
   which <- match.arg(which)
   method <- match.arg(method)
   if (which == "both") {
     return(list(
-      first = project(x, "first", weighted, method, loops, threads),
-      second = project(x, "second", weighted, method, loops, threads)
+      first = net_project(x, "first", weighted, method, loops, threads),
+      second = net_project(x, "second", weighted, method, loops, threads)
     ))
   }
   weighted <- check_flag(weighted, "weighted")
@@ -105,48 +169,48 @@ project <- function(x, which = c("first", "second", "both"), weighted = TRUE,
   threads <- resolve_threads(threads)
   types <- twomode_types(x)
   ptr <- engine_graph(x)
-  res <- engine_call("project", .Call(C_project, ptr, types, second, code, loops, threads))
-  in_mode <- x$nodes[[x$roles$type]] == second
+  res <- engine_call("net_project", .Call(C_project, ptr, types, second, code, loops, threads))
+  in_mode <- types == as.integer(second)
   nodes <- x$nodes[in_mode, , drop = FALSE]
   rownames(nodes) <- NULL
   ids <- x$nodes[[x$roles$id]]
-  edges <- data.frame(from = ids[res[[1]]], to = ids[res[[2]]], stringsAsFactors = FALSE)
+  edges <- data.frame(source = ids[res[[1]]], target = ids[res[[2]]], stringsAsFactors = FALSE)
   if (weighted) edges$weight <- res[[3]]
-  netframe(edges, nodes, directed = FALSE, from = "from", to = "to", id = x$roles$id,
-           weight = if (weighted) "weight", weight_type = "strength",
-           graph = x$graph)
+  net_frame(edges, nodes, directed = FALSE, id = x$roles$id,
+            weight = if (weighted) "weight", weight_type = "strength",
+            loops = if (!loops) FALSE, quiet = TRUE, graph = x$graph)
 }
 
-# Centrality and density of two-mode networks (man/twomode_degree.Rd).
-twomode_degree <- function(x, normalized = TRUE) {
-  twomode_centrality(x, 0L, normalized, 0L, 1L, "twomode_degree")
+# Centrality and density of two-mode networks (man/net_twomode_degree.Rd).
+net_twomode_degree <- function(x, normalized = TRUE) {
+  twomode_centrality(x, 0L, normalized, 0L, 1L, "net_twomode_degree")
 }
 
-# See man/twomode_degree.Rd.
-twomode_closeness <- function(x, normalized = TRUE,
-                              unreachable = c("wasserman_faust", "ignore"), threads = 0L) {
+# See man/net_twomode_degree.Rd.
+net_twomode_closeness <- function(x, normalized = TRUE,
+                                  unreachable = c("wasserman_faust", "ignore"), threads = 0L) {
   unreachable <- match.arg(unreachable)
   if (unreachable == "wasserman_faust" && !isTRUE(normalized)) {
     stop("The Wasserman-Faust rule applies to normalized closeness; use ",
          "`unreachable = \"ignore\"` with `normalized = FALSE`.", call. = FALSE)
   }
   twomode_centrality(x, 1L, normalized, if (unreachable == "ignore") 0L else 1L, threads,
-                     "twomode_closeness")
+                     "net_twomode_closeness")
 }
 
-# See man/twomode_degree.Rd.
-twomode_betweenness <- function(x, normalized = TRUE, threads = 0L) {
-  twomode_centrality(x, 2L, normalized, 0L, threads, "twomode_betweenness")
+# See man/net_twomode_degree.Rd.
+net_twomode_betweenness <- function(x, normalized = TRUE, threads = 0L) {
+  twomode_centrality(x, 2L, normalized, 0L, threads, "net_twomode_betweenness")
 }
 
-# See man/twomode_degree.Rd.
-twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L) {
+# See man/net_twomode_degree.Rd.
+net_twomode_eigen <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L) {
   check_twomode(x)
   check_iteration(tol, max_iter)
   threads <- resolve_threads(threads)
   types <- twomode_types(x)
   ptr <- engine_graph(x)
-  res <- engine_call("twomode_eigenvector",
+  res <- engine_call("net_twomode_eigen",
                      .Call(C_twomode_eigenvector, ptr, types, as.double(tol),
                            as.double(max_iter), threads))
   if (!res[[3]] && nrow(x$edges) > 0L) {
@@ -156,12 +220,12 @@ twomode_eigenvector <- function(x, tol = 1e-12, max_iter = 10000L, threads = 0L)
   res[[1]]
 }
 
-# See man/twomode_degree.Rd.
-twomode_density <- function(x) {
+# See man/net_twomode_degree.Rd.
+net_twomode_density <- function(x) {
   check_twomode(x)
   types <- twomode_types(x)
   ptr <- engine_graph(x)
-  engine_call("twomode_density", .Call(C_twomode_density, ptr, types))
+  engine_call("net_twomode_density", .Call(C_twomode_density, ptr, types))
 }
 
 twomode_centrality <- function(x, measure, normalized, unreachable, threads, fn) {
@@ -175,101 +239,59 @@ twomode_centrality <- function(x, measure, normalized, unreachable, threads, fn)
 }
 
 check_twomode <- function(x) {
-  check_netframe(x)
-  if (is.null(x$roles$type)) {
-    stop("`x` is not a two-mode network; create one with twomode() or as_twomode().",
+  check_net_frame(x)
+  if (is.null(x$roles$mode) || !isTRUE(x$declared$between_modes_only)) {
+    stop("`x` is not a two-mode network; create one with net_twomode() or net_as_twomode().",
          call. = FALSE)
   }
-  v <- x$nodes[[x$roles$type]]
-  if (!is.logical(v) || anyNA(v)) {
-    stop(sprintf(paste0("The node type column `%s` must be logical without missing values; ",
-                        "recreate the network with as_twomode()."), x$roles$type),
-         call. = FALSE)
+  k <- length(mode_labels(x))
+  if (k != 2L) {
+    stop(sprintf(paste0("`x` has %d modes (column `%s` of `x$nodes`); two-mode measures ",
+                        "need exactly two."), k, x$roles$mode), call. = FALSE)
   }
+  invisible(TRUE)
 }
 
-# Node types as the engine expects them: 0 for the first mode, 1 for the
-# second.
-twomode_types <- function(x) as.integer(x$nodes[[x$roles$type]])
+# The mode labels in the engine's order (first appearance in the node
+# table).
+mode_labels <- function(x) frame_summary_cached(x)$modes
 
-# Records `type` (a node column) as the two-mode node type, converting a
-# two-valued column to a new logical column, and checks every edge.
-set_twomode <- function(x, type, first) {
-  if (!is.character(type) || length(type) != 1L || !type %in% names(x$nodes)) {
-    stop(sprintf("Node column `%s` not found.", format(type)), call. = FALSE)
-  }
-  v <- x$nodes[[type]]
-  if (anyNA(v)) {
-    stop(sprintf("Node type column `%s` has missing values.", type), call. = FALSE)
-  }
-  if (is.logical(v)) {
-    if (!is.null(first)) {
-      stop("`first` applies only to a type column that is not logical; a logical ",
-           "column always has FALSE for the first mode.", call. = FALSE)
+# The mode of each node as the engine's 0-based code by first appearance.
+mode_codes <- function(x) {
+  engine_graph(x, missing_ok = TRUE)
+  engine_call("net_frame", .Call(C_frame_codes, x$cache$frame, 0L, as.double(nrow(x$nodes))))
+}
+
+# Node types as the two-mode engine functions expect them: 0 for the first
+# mode, 1 for the second.
+twomode_types <- function(x) {
+  labels <- mode_labels(x)
+  first <- x$roles$mode_levels
+  first <- if (is.null(first)) labels[[1L]] else first[[1L]]
+  as.integer(labels[mode_codes(x) + 1L] != first)
+}
+
+# Records which mode is the first (`mode_levels`: the first mode's label,
+# then the others in order of appearance).
+set_first_mode <- function(x, first) {
+  labels <- mode_labels(x)
+  if (is.null(first)) {
+    if (is.null(x$roles$mode_levels) || !all(x$roles$mode_levels %in% labels)) {
+      x$roles$mode_levels <- labels
     }
-    col <- type
-    labels <- c("FALSE", "TRUE")
-    is_second <- v
-  } else {
-    # Radix sorting orders text by bytes, the same in every locale.
-    values <- if (is.factor(v)) levels(droplevels(v)) else sort(unique(v), method = "radix")
-    if (length(values) != 2L) {
-      stop(sprintf(paste0("Node type column `%s` must be logical or have exactly two ",
-                          "distinct values; it has %d."), type, length(values)),
-           call. = FALSE)
-    }
-    key <- if (is.factor(v)) as.character(v) else v
-    if (!is.null(first)) {
-      if (length(first) != 1L || !as.character(first) %in% as.character(values)) {
-        stop(sprintf("`first` must be one of the values of `%s`: %s.", type,
-                     paste(format(values), collapse = ", ")), call. = FALSE)
-      }
-      first_value <- values[as.character(values) == as.character(first)]
-    } else {
-      first_value <- values[[1L]]
-    }
-    second_value <- values[as.character(values) != as.character(first_value)]
-    is_second <- as.character(key) != as.character(first_value)
-    labels <- c(as.character(first_value), as.character(second_value))
-    col <- if ("type" %in% names(x$nodes)) {
-      make.unique(c(names(x$nodes), make.names(paste0("is_", labels[[2L]]))))[ncol(x$nodes) + 1L]
-    } else {
-      "type"
-    }
-    x$nodes[[col]] <- is_second
+    return(x)
   }
-  bad <- which(is_second[x$index$src + 1L] == is_second[x$index$tgt + 1L])
-  if (length(bad)) {
-    k <- bad[[1L]]
-    ids <- x$nodes[[x$roles$id]]
-    a <- x$index$src[[k]] + 1L
-    stop(sprintf(paste0(
-      "%d edge(s) join two nodes of the same mode, for example edge %d between `%s` and ",
-      "`%s` (both %s); in a two-mode network every edge joins the two modes."),
-      length(bad), k, format(ids[[a]]), format(ids[[x$index$tgt[[k]] + 1L]]),
-      if (is_second[[a]]) labels[[2L]] else labels[[1L]]), call. = FALSE)
+  if (length(first) != 1L || is.na(first) || !as.character(first) %in% labels) {
+    stop(sprintf("`first` must be one of the modes in `%s`: %s.", x$roles$mode,
+                 paste(labels, collapse = ", ")), call. = FALSE)
   }
-  x$roles$type <- col
-  x$roles$type_labels <- labels
+  first <- as.character(first)
+  x$roles$mode_levels <- c(first, setdiff(labels, first))
   x
 }
 
-# A logical `type` column, else a two-valued `class` (DyNetML node
-# classes), `type`, or `mode` (network's bipartite networks) column.
-find_type_column <- function(nodes) {
-  two <- function(col) {
-    col %in% names(nodes) && !anyNA(nodes[[col]]) &&
-      length(unique(as.character(nodes[[col]]))) == 2L
-  }
-  if ("type" %in% names(nodes) && is.logical(nodes$type)) return("type")
-  for (col in c("class", "type", "mode")) if (two(col)) return(col)
-  stop(paste0("Cannot tell the two modes apart. Name the node column that holds them with ",
-              "`type =` (a logical column, or one with exactly two distinct values)."),
-       call. = FALSE)
-}
-
 # An incidence matrix as a two-mode network: rows are the first mode.
-incidence_to_twomode <- function(m, weighted) {
+incidence_to_twomode <- function(m, weighted, quiet = FALSE) {
   rows <- rownames(m)
   cols <- colnames(m)
   if (is.null(rows)) rows <- paste0("r", seq_len(nrow(m)))
@@ -303,11 +325,11 @@ incidence_to_twomode <- function(m, weighted) {
   j <- j[o]
   v <- v[o]
   weighted <- if (is.null(weighted)) any(v != 1) else isTRUE(weighted)
-  edges <- data.frame(from = rows[i], to = cols[j], stringsAsFactors = FALSE)
+  edges <- data.frame(source = rows[i], target = cols[j], stringsAsFactors = FALSE)
   if (weighted) edges$weight <- v
-  nodes <- data.frame(name = c(rows, cols), type = rep(c(FALSE, TRUE), c(length(rows),
-                                                                         length(cols))),
+  nodes <- data.frame(id = c(rows, cols),
+                      mode = rep(c("row", "column"), c(length(rows), length(cols))),
                       stringsAsFactors = FALSE)
-  twomode(edges, nodes, type = "type", from = "from", to = "to", id = "name",
-          weight = if (weighted) "weight")
+  net_twomode(edges, nodes, mode = "mode", weight = if (weighted) "weight",
+              weight_type = if (weighted) "strength", quiet = quiet)
 }

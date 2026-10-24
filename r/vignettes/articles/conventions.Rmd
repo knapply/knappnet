@@ -27,9 +27,9 @@ measure(g, convention = "sna")
 measure(g, convention = "ucinet")
 ```
 
-`convention` is available on `degree()`, `betweenness()`, `closeness()`,
-`harmonic_centrality()`, `eigenvector_centrality()`, `graph_density()`, and
-`centralization()`. Other measures have a single convention, stated in
+`convention` is available on `net_degree()`, `net_betweenness()`, `net_closeness()`,
+`net_harmonic()`, `net_eigen()`, `net_density()`, and
+`net_centralization()`. Other measures have a single convention, stated in
 their help pages along with the tools it matches.
 
 ```{r}
@@ -71,12 +71,12 @@ between the same people become one cell, and a self-loop is a diagonal
 cell they ignore. [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/) count every edge:
 
 ```{r}
-multi <- netframe(data.frame(from = c("a", "a", "b", "c"),
-                             to   = c("b", "b", "c", "c")), directed = FALSE)
+multi <- net_frame(data.frame(source = c("a", "a", "b", "c"),
+                             target   = c("b", "b", "c", "c")), directed = FALSE)
 multi$edges
-data.frame(node   = multi$nodes$name,
-           igraph = degree(multi),
-           sna    = degree(multi, convention = "sna"))
+data.frame(node   = multi$nodes$id,
+           igraph = net_degree(multi),
+           sna    = net_degree(multi, convention = "sna"))
 ```
 
 Under igraph's convention, `a` has two edges to `b`, and `c`'s self-loop
@@ -89,12 +89,12 @@ Here `a` and `b` are joined twice, and there are two routes between `a`
 and `c`, through `b` or through `d`:
 
 ```{r}
-paths <- netframe(data.frame(from = c("a", "a", "b", "a", "d"),
-                             to   = c("b", "b", "c", "d", "c")), directed = FALSE)
-data.frame(node     = paths$nodes$name,
-           igraph   = round(betweenness(paths), 3),
-           networkx = round(betweenness(paths, convention = "networkx"), 3),
-           sna      = round(betweenness(paths, convention = "sna"), 3))
+paths <- net_frame(data.frame(source = c("a", "a", "b", "a", "d"),
+                             target   = c("b", "b", "c", "d", "c")), directed = FALSE)
+data.frame(node     = paths$nodes$id,
+           igraph   = round(net_betweenness(paths), 3),
+           networkx = round(net_betweenness(paths, convention = "networkx"), 3),
+           sna      = round(net_betweenness(paths, convention = "sna"), 3))
 ```
 
 [igraph](https://r.igraph.org/) counts each parallel edge as a separate shortest path, so of the
@@ -113,14 +113,14 @@ normalization for these measures (its `rescale` divides by the sum
 instead).
 
 ```{r}
-g <- netframe(data.frame(from = c("a", "a", "a", "b"), to = c("b", "c", "d", "c")),
+g <- net_frame(data.frame(source = c("a", "a", "a", "b"), target = c("b", "c", "d", "c")),
               directed = FALSE)
-data.frame(node             = g$nodes$name,
-           betweenness      = betweenness(g),
-           normalized       = round(betweenness(g, normalized = TRUE), 3),
-           ucinet_percent   = round(100 * betweenness(g, normalized = TRUE,
+data.frame(node             = g$nodes$id,
+           betweenness      = net_betweenness(g),
+           normalized       = round(net_betweenness(g, normalized = TRUE), 3),
+           ucinet_percent   = round(100 * net_betweenness(g, normalized = TRUE,
                                                       convention = "ucinet"), 1),
-           sna_rescale      = round(betweenness(g) / sum(betweenness(g)), 3))
+           sna_rescale      = round(net_betweenness(g) / sum(net_betweenness(g)), 3))
 ```
 
 ## Closeness when some nodes cannot be reached
@@ -129,14 +129,14 @@ Closeness is the classic disagreement. In this network `a`, `b`, and `c`
 form a path, and `d` and `e` are a separate pair:
 
 ```{r}
-split <- netframe(data.frame(from = c("a", "b", "d"), to = c("b", "c", "e")),
+split <- net_frame(data.frame(source = c("a", "b", "d"), target = c("b", "c", "e")),
                   directed = FALSE)
 data.frame(
-  node     = split$nodes$name,
-  igraph   = round(closeness(split), 3),
-  networkx = round(closeness(split, convention = "networkx"), 3),
-  sna      = closeness(split, convention = "sna"),
-  ucinet   = round(closeness(split, convention = "ucinet"), 3)
+  node     = split$nodes$id,
+  igraph   = round(net_closeness(split), 3),
+  networkx = round(net_closeness(split, convention = "networkx"), 3),
+  sna      = net_closeness(split, convention = "sna"),
+  ucinet   = round(net_closeness(split, convention = "ucinet"), 3)
 )
 ```
 
@@ -155,10 +155,10 @@ unreachable node simply adds 0, and the tools agree on it up to
 normalization and direction:
 
 ```{r}
-data.frame(node       = split$nodes$name,
-           igraph     = harmonic_centrality(split),
-           networkx   = harmonic_centrality(split, convention = "networkx"),
-           sna_ucinet = harmonic_centrality(split, convention = "sna"))
+data.frame(node       = split$nodes$id,
+           igraph     = net_harmonic(split),
+           networkx   = net_harmonic(split, convention = "networkx"),
+           sna_ucinet = net_harmonic(split, convention = "sna"))
 ```
 
 In directed networks NetworkX measures distances *to* each node and the
@@ -172,13 +172,13 @@ and NetworkX score a node by who points to it, sna by whom it points to,
 and UCINET symmetrizes the network first:
 
 ```{r}
-d <- netframe(data.frame(from = c("a", "b", "c", "b", "c"),
-                         to   = c("b", "c", "a", "a", "b")))
-data.frame(node     = d$nodes$name,
-           igraph   = round(eigenvector_centrality(d), 3),
-           networkx = round(eigenvector_centrality(d, convention = "networkx"), 3),
-           sna      = round(eigenvector_centrality(d, convention = "sna"), 3),
-           ucinet   = round(eigenvector_centrality(d, convention = "ucinet"), 3))
+d <- net_frame(data.frame(source = c("a", "b", "c", "b", "c"),
+                         target   = c("b", "c", "a", "a", "b")))
+data.frame(node     = d$nodes$id,
+           igraph   = round(net_eigen(d), 3),
+           networkx = round(net_eigen(d, convention = "networkx"), 3),
+           sna      = round(net_eigen(d, convention = "sna"), 3),
+           ucinet   = round(net_eigen(d, convention = "ucinet"), 3))
 ```
 
 igraph's R function ignores direction unless `directed = TRUE` is given;
@@ -191,7 +191,7 @@ convention refuses too, and `"ucinet"` stops rather than return something
 UCINET would not:
 
 ```{r, error = TRUE}
-eigenvector_centrality(split, convention = "networkx")
+net_eigen(split, convention = "networkx")
 ```
 
 ## Centralization
@@ -202,12 +202,12 @@ possible in a network of the same size, which a star attains. For degree,
 perfect star without loops scores below 1; [sna](https://cran.r-project.org/package=sna)'s and [UCINET](https://sites.google.com/site/ucinetsoftware/home)'s do not:
 
 ```{r}
-star <- netframe(data.frame(from = "hub", to = c("a", "b", "c", "d", "e")),
+star <- net_frame(data.frame(source = "hub", target = c("a", "b", "c", "d", "e")),
                  directed = FALSE)
-c(igraph          = centralization(star, "degree"),
-  igraph_no_loops = centralization(star, "degree", loops = FALSE),
-  sna             = centralization(star, "degree", convention = "sna"),
-  ucinet          = centralization(star, "degree", convention = "ucinet"))
+c(igraph          = net_centralization(star, "degree"),
+  igraph_no_loops = net_centralization(star, "degree", loops = FALSE),
+  sna             = net_centralization(star, "degree", convention = "sna"),
+  ucinet          = net_centralization(star, "degree", convention = "ucinet"))
 ```
 
 `?centralization` lists every maximum. [NetworkX](https://networkx.org/) has no centralization
@@ -219,16 +219,16 @@ With every edge counted, parallel edges and loops can push density above
 1, as in [igraph](https://r.igraph.org/) and [NetworkX](https://networkx.org/). [sna](https://cran.r-project.org/package=sna) and [UCINET](https://sites.google.com/site/ucinetsoftware/home) count each pair once:
 
 ```{r}
-c(igraph = graph_density(multi), sna = graph_density(multi, convention = "sna"))
+c(igraph = net_density(multi), sna = net_density(multi, convention = "sna"))
 ```
 
 ## Measures with one convention
 
 Measures where tools agree, or where knappnet follows one tool and the
 others are not comparable, take no `convention` argument. Their help pages
-state every choice: for example, `coreness()` counts parallel edges and
-loops as [igraph](https://r.igraph.org/) does ([NetworkX](https://networkx.org/) refuses multigraphs), `constraint()` ignores
-self-loops (NetworkX counts them), and `triad_census()` counts parallel
+state every choice: for example, `net_coreness()` counts parallel edges and
+loops as [igraph](https://r.igraph.org/) does ([NetworkX](https://networkx.org/) refuses multigraphs), `net_constraint()` ignores
+self-loops (NetworkX counts them), and `net_triad_census()` counts parallel
 edges once (igraph's census does not support them). The validation
 manifest records each of these differences with its reason; see
 [validation](validation.html).

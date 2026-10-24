@@ -1,8 +1,9 @@
 /*
  * R bindings for cohesive subsets (bicomponents, n-cliques, n-clans,
  * k-plexes, lambda sets, factions), community partitions (Girvan-Newman,
- * leading eigenvector, greedy modularity), topography (core-periphery
- * fits, compactness, the small-world quotient), and random graphs. As in
+ * leading eigenvector, greedy modularity), whole-network structure
+ * (core-periphery fits, compactness, the small-world quotient), and random
+ * graphs. As in
  * glue.c, R errors are raised only after the engine call has returned and
  * every engine-owned object has been released.
  */
@@ -197,7 +198,7 @@ SEXP C_fast_greedy(SEXP ptr, SEXP resolution, SEXP weighted) {
   return out;
 }
 
-/* ---- Topography --------------------------------------------------------- */
+/* ---- Whole-network structure ------------------------------------------- */
 
 /* Returns list(core (logical), correlation). */
 SEXP C_core_periphery(SEXP ptr, SEXP links, SEXP weighted, SEXP starts, SEXP max_stall, SEXP tenure,

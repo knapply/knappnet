@@ -1,14 +1,14 @@
 # Node coordinates: the layouts computed by the engine, the stress of a
 # layout, and the checks on layouts given by hand.
 
-# Node coordinates for drawing a network (man/layout_network.Rd).
-layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
+# Node coordinates for drawing a network (man/net_layout.Rd).
+net_layout <- function(x, method = c("auto", "stress", "sparse_stress", "fr", "circle",
                                          "star", "grid", "tree", "twomode"),
                            seed = NULL, weighted = NULL, weights_as = NULL, types = NULL,
                            root = NULL, center = NULL, max_iter = NULL, tol = NULL,
                            pivots = NULL, approximation = c("auto", "exact", "barnes_hut"),
                            threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   approximation <- match.arg(approximation)
   threads <- resolve_threads(threads)
@@ -28,8 +28,10 @@ layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr"
     twomode = list(types = layout_types(x, types)),
     list()
   )
-  ptr <- engine_graph(x)
-  xy <- engine_call("layout_network", switch(method,
+  # A layout places the observed ties; it is not a measure, so unresolved
+  # missing data do not stop it.
+  ptr <- engine_graph(x, missing_ok = TRUE)
+  xy <- engine_call("net_layout", switch(method,
     auto = , stress = , sparse_stress = {
       algorithm <- switch(method, auto = 0L, stress = 1L, sparse_stress = 2L)
       .Call(C_layout_stress, ptr, algorithm, args$w$weighted, args$w$code, args$pivots,
@@ -50,14 +52,14 @@ layout_network <- function(x, method = c("auto", "stress", "sparse_stress", "fr"
   matrix(xy, nrow = n, ncol = 2L, dimnames = list(NULL, c("x", "y")))
 }
 
-# See man/layout_network.Rd.
-layout_stress <- function(x, layout, weighted = NULL, weights_as = NULL, threads = 0L) {
-  check_netframe(x)
+# See man/net_layout.Rd.
+net_layout_stress <- function(x, layout, weighted = NULL, weights_as = NULL, threads = 0L) {
+  check_net_frame(x)
   xy <- layout_matrix(layout, nrow(x$nodes))
   w <- resolve_weighting(x, weighted, weights_as)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call("layout_stress",
+  engine_call("net_layout_stress",
               .Call(C_layout_stress_value, ptr, as.double(xy), w$weighted, w$code, threads))
 }
 
@@ -74,10 +76,11 @@ layout_tol <- function(tol) {
 layout_types <- function(x, types) {
   n <- nrow(x$nodes)
   if (is.null(types)) {
-    col <- if (!is.null(x$roles$type)) x$roles$type else "type"
+    if (net_is_twomode(x)) return(twomode_types(x))
+    col <- if (!is.null(x$roles$mode)) x$roles$mode else "type"
     if (!col %in% names(x$nodes)) {
-      stop(paste0("A two-mode layout needs node types: supply `types =`, use a network ",
-                  "made by twomode() or as_twomode(), or add a `type` column to the node ",
+      stop(paste0("A two-mode layout needs node modes: supply `types =`, use a network ",
+                  "made by net_twomode() or net_as_twomode(), or add a `type` column to the node ",
                   "table."), call. = FALSE)
     }
     types <- x$nodes[[col]]

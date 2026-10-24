@@ -1,0 +1,93 @@
+\name{net_constraint}
+\alias{net_constraint}
+\alias{net_effective_size}
+\alias{net_efficiency}
+\alias{net_hierarchy}
+\title{Structural holes}
+\description{
+Burt's (1992) measures of how far a node's contacts are redundant with one
+another. \code{net_constraint()} is high when a node's contacts are few or
+strongly tied to each other; \code{net_effective_size()} is the number of
+contacts, discounted for redundancy; \code{net_efficiency()} is effective size
+divided by the number of contacts; \code{net_hierarchy()} measures how far the
+constraint on a node is concentrated in a single contact.
+}
+\usage{
+net_constraint(x, weighted = NULL, threads = 0L)
+
+net_effective_size(x, weighted = NULL, threads = 0L)
+
+net_efficiency(x, weighted = NULL, threads = 0L)
+
+net_hierarchy(x, weighted = NULL, threads = 0L)
+}
+\arguments{
+\item{x}{A \code{\link{net_frame}}.}
+\item{weighted}{Whether to use edge weights as tie strengths. \code{NULL} (the
+default) uses them when the network has a weight column.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{net_frame}}).}
+}
+\details{
+A node's contacts are its in- and out-neighbours other than itself.
+Proportional tie strength is \eqn{p_{ij} = z_{ij} / \sum_k z_{ik}}{p_ij =
+z_ij / sum_k z_ik} with \eqn{z_{ij} = a_{ij} + a_{ji}}{z_ij = a_ij + a_ji},
+where \eqn{a_{ij}}{a_ij} is the total weight of the edges from i to j (their
+number in a binary network), so parallel edges add up and a mutual pair of
+arcs is a stronger tie than a single arc. An undirected network gives the
+same results as the directed network with every edge reciprocated.
+Self-loops are ignored.
+
+Constraint is
+\deqn{C_i = \sum_j \left(p_{ij} + \sum_{q \ne j} p_{iq} p_{qj}\right)^2}{C_i
+= sum_j (p_ij + sum_{q != j} p_iq p_qj)^2}
+and effective size is
+\deqn{E_i = \sum_j \left(1 - \sum_{q \ne j} p_{iq} m_{jq}\right), \quad
+m_{jq} = z_{jq} / \max_k z_{jk},}{E_i = sum_j (1 - sum_{q != j} p_iq m_jq),
+m_jq = z_jq / max_k z_jk,}
+where j and q range over the contacts of i (Burt 1992, 2004). In binary
+undirected networks without parallel edges, effective size equals
+\eqn{n - 2t/n} for a node with n contacts and t ties among them (Borgatti
+1997).
+
+Hierarchy is the Coleman-Theil disorder index of the constraint each
+contact contributes, \eqn{c_{ij} = (p_{ij} + \sum_{q \ne j} p_{iq}
+p_{qj})^2}{c_ij = (p_ij + sum_{q != j} p_iq p_qj)^2} (so that
+\eqn{C_i = \sum_j c_{ij}}{C_i = sum_j c_ij}). With \eqn{N} contacts and
+\eqn{r_j = c_{ij} / (C_i / N)}{r_j = c_ij / (C_i / N)}, each contact's
+share of the constraint relative to an even split,
+\deqn{H_i = \frac{\sum_j r_j \ln r_j}{N \ln N},}{H_i = sum_j r_j ln(r_j) / (N ln N),}
+which is 0 when every contact constrains the node equally and approaches
+1 as a single contact accounts for all of the constraint (Burt 1992, ch.
+2). This is the definition UCINET's structural holes routine documents.
+
+All four measures are \code{NaN} for nodes without contacts, and hierarchy
+also for nodes with a single contact, where \eqn{N \ln N = 0}{N ln N = 0}
+(some programs report 1 there).
+
+Weights are read as tie strengths (volume of contact) and used as given,
+whatever the network's \code{weight_type}; they must be positive. These
+conventions match igraph's \code{net_constraint()} and NetworkX's
+\code{net_constraint()} and \code{net_effective_size()}. NetworkX counts
+self-loops in a node's tie volume; this package, like igraph, does not.
+}
+\value{A numeric vector aligned with the rows of \code{x$nodes}.}
+\references{
+Burt, R. S. (1992). \emph{Structural Holes: The Social Structure of
+Competition}. Harvard University Press. \doi{10.4159/9780674029095}
+
+Burt, R. S. (2004). Structural holes and good ideas. \emph{American Journal
+of Sociology}, 110(2), 349-399. \doi{10.1086/421787}
+
+Borgatti, S. P. (1997). Structural holes: Unpacking Burt's redundancy
+measures. \emph{Connections}, 20(1), 35-38.
+}
+\examples{
+g <- net_frame(data.frame(source = c(1, 1, 1, 2), target = c(2, 3, 4, 3)),
+              directed = FALSE)
+net_constraint(g)
+net_effective_size(g)
+net_efficiency(g)
+net_hierarchy(g)
+}

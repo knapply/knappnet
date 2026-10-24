@@ -19,10 +19,11 @@ sna's in a few places. One argument, `convention = "sna"`, reproduces
 sna's choices exactly, and the QAP functions follow sna's conventions for
 dyads, missing values, and p-values.
 
-Some function names are shared with sna (`degree()`, `betweenness()`,
-`closeness()`, `components()`, `brokerage()`). Whichever package is
-attached last wins; this article attaches knappnet and calls sna and
-network with `sna::` and `network::`.
+Every knappnet function starts with `net_` (`net_degree()`,
+`net_betweenness()`, `net_closeness()`, `net_components()`,
+`net_brokerage()`), so none masks sna's `degree()` or `betweenness()`.
+This article still calls sna and network with `sna::` and `network::` so
+that every line says which package computes it.
 
 ```{r}
 library(knappnet)
@@ -30,22 +31,22 @@ library(knappnet)
 
 ## Converting
 
-`as_netframe()` reads a `network` object, and `to_network()` converts
+`as_net_frame()` reads a `network` object, and `net_to_network()` converts
 back, keeping vertex, edge, and network attributes. For bipartite
 networks a `mode` node column records the two sets. Matrices work in both
 directions too:
 
 ```{r}
 # Padgett's Florentine marriage ties, with the Pucci family added as an
-# isolate (it married outside this group); see ?example_network.
-ties <- example_network("florentine")$edges
-families <- data.frame(name = sort(unique(c(ties$from, ties$to, "Pucci"))))
-flo <- netframe(ties, nodes = families, directed = FALSE)
+# isolate (it married outside this group); see ?net_example.
+ties <- net_example("florentine")$edges
+families <- data.frame(name = sort(unique(c(ties$source, ties$target, "Pucci"))))
+flo <- net_frame(ties, nodes = families, directed = FALSE, id = "name")
 
-net <- to_network(flo)
+net <- net_to_network(flo)
 network::network.size(net)
 network::network.edgecount(net)
-as_netframe(net)
+as_net_frame(net)
 
 m <- as.matrix(flo)   # a symmetric 0/1 sociomatrix with node names
 m[1:4, 1:4]
@@ -57,36 +58,36 @@ the Pucci family has no marriage ties in the data and is an isolate.
 ## Function map
 
 `gmode = "graph"` in [sna](https://cran.r-project.org/package=sna) corresponds to `directed = FALSE` on the
-netframe; the network itself says whether it is directed, so knappnet
+net_frame; the network itself says whether it is directed, so knappnet
 functions have no `gmode`.
 
 | sna / network | knappnet | Notes |
 |---|---|---|
-| `network(m, directed)`, `as.network()` | `netframe(edges, nodes, directed)`, `as_netframe(m)` | |
+| `network(m, directed)`, `as.network()` | `net_frame(edges, nodes, directed)`, `as_net_frame(m)` | |
 | `as.sociomatrix(net)`, `as.matrix(net)` | `as.matrix(g)` | Parallel edges are summed; `attr` fills the matrix with an edge column. |
 | `network.size()`, `network.edgecount()` | `nrow(g$nodes)`, `nrow(g$edges)` | |
 | `get.vertex.attribute(net, "x")` | `g$nodes$x` | |
-| `degree(m, cmode = "freeman")` | `degree(g)` | Total degree, in plus out, in directed networks. |
-| `degree(m, cmode = "indegree" / "outdegree")` | `degree(g, mode = "in" / "out")` | |
+| `degree(m, cmode = "freeman")` | `net_degree(g)` | Total degree, in plus out, in directed networks. |
+| `degree(m, cmode = "indegree" / "outdegree")` | `net_degree(g, mode = "in" / "out")` | |
 | any sna measure on a network with loops or repeated ties | the same measure with `convention = "sna"` | Parallel edges collapse into one tie and loops are ignored, as when the network is a sociomatrix. |
-| `betweenness(m, gmode, cmode)` | `betweenness(g, convention = "sna")` | Identical on networks without parallel edges. sna's `rescale = TRUE` is `b / sum(b)`. |
-| `closeness(m, gmode, cmode)` | `closeness(g, convention = "sna")` | sna gives 0 to every node that cannot reach all others; see below. |
-| `closeness(m, cmode = "suminvdir" / "suminvundir")` | `harmonic_centrality(g, convention = "sna")` | Divided by n - 1. |
-| `evcent(m, gmode)` | `eigenvector_centrality(g, convention = "sna")` | Unit Euclidean norm; out-ties in directed networks. |
-| `gden(m, diag = FALSE)` | `graph_density(g, convention = "sna")` | |
-| `centralization(m, degree)`, `betweenness`, `closeness` | `centralization(g, measure, convention = "sna")` | sna's theoretical maxima, which differ from [igraph](https://r.igraph.org/)'s for degree. |
-| `components(m, connected)`, `component.dist()` | `components(g, mode)`, `fragmentation(g, mode)` | sna defaults to strong components (`connected = "strong"`); knappnet to weak. |
-| `kcores(m)` | `coreness(g)` | |
-| `clique.census(m)` | `max_cliques(g)`, `clique_number(g)` | knappnet lists the maximal cliques themselves. |
-| `triad.census(m, mode = "digraph")` | `triad_census(g)` | Identical on directed networks. For undirected data sna reports four classes, knappnet all sixteen with every tie mutual. |
-| `brokerage(m, cl)$raw.nli` | `brokerage(g, groups)` | Columns `w_I`, `w_O`, `b_IO`, `b_OI`, `b_O`, `t` are `coordinator`, `itinerant`, `representative`, `gatekeeper`, `liaison`, `total`. |
-| `sedist(m, method)` | `structural_equivalence(g, method)` | sna's default method is `"hamming"`, knappnet's `"euclidean"`. Same treatment of the diagonal (`diag = FALSE`). |
-| `equiv.clust(m)` | `hclust(as.dist(structural_equivalence(g)))` | |
-| (concoR package) | `concor(g, depth)` | |
-| `gcor(y, x)` | `qap_cor(y, x)$statistic` | Identical. |
-| `qaptest(list(y, x), gcor, g1 = 1, g2 = 2)` | `qap_cor(y, x)` | Same reference distribution; `exact = TRUE` enumerates every permutation. |
-| `netlm(y, x, nullhyp = "qap")` | `mrqap(y, x)` | Double semi-partialling (Dekker et al. 2007), sna's default. |
-| `netlm(y, x, nullhyp = "qapy")` | `mrqap(y, x, method = "y")` | Y-permutation (Krackhardt 1988). |
+| `betweenness(m, gmode, cmode)` | `net_betweenness(g, convention = "sna")` | Identical on networks without parallel edges. sna's `rescale = TRUE` is `b / sum(b)`. |
+| `closeness(m, gmode, cmode)` | `net_closeness(g, convention = "sna")` | sna gives 0 to every node that cannot reach all others; see below. |
+| `closeness(m, cmode = "suminvdir" / "suminvundir")` | `net_harmonic(g, convention = "sna")` | Divided by n - 1. |
+| `evcent(m, gmode)` | `net_eigen(g, convention = "sna")` | Unit Euclidean norm; out-ties in directed networks. |
+| `gden(m, diag = FALSE)` | `net_density(g, convention = "sna")` | |
+| `centralization(m, degree)`, `betweenness`, `closeness` | `net_centralization(g, measure, convention = "sna")` | sna's theoretical maxima, which differ from [igraph](https://r.igraph.org/)'s for degree. |
+| `components(m, connected)`, `component.dist()` | `net_components(g, mode)`, `net_fragmentation(g, mode)` | sna defaults to strong components (`connected = "strong"`); knappnet to weak. |
+| `kcores(m)` | `net_coreness(g)` | |
+| `clique.census(m)` | `net_max_cliques(g)`, `net_clique_number(g)` | knappnet lists the maximal cliques themselves. |
+| `triad.census(m, mode = "digraph")` | `net_triad_census(g)` | Identical on directed networks. For undirected data sna reports four classes, knappnet all sixteen with every tie mutual. |
+| `brokerage(m, cl)$raw.nli` | `net_brokerage(g, groups)` | Columns `w_I`, `w_O`, `b_IO`, `b_OI`, `b_O`, `t` are `coordinator`, `itinerant`, `representative`, `gatekeeper`, `liaison`, `total`. |
+| `sedist(m, method)` | `net_struct_equiv(g, method)` | sna's default method is `"hamming"`, knappnet's `"euclidean"`. Same treatment of the diagonal (`diag = FALSE`). |
+| `equiv.clust(m)` | `hclust(as.dist(net_struct_equiv(g)))` | |
+| (concoR package) | `net_concor(g, depth)` | |
+| `gcor(y, x)` | `net_qap_cor(y, x)$statistic` | Identical. |
+| `qaptest(list(y, x), gcor, g1 = 1, g2 = 2)` | `net_qap_cor(y, x)` | Same reference distribution; `exact = TRUE` enumerates every permutation. |
+| `netlm(y, x, nullhyp = "qap")` | `net_mrqap(y, x)` | Double semi-partialling (Dekker et al. 2007), sna's default. |
+| `netlm(y, x, nullhyp = "qapy")` | `net_mrqap(y, x, method = "y")` | Y-permutation (Krackhardt 1988). |
 
 Statistical models (ERGMs and stochastic actor-oriented models) are
 planned.
@@ -103,11 +104,11 @@ diagonal cell it ignores. [igraph](https://r.igraph.org/), [NetworkX](https://ne
 every edge:
 
 ```{r}
-multi <- netframe(data.frame(from = c("a", "a", "b", "c"),
-                             to   = c("b", "b", "c", "c")), directed = FALSE)
-data.frame(node = multi$nodes$name,
-           default = degree(multi),
-           sna = degree(multi, convention = "sna"))
+multi <- net_frame(data.frame(source = c("a", "a", "b", "c"),
+                             target   = c("b", "b", "c", "c")), directed = FALSE)
+data.frame(node = multi$nodes$id,
+           default = net_degree(multi),
+           sna = net_degree(multi, convention = "sna"))
 ```
 
 **Disconnected networks.** sna's closeness is 0 for any node that cannot
@@ -118,12 +119,12 @@ every family:
 sna_closeness <- sna::closeness(m, gmode = "graph", cmode = "undirected")
 data.frame(family = flo$nodes$name,
            sna = sna_closeness,
-           knappnet_sna = closeness(flo, convention = "sna"),
-           knappnet_default = round(closeness(flo, normalized = TRUE), 3))
+           knappnet_sna = net_closeness(flo, convention = "sna"),
+           knappnet_default = round(net_closeness(flo, normalized = TRUE), 3))
 ```
 
 The default (igraph's convention) uses only the nodes each node can
-reach. Harmonic centrality, `harmonic_centrality()`, avoids the problem
+reach. Harmonic centrality, `net_harmonic()`, avoids the problem
 altogether, and with `convention = "sna"` it is sna's
 `cmode = "suminvundir"`.
 
@@ -132,10 +133,10 @@ maxima for degree centralization; in a star, sna's index is 1 and igraph's
 default is lower, because igraph's maximum allows for self-loops:
 
 ```{r}
-star <- netframe(data.frame(from = "hub", to = c("a", "b", "c", "d", "e")),
+star <- net_frame(data.frame(source = "hub", target = c("a", "b", "c", "d", "e")),
                  directed = FALSE)
-c(igraph = centralization(star, "degree"),
-  sna = centralization(star, "degree", convention = "sna"),
+c(igraph = net_centralization(star, "degree"),
+  sna = net_centralization(star, "degree", convention = "sna"),
   sna_itself = sna::centralization(as.matrix(star), sna::degree, mode = "graph",
                                    cmode = "indegree"))
 ```
@@ -149,9 +150,9 @@ sna_scores <- data.frame(
   harmonic    = sna::closeness(m, gmode = "graph", cmode = "suminvundir")
 )
 kn_scores <- data.frame(
-  degree      = degree(flo, convention = "sna"),
-  betweenness = betweenness(flo, convention = "sna"),
-  harmonic    = harmonic_centrality(flo, convention = "sna")
+  degree      = net_degree(flo, convention = "sna"),
+  betweenness = net_betweenness(flo, convention = "sna"),
+  harmonic    = net_harmonic(flo, convention = "sna")
 )
 sapply(names(sna_scores), function(v) {
   isTRUE(all.equal(kn_scores[[v]], sna_scores[[v]], check.attributes = FALSE))
@@ -163,7 +164,7 @@ families are split into two arbitrary groups:
 
 ```{r}
 side <- ifelse(flo$nodes$name < "M", 1, 2)   # A-L and M-Z
-kn_brokerage <- brokerage(flo, side)
+kn_brokerage <- net_brokerage(flo, side)
 sna_brokerage <- sna::brokerage(m, side)$raw.nli[, c("w_I", "w_O", "b_IO", "b_OI", "b_O", "t")]
 all.equal(unname(as.matrix(kn_brokerage[, -1])), unname(sna_brokerage))
 ```
@@ -171,11 +172,11 @@ all.equal(unname(as.matrix(kn_brokerage[, -1])), unname(sna_brokerage))
 So do structural equivalence distances:
 
 ```{r}
-all.equal(unname(structural_equivalence(flo, "hamming")),
+all.equal(unname(net_struct_equiv(flo, "hamming")),
           unname(as.matrix(sna::sedist(m, method = "hamming"))))
 ```
 
-## QAP: `qap_cor()` and `mrqap()` against `qaptest()` and `netlm()`
+## QAP: `net_qap_cor()` and `net_mrqap()` against `qaptest()` and `netlm()`
 
 The quadratic assignment procedure tests dyadic hypotheses by permuting
 node labels (Krackhardt 1987, 1988). Here, in a small office, we ask
@@ -183,17 +184,17 @@ whether advice ties follow friendship or department lines:
 
 ```{r}
 staff <- data.frame(
-  name = c("ann", "bob", "cat", "dan", "eve", "fay"),
+  id = c("ann", "bob", "cat", "dan", "eve", "fay"),
   dept = c("sales", "sales", "eng", "eng", "eng", "legal")
 )
-advice <- netframe(
-  data.frame(from = c("ann", "bob", "cat", "dan", "eve", "bob", "fay", "ann"),
-             to   = c("bob", "cat", "dan", "eve", "cat", "fay", "dan", "cat")),
+advice <- net_frame(
+  data.frame(source = c("ann", "bob", "cat", "dan", "eve", "bob", "fay", "ann"),
+             target   = c("bob", "cat", "dan", "eve", "cat", "fay", "dan", "cat")),
   nodes = staff
 )
-friends <- netframe(
-  data.frame(from = c("ann", "ann", "bob", "cat", "dan"),
-             to   = c("bob", "eve", "eve", "fay", "eve")),
+friends <- net_frame(
+  data.frame(source = c("ann", "ann", "bob", "cat", "dan"),
+             target   = c("bob", "eve", "eve", "fay", "eve")),
   nodes = staff, directed = FALSE
 )
 same_dept <- outer(staff$dept, staff$dept, "==") * 1
@@ -202,14 +203,14 @@ Y <- as.matrix(advice)
 X <- as.matrix(friends)
 ```
 
-`qap_cor()` and `mrqap()` accept netframes, matrices, or a mix. The
+`net_qap_cor()` and `net_mrqap()` accept net_frames, matrices, or a mix. The
 statistics themselves are identical to [sna](https://cran.r-project.org/package=sna)'s:
 
 ```{r}
-test <- qap_cor(advice, friends, exact = TRUE)
+test <- net_qap_cor(advice, friends, exact = TRUE)
 c(knappnet = test$statistic, sna = sna::gcor(Y, X))
 
-fit <- mrqap(advice, list(friends = friends, same_dept = same_dept), exact = TRUE)
+fit <- net_mrqap(advice, list(friends = friends, same_dept = same_dept), exact = TRUE)
 set.seed(1)
 sna_fit <- sna::netlm(Y, list(X, same_dept), reps = 1000)
 rbind(knappnet = fit$coefficients, sna = sna_fit$coefficients)
@@ -235,7 +236,7 @@ Two details make results line up:
 - **Dyads.** `mode = "digraph"` (the default) uses every ordered pair of
   distinct nodes and `mode = "graph"` each unordered pair once, from the
   lower triangle; `diag = TRUE` adds the diagonal. These are `gcor()` and
-  `netlm()`'s conventions. An undirected netframe gives a symmetric
+  `netlm()`'s conventions. An undirected net_frame gives a symmetric
   matrix, for which `mode = "graph"` is appropriate.
 - **p-values.** As in sna, the observed statistic is not counted among
   the draws. `(test$counts + 1) / (test$valid + 1)` gives the form that

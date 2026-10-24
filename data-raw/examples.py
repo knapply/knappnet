@@ -47,7 +47,7 @@ def jemaah_islamiyah(homophily):
     _, strength = table("# Table 2")
     block = src.split("node_attrs <- tibble::tribble(")[1].split(")\n")[0]
     roles = dict(re.findall(r'^\s*"([A-Z]+)",\s+"([^"]+)"', block, re.M))
-    write(os.path.join(OUT, "jemaah_islamiyah", "nodes.csv"), ["name", "role"],
+    write(os.path.join(OUT, "jemaah_islamiyah", "nodes.csv"), ["id", "role"],
           [[n.title(), roles[n]] for n in hdr])
     rows = []
     for i, a in enumerate(hdr):
@@ -56,17 +56,17 @@ def jemaah_islamiyah(homophily):
                 # One cell of Table 2 is blank; use its symmetric counterpart.
                 v = strength[(a, c)] if strength[(a, c)] is not None else strength[(c, a)]
                 rows.append([a.title(), c.title(), v])
-    write(os.path.join(OUT, "jemaah_islamiyah", "edges.csv"), ["from", "to", "strength"], rows)
+    write(os.path.join(OUT, "jemaah_islamiyah", "edges.csv"), ["source", "target", "strength"], rows)
 
 
 def networkx_examples():
     g = nx.karate_club_graph()
-    write(os.path.join(OUT, "karate", "nodes.csv"), ["name", "faction"],
+    write(os.path.join(OUT, "karate", "nodes.csv"), ["id", "faction"],
           [[v + 1, g.nodes[v]["club"]] for v in g])
-    write(os.path.join(OUT, "karate", "edges.csv"), ["from", "to", "contexts"],
+    write(os.path.join(OUT, "karate", "edges.csv"), ["source", "target", "contexts"],
           [[a + 1, b + 1, d.get("weight", 1)] for a, b, d in sorted(g.edges(data=True))])
     g = nx.florentine_families_graph()
-    write(os.path.join(OUT, "florentine", "edges.csv"), ["from", "to"],
+    write(os.path.join(OUT, "florentine", "edges.csv"), ["source", "target"],
           [sorted([a, b]) for a, b in sorted(g.edges())])
     g = nx.davis_southern_women_graph()
     top = set(g.graph["top"])

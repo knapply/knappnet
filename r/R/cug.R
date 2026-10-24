@@ -1,12 +1,12 @@
 # Conditional uniform graph tests: the test, its print, summary, and plot
 # methods.
 
-# Conditional uniform graph tests (man/cug_test.Rd).
-cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
+# Conditional uniform graph tests (man/net_cug_test.Rd).
+net_cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.census"),
                      reps = 1000L, ..., seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   if (!is.function(statistic)) {
-    stop("`statistic` must be a function of a netframe returning one number.", call. = FALSE)
+    stop("`statistic` must be a function of a net_frame returning one number.", call. = FALSE)
   }
   conditioning <- match.arg(conditioning)
   reps <- check_count(reps, "reps", min = 1L)
@@ -15,7 +15,7 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
   label <- deparse(substitute(statistic))[[1L]]
 
   n <- nrow(x$nodes)
-  s <- edge_summary(x)
+  s <- frame_summary_cached(x)
   if (s$loops || s$parallel) {
     warning("The network has self-loops or parallel edges; the random networks are simple, ",
             "and the observed number of edges and dyad census ignore them.", call. = FALSE)
@@ -39,9 +39,10 @@ cug_test <- function(x, statistic, conditioning = c("size", "edges", "dyad.censu
   # All replicates are drawn in one engine call: replicate r uses random
   # stream (seed, r), so the null distribution for a seed is the same on
   # any number of threads.
-  lists <- engine_call("cug_test", draw(reps, seed), edge_rows = FALSE)
+  lists <- engine_call("net_cug_test", draw(reps, seed), edge_rows = FALSE)
   null <- vapply(lists, function(e) {
-    g <- netframe(data.frame(from = e[[1L]], to = e[[2L]]), nodes, directed = x$directed)
+    g <- net_frame(data.frame(source = e[[1L]], target = e[[2L]]), nodes,
+                   directed = x$directed, quiet = TRUE)
     as_statistic(statistic(g, ...), "a random network")
   }, numeric(1))
   dropped <- sum(is.na(null))
@@ -67,6 +68,7 @@ as_statistic <- function(value, where) {
 # Distinct non-loop ties of the simple reading, and the dyad census of a
 # directed network (mutual, asymmetric; null is the rest).
 simple_dyads <- function(x) {
+  require_resolved(x)
   src <- x$index$src
   tgt <- x$index$tgt
   keep <- src != tgt
@@ -84,7 +86,7 @@ simple_dyads <- function(x) {
   }
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 print.cug_test <- function(x, ...) {
   cat("Conditional uniform graph test\n\n")
   cat(sprintf("Statistic: %s\n", x$statistic))
@@ -99,7 +101,7 @@ print.cug_test <- function(x, ...) {
   invisible(x)
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 summary.cug_test <- function(object, ...) {
   q <- if (length(object$null)) {
     stats::quantile(object$null, c(0, 0.025, 0.25, 0.5, 0.75, 0.975, 1), names = TRUE)
@@ -119,7 +121,7 @@ print.summary.cug_test <- function(x, ...) {
   invisible(x)
 }
 
-# See man/cug_test.Rd.
+# See man/net_cug_test.Rd.
 plot.cug_test <- function(x, ..., breaks = "Sturges") {
   pal <- plot_qualitative(8L)
   null <- x$null

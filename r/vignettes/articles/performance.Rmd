@@ -76,8 +76,8 @@ which is unavailable on some platforms where R packages are built. The
 `threads` argument limits it; `threads = 0`, the default, uses every core.
 
 ```{r}
-karate <- as_netframe(igraph::make_graph("Zachary"))
-all.equal(betweenness(karate, threads = 1), betweenness(karate, threads = 2))
+karate <- as_net_frame(igraph::make_graph("Zachary"))
+all.equal(net_betweenness(karate, threads = 1), net_betweenness(karate, threads = 2))
 ```
 
 ### Reproducibility
@@ -97,7 +97,7 @@ number, so results depend only on the seed, not on which thread ran what
 or on the platform:
 
 ```{r}
-identical(cluster_louvain(karate, seed = 42), cluster_louvain(karate, seed = 42))
+identical(net_louvain(karate, seed = 42), net_louvain(karate, seed = 42))
 ```
 
 When no seed is given, one is drawn from R's random number generator, so

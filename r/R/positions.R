@@ -2,41 +2,41 @@
 # regular, and automorphic equivalence, CONCOR, and blockmodels with their
 # print and plot methods.
 
-# Structural holes: constraint, effective size, efficiency, and hierarchy (man/constraint.Rd).
-constraint <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 0L, weighted, threads, "constraint")
+# Structural holes: constraint, effective size, efficiency, and hierarchy (man/net_constraint.Rd).
+net_constraint <- function(x, weighted = NULL, threads = 0L) {
+  structural_holes(x, 0L, weighted, threads, "net_constraint")
 }
 
-# See man/constraint.Rd.
-effective_size <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 1L, weighted, threads, "effective_size")
+# See man/net_constraint.Rd.
+net_effective_size <- function(x, weighted = NULL, threads = 0L) {
+  structural_holes(x, 1L, weighted, threads, "net_effective_size")
 }
 
-# See man/constraint.Rd.
-efficiency <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 2L, weighted, threads, "efficiency")
+# See man/net_constraint.Rd.
+net_efficiency <- function(x, weighted = NULL, threads = 0L) {
+  structural_holes(x, 2L, weighted, threads, "net_efficiency")
 }
 
-# See man/constraint.Rd.
-hierarchy <- function(x, weighted = NULL, threads = 0L) {
-  structural_holes(x, 3L, weighted, threads, "hierarchy")
+# See man/net_constraint.Rd.
+net_hierarchy <- function(x, weighted = NULL, threads = 0L) {
+  structural_holes(x, 3L, weighted, threads, "net_hierarchy")
 }
 
 structural_holes <- function(x, measure, weighted, threads, fn) {
-  check_netframe(x)
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
   engine_call(fn, .Call(C_structural_holes, ptr, measure, weighted, threads))
 }
 
-# Gould-Fernandez brokerage roles (man/brokerage.Rd).
-brokerage <- function(x, groups, threads = 0L) {
-  check_netframe(x)
+# Gould-Fernandez brokerage roles (man/net_brokerage.Rd).
+net_brokerage <- function(x, groups, threads = 0L) {
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   codes <- node_groups(x, groups, "groups")$codes
   ptr <- engine_graph(x)
-  m <- engine_call("brokerage", .Call(C_brokerage, ptr, codes, threads))
+  m <- engine_call("net_brokerage", .Call(C_brokerage, ptr, codes, threads))
   out <- data.frame(node = x$nodes[[x$roles$id]], stringsAsFactors = FALSE)
   roles <- c("coordinator", "itinerant", "representative", "gatekeeper",
              "liaison", "total")
@@ -44,33 +44,33 @@ brokerage <- function(x, groups, threads = 0L) {
   out
 }
 
-# Structural equivalence (man/structural_equivalence.Rd).
-structural_equivalence <- function(x, method = c("euclidean", "correlation", "hamming"),
+# Structural equivalence (man/net_struct_equiv.Rd).
+net_struct_equiv <- function(x, method = c("euclidean", "correlation", "hamming"),
                                    weighted = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   code <- switch(method, euclidean = 0L, correlation = 1L, hamming = 2L)
   weighted <- resolve_additive_weights(x, weighted)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  m <- engine_call("structural_equivalence",
+  m <- engine_call("net_struct_equiv",
                    .Call(C_structural_equivalence, ptr, code, weighted, threads))
   ids <- as.character(x$nodes[[x$roles$id]])
   dimnames(m) <- list(ids, ids)
   m
 }
 
-# CONCOR blockmodel (man/concor.Rd).
-concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
+# CONCOR blockmodel (man/net_concor.Rd).
+net_concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 100L,
                    threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   depth <- check_count(depth, "depth", min = 1L)
   tolerance <- check_number(tolerance, "tolerance", lower = 0, upper = 1, open = TRUE)
   max_iter <- check_count(max_iter, "max_iter")
   weighted <- resolve_additive_weights(x, weighted)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  r <- engine_call("concor", .Call(C_concor, ptr, depth, weighted, tolerance,
+  r <- engine_call("net_concor", .Call(C_concor, ptr, depth, weighted, tolerance,
                                    max_iter, threads))
   if (r[[2]][[1]] > 0L) {
     warning(sprintf("%d CONCOR split(s) did not converge to +1/-1 within `max_iter` iterations.",
@@ -84,31 +84,31 @@ concor <- function(x, depth = 1L, weighted = NULL, tolerance = 1e-7, max_iter = 
   r[[1]]
 }
 
-# Regular equivalence (CATREGE) (man/regular_equivalence.Rd).
-regular_equivalence <- function(x, seed = NULL, weighted = NULL) {
-  check_netframe(x)
+# Regular equivalence (CATREGE) (man/net_regular_equiv.Rd).
+net_regular_equiv <- function(x, seed = NULL, weighted = NULL) {
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   codes <- if (is.null(seed)) NULL else node_groups(x, seed, "seed")$codes
   ptr <- engine_graph(x)
-  r <- engine_call("regular_equivalence", .Call(C_regular_equivalence, ptr, codes, weighted))
+  r <- engine_call("net_regular_equiv", .Call(C_regular_equivalence, ptr, codes, weighted))
   structure(r[[1L]] + 1L, rounds = r[[2L]])
 }
 
-# Automorphic equivalence (man/automorphic_equivalence.Rd).
-automorphic_equivalence <- function(x, max_steps = 1e6) {
-  check_netframe(x)
+# Automorphic equivalence (man/net_auto_equiv.Rd).
+net_auto_equiv <- function(x, max_steps = 1e6) {
+  check_net_frame(x)
   if (!is.numeric(max_steps) || length(max_steps) != 1L || is.na(max_steps) ||
       max_steps < 1 || max_steps != floor(max_steps) || max_steps > 2^53) {
     stop("`max_steps` must be a positive whole number.", call. = FALSE)
   }
   ptr <- engine_graph(x)
-  engine_call("automorphic_equivalence",
+  engine_call("net_auto_equiv",
               .Call(C_automorphic_equivalence, ptr, as.double(max_steps))) + 1L
 }
 
-# Blockmodel of a partition (man/blockmodel.Rd).
-blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = NULL) {
-  check_netframe(x)
+# Blockmodel of a partition (man/net_blockmodel.Rd).
+net_blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = NULL) {
+  check_net_frame(x)
   weighted <- resolve_additive_weights(x, weighted)
   loops <- check_flag(loops, "loops")
   if (!is.null(cutoff) && (!is.numeric(cutoff) || length(cutoff) != 1L || is.na(cutoff))) {
@@ -117,7 +117,7 @@ blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = N
   grp <- node_groups(x, membership, "membership")
   k <- length(grp$labels)
   ptr <- engine_graph(x)
-  r <- engine_call("blockmodel", .Call(C_block_model, ptr, grp$codes, k, weighted, loops))
+  r <- engine_call("net_blockmodel", .Call(C_block_model, ptr, grp$codes, k, weighted, loops))
   names_ <- as.character(grp$labels)
   density <- r[[1L]]
   ties <- r[[2L]]
@@ -145,10 +145,10 @@ blockmodel <- function(x, membership, weighted = NULL, loops = FALSE, cutoff = N
   )
 }
 
-# See man/blockmodel.Rd.
-block_summary <- function(bm) {
+# See man/net_blockmodel.Rd.
+net_block_summary <- function(bm) {
   if (!inherits(bm, "blockmodel")) {
-    stop("`bm` must be the result of blockmodel().", call. = FALSE)
+    stop("`bm` must be the result of net_blockmodel().", call. = FALSE)
   }
   k <- length(bm$blocks)
   r <- rep(seq_len(k), times = k)
@@ -166,7 +166,7 @@ block_summary <- function(bm) {
   )
 }
 
-# See man/blockmodel.Rd.
+# See man/net_blockmodel.Rd.
 print.blockmodel <- function(x, ...) {
   k <- length(x$blocks)
   cat(sprintf("<blockmodel> %d blocks of %d nodes; cutoff %s, R-squared %s\n", k,
@@ -183,7 +183,7 @@ plot.blockmodel <- function(x, network = NULL, which = c("both", "density", "mat
   which <- match.arg(which)
   values <- check_flag(values, "values")
   if (!is.null(network)) {
-    check_netframe(network)
+    check_net_frame(network)
     if (nrow(network$nodes) != length(x$membership)) {
       stop("`network` must have one node per element of `x$membership`.", call. = FALSE)
     }
@@ -201,7 +201,7 @@ plot.blockmodel <- function(x, network = NULL, which = c("both", "density", "mat
   if (which != "density") {
     args <- c(list(x = network, order = x$membership, key = FALSE), dots)
     if (is.null(args$main)) args$main <- "Permuted adjacency matrix"
-    do.call(plot_matrix, args)
+    do.call(net_plot_matrix, args)
   }
   if (which != "matrix") {
     d <- x$density

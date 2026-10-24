@@ -27,7 +27,7 @@ The division of labour is strict. sf (with GEOS and s2 underneath) does
 all the geometry; the engine never sees a coordinate it did not ask for.
 What crosses from one side to the other are numbers: edge lengths that
 become distance weights, and one representative point per node that the
-point-based functions of `spatial_network()` use. sf is a suggested
+point-based functions of `net_spatial()` use. sf is a suggested
 package: knappnet installs and works without it, and every function on this
 page says so clearly if it is missing.
 
@@ -47,18 +47,18 @@ zone 33N (coordinates in metres) are joined by three links:
 
 ```{r}
 stations <- sf::st_as_sf(
-  data.frame(name = c("north", "east", "south", "west"),
+  data.frame(id = c("north", "east", "south", "west"),
              x = c(500000, 503000, 500000, 497000),
              y = c(6003000, 6000000, 5997000, 6000000),
              elevation = c(120, 85, 90, 140)),
   coords = c("x", "y"), crs = 32633)
-links <- data.frame(from = c("north", "east", "south"),
-                    to = c("east", "south", "west"))
-g <- netframe(links, stations, directed = FALSE)
+links <- data.frame(source = c("north", "east", "south"),
+                    target = c("east", "south", "west"))
+g <- net_frame(links, stations, directed = FALSE)
 g
 ```
 
-`netframe()` noticed the sf table on its own. The geometry column and the
+`net_frame()` noticed the sf table on its own. The geometry column and the
 CRS are recorded as roles next to the identifier and endpoint columns, and
 the node table is kept exactly as it was given, geometry included:
 
@@ -68,16 +68,16 @@ g$roles$crs$Name
 g$nodes
 ```
 
-Edges may have geometry too. `to_sf()` returns either table as sf; for
+Edges may have geometry too. `net_to_sf()` returns either table as sf; for
 edges without geometry it draws straight lines between the endpoints,
 which sfnetworks calls *spatially implicit* edges. Giving those lines back
-to `netframe()` makes them explicit, and the two tables must then agree on
+to `net_frame()` makes them explicit, and the two tables must then agree on
 the CRS (an error with the fix explains if they do not):
 
 ```{r}
-edge_lines <- to_sf(g, "edges")
+edge_lines <- net_to_sf(g, "edges")
 edge_lines
-h <- netframe(edge_lines, stations, directed = FALSE)
+h <- net_frame(edge_lines, stations, directed = FALSE)
 h
 ```
 
@@ -85,22 +85,22 @@ Measures do not care which kind of network they get. The engine sees the
 same three edges either way:
 
 ```{r}
-degree(h)
-betweenness(h)
+net_degree(h)
+net_betweenness(h)
 ```
 
 ## Lengths along the geometry
 
-`edge_lengths()` is the bridge between geometry and weights. Without edge
+`net_edge_lengths()` is the bridge between geometry and weights. Without edge
 geometry it measures between the nodes' points (great-circle distances for
-longitude and latitude, Euclidean otherwise, as `spatial_network()`
+longitude and latitude, Euclidean otherwise, as `net_spatial()`
 documents). With edge geometry it defers to `sf::st_length()`, which is
 geodesic for longitude and latitude and planar in the units of a projected
 CRS, and it records the unit:
 
 ```{r}
-edge_lengths(g)
-edge_lengths(h)
+net_edge_lengths(g)
+net_edge_lengths(h)
 ```
 
 A bent edge is longer than the straight one between the same nodes, and
@@ -112,18 +112,18 @@ every row:
 bend <- sf::st_linestring(rbind(c(500000, 6003000), c(503000, 6003000), c(503000, 6000000)))
 sf::st_geometry(edge_lines)[1] <- sf::st_sfc(bend, crs = 32633)
 sf::st_geometry(edge_lines)[3] <- sf::st_sfc(sf::st_linestring(), crs = 32633)
-mixed <- netframe(edge_lines, stations, directed = FALSE)
+mixed <- net_frame(edge_lines, stations, directed = FALSE)
 mixed
-edge_lengths(mixed)
+net_edge_lengths(mixed)
 ```
 
 Lengths become weights in the usual way, and path-based measures then
 follow travel distance rather than hop count:
 
 ```{r}
-mixed$edges$metres <- as.vector(edge_lengths(mixed))
-w <- netframe(mixed$edges, stations, directed = FALSE, weight = "metres")
-distances(w)
+mixed$edges$metres <- as.vector(net_edge_lengths(mixed))
+w <- net_frame(mixed$edges, stations, directed = FALSE, weight = "metres", weight_type = "distance")
+net_distances(w)
 ```
 
 ## Representative points
@@ -131,7 +131,7 @@ distances(w)
 Nodes need not be points. Regions, buildings, or river reaches can be
 nodes, and the point-based functions reduce each geometry to one
 representative point. By default that is `sf::st_point_on_surface()`,
-which always lies on the geometry; `spatial_network(x, representative =
+which always lies on the geometry; `net_spatial(x, representative =
 "centroid")` switches to `sf::st_centroid()`, which can fall outside a
 concave shape. Here four unit squares form a 2-by-2 grid, and the group
 geometry of the top and bottom rows is computed from the squares' points:
@@ -144,8 +144,8 @@ regions <- sf::st_sf(region = c("sw", "se", "nw", "ne"),
                      row = c("bottom", "bottom", "top", "top"),
                      geometry = sf::st_sfc(square(0, 0), square(1, 0), square(0, 1), square(1, 1),
                                            crs = 32633))
-r <- from_polygons(regions, id = "region")
-group_geometry(r, "row")
+r <- net_from_polygons(regions, id = "region")
+net_group_geometry(r, "row")
 ```
 
 ## Building networks from geometry
@@ -155,23 +155,23 @@ built in.
 
 ### Contiguity of regions
 
-`from_polygons()` joins polygons that share a boundary. Under *queen*
+`net_from_polygons()` joins polygons that share a boundary. Under *queen*
 contiguity a shared corner is enough; under *rook* contiguity the shared
 boundary must be a line, as the chess pieces move. The relations are
 evaluated exactly with `sf::st_relate()` and the DE-9IM patterns that
 define them, which is also what `spdep::poly2nb()` does with `snap = 0`:
 
 ```{r}
-from_polygons(regions, id = "region")$edges
-from_polygons(regions, contiguity = "rook", id = "region")$edges
+net_from_polygons(regions, id = "region")$edges
+net_from_polygons(regions, contiguity = "rook", id = "region")$edges
 ```
 
 The edges of a contiguity network have no geometry of their own, so
-`edge_lengths()` measures between the regions' representative points.
+`net_edge_lengths()` measures between the regions' representative points.
 
 ### Streets, rivers, and pipelines
 
-`from_lines()` turns LINESTRING features into a network: each line is an
+`net_from_lines()` turns LINESTRING features into a network: each line is an
 edge, and its endpoints are nodes shared with every other line ending at
 the same place. With `tolerance = 0` endpoints must coincide exactly, as in
 sfnetworks; a positive tolerance merges endpoints within that distance
@@ -187,7 +187,7 @@ streets <- sf::st_sf(
   geometry = sf::st_sfc(segment(0, 0, 200, 0), segment(0, 100, 200, 100), segment(0, 200, 200, 200),
                         segment(0, 0, 0, 200), segment(100, 0, 100, 200), segment(200, 0, 200, 200),
                         crs = 32633))
-roads <- from_lines(streets)
+roads <- net_from_lines(streets)
 roads
 roads$edges
 ```
@@ -196,37 +196,37 @@ Each whole street is one edge here, so streets that cross without a vertex
 at the crossing are not connected: the network knows the data, not the
 map. `sf::st_intersection()` or `lwgeom::st_split()` can split the lines
 at their crossings first when that is what the data mean. Once built, the
-network is an ordinary netframe, and shortest paths follow street length:
+network is an ordinary net_frame, and shortest paths follow street length:
 
 ```{r}
-distances(roads)[1, ]
+net_distances(roads)[1, ]
 ```
 
 ### Proximity
 
-`proximity_network()` accepts sf tables of any geometry. By default it
+`net_proximity()` accepts sf tables of any geometry. By default it
 works from representative points through the engine's k-d tree; with
 `exact = TRUE` it uses `sf::st_distance()` between the geometries
 themselves, so two polygons that touch are at distance 0:
 
 ```{r}
-proximity_network(regions, within = 1, id = "region")$edges
-proximity_network(regions, within = 0, id = "region", exact = TRUE)$edges
+net_proximity(regions, within = 1, id = "region")$edges
+net_proximity(regions, within = 0, id = "region", exact = TRUE)$edges
 ```
 
 ## Spatial operations that keep the network consistent
 
 Subsetting the node table by hand would break the edge index, so the
 spatial operations come as functions that rebuild what they must.
-`spatial_filter()` keeps the nodes whose geometry satisfies a predicate
-with some features and returns the induced subnetwork; `spatial_join()`
+`net_spatial_filter()` keeps the nodes whose geometry satisfies a predicate
+with some features and returns the induced subnetwork; `net_spatial_join()`
 attaches attributes of the features each node falls in; and
-`transform_network()` reprojects both tables at once:
+`net_transform()` reprojects both tables at once:
 
 ```{r}
 inner <- sf::st_bbox(c(xmin = 498000, ymin = 5998000, xmax = 504000, ymax = 6004000),
                      crs = sf::st_crs(32633))
-spatial_filter(h, inner)$nodes$name
+net_spatial_filter(h, inner)$nodes$id
 
 zones <- sf::st_sf(zone = c("uptown", "downtown"),
                    geometry = sf::st_sfc(
@@ -237,48 +237,48 @@ zones <- sf::st_sf(zone = c("uptown", "downtown"),
                                                c(505000, 6001500), c(495000, 6001500),
                                                c(495000, 5995000))))),
                    crs = 32633)
-spatial_join(h, zones)$nodes[, c("name", "zone")]
+net_spatial_join(h, zones)$nodes[, c("id", "zone")]
 
-ll <- transform_network(h, 4326)
+ll <- net_transform(h, 4326)
 ll$roles$crs$Name
-edge_lengths(ll)
+net_edge_lengths(ll)
 ```
 
 The last line shows the geodesic lengths of the reprojected lines; they
 differ from the planar UTM lengths by the projection's scale distortion,
 a fraction of a percent here.
 
-`check_geometry()` is the optional consistency check: does each edge
+`net_check_geometry()` is the optional consistency check: does each edge
 geometry start and end at (or within a tolerance of) its nodes? knappnet
 never requires it, because connectivity comes from the endpoint columns,
 but it is the first thing to run on data assembled from several sources:
 
 ```{r}
-check_geometry(h)
-check_geometry(mixed)
+net_check_geometry(h)
+net_check_geometry(mixed)
 ```
 
 ## Maps
 
-`plot_spatial()` draws a spatial network at its true locations. Polygons
+`net_plot_spatial()` draws a spatial network at its true locations. Polygons
 are filled with the node color, lines drawn in it, points drawn as points,
 and edges follow their own geometry when they have one. Only base graphics
 and sf's own plot methods are involved, colors come from palettes that are
 safe for color-blind readers, and the usual appearance arguments work:
 
 ```{r}
-plot_spatial(r, node_color = "row", main = "Queen contiguity of four regions")
-plot_spatial(roads, node_label = FALSE, edge_color = "length", main = "Six streets")
-plot_spatial(mixed, edge_width = 2, main = "Stations, with one bent and one implicit edge")
+net_plot_spatial(r, node_color = "row", main = "Queen contiguity of four regions")
+net_plot_spatial(roads, node_label = FALSE, edge_color = "length", main = "Six streets")
+net_plot_spatial(mixed, edge_width = 2, main = "Stations, with one bent and one implicit edge")
 ```
 
 `plot()` on the same network draws an abstract layout, as for any other
-netframe. `plot_edge_lengths()` shows the distribution of edge lengths and,
-given a `scale`, the `distance_decay()` curve it would imply, which is the
+net_frame. `net_plot_edge_lengths()` shows the distribution of edge lengths and,
+given a `scale`, the `net_distance_decay()` curve it would imply, which is the
 quickest way to pick a scale for distance-weighted ties:
 
 ```{r}
-plot_edge_lengths(mixed, scale = 3000)
+net_plot_edge_lengths(mixed, scale = 3000)
 ```
 
 ## Files and other packages
@@ -291,10 +291,10 @@ network reads back as it was written:
 
 ```{r}
 path <- tempfile(fileext = ".gpkg")
-write_network(roads, path)
+net_write(roads, path)
 sf::st_layers(path)$name
-back <- read_network(path)
-identical(distances(back), distances(roads))
+back <- net_read(path)
+identical(net_distances(back), net_distances(roads))
 unlink(path)
 ```
 
@@ -304,13 +304,13 @@ attributes and geometry; node identifiers travel as the `name` column that
 igraph and tidygraph use:
 
 ```{r, eval = has_sfnetworks}
-net <- to_sfnetwork(roads)
+net <- net_to_sfnetwork(roads)
 net
-as_netframe(net)
+as_net_frame(net)
 ```
 
-`sfnetworks::as_sfnetwork()` on a netframe and `sf::st_as_sf()` on a
-netframe work as well.
+`sfnetworks::as_sfnetwork()` on a net_frame and `sf::st_as_sf()` on a
+net_frame work as well.
 
 ## The planned Python mirror
 
@@ -321,7 +321,7 @@ is a data frame with an sfc column. The convention of a pair of
 GeoDataFrames, one for nodes and one for edges, is the one OSMnx
 established with `graph_to_gdfs()` and `graph_from_gdfs()` (Boeing 2017),
 so street networks downloaded with OSMnx will drop straight into the
-Python netframe. Geometry stays with GeoPandas and shapely (GEOS) and
+Python net_frame. Geometry stays with GeoPandas and shapely (GEOS) and
 pyproj; the engine receives lengths and representative points exactly as
 it does from R, so every measure validated here is validated there.
 

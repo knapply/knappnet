@@ -2,60 +2,60 @@
 # relaxations, bicomponents, lambda sets, modularity, the community
 # detection methods, factions, and hierarchical clustering of nodes.
 
-# Coreness (k-cores) (man/coreness.Rd).
-coreness <- function(x, mode = c("all", "out", "in")) {
-  check_netframe(x)
+# Coreness (k-cores) (man/net_coreness.Rd).
+net_coreness <- function(x, mode = c("all", "out", "in")) {
+  check_net_frame(x)
   mode <- match.arg(mode)
   ptr <- engine_graph(x)
-  engine_call("coreness", .Call(C_coreness, ptr, mode_code(mode)))
+  engine_call("net_coreness", .Call(C_coreness, ptr, mode_code(mode)))
 }
 
-# Maximal cliques and the clique number (man/max_cliques.Rd).
-max_cliques <- function(x, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+# Maximal cliques and the clique number (man/net_max_cliques.Rd).
+net_max_cliques <- function(x, min_size = 1L, threads = 0L) {
+  check_net_frame(x)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  idx <- engine_call("max_cliques", .Call(C_max_cliques, ptr, min_size, threads))
+  idx <- engine_call("net_max_cliques", .Call(C_max_cliques, ptr, min_size, threads))
   ids <- x$nodes[[x$roles$id]]
   lapply(idx, function(i) ids[i])
 }
 
-# See man/max_cliques.Rd.
-clique_number <- function(x, threads = 0L) {
-  check_netframe(x)
+# See man/net_max_cliques.Rd.
+net_clique_number <- function(x, threads = 0L) {
+  check_net_frame(x)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  engine_call("clique_number", .Call(C_clique_number, ptr, threads))
+  engine_call("net_clique_number", .Call(C_clique_number, ptr, threads))
 }
 
-# n-cliques, n-clans, and k-plexes (man/n_cliques.Rd).
-n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+# n-cliques, n-clans, and k-plexes (man/net_n_cliques.Rd).
+net_n_cliques <- function(x, n = 2L, min_size = 1L, threads = 0L) {
+  check_net_frame(x)
   n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  idx <- engine_call("n_cliques", .Call(C_n_cliques, ptr, n, min_size, FALSE, threads))
+  idx <- engine_call("net_n_cliques", .Call(C_n_cliques, ptr, n, min_size, FALSE, threads))
   ids <- x$nodes[[x$roles$id]]
   lapply(idx, function(i) ids[i])
 }
 
-# See man/n_cliques.Rd.
-n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
-  check_netframe(x)
+# See man/net_n_cliques.Rd.
+net_n_clans <- function(x, n = 2L, min_size = 1L, threads = 0L) {
+  check_net_frame(x)
   n <- check_count(n, "n", min = 1L)
   min_size <- check_count(min_size, "min_size")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  idx <- engine_call("n_clans", .Call(C_n_cliques, ptr, n, min_size, TRUE, threads))
+  idx <- engine_call("net_n_clans", .Call(C_n_cliques, ptr, n, min_size, TRUE, threads))
   ids <- x$nodes[[x$roles$id]]
   lapply(idx, function(i) ids[i])
 }
 
-# See man/n_cliques.Rd.
-k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 0L) {
-  check_netframe(x)
+# See man/net_n_cliques.Rd.
+net_k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 0L) {
+  check_net_frame(x)
   k <- check_count(k, "k", min = 1L)
   min_size <- if (is.null(min_size)) 2L * k - 1L else check_count(min_size, "min_size")
   if (!is.numeric(max_steps) || length(max_steps) != 1L || is.na(max_steps) || max_steps < 1) {
@@ -63,26 +63,26 @@ k_plexes <- function(x, k = 2L, min_size = NULL, max_steps = 1e7, threads = 0L) 
   }
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  idx <- engine_call("k_plexes",
+  idx <- engine_call("net_k_plexes",
                      .Call(C_k_plexes, ptr, k, min_size, as.double(max_steps), threads))
   ids <- x$nodes[[x$roles$id]]
   lapply(idx, function(i) ids[i])
 }
 
-# Bicomponents (blocks) (man/bicomponents.Rd).
-bicomponents <- function(x) {
-  check_netframe(x)
+# Bicomponents (blocks) (man/net_bicomponents.Rd).
+net_bicomponents <- function(x) {
+  check_net_frame(x)
   ptr <- engine_graph(x)
-  idx <- engine_call("bicomponents", .Call(C_bicomponents, ptr))
+  idx <- engine_call("net_bicomponents", .Call(C_bicomponents, ptr))
   ids <- x$nodes[[x$roles$id]]
   lapply(idx, function(i) ids[i])
 }
 
-# Lambda sets and edge connectivity (man/lambda_sets.Rd).
-lambda_sets <- function(x) {
-  check_netframe(x)
+# Lambda sets and edge connectivity (man/net_lambda_sets.Rd).
+net_lambda_sets <- function(x) {
+  check_net_frame(x)
   ptr <- engine_graph(x)
-  m <- engine_call("lambda_sets", .Call(C_lambda_connectivity, ptr))
+  m <- engine_call("net_lambda_sets", .Call(C_lambda_connectivity, ptr))
   ids <- x$nodes[[x$roles$id]]
   dimnames(m) <- list(ids, ids)
   n <- nrow(m)
@@ -109,7 +109,7 @@ lambda_sets <- function(x) {
   structure(list(connectivity = m, sets = sets), class = "lambda_sets")
 }
 
-# See man/lambda_sets.Rd.
+# See man/net_lambda_sets.Rd.
 print.lambda_sets <- function(x, ...) {
   cat(sprintf("Lambda sets of %d nodes: %d sets\n", nrow(x$connectivity), length(x$sets)))
   for (s in x$sets) {
@@ -124,7 +124,7 @@ print.lambda_sets <- function(x, ...) {
   invisible(x)
 }
 
-# See man/lambda_sets.Rd.
+# See man/net_lambda_sets.Rd.
 plot.lambda_sets <- function(x, ...) {
   m <- x$connectivity
   n <- nrow(m)
@@ -144,37 +144,37 @@ plot.lambda_sets <- function(x, ...) {
   invisible(x)
 }
 
-# Modularity of a partition (man/modularity.Rd).
-modularity <- function(x, membership, resolution = 1, weighted = NULL) {
-  check_netframe(x)
+# Modularity of a partition (man/net_modularity.Rd).
+net_modularity <- function(x, membership, resolution = 1, weighted = NULL) {
+  check_net_frame(x)
   labels <- node_groups(x, membership, "membership")$codes
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
-  engine_call("modularity", .Call(C_modularity, ptr, labels, resolution, weighted))
+  engine_call("net_modularity", .Call(C_modularity, ptr, labels, resolution, weighted))
 }
 
-# Louvain community detection (man/cluster_louvain.Rd).
-cluster_louvain <- function(x, resolution = 1, weighted = NULL, seed = NULL) {
-  check_netframe(x)
+# Louvain community detection (man/net_louvain.Rd).
+net_louvain <- function(x, resolution = 1, weighted = NULL, seed = NULL) {
+  check_net_frame(x)
   require_undirected(x, "Louvain community detection")
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
   seed <- check_seed(seed)
   ptr <- engine_graph(x)
-  res <- engine_call("cluster_louvain", .Call(C_louvain, ptr, resolution, weighted, seed))
+  res <- engine_call("net_louvain", .Call(C_louvain, ptr, resolution, weighted, seed))
   structure(res[[1L]], modularity = res[[2L]])
 }
 
-# Girvan-Newman, leading eigenvector, and greedy modularity communities (man/cluster_girvan_newman.Rd).
-cluster_girvan_newman <- function(x, threads = 0L) {
-  check_netframe(x)
+# Girvan-Newman, leading eigenvector, and greedy modularity communities (man/net_girvan_newman.Rd).
+net_girvan_newman <- function(x, threads = 0L) {
+  check_net_frame(x)
   require_undirected(x, "Girvan-Newman clustering")
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  res <- engine_call("cluster_girvan_newman", .Call(C_girvan_newman, ptr, threads))
+  res <- engine_call("net_girvan_newman", .Call(C_girvan_newman, ptr, threads))
   ids <- x$nodes[[x$roles$id]]
-  removed <- data.frame(from = ids[res[[3L]]], to = ids[res[[4L]]], stringsAsFactors = FALSE)
+  removed <- data.frame(source = ids[res[[3L]]], target = ids[res[[4L]]], stringsAsFactors = FALSE)
   structure(res[[1L]], modularity = res[[2L]], removed = removed, path = res[[5L]],
             tree = removal_tree(length(ids), res[[3L]], res[[4L]], as.character(ids)))
 }
@@ -238,31 +238,31 @@ leaf_order <- function(merge) {
   out
 }
 
-# See man/cluster_girvan_newman.Rd.
-cluster_leading_eigen <- function(x, weighted = NULL) {
-  check_netframe(x)
+# See man/net_girvan_newman.Rd.
+net_leading_eigen <- function(x, weighted = NULL) {
+  check_net_frame(x)
   require_undirected(x, "The leading eigenvector method")
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
-  res <- engine_call("cluster_leading_eigen", .Call(C_leading_eigen, ptr, weighted))
+  res <- engine_call("net_leading_eigen", .Call(C_leading_eigen, ptr, weighted))
   structure(res[[1L]], modularity = res[[2L]], splits = res[[3L]])
 }
 
-# See man/cluster_girvan_newman.Rd.
-cluster_fast_greedy <- function(x, resolution = 1, weighted = NULL) {
-  check_netframe(x)
+# See man/net_girvan_newman.Rd.
+net_fast_greedy <- function(x, resolution = 1, weighted = NULL) {
+  check_net_frame(x)
   require_undirected(x, "Greedy modularity optimization")
   resolution <- check_resolution(resolution)
   weighted <- resolve_additive_weights(x, weighted)
   ptr <- engine_graph(x)
-  res <- engine_call("cluster_fast_greedy", .Call(C_fast_greedy, ptr, resolution, weighted))
+  res <- engine_call("net_fast_greedy", .Call(C_fast_greedy, ptr, resolution, weighted))
   structure(res[[1L]], modularity = res[[2L]])
 }
 
-# Factions (man/factions.Rd).
-factions <- function(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
+# Factions (man/net_factions.Rd).
+net_factions <- function(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
                      max_stall = 200L, tenure = NULL, seed = NULL, threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   k <- check_count(k, "k")
   fit <- match.arg(fit)
   starts <- check_count(starts, "starts")
@@ -271,14 +271,14 @@ factions <- function(x, k = 2L, fit = c("errors", "correlation"), starts = 20L,
   seed <- check_seed(seed)
   threads <- resolve_threads(threads)
   ptr <- engine_graph(x)
-  res <- engine_call("factions",
+  res <- engine_call("net_factions",
                      .Call(C_factions, ptr, k, if (fit == "errors") 0L else 1L, starts,
                            max_stall, tenure, seed, threads))
   structure(res[[1L]], errors = res[[2L]], correlation = res[[3L]])
 }
 
-# Hierarchical clustering of nodes (man/cluster_hierarchical.Rd).
-cluster_hierarchical <- function(d, method = c("average", "single", "complete", "ward"),
+# Hierarchical clustering of nodes (man/net_hclust.Rd).
+net_hclust <- function(d, method = c("average", "single", "complete", "ward"),
                                  similarity = FALSE) {
   method <- match.arg(method)
   similarity <- check_flag(similarity, "similarity")
@@ -303,10 +303,10 @@ cluster_hierarchical <- function(d, method = c("average", "single", "complete", 
   stats::hclust(dist, method = if (method == "ward") "ward.D2" else method)
 }
 
-# See man/cluster_hierarchical.Rd.
-cut_clusters <- function(tree, k = NULL, height = NULL) {
+# See man/net_hclust.Rd.
+net_cut_clusters <- function(tree, k = NULL, height = NULL) {
   if (!inherits(tree, "hclust")) {
-    stop("`tree` must be the result of cluster_hierarchical() (an `hclust` object).",
+    stop("`tree` must be the result of net_hclust() (an `hclust` object).",
          call. = FALSE)
   }
   if (is.null(k) == is.null(height)) {

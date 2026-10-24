@@ -25,74 +25,74 @@ looks the same from one plot to the next.
 
 ```{r setup}
 library(knappnet)
-karate <- example_network("karate")
-florentine <- example_network("florentine")
+karate <- net_example("karate")
+florentine <- net_example("florentine")
 ```
 
 ## Networks
 
-`plot()` on a netframe draws it with a stress layout, nodes sized by degree,
+`plot()` on a net_frame draws it with a stress layout, nodes sized by degree,
 and labels when the network is small. Appearance comes from columns of the
-node and edge tables; see `?plot.netframe`.
+node and edge tables; see `?plot.net_frame`.
 
 ```{r network}
 plot(karate, node_color = "faction", seed = 1, main = "Zachary's karate club")
 ```
 
-Two helpers wrap the common cases. `plot_centrality()` sizes and colors
-nodes by a score and names the legend after it; `plot_partition()` colors
+Two helpers wrap the common cases. `net_plot_centrality()` sizes and colors
+nodes by a score and names the legend after it; `net_plot_partition()` colors
 nodes by a grouping and reports its modularity when the grouping carries
 one.
 
 ```{r overlays}
-plot_centrality(karate, betweenness(karate), title = "betweenness", seed = 1)
-plot_partition(karate, cluster_louvain(karate, seed = 1), title = "community", seed = 1)
+net_plot_centrality(karate, net_betweenness(karate), title = "betweenness", seed = 1)
+net_plot_partition(karate, net_louvain(karate, seed = 1), title = "community", seed = 1)
 ```
 
-`plot_scores()` is the companion ranked dot plot, which answers "who is
+`net_plot_scores()` is the companion ranked dot plot, which answers "who is
 highest, and by how much" more precisely than node sizes can.
 
 ```{r scores, fig.height = 4}
-plot_scores(betweenness(florentine), florentine, main = "Betweenness, Florentine families")
+net_plot_scores(net_betweenness(florentine), florentine, main = "Betweenness, Florentine families")
 ```
 
 ## Matrices
 
 Network texts present structure as a permuted adjacency matrix as often as
-a drawing. `plot_matrix()` draws the adjacency matrix (or the incidence
+a drawing. `net_plot_matrix()` draws the adjacency matrix (or the incidence
 matrix of a two-mode network) and, given a partition, sorts the nodes by
 group and marks the boundaries.
 
 ```{r matrix, fig.width = 6, fig.height = 6}
-plot_matrix(karate, order = cluster_louvain(karate, seed = 1), main = "Sorted by community")
+net_plot_matrix(karate, order = net_louvain(karate, seed = 1), main = "Sorted by community")
 ```
 
-A `blockmodel()` has both views at once: the permuted matrix and the block
+A `net_blockmodel()` has both views at once: the permuted matrix and the block
 densities, with the 1-blocks of the image outlined.
 
 ```{r blockmodel, fig.width = 9, fig.height = 4.5}
-bm <- blockmodel(florentine, concor(florentine, depth = 2))
+bm <- net_blockmodel(florentine, net_concor(florentine, depth = 2))
 plot(bm, network = florentine)
 ```
 
-`plot_mixing_matrix()` shows ties between categories, the raw material of
+`net_plot_mixing()` shows ties between categories, the raw material of
 assortativity and the E-I index.
 
 ```{r mixing, fig.width = 5, fig.height = 4}
-plot_mixing_matrix(karate, "faction", main = "Ties within and between factions")
-assortativity_nominal(karate, "faction")
+net_plot_mixing(karate, "faction", main = "Ties within and between factions")
+net_assort_nominal(karate, "faction")
 ```
 
 ## Distributions and censuses
 
 ```{r degree, fig.height = 4}
-plot_degree_distribution(karate)
-plot_degree_distribution(karate, type = "ccdf", log = TRUE)
+net_plot_degree(karate)
+net_plot_degree(karate, type = "ccdf", log = TRUE)
 ```
 
 ```{r components, fig.height = 4}
-friends <- example_network("noordin", relation = "friendship")
-plot_component_sizes(friends)
+friends <- net_example("noordin", relation = "friendship")
+net_plot_components(friends)
 ```
 
 The triad census is drawn against the counts expected under Holland and
@@ -100,40 +100,40 @@ Leinhardt's U|MAN null model, which conditions on the dyad census, so the
 comparison isolates triadic structure from density and reciprocity.
 
 ```{r triads, fig.height = 4.5}
-advice <- netframe(data.frame(from = c(1, 2, 3, 3, 4, 5, 5, 6, 1, 2),
-                              to   = c(2, 3, 1, 4, 5, 3, 6, 4, 6, 1)))
-plot_triad_census(advice, threads = 2)
+advice <- net_frame(data.frame(source = c(1, 2, 3, 3, 4, 5, 5, 6, 1, 2),
+                              target   = c(2, 3, 1, 4, 5, 3, 6, 4, 6, 1)))
+net_plot_triads(advice, threads = 2)
 ```
 
 ## Cores, ego networks, and robustness
 
 ```{r cores, fig.width = 6, fig.height = 6}
-plot_coreness(karate, seed = 1, threads = 2, main = "k-core shells")
+net_plot_coreness(karate, seed = 1, threads = 2, main = "k-core shells")
 ```
 
 ```{r ego}
-plot_ego(florentine, "Medici", seed = 1, main = "The Medici and their neighbours")
+net_plot_ego(florentine, "Medici", seed = 1, main = "The Medici and their neighbours")
 ```
 
-`plot_robustness()` removes nodes in order and tracks the largest component
+`net_plot_robustness()` removes nodes in order and tracks the largest component
 or the fragmentation, so a chosen set (the key players, say) can be compared
 with removal by degree, by betweenness, and at random.
 
 ```{r robustness, fig.height = 4.5}
-ji <- example_network("jemaah_islamiyah")
-kp <- key_players(ji, 3, "fragmentation", seed = 1, threads = 2)
+ji <- net_example("jemaah_islamiyah")
+kp <- net_key_players(ji, 3, "fragmentation", seed = 1, threads = 2)
 kp$set
-plot_robustness(ji, nodes = kp$set, label = "key players", seed = 1, threads = 2)
+net_plot_robustness(ji, nodes = kp$set, label = "key players", seed = 1, threads = 2)
 ```
 
 ## Scaling
 
-`classical_mds()` results plot as a configuration, a Shepard diagram, or a
+`net_mds()` results plot as a configuration, a Shepard diagram, or a
 scree plot of the eigenvalues.
 
 ```{r mds, fig.width = 6, fig.height = 6}
-d <- mds_distances(florentine)
-fit <- classical_mds(d, k = 2)
+d <- net_mds_distances(florentine)
+fit <- net_mds(d, k = 2)
 fit
 plot(fit, main = "Geodesic distances, metric scaling")
 ```
@@ -153,7 +153,7 @@ set.seed(1)
 m <- as.matrix(florentine)
 noise <- matrix(rbinom(length(m), 1, 0.15), nrow(m))
 noisy <- pmax(m, (noise + t(noise)) > 0)
-q <- qap_cor(m, noisy, mode = "graph", reps = 1000, seed = 1, threads = 2)
+q <- net_qap_cor(m, noisy, mode = "graph", reps = 1000, seed = 1, threads = 2)
 plot(q)
 ```
 
@@ -162,29 +162,29 @@ set.seed(2)
 x1 <- matrix(rnorm(144), 12)
 x2 <- matrix(rnorm(144), 12)
 y <- 0.8 * x1 + matrix(rnorm(144), 12)
-fit <- mrqap(y, list(same = x1, other = x2), reps = 1000, seed = 1, threads = 2)
+fit <- net_mrqap(y, list(same = x1, other = x2), reps = 1000, seed = 1, threads = 2)
 plot(fit)
 plot(fit, which = "distributions")
 ```
 
 ## Temporal networks
 
-`plot_timeline()` shows the raw contact sequence, one row per pair or per
-node; `plot_rolling()` draws any measure computed over windows by
-`rolling()`.
+`net_plot_timeline()` shows the raw contact sequence, one row per pair or per
+node; `net_plot_rolling()` draws any measure computed over windows by
+`net_rolling()`.
 
 ```{r temporal, fig.height = 4}
 logins <- data.frame(user = c("u1", "u2", "u1", "u3", "u2", "u3", "u1", "u2"),
                      host = c("h1", "h1", "h2", "h2", "h3", "h1", "h1", "h2"),
                      time = c(0, 1, 5, 6, 12, 13, 14, 15))
-g <- temporal_network(logins)
-plot_timeline(g, main = "Logins")
-plot_rolling(rolling(g, degree, width = 6, step = 3), main = "Degree in sliding windows")
+g <- net_temporal(logins, source = "user", target = "host")
+net_plot_timeline(g, main = "Logins")
+net_plot_rolling(net_rolling(g, net_degree, width = 6, step = 3), main = "Degree in sliding windows")
 ```
 
 ## Spatial networks
 
-Networks with node locations are drawn as maps by `plot_spatial()`, which
+Networks with node locations are drawn as maps by `net_plot_spatial()`, which
 `plot()` calls automatically for them; see the article on spatial networks.
 
 ## References

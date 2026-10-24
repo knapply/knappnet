@@ -1,0 +1,71 @@
+\name{net_compactness}
+\alias{net_compactness}
+\alias{net_dw_fragmentation}
+\title{Compactness and distance-weighted fragmentation}
+\description{
+Borgatti (2006) measures how far a network is from falling apart with the
+distance-weighted fragmentation
+\deqn{{}^{D}F = 1 - \frac{\sum_{i \ne j} 1 / d_{ij}}{n (n - 1)}}{DF = 1 - sum_{i != j} (1 / d_ij) / (n (n - 1))}
+where \eqn{1 / d_{ij} = 0} for nodes that cannot reach each other. Its
+complement, the mean reciprocal distance over ordered pairs of distinct
+nodes, is the network's compactness (the global efficiency of Latora and
+Marchiori 2001). Fragmentation is 0 for a complete network and 1 for a
+network without ties; unlike \code{\link{net_fragmentation}} it distinguishes
+networks that are connected but stretched out. UCINET reports both in
+Network > Cohesion > Distance.
+}
+\usage{
+net_compactness(x, mode = c("out", "in", "all"), weighted = NULL, weights_as = NULL,
+            threads = 0L)
+
+net_dw_fragmentation(x, mode = c("out", "in", "all"), weighted = NULL,
+                                weights_as = NULL, threads = 0L)
+}
+\arguments{
+\item{x}{A \code{\link{net_frame}}.}
+\item{mode}{For directed networks: \code{"out"} uses paths from each node,
+\code{"in"} paths to it, and \code{"all"} ignores direction.}
+\item{weighted}{Whether to use edge weights. \code{NULL} (the default) uses
+them when the network has a weight column.}
+\item{weights_as}{Override the network's \code{weight_type}: \code{"distance"}
+or \code{"strength"}.}
+\item{threads}{Number of threads, a whole number; \code{0} uses all available
+cores, or 2 during \verb{R CMD check} (see \sQuote{Threads} in
+\code{\link{net_frame}}).}
+}
+\details{
+Directed networks use directed distances over ordered pairs (\code{mode}
+\code{"out"}: from \eqn{i} to \eqn{j}; \code{"in"}: to each node;
+\code{"all"}: ignoring direction). Distances are counted in steps, or, with
+weights, as sums of lengths as in \code{\link{net_distances}} (weights read as
+distances or as strengths converted to lengths \eqn{1/w}; they must be
+strictly positive). Self-loops never shorten a path and parallel edges
+count through the shortest. Networks with fewer than two nodes give
+\code{NaN}. Compactness matches NetworkX's \code{global_efficiency()} on
+undirected unweighted networks and the mean of \code{1 / igraph::distances()}
+off the diagonal otherwise.
+}
+\value{A number.}
+\references{
+Borgatti, S. P. (2006). Identifying sets of key players in a social
+network. \emph{Computational and Mathematical Organization Theory}, 12(1),
+21-34. \doi{10.1007/s10588-006-7084-x}
+
+Latora, V., & Marchiori, M. (2001). Efficient behavior of small-world
+networks. \emph{Physical Review Letters}, 87(19), 198701.
+\doi{10.1103/PhysRevLett.87.198701}
+}
+\seealso{\code{\link{net_fragmentation}}, \code{\link{net_distances}}}
+\examples{
+# A path 1 - 2 - 3 and an isolate 4.
+g <- net_frame(data.frame(source = c(1, 2), target = c(2, 3)), nodes = data.frame(id = 1:4),
+              directed = FALSE)
+net_compactness(g)                       # (4 * 1 + 2 * 1/2) / 12
+net_dw_fragmentation(g)
+net_fragmentation(g)                     # plain fragmentation only sees components
+
+# Direction matters: a directed path reaches fewer ordered pairs.
+d <- net_frame(data.frame(source = c(1, 2), target = c(2, 3)))
+net_compactness(d)                       # out
+net_compactness(d, mode = "all")         # ignoring direction
+}

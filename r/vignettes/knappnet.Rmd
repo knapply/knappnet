@@ -39,11 +39,11 @@ is a marriage tie between two families:
 
 ```{r}
 ties <- data.frame(
-  from = c("Acciaiuoli", "Medici", "Medici", "Medici", "Medici", "Medici",
+  source = c("Acciaiuoli", "Medici", "Medici", "Medici", "Medici", "Medici",
            "Castellani", "Castellani", "Castellani", "Peruzzi", "Peruzzi",
            "Strozzi", "Strozzi", "Ridolfi", "Tornabuoni", "Albizzi", "Albizzi",
            "Salviati", "Bischeri", "Guadagni"),
-  to   = c("Medici", "Barbadori", "Ridolfi", "Tornabuoni", "Albizzi", "Salviati",
+  target   = c("Medici", "Barbadori", "Ridolfi", "Tornabuoni", "Albizzi", "Salviati",
            "Peruzzi", "Strozzi", "Barbadori", "Strozzi", "Bischeri",
            "Ridolfi", "Bischeri", "Tornabuoni", "Guadagni", "Ginori", "Guadagni",
            "Pazzi", "Guadagni", "Lamberteschi")
@@ -55,17 +55,33 @@ node table keeps it in the network as an isolate, and holds any node
 attributes:
 
 ```{r}
-families <- data.frame(name = sort(unique(c(ties$from, ties$to, "Pucci"))))
-flo <- netframe(ties, nodes = families, directed = FALSE)
+families <- data.frame(name = sort(unique(c(ties$source, ties$target, "Pucci"))))
+flo <- net_frame(ties, nodes = families, directed = FALSE, id = "name")
 flo
 ```
 
-Without `nodes`, the node table is built from the edge list, in order of
-first appearance, and isolates are necessarily missing. `netframe()`
-assumes the endpoints are the first two columns of the edge table and the
-identifier is the first column of the node table; `from`, `to`, and `id`
-name other columns. Any other columns are attributes and are carried
-along untouched.
+The printed card says what kind of network this is (undirected, one mode,
+unweighted, static, simple) and previews both tables. The endpoint
+columns are named by `source` and `target`, whose defaults are the column
+names `"source"` and `"target"`, and the identifier column by `id`
+(default `"id"`); column names and positions are never guessed. Without
+`nodes`, the node table is built from the edge list, in order of first
+appearance, and isolates are necessarily missing. Any other columns are
+attributes and are carried along untouched.
+
+The tables are checked before anything is computed, and every problem is
+reported at once, with the rows concerned:
+
+```{r, error = TRUE}
+bad <- data.frame(source = c("Medici", NA, "Strozzi"), target = c("Pazzi", "Ginori", "Medcii"))
+net_frame(bad, nodes = families, directed = FALSE, id = "name")
+```
+
+`plot()` draws a network with no further arguments:
+
+```{r, fig.width = 6, fig.height = 5}
+plot(flo, seed = 1)
+```
 
 The two tables are plain data frames:
 
@@ -80,11 +96,17 @@ Each node-level measure returns one value per row of `flo$nodes`, in the
 same order, so results can be stored directly as columns:
 
 ```{r}
-flo$nodes$degree <- degree(flo)
-flo$nodes$betweenness <- betweenness(flo)
-flo$nodes$harmonic <- round(harmonic_centrality(flo, normalized = TRUE), 3)
-flo$nodes$core <- coreness(flo)
+flo$nodes$degree <- net_degree(flo)
+flo$nodes$betweenness <- net_betweenness(flo)
+flo$nodes$harmonic <- round(net_harmonic(flo, normalized = TRUE), 3)
+flo$nodes$core <- net_coreness(flo)
 flo$nodes[order(-flo$nodes$betweenness), ]
+```
+
+Results stored as columns can be drawn directly:
+
+```{r, fig.width = 6, fig.height = 5}
+plot(flo, node_size = "betweenness", node_color = "core", seed = 1)
 ```
 
 The Medici lie on far more shortest paths between other families than
@@ -97,7 +119,7 @@ cannot reach anyone. Closeness sums distances to the other nodes, and
 programs disagree about what to do with distances that do not exist:
 
 ```{r}
-closeness(flo)[flo$nodes$name == "Pucci"]
+net_closeness(flo)[flo$nodes$name == "Pucci"]
 ```
 
 Under [igraph](https://r.igraph.org/)'s convention, the default, a node that reaches no one gets
@@ -109,9 +131,9 @@ explain every difference.
 Measures of the whole network return a single number, or a list:
 
 ```{r}
-graph_density(flo)
-centralization(flo, "degree")
-comp <- components(flo)
+net_density(flo)
+net_centralization(flo, "degree")
+comp <- net_components(flo)
 comp$no
 comp$csize
 ```
@@ -120,8 +142,8 @@ Groups of nodes are returned as membership vectors aligned with the nodes,
 or as lists of node identifiers:
 
 ```{r}
-max_cliques(flo, min_size = 3)
-groups <- cluster_louvain(flo, seed = 1)
+net_max_cliques(flo, min_size = 3)
+groups <- net_louvain(flo, seed = 1)
 table(groups)
 ```
 
@@ -138,14 +160,14 @@ Distances (travel time, cost, latency) keep nodes apart:
 
 ```{r}
 roads <- data.frame(
-  from    = c("a", "b", "a"),
-  to      = c("b", "c", "c"),
+  source    = c("a", "b", "a"),
+  target      = c("b", "c", "c"),
   minutes = c(5, 5, 20)
 )
-trips <- netframe(roads, directed = FALSE, weight = "minutes")
+trips <- net_frame(roads, directed = FALSE, weight = "minutes", weight_type = "distance")
 trips
-betweenness(trips)                    # a to c is quicker through b
-betweenness(trips, weighted = FALSE)  # ignoring travel time
+net_betweenness(trips)                    # a to c is quicker through b
+net_betweenness(trips, weighted = FALSE)  # ignoring travel time
 ```
 
 Strengths (contact frequency, tie intensity) bring nodes closer, so
@@ -154,13 +176,26 @@ weights use them as given:
 
 ```{r}
 calls <- data.frame(
-  from  = c("a", "b", "a"),
-  to    = c("b", "c", "c"),
+  source  = c("a", "b", "a"),
+  target    = c("b", "c", "c"),
   calls = c(1, 1, 20)
 )
-phone <- netframe(calls, directed = FALSE, weight = "calls", weight_type = "strength")
-betweenness(phone)  # a and c talk directly, so b brokers nothing
-strength(phone)
+phone <- net_frame(calls, directed = FALSE, weight = "calls", weight_type = "strength")
+net_betweenness(phone)  # a and c talk directly, so b brokers nothing
+net_strength(phone)
+```
+
+The same three edges, read as distances and as strengths, give different
+shortest paths from `a` to `c`; edges are drawn wider the stronger they
+are, and distances do not change the width:
+
+```{r, fig.width = 7, fig.height = 3}
+op <- par(mfrow = c(1, 2))
+xy <- plot(trips, main = "minutes (distance)", edge_color = I(c("black", "black", "gray")),
+           seed = 2)
+plot(phone, layout = xy, main = "calls (strength)",
+     edge_color = I(c("gray", "gray", "black")))
+par(op)
 ```
 
 Path-based measures take `weighted` (use the weights or not) and
@@ -168,9 +203,34 @@ Path-based measures take `weighted` (use the weights or not) and
 only). Measures defined only on binary ties, such as cliques, the triad
 census, and brokerage, ignore weights and say so in their help pages.
 
+## Kinds of networks
+
+The same two tables hold every kind of network; roles name the columns
+that carry structure. Two-mode data take a `mode` column (or
+`net_twomode()`), multiplex data a `relation` column, signed data a `sign`
+column, temporal data `start` (and `end`) or `wave` columns, spatial data
+coordinate columns or sf geometry, multilayer data the layers of each
+endpoint, egocentric data an `ego` column, and unobserved pairs or
+non-respondents logical flags. The card and the plot show each of them:
+
+```{r, fig.width = 7, fig.height = 3.5}
+women <- net_example("southern_women")
+women
+op <- par(mfrow = c(1, 2))
+plot(women, node_label = FALSE, main = "two-mode: women and events")
+plot(net_example("krackhardt"), node_label = FALSE, main = "multiplex: three relations",
+     seed = 1)
+par(op)
+```
+
+The [network types](https://knapply.github.io/knappnet/articles/network-types.html)
+article shows every configuration with its tables, card, and plot, and the
+[definitions](https://knapply.github.io/knappnet/articles/definitions.html)
+article explains the choices behind them.
+
 ## Conversion
 
-`as.matrix()` gives the adjacency matrix, and `as_netframe()` turns a
+`as.matrix()` gives the adjacency matrix, and `as_net_frame()` turns a
 matrix back into a network. Direction is inferred from symmetry, and
 values other than 0 and 1 become weights:
 
@@ -179,7 +239,7 @@ m <- matrix(c(0, 2, 0,
               2, 0, 1,
               0, 1, 0), 3, byrow = TRUE,
             dimnames = list(c("x", "y", "z"), c("x", "y", "z")))
-small <- as_netframe(m)
+small <- as_net_frame(m)
 small
 small$edges
 as.matrix(small, attr = "weight")
@@ -189,32 +249,32 @@ Networks also convert both ways with [igraph](https://r.igraph.org/), [tidygraph
 network package, keeping node, edge, and network attributes:
 
 ```{r, eval = has_igraph}
-ig <- to_igraph(flo)
+ig <- net_to_igraph(flo)
 igraph::vcount(ig)
 head(igraph::vertex_attr(ig, "betweenness"))
-karate <- as_netframe(igraph::make_graph("Zachary"))
+karate <- as_net_frame(igraph::make_graph("Zachary"))
 karate
 ```
 
 ```{r, eval = has_network}
-net <- to_network(flo)
+net <- net_to_network(flo)
 network::network.size(net)
 ```
 
-`to_tbl_graph()` returns a tidygraph object, and the usual generics of
+`net_to_tbl_graph()` returns a tidygraph object, and the usual generics of
 those packages, `igraph::as.igraph()`, `network::as.network()`, and
-`tidygraph::as_tbl_graph()`, also accept a netframe.
+`tidygraph::as_tbl_graph()`, also accept a net_frame.
 
 ## Files
 
-`read_network()` and `write_network()` handle GraphML, GEXF, GML, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
+`net_read()` and `net_write()` handle GraphML, GEXF, GML, [Pajek](http://mrvar.fdv.uni-lj.si/pajek/),
 [UCINET](https://sites.google.com/site/ucinetsoftware/home) DL, JSON node-link, [ORA](https://www.casos.cs.cmu.edu/projects/ora/)'s DyNetML, CSV and TSV edge lists, and
 (write only) DOT. The format comes from the file extension:
 
 ```{r}
 path <- tempfile(fileext = ".graphml")
-write_network(flo, path)
-back <- read_network(path)
+net_write(flo, path)
+back <- net_read(path)
 back
 head(back$nodes)
 ```
@@ -226,13 +286,13 @@ edge list is written with an optional node file alongside it:
 ```{r}
 edges_csv <- tempfile(fileext = ".csv")
 nodes_csv <- tempfile(fileext = ".csv")
-write_network(flo, edges_csv, nodes_file = nodes_csv)
-read_network(edges_csv, nodes = nodes_csv, directed = FALSE)
+net_write(flo, edges_csv, nodes_file = nodes_csv)
+net_read(edges_csv, nodes = nodes_csv, directed = FALSE)
 ```
 
 ## Next steps
 
-- `?netframe`, `?read_network`, and `?as_netframe` for the details of
+- `?net_frame`, `?net_read`, and `?as_net_frame` for the details of
   building, reading, and converting networks.
 - `?conventions` for how [igraph](https://r.igraph.org/), [NetworkX](https://networkx.org/), [sna](https://cran.r-project.org/package=sna), and [UCINET](https://sites.google.com/site/ucinetsoftware/home) differ, and the
   `convention` argument that reproduces each.

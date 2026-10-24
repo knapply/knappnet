@@ -1,8 +1,8 @@
 # Quadratic assignment procedure tests: QAP correlation and multiple
 # regression QAP, with their print, summary, and plot methods.
 
-# QAP correlation test (man/qap_cor.Rd).
-qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
+# QAP correlation test (man/net_qap_cor.Rd).
+net_qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
                     mode = c("digraph", "graph"), exact = FALSE, attr = NULL,
                     threads = 0L) {
   mode <- match.arg(mode)
@@ -14,7 +14,7 @@ qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
   mats <- m$values
   draws <- qap_draws(n, reps, exact)
   seed <- check_seed(seed)
-  res <- engine_call("qap_cor",
+  res <- engine_call("net_qap_cor",
     .Call(C_qap_cor, mats[[1]], mats[[2]], n, qap_mode_code(mode), diag, exact,
           as.double(reps), seed, threads, as.double(draws)))
   s <- res[[1]]
@@ -37,7 +37,7 @@ qap_cor <- function(y, x, reps = 1000, seed = NULL, diag = FALSE,
   ), class = "qap_cor")
 }
 
-# See man/qap_cor.Rd.
+# See man/net_qap_cor.Rd.
 print.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nQAP correlation test\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -49,14 +49,14 @@ print.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-# See man/qap_cor.Rd.
+# See man/net_qap_cor.Rd.
 summary.qap_cor <- function(object, ...) {
   q <- stats::quantile(object$dist, c(0, 0.025, 0.25, 0.5, 0.75, 0.975, 1),
                        na.rm = TRUE, names = TRUE)
   structure(c(object, list(quantiles = q)), class = c("summary.qap_cor", "qap_cor"))
 }
 
-# See man/qap_cor.Rd.
+# See man/net_qap_cor.Rd.
 print.summary.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   print.qap_cor(x, digits = digits)
   cat("\nReference distribution of r:\n")
@@ -68,7 +68,7 @@ print.summary.qap_cor <- function(x, digits = max(3L, getOption("digits") - 3L),
 plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   d <- x$dist[is.finite(x$dist)]
   if (!length(d)) {
-    stop("There are no permutation draws to plot; run qap_cor() with `reps > 0`.",
+    stop("There are no permutation draws to plot; run net_qap_cor() with `reps > 0`.",
          call. = FALSE)
   }
   dots <- list(...)
@@ -100,8 +100,8 @@ plot.qap_cor <- function(x, breaks = "Sturges", ...) {
   invisible(x)
 }
 
-# Multiple regression QAP (man/mrqap.Rd).
-mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
+# Multiple regression QAP (man/net_mrqap.Rd).
+net_mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
                   intercept = TRUE, mode = c("digraph", "graph"), diag = FALSE,
                   statistic = c("t", "beta"), exact = FALSE, attr = NULL,
                   tol = 1e-7, threads = 0L) {
@@ -113,8 +113,8 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   exact <- check_flag(exact, "exact")
   tol <- check_number(tol, "tol", lower = 0, upper = 1)
   threads <- resolve_threads(threads)
-  if (is.matrix(x) || inherits(x, "netframe") || is.data.frame(x)) x <- list(x)
-  if (!is.list(x)) stop("`x` must be a matrix, a netframe, or a list of them.", call. = FALSE)
+  if (is.matrix(x) || inherits(x, "net_frame") || is.data.frame(x)) x <- list(x)
+  if (!is.list(x)) stop("`x` must be a matrix, a net_frame, or a list of them.", call. = FALSE)
   k <- length(x)
   xnames <- names(x)
   if (is.null(xnames)) xnames <- rep("", k)
@@ -125,7 +125,7 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   draws <- qap_draws(n, reps, exact)
   seed <- check_seed(seed)
   xs <- if (k) unlist(mats[-1], use.names = FALSE) else double(0)
-  res <- engine_call("mrqap",
+  res <- engine_call("net_mrqap",
     .Call(C_mrqap, mats[[1]], as.double(xs), n, k, intercept, qap_mode_code(mode), diag,
           if (method == "dsp") 0L else 1L, if (statistic == "t") 0L else 1L,
           as.double(tol), exact, as.double(reps), seed, threads, as.double(draws)))
@@ -168,7 +168,7 @@ mrqap <- function(y, x, reps = 1000, method = c("dsp", "y"), seed = NULL,
   ), class = "mrqap")
 }
 
-# See man/mrqap.Rd.
+# See man/net_mrqap.Rd.
 print.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nMultiple regression QAP\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -178,14 +178,14 @@ print.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   invisible(x)
 }
 
-# See man/mrqap.Rd.
+# See man/net_mrqap.Rd.
 summary.mrqap <- function(object, ...) {
   tab <- cbind(Estimate = object$coefficients, `Std. Error` = object$std.error,
                `t value` = object$t, object$p.value)
   structure(c(object, list(table = tab)), class = c("summary.mrqap", "mrqap"))
 }
 
-# See man/mrqap.Rd.
+# See man/net_mrqap.Rd.
 print.summary.mrqap <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat("\nMultiple regression QAP\n\n")
   cat("Call:\n", paste(deparse(x$call), collapse = "\n"), "\n\n", sep = "")
@@ -222,7 +222,7 @@ plot.mrqap <- function(x, which = c("coefficients", "distributions"), level = 0.
   dist <- x$dist[, keep, drop = FALSE]
   p <- x$p.value[keep, 3L]
   if (nrow(dist) == 0L) {
-    stop("There are no permutation draws to plot; run mrqap() with `reps > 0`.", call. = FALSE)
+    stop("There are no permutation draws to plot; run net_mrqap() with `reps > 0`.", call. = FALSE)
   }
   dots <- list(...)
   k <- length(observed)
@@ -314,14 +314,14 @@ qap_draws <- function(n, reps, exact) {
 qap_matrices <- function(inputs, attr) {
   mats <- lapply(seq_along(inputs), function(i) {
     m <- inputs[[i]]
-    if (inherits(m, "netframe")) {
+    if (inherits(m, "net_frame")) {
       a <- if (is.null(attr)) m$roles$weight else attr
       m <- as.matrix(m, attr = a)
     } else if (is.data.frame(m)) {
       m <- as.matrix(m)
     }
     if (!is.matrix(m) || nrow(m) != ncol(m)) {
-      stop(sprintf("Input %d is not a square matrix or a netframe.", i), call. = FALSE)
+      stop(sprintf("Input %d is not a square matrix or a net_frame.", i), call. = FALSE)
     }
     if (!(is.numeric(m) || is.logical(m))) {
       stop(sprintf("Input %d is not numeric.", i), call. = FALSE)

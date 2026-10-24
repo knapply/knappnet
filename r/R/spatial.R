@@ -3,14 +3,15 @@
 # Networks whose tables are sf data frames are handled in sf.R, and the
 # map plot in plot-spatial.R.
 
-# Geospatial networks (man/spatial_network.Rd).
-spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
-                            radius = 6371008.7714,
-                            representative = c("point_on_surface", "centroid")) {
-  check_netframe(x)
+# Geospatial networks (man/net_spatial.Rd).
+net_spatial <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
+                        radius = 6371008.7714,
+                        representative = c("point_on_surface", "centroid"), quiet = FALSE) {
+  check_net_frame(x)
   crs <- match.arg(crs)
   representative <- match.arg(representative)
   radius <- check_number(radius, "radius", lower = 0, open = TRUE)
+  quiet <- check_flag(quiet, "quiet")
   if (has_node_geometry(x)) {
     if (!missing(coords)) {
       stop(sprintf(paste0("`x$nodes` already carries geometry in column `%s`, from which ",
@@ -26,14 +27,28 @@ spatial_network <- function(x, coords = c("lon", "lat"), crs = c("lonlat", "plan
     stop("`coords` must name two columns of `x$nodes`: longitude and latitude, or x and y.",
          call. = FALSE)
   }
-  cx <- resolve_column(x$nodes, coords[[1L]], "coords[1]", "nodes")
-  cy <- resolve_column(x$nodes, coords[[2L]], "coords[2]", "nodes")
-  check_coordinates(x$nodes[[cx]], x$nodes[[cy]], cx, cy, crs, "x$nodes")
-  x$roles$x <- cx
-  x$roles$y <- cy
-  x$roles$crs <- crs
-  x$roles$radius <- as.double(radius)
-  x
+  cx <- role_column(x$nodes, coords[[1L]], "coords[1]", "nodes")
+  cy <- role_column(x$nodes, coords[[2L]], "coords[2]", "nodes")
+  roles <- x$roles
+  roles$x <- cx
+  roles$y <- cy
+  roles$crs <- crs
+  roles$radius <- as.double(radius)
+  out <- new_net_frame(x$edges, x$nodes, x$directed, roles, x$declared, x$graph,
+                       tables = frame_tables(x))
+  build_net_frame(out, quiet, "net_spatial")
+}
+
+# See man/net_spatial.Rd.
+net_is_spatial <- function(x) inherits(x, "spatial_net_frame")
+
+check_spatial <- function(x) {
+  check_net_frame(x)
+  if (!inherits(x, "spatial_net_frame")) {
+    stop(paste0("`x` must be a spatial network (class `spatial_net_frame`), with node ",
+                "coordinates or sf geometry; create one with net_spatial(x, coords = ...) ",
+                "or from sf tables."), call. = FALSE)
+  }
 }
 
 check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
@@ -65,13 +80,13 @@ check_coordinates <- function(cx_values, cy_values, cx, cy, crs, table) {
 # coordinates through this helper, so that node geometries of other kinds
 # can later be reduced to representative points in one place.
 node_coordinates <- function(x) {
-  check_netframe(x)
+  check_net_frame(x)
   if (has_node_geometry(x)) {
-    require_pkg("sf", "A netframe with sf node geometry")
+    require_pkg("sf", "A net_frame with sf node geometry")
     return(geometry_coordinates(x))
   }
   if (is.null(x$roles$x) || is.null(x$roles$y) || is.null(x$roles$crs)) {
-    stop("`x` has no coordinates; record them with spatial_network(x, coords = ...).",
+    stop("`x` has no coordinates; record them with net_spatial(x, coords = ...).",
          call. = FALSE)
   }
   cx <- x$roles$x
@@ -95,20 +110,20 @@ spatial_coords <- function(x) {
        radius = p$radius, names = colnames(p$coords))
 }
 
-# See man/spatial_network.Rd.
-edge_lengths <- function(x) {
-  check_netframe(x)
+# See man/net_spatial.Rd.
+net_edge_lengths <- function(x) {
+  check_net_frame(x)
   if (has_edge_geometry(x)) {
-    require_pkg("sf", "A netframe with sf edge geometry")
+    require_pkg("sf", "A net_frame with sf edge geometry")
     return(geometry_edge_lengths(x))
   }
   p <- spatial_coords(x)
   ptr <- engine_graph(x)
-  engine_call("edge_lengths", .Call(C_edge_lengths, ptr, p$x, p$y, p$crs, p$radius))
+  engine_call("net_edge_lengths", .Call(C_edge_lengths, ptr, p$x, p$y, p$crs, p$radius))
 }
 
-# See man/spatial_network.Rd.
-distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"),
+# See man/net_spatial.Rd.
+net_distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"),
                            exponent = 2) {
   form <- match.arg(form)
   if (!is.numeric(d)) stop("`d` must be numeric.", call. = FALSE)
@@ -123,12 +138,12 @@ distance_decay <- function(d, scale, form = c("exponential", "gaussian", "power"
   )
 }
 
-# See man/spatial_network.Rd.
-group_geometry <- function(x, groups) {
+# See man/net_spatial.Rd.
+net_group_geometry <- function(x, groups) {
   p <- spatial_coords(x)
   grp <- node_groups(x, groups, "groups")
   k <- length(grp$labels)
-  m <- engine_call("group_geometry",
+  m <- engine_call("net_group_geometry",
                    .Call(C_group_geometry, p$x, p$y, grp$codes, p$crs, p$radius, k),
                    edge_rows = FALSE)
   out <- data.frame(group = grp$labels, size = as.integer(m[, 1L]), stringsAsFactors = FALSE)
@@ -139,8 +154,8 @@ group_geometry <- function(x, groups) {
   out
 }
 
-# Proximity networks from locations (man/proximity_network.Rd).
-proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
+# Proximity networks from locations (man/net_proximity.Rd).
+net_proximity <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat", "planar"),
                               radius = 6371008.7714, within = NULL, k = NULL,
                               knn = c("directed", "either", "mutual"), id = 1L,
                               threads = 0L, exact = FALSE) {
@@ -149,7 +164,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
   check_flag(exact, "exact")
   check_proximity_args(within, k)
   sf_nodes <- NULL
-  if (inherits(nodes, "netframe")) {
+  if (inherits(nodes, "net_frame")) {
     if (missing(coords) && has_node_geometry(nodes)) {
       sf_nodes <- nodes$nodes
     } else if (missing(coords) && !is.null(nodes$roles$x) && !is.null(nodes$roles$y)) {
@@ -164,7 +179,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
     if (missing(id)) id <- NULL
   }
   if (!is.null(sf_nodes)) {
-    require_pkg("sf", "proximity_network() with sf nodes")
+    require_pkg("sf", "net_proximity() with sf nodes")
     return(sf_proximity_network(sf_nodes, within, k, knn, id, exact, threads))
   }
   if (exact) {
@@ -172,7 +187,7 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
   }
   crs <- match.arg(crs)
   if (!is.data.frame(nodes)) {
-    stop(sprintf("`nodes` must be a data frame or a netframe, not %s.", describe_class(nodes)),
+    stop(sprintf("`nodes` must be a data frame or a net_frame, not %s.", describe_class(nodes)),
          call. = FALSE)
   }
   if (length(coords) != 2L) {
@@ -187,11 +202,11 @@ proximity_network <- function(nodes, coords = c("lon", "lat"), crs = c("lonlat",
                        radius, within, k, threads)
   r <- symmetrize_knn(r, k, knn)
   ids <- nodes[[id]]
-  edges <- data.frame(from = ids[r$from], to = ids[r$to], distance = r$distance,
+  edges <- data.frame(source = ids[r$from], target = ids[r$to], distance = r$distance,
                       stringsAsFactors = FALSE)
-  g <- netframe(edges, nodes, directed = r$directed, id = id, weight = "distance",
-                weight_type = "distance")
-  spatial_network(g, coords = c(cx, cy), crs = crs, radius = radius)
+  g <- net_frame(edges, nodes, directed = r$directed, id = id, weight = proximity_weight(edges),
+                 weight_type = proximity_weight_type(edges), quiet = TRUE)
+  net_spatial(g, coords = c(cx, cy), crs = crs, radius = radius, quiet = TRUE)
 }
 
 check_proximity_args <- function(within, k) {
@@ -206,8 +221,22 @@ check_proximity_args <- function(within, k) {
 
 # The engine's neighbour search: pairs within a distance or each point's
 # k nearest neighbours, as 1-based positions with their distances.
+# Distances are the weights of a proximity network when every one is
+# positive; a zero distance (coincident points, touching polygons) cannot
+# be a path length, so the column is then kept as an attribute only.
+proximity_weight <- function(edges) {
+  if (all(edges$distance > 0)) return("distance")
+  if (length(edges$distance)) {
+    message("Some neighbour distances are zero (coincident points or touching ",
+            "shapes), so the network is unweighted; distances are kept in the ",
+            "`distance` edge column.")
+  }
+  NULL
+}
+proximity_weight_type <- function(edges) if (all(edges$distance > 0)) "distance"
+
 proximity_pairs <- function(px, py, lonlat, radius, within, k, threads) {
-  r <- engine_call("proximity_network",
+  r <- engine_call("net_proximity",
                    .Call(C_proximity, px, py, if (lonlat) 0L else 1L, as.double(radius),
                          if (is.null(within)) 0 else as.double(within),
                          if (is.null(k)) 0 else as.double(k), threads),

@@ -1,77 +1,91 @@
 # Conversion to and from other packages' objects (igraph, tidygraph,
 # network, dense and sparse adjacency matrices). Methods for sf and
 # sfnetworks are in sf.R. Methods for other packages' generics are
-# registered in NAMESPACE with S3method(pkg::generic, netframe) and take
+# registered in NAMESPACE with S3method(pkg::generic, net_frame) and take
 # effect when that package is loaded.
 
-# Convert networks to and from other packages (man/as_netframe.Rd).
-as_netframe <- function(x, ...) {
-  UseMethod("as_netframe")
+# Convert networks to and from other packages (man/as_net_frame.Rd).
+as_net_frame <- function(x, ...) {
+  UseMethod("as_net_frame")
 }
 
-# See man/as_netframe.Rd.
-as_netframe.default <- function(x, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.default <- function(x, ...) {
   if (isS4(x) && methods::is(x, "Matrix")) {
-    return(as_netframe.Matrix(x, ...))
+    return(as_net_frame.Matrix(x, ...))
   }
   stop(sprintf(paste0(
-    "Cannot convert an object of class `%s` to a netframe. Supported: igraph, ",
+    "Cannot convert an object of class `%s` to a net_frame. Supported: igraph, ",
     "tbl_graph, network, matrix, Matrix, and data.frame (an edge list)."),
     class(x)[[1]]), call. = FALSE)
 }
 
-# See man/as_netframe.Rd.
-as_netframe.netframe <- function(x, ...) x
+# See man/as_net_frame.Rd.
+as_net_frame.net_frame <- function(x, ...) x
 
-# See man/as_netframe.Rd.
-as_netframe.data.frame <- function(x, ...) netframe(x, ...)
+# See man/as_net_frame.Rd.
+as_net_frame.data.frame <- function(x, ...) net_frame(x, ...)
 
-# See man/as_netframe.Rd.
-as_netframe.igraph <- function(x, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.igraph <- function(x, weight_type = "distance", quiet = FALSE, ...) {
   require_pkg("igraph")
   n <- igraph::vcount(x)
   vattrs <- igraph::vertex_attr(x)
   named <- "name" %in% names(vattrs)
   ids <- if (named) vattrs$name else seq_len(n)
   vattrs$name <- NULL
-  nodes <- data.frame(name = ids, stringsAsFactors = FALSE)
-  for (a in names(vattrs)) nodes[[a]] <- plain_column(vattrs[[a]])
+  # igraph's `name` becomes the identifier column `id`, as in net_frame().
+  nodes <- data.frame(id = ids, stringsAsFactors = FALSE)
+  for (a in names(vattrs)) {
+    nodes[[if (a == "id") "id_attr" else a]] <- plain_column(vattrs[[a]])
+  }
 
   ends <- igraph::ends(x, igraph::E(x), names = FALSE)
-  edges <- data.frame(from = ids[ends[, 1]], to = ids[ends[, 2]], stringsAsFactors = FALSE)
+  edges <- data.frame(source = ids[ends[, 1]], target = ids[ends[, 2]],
+                      stringsAsFactors = FALSE)
   eattrs <- igraph::edge_attr(x)
   for (a in names(eattrs)) {
-    col <- if (a %in% c("from", "to")) paste0(a, "_attr") else a
+    col <- if (a %in% c("source", "target")) paste0(a, "_attr") else a
     edges[[col]] <- plain_column(eattrs[[a]])
   }
   weight <- if (is.numeric(eattrs$weight)) "weight"
-  netframe(edges, nodes, directed = igraph::is_directed(x), from = "from", to = "to",
-           id = "name", weight = weight, graph = igraph::graph_attr(x))
+  if (!is.null(weight)) check_weight_type(weight, weight_type)
+  graph <- igraph::graph_attr(x)
+  # igraph's logical `type` attribute declares the modes of a two-mode
+  # network.
+  if (is.logical(nodes$type) && !anyNA(nodes$type) && nrow(nodes)) {
+    return(net_twomode(edges, nodes, mode = "type", directed = igraph::is_directed(x),
+                       weight = weight, weight_type = weight_type, quiet = quiet,
+                       graph = graph))
+  }
+  net_frame(edges, nodes, directed = igraph::is_directed(x), weight = weight,
+            weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
-# See man/as_netframe.Rd.
-as_netframe.network <- function(x, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.network <- function(x, weight_type = "strength", quiet = FALSE, ...) {
   require_pkg("network")
   n <- network::network.size(x)
   vnames <- network::network.vertex.names(x)
   ids <- if (length(vnames) == n && !anyDuplicated(vnames)) vnames else seq_len(n)
-  nodes <- data.frame(name = ids, stringsAsFactors = FALSE)
+  # network's `vertex.names` become the identifier column `id`.
+  nodes <- data.frame(id = ids, stringsAsFactors = FALSE)
   for (a in setdiff(network::list.vertex.attributes(x), c("vertex.names", "na"))) {
-    nodes[[a]] <- plain_column(network::get.vertex.attribute(x, a, unlist = FALSE))
+    col <- if (a == "id") "id_attr" else a
+    nodes[[col]] <- plain_column(network::get.vertex.attribute(x, a, unlist = FALSE))
   }
   b <- network::get.network.attribute(x, "bipartite")
-  if (is.numeric(b) && length(b) == 1L && b > 0) {
-    nodes$mode <- ifelse(seq_len(n) <= b, 1L, 2L)
-  }
+  bipartite <- is.numeric(b) && length(b) == 1L && b > 0
+  if (bipartite) nodes$mode <- ifelse(seq_len(n) <= b, "first", "second")
 
   # Read edges in storage order so edge attributes line up.
   eids <- network::valid.eids(x)
   tails <- vapply(x$mel[eids], function(e) as.numeric(e$outl[[1]]), 0)
   heads <- vapply(x$mel[eids], function(e) as.numeric(e$inl[[1]]), 0)
-  edges <- data.frame(from = ids[tails], to = ids[heads], stringsAsFactors = FALSE)
+  edges <- data.frame(source = ids[tails], target = ids[heads], stringsAsFactors = FALSE)
   for (a in setdiff(network::list.edge.attributes(x), "na")) {
     vals <- network::get.edge.attribute(x, a, unlist = FALSE)[eids]
-    col <- if (a %in% c("from", "to")) paste0(a, "_attr") else a
+    col <- if (a %in% c("source", "target")) paste0(a, "_attr") else a
     edges[[col]] <- plain_column(vals)
   }
   graph <- list()
@@ -81,12 +95,19 @@ as_netframe.network <- function(x, ...) {
     if (is.atomic(v) && length(v) == 1L) graph[[a]] <- v
   }
   weight <- if (is.numeric(edges$weight)) "weight"
-  netframe(edges, nodes, directed = network::is.directed(x), from = "from", to = "to",
-           id = "name", weight = weight, graph = graph)
+  if (!is.null(weight)) check_weight_type(weight, weight_type)
+  if (bipartite) {
+    return(net_twomode(edges, nodes, mode = "mode", directed = network::is.directed(x),
+                       weight = weight, weight_type = weight_type, quiet = quiet,
+                       graph = graph))
+  }
+  net_frame(edges, nodes, directed = network::is.directed(x), weight = weight,
+            weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
-# See man/as_netframe.Rd.
-as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
+                               quiet = FALSE, ...) {
   check_flag_or_null(directed, "directed")
   check_flag_or_null(weighted, "weighted")
   if (nrow(x) != ncol(x)) {
@@ -97,12 +118,14 @@ as_netframe.matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   }
   x[is.na(x)] <- 0
   idx <- which(x != 0, arr.ind = TRUE)
-  matrix_to_netframe(idx[, 1], idx[, 2], as.numeric(x[idx]), nrow(x), rownames(x),
-                     symmetric = isSymmetric(unname(x)), directed, weighted)
+  matrix_to_net_frame(idx[, 1], idx[, 2], as.numeric(x[idx]), nrow(x), rownames(x),
+                     symmetric = isSymmetric(unname(x)), directed, weighted, weight_type,
+                     quiet)
 }
 
-# See man/as_netframe.Rd.
-as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.Matrix <- function(x, directed = NULL, weighted = NULL, weight_type = "strength",
+                               quiet = FALSE, ...) {
   require_pkg("Matrix")
   check_flag_or_null(directed, "directed")
   check_flag_or_null(weighted, "weighted")
@@ -123,11 +146,12 @@ as_netframe.Matrix <- function(x, directed = NULL, weighted = NULL, ...) {
   }
   # As for dense matrices, missing values are read as 0 (no tie).
   keep <- !is.na(v) & v != 0
-  matrix_to_netframe(i[keep], j[keep], v[keep], nrow(x), rownames(x),
-                     symmetric = Matrix::isSymmetric(x), directed, weighted)
+  matrix_to_net_frame(i[keep], j[keep], v[keep], nrow(x), rownames(x),
+                     symmetric = Matrix::isSymmetric(x), directed, weighted, weight_type, quiet)
 }
 
-matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted) {
+matrix_to_net_frame <- function(i, j, v, n, ids, symmetric, directed, weighted, weight_type,
+                               quiet) {
   if (is.null(ids)) ids <- seq_len(n)
   if (anyDuplicated(ids)) {
     stop("Row names of the adjacency matrix must be unique.", call. = FALSE)
@@ -144,16 +168,17 @@ matrix_to_netframe <- function(i, j, v, n, ids, symmetric, directed, weighted) {
   j <- j[o]
   v <- v[o]
   weighted <- if (is.null(weighted)) any(v != 1) else isTRUE(weighted)
-  edges <- data.frame(from = ids[i], to = ids[j], stringsAsFactors = FALSE)
+  if (weighted) check_weight_type("weight", weight_type)
+  edges <- data.frame(source = ids[i], target = ids[j], stringsAsFactors = FALSE)
   if (weighted) edges$weight <- v
-  nodes <- data.frame(name = ids, stringsAsFactors = FALSE)
-  netframe(edges, nodes, directed = directed, from = "from", to = "to", id = "name",
-           weight = if (weighted) "weight")
+  nodes <- data.frame(id = ids, stringsAsFactors = FALSE)
+  net_frame(edges, nodes, directed = directed, weight = if (weighted) "weight",
+            weight_type = if (weighted) weight_type, quiet = quiet)
 }
 
-# See man/as_netframe.Rd.
-to_igraph <- function(x) {
-  check_netframe(x)
+# See man/as_net_frame.Rd.
+net_to_igraph <- function(x) {
+  check_net_frame(x)
   require_pkg("igraph")
   g <- igraph::make_empty_graph(n = nrow(x$nodes), directed = x$directed)
   if (nrow(x$edges)) {
@@ -164,8 +189,12 @@ to_igraph <- function(x) {
     col <- if (a == "name") "name_attr" else a
     g <- igraph::set_vertex_attr(g, col, value = x$nodes[[a]])
   }
-  for (a in setdiff(names(x$edges), c(x$roles$from, x$roles$to))) {
+  for (a in setdiff(names(x$edges), c(x$roles$source, x$roles$target))) {
     g <- igraph::set_edge_attr(g, a, value = x$edges[[a]])
+  }
+  # igraph declares two-mode networks with a logical `type` attribute.
+  if (net_is_twomode(x) && !identical(x$roles$mode, "type")) {
+    g <- igraph::set_vertex_attr(g, "type", value = twomode_types(x) == 1L)
   }
   if (!is.null(x$roles$weight) && x$roles$weight != "weight" &&
       !"weight" %in% names(x$edges)) {
@@ -175,30 +204,30 @@ to_igraph <- function(x) {
   g
 }
 
-# See man/as_netframe.Rd.
-to_tbl_graph <- function(x) {
+# See man/as_net_frame.Rd.
+net_to_tbl_graph <- function(x) {
   require_pkg("tidygraph")
-  tidygraph::as_tbl_graph(to_igraph(x))
+  tidygraph::as_tbl_graph(net_to_igraph(x))
 }
 
-# See man/as_netframe.Rd.
-to_network <- function(x) {
-  check_netframe(x)
+# See man/as_net_frame.Rd.
+net_to_network <- function(x) {
+  check_net_frame(x)
   require_pkg("network")
   n <- nrow(x$nodes)
   src <- x$index$src + 1L
   tgt <- x$index$tgt + 1L
   pairs <- if (x$directed) paste(src, tgt) else paste(pmin(src, tgt), pmax(src, tgt))
-  bipartite <- if ("mode" %in% names(x$nodes)) bipartite_count(x$nodes$mode, src, tgt)
+  bipartite <- if (net_is_twomode(x)) bipartite_count(twomode_types(x))
   net <- network::network.initialize(n, directed = x$directed, loops = any(src == tgt),
                                      multiple = anyDuplicated(pairs) > 0,
                                      bipartite = if (is.null(bipartite)) FALSE else bipartite)
   network::set.vertex.attribute(net, "vertex.names", as.character(x$nodes[[x$roles$id]]))
-  for (a in setdiff(names(x$nodes), c(x$roles$id, if (!is.null(bipartite)) "mode"))) {
+  for (a in setdiff(names(x$nodes), x$roles$id)) {
     network::set.vertex.attribute(net, a, x$nodes[[a]])
   }
   if (length(src)) {
-    attrs <- setdiff(names(x$edges), c(x$roles$from, x$roles$to))
+    attrs <- setdiff(names(x$edges), c(x$roles$source, x$roles$target))
     names_list <- rep(list(attrs), length(src))
     vals_list <- lapply(seq_along(src), function(k) lapply(attrs, function(a) x$edges[[a]][[k]]))
     network::add.edges(net, tail = src, head = tgt,
@@ -209,17 +238,17 @@ to_network <- function(x) {
   net
 }
 
-# network's bipartite flag requires the first `b` vertices to be one mode
-# and every edge to cross modes; only then is it set.
-bipartite_count <- function(mode, src, tgt) {
-  b <- sum(mode == 1, na.rm = TRUE)
-  ok <- !anyNA(mode) && all(mode[seq_len(b)] == 1) && all(mode[src] != mode[tgt])
-  if (ok && b > 0) b else NULL
+# network's bipartite flag requires the first `b` vertices to be one mode;
+# only then is it set (the edges of a two-mode net_frame already cross
+# modes).
+bipartite_count <- function(types) {
+  b <- sum(types == 0L)
+  if (b > 0 && all(types[seq_len(b)] == 0L)) b else NULL
 }
 
-# See man/as_netframe.Rd.
-as.matrix.netframe <- function(x, attr = NULL, sparse = FALSE, ...) {
-  check_netframe(x)
+# See man/as_net_frame.Rd.
+as.matrix.net_frame <- function(x, attr = NULL, sparse = FALSE, ...) {
+  check_net_frame(x)
   check_flag(sparse, "sparse")
   n <- nrow(x$nodes)
   i <- x$index$src + 1L
@@ -262,6 +291,6 @@ plain_column <- function(v) {
 }
 
 # Methods for other packages' generics, registered when those packages load.
-as.igraph.netframe <- function(x, ...) to_igraph(x)
-as.network.netframe <- function(x, ...) to_network(x)
-as_tbl_graph.netframe <- function(x, ...) to_tbl_graph(x)
+as.igraph.net_frame <- function(x, ...) net_to_igraph(x)
+as.network.net_frame <- function(x, ...) net_to_network(x)
+as_tbl_graph.net_frame <- function(x, ...) net_to_tbl_graph(x)

@@ -9,18 +9,18 @@
 # sfnetworks. sf, sfnetworks, and spdep are suggested packages: every use is
 # guarded by requireNamespace() and the package works without them.
 
-# Spatial networks with sf (man/to_sf.Rd).
-to_sf <- function(x, what = c("nodes", "edges"), implicit = TRUE) {
-  check_netframe(x)
+# Spatial networks with sf (man/net_to_sf.Rd).
+net_to_sf <- function(x, what = c("nodes", "edges"), implicit = TRUE) {
+  check_net_frame(x)
   what <- match.arg(what)
   check_flag(implicit, "implicit")
-  require_pkg("sf", "to_sf()")
+  require_pkg("sf", "net_to_sf()")
   if (what == "nodes") return(node_table_sf(x))
   edge_table_sf(x, implicit)
 }
 
 # The node table as sf: as it is when it has geometry, or POINT features
-# built from the coordinate columns recorded by spatial_network().
+# built from the coordinate columns recorded by net_spatial().
 node_table_sf <- function(x) {
   if (has_node_geometry(x)) {
     nodes <- x$nodes
@@ -28,8 +28,8 @@ node_table_sf <- function(x) {
     return(nodes)
   }
   if (is.null(x$roles$x) || is.null(x$roles$y)) {
-    stop(paste0("`x$nodes` has no geometry. Give sf nodes to netframe(), or record ",
-                "coordinate columns with spatial_network(x, coords = ...)."), call. = FALSE)
+    stop(paste0("`x$nodes` has no geometry. Give sf nodes to net_frame(), or record ",
+                "coordinate columns with net_spatial(x, coords = ...)."), call. = FALSE)
   }
   p <- node_coordinates(x)
   crs <- if (p$lonlat) sf::st_crs(4326) else sf::st_crs(NA)
@@ -74,10 +74,10 @@ straight_lines <- function(x, rows) {
   sf::st_sfc(lines, crs = sf::st_crs(pts))
 }
 
-# See man/to_sf.Rd.
-check_geometry <- function(x, tolerance = 0) {
-  check_netframe(x)
-  require_pkg("sf", "check_geometry()")
+# See man/net_to_sf.Rd.
+net_check_geometry <- function(x, tolerance = 0) {
+  check_net_frame(x)
+  require_pkg("sf", "net_check_geometry()")
   check_tolerance(tolerance)
   if (!has_edge_geometry(x)) {
     return(rep(NA, nrow(x$edges)))
@@ -104,10 +104,10 @@ check_geometry <- function(x, tolerance = 0) {
   out
 }
 
-# See man/to_sf.Rd.
-transform_network <- function(x, crs) {
-  check_netframe(x)
-  require_pkg("sf", "transform_network()")
+# See man/net_to_sf.Rd.
+net_transform <- function(x, crs) {
+  check_net_frame(x)
+  require_pkg("sf", "net_transform()")
   if (!has_node_geometry(x) && !has_edge_geometry(x)) {
     stop("`x` has no geometry to transform; see ?to_sf for spatial networks.", call. = FALSE)
   }
@@ -117,11 +117,11 @@ transform_network <- function(x, crs) {
   x
 }
 
-# See man/to_sf.Rd.
-spatial_filter <- function(x, y, predicate = sf::st_intersects, ...) {
-  check_netframe(x)
-  require_pkg("sf", "spatial_filter()")
-  nodes <- need_node_geometry(x, "spatial_filter()")
+# See man/net_to_sf.Rd.
+net_spatial_filter <- function(x, y, predicate = sf::st_intersects, ...) {
+  check_net_frame(x)
+  require_pkg("sf", "net_spatial_filter()")
+  nodes <- need_node_geometry(x, "net_spatial_filter()")
   target <- filter_geometry(y)
   if (!is.function(predicate)) {
     stop("`predicate` must be a function such as sf::st_intersects.", call. = FALSE)
@@ -132,24 +132,24 @@ spatial_filter <- function(x, y, predicate = sf::st_intersects, ...) {
          call. = FALSE)
   }
   keep <- which(lengths(hits) > 0L)
-  induced_netframe(x, keep)
+  induced_net_frame(x, keep)
 }
 
 filter_geometry <- function(y) {
-  if (inherits(y, "netframe")) {
-    return(need_node_geometry(y, "spatial_filter()"))
+  if (inherits(y, "net_frame")) {
+    return(need_node_geometry(y, "net_spatial_filter()"))
   }
   if (inherits(y, "bbox")) return(sf::st_as_sfc(y))
   if (inherits(y, "sf") || inherits(y, "sfc")) return(sf::st_geometry(y))
-  stop(sprintf("`y` must be an sf or sfc object, a bbox, or a spatial netframe, not %s.",
+  stop(sprintf("`y` must be an sf or sfc object, a bbox, or a spatial net_frame, not %s.",
                describe_class(y)), call. = FALSE)
 }
 
-# See man/to_sf.Rd.
-spatial_join <- function(x, y, join = sf::st_intersects, ...) {
-  check_netframe(x)
-  require_pkg("sf", "spatial_join()")
-  need_node_geometry(x, "spatial_join()")
+# See man/net_to_sf.Rd.
+net_spatial_join <- function(x, y, join = sf::st_intersects, ...) {
+  check_net_frame(x)
+  require_pkg("sf", "net_spatial_join()")
+  need_node_geometry(x, "net_spatial_join()")
   if (!inherits(y, "sf")) {
     stop(sprintf("`y` must be an sf data frame, not %s.", describe_class(y)), call. = FALSE)
   }
@@ -173,7 +173,7 @@ spatial_join <- function(x, y, join = sf::st_intersects, ...) {
   joined[[key]] <- NULL
   rownames(joined) <- NULL
   if (nrow(joined) != nrow(x$nodes)) {
-    stop("spatial_join(): the join did not return one row per node.", call. = FALSE)
+    stop("net_spatial_join(): the join did not return one row per node.", call. = FALSE)
   }
   x$nodes <- joined
   x
@@ -182,13 +182,13 @@ spatial_join <- function(x, y, join = sf::st_intersects, ...) {
 # --- Geometry roles -----------------------------------------------------
 
 # Records the geometry columns and CRS of sf node and edge tables in the
-# roles of a new netframe. Called by netframe(); a netframe built from
+# roles of a new net_frame. Called by net_frame(); a net_frame built from
 # plain data frames passes through untouched, so nothing here needs sf.
 record_geometry <- function(x) {
   ng <- if (inherits(x$nodes, "sf")) attr(x$nodes, "sf_column")
   eg <- if (inherits(x$edges, "sf")) attr(x$edges, "sf_column")
   if (is.null(ng) && is.null(eg)) return(x)
-  require_pkg("sf", "A netframe with sf nodes or edges")
+  require_pkg("sf", "A net_frame with sf nodes or edges")
   if (!is.null(ng) && !inherits(x$nodes[[ng]], "sfc")) {
     stop(sprintf("The geometry column `%s` of `nodes` is not an sfc list column.", ng),
          call. = FALSE)
@@ -237,7 +237,7 @@ has_node_geometry <- function(x) !is.null(x$roles$node_geometry)
 has_edge_geometry <- function(x) !is.null(x$roles$edge_geometry)
 
 # Whether node positions are available for layouts: sf node geometry or
-# coordinate columns recorded by spatial_network().
+# coordinate columns recorded by net_spatial().
 has_positions <- function(x) {
   has_node_geometry(x) || (!is.null(x$roles$x) && !is.null(x$roles$y))
 }
@@ -245,26 +245,26 @@ has_positions <- function(x) {
 need_node_geometry <- function(x, fn) {
   if (!has_node_geometry(x)) {
     stop(sprintf(paste0("%s needs node geometries: build the network from an sf node ",
-                        "table, or convert coordinate columns with to_sf(x, \"nodes\")."),
+                        "table, or convert coordinate columns with net_to_sf(x, \"nodes\")."),
                  fn), call. = FALSE)
   }
   sf::st_geometry(x$nodes)
 }
 
-# "lonlat" or "planar" for any recorded CRS: the strings spatial_network()
+# "lonlat" or "planar" for any recorded CRS: the strings net_spatial()
 # stores, or an sf crs (longitude/latitude when sf says so; an unknown CRS
 # counts as planar).
 crs_kind <- function(x) {
   crs <- x$roles$crs
   if (is.character(crs)) return(crs)
   if (inherits(crs, "crs")) {
-    require_pkg("sf", "A netframe with sf geometry")
+    require_pkg("sf", "A net_frame with sf geometry")
     return(if (isTRUE(sf::st_is_longlat(crs))) "lonlat" else "planar")
   }
   "planar"
 }
 
-# Representative points for any spatial netframe: from sf node geometry,
+# Representative points for any spatial net_frame: from sf node geometry,
 # or POINT features built from the coordinate columns.
 node_points_any <- function(x) {
   if (has_node_geometry(x)) node_points(x) else sf::st_geometry(node_table_sf(x))
@@ -321,7 +321,7 @@ geometry_coordinates <- function(x) {
        radius = if (is.null(x$roles$radius)) 6371008.7714 else x$roles$radius)
 }
 
-# edge_lengths() for networks with edge geometry; see ?to_sf.
+# net_edge_lengths() for networks with edge geometry; see ?to_sf.
 geometry_edge_lengths <- function(x) {
   geom <- sf::st_geometry(x$edges)
   len <- sf::st_length(geom)
@@ -330,7 +330,7 @@ geometry_edge_lengths <- function(x) {
   empty <- which(sf::st_is_empty(geom))
   if (length(empty)) {
     if (!has_positions(x)) {
-      stop(sprintf(paste0("edge_lengths(): %s of `x$edges` %s empty geometry and `x$nodes` ",
+      stop(sprintf(paste0("net_edge_lengths(): %s of `x$edges` %s empty geometry and `x$nodes` ",
                           "has no locations to measure between."),
                    rows_text(empty), if (length(empty) == 1L) "has" else "have"), call. = FALSE)
     }
@@ -389,44 +389,11 @@ points_from_matrix <- function(xy, crs) {
   sf::st_geometry(sf::st_as_sf(df, coords = c("x", "y"), crs = crs, na.fail = FALSE))
 }
 
-# One line for print.netframe().
-spatial_summary <- function(x) {
-  if (!has_node_geometry(x) && !has_edge_geometry(x)) {
-    if (!is.null(x$roles$x) && !is.null(x$roles$y)) {
-      return(sprintf("spatial: coordinates in `%s`, `%s` (%s)\n", x$roles$x, x$roles$y,
-                     if (identical(x$roles$crs, "lonlat")) "longitude and latitude" else "planar"))
-    }
-    return("")
-  }
-  if (!requireNamespace("sf", quietly = TRUE)) {
-    return("spatial: sf geometry (install sf to use it)\n")
-  }
-  describe <- function(geom) {
-    types <- as.character(sf::st_geometry_type(geom, by_geometry = TRUE))
-    empty <- sf::st_is_empty(geom)
-    kinds <- unique(types[!empty])
-    label <- if (!length(kinds)) "no geometry" else if (length(kinds) <= 2L) {
-      paste(kinds, collapse = " and ")
-    } else {
-      "mixed geometry"
-    }
-    if (any(empty) && length(kinds)) {
-      label <- sprintf("%s, %d without geometry", label, sum(empty))
-    }
-    label
-  }
-  parts <- c(
-    if (has_node_geometry(x)) sprintf("nodes %s", describe(sf::st_geometry(x$nodes))),
-    if (has_edge_geometry(x)) sprintf("edges %s", describe(sf::st_geometry(x$edges)))
-  )
-  sprintf("spatial: %s; CRS %s\n", paste(parts, collapse = ", "), crs_label(x$roles$crs))
-}
-
 # --- Builders -------------------------------------------------------------
 
-# Spatial networks from lines and polygons (man/from_lines.Rd).
-from_lines <- function(lines, tolerance = 0, directed = FALSE) {
-  require_pkg("sf", "from_lines()")
+# Spatial networks from lines and polygons (man/net_from_lines.Rd).
+net_from_lines <- function(lines, tolerance = 0, directed = FALSE) {
+  require_pkg("sf", "net_from_lines()")
   check_tolerance(tolerance)
   check_flag(directed, "directed")
   lines <- as_sf_table(lines, "lines")
@@ -454,12 +421,12 @@ from_lines <- function(lines, tolerance = 0, directed = FALSE) {
   from <- node_of[seq(1L, by = 2L, length.out = m)]
   to <- node_of[seq(2L, by = 2L, length.out = m)]
   attrs <- sf::st_drop_geometry(lines)
-  names(attrs) <- rename_reserved(names(attrs), c("from", "to", "length"))
+  names(attrs) <- rename_reserved(names(attrs), c("source", "target", "length"))
   len <- strip_units(sf::st_length(geom))
-  edges <- cbind(data.frame(from = from, to = to), attrs, data.frame(length = len))
+  edges <- cbind(data.frame(source = from, target = to), attrs, data.frame(length = len))
   edges <- sf::st_sf(edges, geometry = geom)
-  netframe(edges, nodes, directed = directed, from = "from", to = "to", id = "id",
-           weight = "length", weight_type = "distance")
+  net_frame(edges, nodes, directed = directed, weight = "length", weight_type = "distance",
+            quiet = TRUE)
 }
 
 # Groups POINT geometries into nodes: equal coordinates at tolerance 0,
@@ -477,9 +444,9 @@ snap_points <- function(pts, tolerance) {
   i <- rep(seq_len(k), lengths(near))
   j <- unlist(near, use.names = FALSE)
   keep <- i < j
-  pairs <- data.frame(from = i[keep], to = j[keep])
-  g <- netframe(pairs, nodes = data.frame(id = seq_len(k)), directed = FALSE)
-  member <- components(g, "weak")$membership
+  pairs <- data.frame(source = i[keep], target = j[keep])
+  g <- net_frame(pairs, nodes = data.frame(id = seq_len(k)), directed = FALSE, quiet = TRUE)
+  member <- net_components(g, "weak")$membership
   match(member, unique(member))
 }
 
@@ -510,9 +477,9 @@ as_sf_table <- function(obj, name) {
   obj
 }
 
-# See man/from_lines.Rd.
-from_polygons <- function(polygons, contiguity = c("queen", "rook"), id = NULL) {
-  require_pkg("sf", "from_polygons()")
+# See man/net_from_lines.Rd.
+net_from_polygons <- function(polygons, contiguity = c("queen", "rook"), id = NULL) {
+  require_pkg("sf", "net_from_polygons()")
   contiguity <- match.arg(contiguity)
   polygons <- as_sf_table(polygons, "polygons")
   geom <- sf::st_geometry(polygons)
@@ -543,11 +510,11 @@ from_polygons <- function(polygons, contiguity = c("queen", "rook"), id = NULL) 
   j <- j[keep]
   o <- order(i, j)
   ids <- nodes[[id]]
-  edges <- data.frame(from = ids[i[o]], to = ids[j[o]], stringsAsFactors = FALSE)
-  netframe(edges, nodes, directed = FALSE, from = "from", to = "to", id = id)
+  edges <- data.frame(source = ids[i[o]], target = ids[j[o]], stringsAsFactors = FALSE)
+  net_frame(edges, nodes, directed = FALSE, id = id, quiet = TRUE)
 }
 
-# proximity_network() for sf node tables: representative points through
+# net_proximity() for sf node tables: representative points through
 # the engine's k-d tree, or exact geometry distances when `exact = TRUE`.
 sf_proximity_network <- function(nodes, within, k, knn, id, exact, threads) {
   if (is.null(id)) {
@@ -561,8 +528,8 @@ sf_proximity_network <- function(nodes, within, k, knn, id, exact, threads) {
   } else {
     id <- resolve_column(sf::st_drop_geometry(nodes), id, "id", "nodes")
   }
-  holder <- netframe(data.frame(from = nodes[[id]][0], to = nodes[[id]][0]), nodes,
-                     directed = FALSE, id = id)
+  holder <- net_frame(data.frame(source = nodes[[id]][0], target = nodes[[id]][0]), nodes,
+                      directed = FALSE, id = id, quiet = TRUE)
   geom <- sf::st_geometry(nodes)
   lonlat <- crs_kind(holder) == "lonlat"
   if (exact) {
@@ -573,10 +540,10 @@ sf_proximity_network <- function(nodes, within, k, knn, id, exact, threads) {
   }
   r <- symmetrize_knn(r, k, knn)
   ids <- nodes[[id]]
-  edges <- data.frame(from = ids[r$from], to = ids[r$to], distance = r$distance,
+  edges <- data.frame(source = ids[r$from], target = ids[r$to], distance = r$distance,
                       stringsAsFactors = FALSE)
-  netframe(edges, nodes, directed = r$directed, id = id, weight = "distance",
-           weight_type = "distance")
+  net_frame(edges, nodes, directed = r$directed, id = id, weight = proximity_weight(edges),
+            weight_type = proximity_weight_type(edges), quiet = TRUE)
 }
 
 # Pairs within a distance, or k nearest neighbours, by sf::st_distance on
@@ -615,11 +582,11 @@ exact_proximity <- function(geom, within, k) {
 
 # --- sfnetworks -------------------------------------------------------------
 
-# Convert to and from sfnetworks (man/to_sfnetwork.Rd).
-to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
-  check_netframe(x)
+# Convert to and from sfnetworks (man/net_to_sfnetwork.Rd).
+net_to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
+  check_net_frame(x)
   require_pkg("sfnetworks")
-  require_pkg("sf", "to_sfnetwork()")
+  require_pkg("sf", "net_to_sfnetwork()")
   check_flag_or_null(edges_as_lines, "edges_as_lines")
   nodes <- node_table_sf(x)
   geom <- sf::st_geometry(nodes)
@@ -642,7 +609,7 @@ to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
     x$edges
   }
   eattrs <- if (inherits(edges, "sf")) sf::st_drop_geometry(edges) else as.data.frame(edges)
-  eattrs <- eattrs[setdiff(names(eattrs), c(x$roles$from, x$roles$to))]
+  eattrs <- eattrs[setdiff(names(eattrs), c(x$roles$source, x$roles$target))]
   names(eattrs) <- rename_reserved(names(eattrs), c("from", "to"))
   edge_df <- cbind(data.frame(from = x$index$src + 1L, to = x$index$tgt + 1L), eattrs)
   if (inherits(edges, "sf")) {
@@ -652,7 +619,7 @@ to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
                                edges_as_lines = inherits(edge_df, "sf"), ...)
   attrs <- x$graph
   if (!is.null(x$roles$weight)) {
-    # Recorded so that as_netframe() restores the weight role.
+    # Recorded so that as_net_frame() restores the weight role.
     attrs$knappnet_weight <- x$roles$weight
     attrs$knappnet_weight_type <- x$roles$weight_type
   }
@@ -664,20 +631,24 @@ to_sfnetwork <- function(x, edges_as_lines = NULL, ...) {
   net
 }
 
-# See man/as_netframe.Rd.
-as_netframe.sfnetwork <- function(x, ...) {
+# See man/as_net_frame.Rd.
+as_net_frame.sfnetwork <- function(x, weight_type = "distance", quiet = FALSE, ...) {
   require_pkg("sfnetworks")
-  require_pkg("sf", "as_netframe() for sfnetwork objects")
+  require_pkg("sf", "as_net_frame() for sfnetwork objects")
   nodes <- sf::st_as_sf(x, active = "nodes")
   n <- nrow(nodes)
-  if ("name" %in% names(nodes) && !anyDuplicated(nodes$name)) {
-    ids <- nodes$name
+  # sfnetworks' `name` (when it identifies the nodes) becomes the identifier
+  # column `id`, as in net_frame().
+  attrs <- sf::st_drop_geometry(nodes)
+  if ("name" %in% names(attrs) && !anyDuplicated(attrs$name) && !anyNA(attrs$name)) {
+    ids <- attrs$name
+    attrs$name <- NULL
   } else {
     ids <- seq_len(n)
-    attrs <- sf::st_drop_geometry(nodes)
-    names(attrs) <- rename_reserved(names(attrs), "name")
-    nodes <- sf::st_sf(cbind(data.frame(name = ids), attrs), geometry = sf::st_geometry(nodes))
   }
+  names(attrs) <- rename_reserved(names(attrs), "id")
+  nodes <- sf::st_sf(cbind(data.frame(id = ids, stringsAsFactors = FALSE), attrs),
+                     geometry = sf::st_geometry(nodes))
   nodes <- strip_unit_columns(nodes)
   edges <- tryCatch(suppressMessages(sf::st_as_sf(x, active = "edges")),
                     error = function(e) NULL)
@@ -687,20 +658,22 @@ as_netframe.sfnetwork <- function(x, ...) {
   edges <- strip_unit_columns(edges)
   edges$from <- ids[edges$from]
   edges$to <- ids[edges$to]
+  names(edges)[match(c("from", "to"), names(edges))] <- c("source", "target")
   # sfnetworks keeps its own bookkeeping in graph attributes; carry over scalars only.
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, igraph::graph_attr(x))
-  # to_sfnetwork() records the weight column and its type; otherwise a
+  # net_to_sfnetwork() records the weight column and its type; otherwise a
   # numeric column called `weight` is the weight, as in igraph.
   weight <- graph[["knappnet_weight"]]
-  weight_type <- graph[["knappnet_weight_type"]]
+  recorded <- graph[["knappnet_weight_type"]]
   graph[c("knappnet_weight", "knappnet_weight_type")] <- NULL
   if (is.null(weight) || !weight %in% names(edges) || !is.numeric(edges[[weight]])) {
     weight <- if ("weight" %in% names(edges) && is.numeric(edges[["weight"]])) "weight"
-    weight_type <- NULL
+    recorded <- NULL
   }
-  if (is.null(weight_type) || !weight_type %in% c("distance", "strength")) weight_type <- "distance"
-  netframe(edges, nodes, directed = igraph::is_directed(x), from = "from", to = "to",
-           id = "name", weight = weight, weight_type = weight_type, graph = graph)
+  if (!is.null(recorded) && recorded %in% c("distance", "strength")) weight_type <- recorded
+  if (!is.null(weight)) check_weight_type(weight, weight_type)
+  net_frame(edges, nodes, directed = igraph::is_directed(x), weight = weight,
+            weight_type = weight_type, quiet = quiet, graph = graph)
 }
 
 strip_unit_columns <- function(df) {
@@ -710,17 +683,17 @@ strip_unit_columns <- function(df) {
   df
 }
 
-# See man/as_netframe.Rd.
-as_netframe.sf <- function(x, nodes = NULL, ..., edges = NULL) {
-  if (!is.null(edges)) return(netframe(edges, nodes = x, ...))
-  netframe(x, nodes = nodes, ...)
+# See man/as_net_frame.Rd.
+as_net_frame.sf <- function(x, nodes = NULL, ..., edges = NULL) {
+  if (!is.null(edges)) return(net_frame(edges, nodes = x, ...))
+  net_frame(x, nodes = nodes, ...)
 }
 
 # Methods for generics in suggested packages, registered when they load.
-st_as_sf.netframe <- function(x, what = c("nodes", "edges"), implicit = TRUE, ...) {
-  to_sf(x, what = what, implicit = implicit)
+st_as_sf.net_frame <- function(x, what = c("nodes", "edges"), implicit = TRUE, ...) {
+  net_to_sf(x, what = what, implicit = implicit)
 }
-as_sfnetwork.netframe <- function(x, ...) to_sfnetwork(x, ...)
+as_sfnetwork.net_frame <- function(x, ...) net_to_sfnetwork(x, ...)
 
 # --- GeoPackage ------------------------------------------------------------
 
@@ -738,11 +711,12 @@ write_gpkg <- function(x, file, weight) {
   check_gpkg_columns(edges, "edges")
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, x$graph)
   meta <- data.frame(
-    key = c("directed", "id", "from", "to", "weight", "weight_type", if (length(graph)) paste0("graph.", names(graph))),
+    key = c("directed", "id", "source", "target", "weight", "weight_type",
+            if (length(graph)) paste0("graph.", names(graph))),
     value = c(if (x$directed) "true" else "false", role_text(x$roles$id),
-              role_text(x$roles$from), role_text(x$roles$to),
+              role_text(x$roles$source), role_text(x$roles$target),
               if (is.null(weight)) "" else weight,
-              if (is.null(weight)) "" else if (is.null(x$roles$weight_type)) "distance" else x$roles$weight_type,
+              if (is.null(weight)) "" else if (is.null(x$roles$weight_type)) "" else x$roles$weight_type,
               vapply(graph, function(v) as.character(v), "", USE.NAMES = FALSE)),
     stringsAsFactors = FALSE
   )
@@ -769,7 +743,7 @@ check_gpkg_columns <- function(df, what) {
   invisible(NULL)
 }
 
-read_gpkg <- function(file, directed, weight, weight_type) {
+read_gpkg <- function(file, directed, source, target, id, weight, weight_type, quiet) {
   require_pkg("sf", "Reading a GeoPackage")
   path <- path.expand(file)
   layers <- sf::st_layers(path)$name
@@ -794,21 +768,24 @@ read_gpkg <- function(file, directed, weight, weight_type) {
     if (is.null(v) || is.na(v) || !nzchar(v)) default else v
   }
   if (is.null(directed)) directed <- identical(pick("directed", "true"), "true")
-  id <- pick("id", names(nodes)[[1L]])
-  from <- pick("from", "from")
-  to <- pick("to", "to")
+  # A file written by net_write() records its roles; otherwise the
+  # arguments name the columns.
+  id <- pick("id", id)
+  source <- pick("source", source)
+  target <- pick("target", target)
   if (is.null(weight)) {
     w <- pick("weight", NULL)
     weight <- if (!is.null(w) && w %in% names(edges) && is.numeric(edges[[w]])) w else pick_weight(edges, NULL)
     wt <- pick("weight_type", NULL)
     if (!is.null(wt) && wt %in% c("distance", "strength")) weight_type <- wt
-  } else if (!weight %in% names(edges)) {
-    stop(sprintf("Edge column `%s` not found in the file.", weight), call. = FALSE)
+  } else {
+    weight <- pick_weight(edges, weight)
   }
   graph <- meta[startsWith(names(meta), "graph.")]
   names(graph) <- substring(names(graph), 7L)
-  netframe(edges, nodes, directed = directed, from = from, to = to, id = id, weight = weight,
-           weight_type = weight_type, graph = graph)
+  net_frame(edges, nodes, directed = directed, source = source, target = target, id = id,
+            weight = weight, weight_type = file_weight_type(weight, weight_type),
+            quiet = quiet, graph = graph)
 }
 
 # st_read() returns a data frame for an aspatial layer and says so; the
@@ -829,11 +806,11 @@ read_gpkg_layer <- function(path, layer) {
 
 # --- Drawing with sf ----------------------------------------------------------
 
-# What plot_spatial() draws from sf tables: each node's geometry kind
+# What net_plot_spatial() draws from sf tables: each node's geometry kind
 # ("point", "line", "polygon", or "other"), the node and edge geometries,
 # which edges have their own geometry, and the bounding box of it all.
 spatial_plot_geometry <- function(x) {
-  require_pkg("sf", "Plotting a netframe with sf geometry")
+  require_pkg("sf", "Plotting a net_frame with sf geometry")
   out <- list(nodes = NULL, kind = rep("point", nrow(x$nodes)), edges = NULL, explicit = NULL,
               bbox = NULL)
   boxes <- list()

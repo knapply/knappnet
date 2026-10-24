@@ -16,7 +16,12 @@ for f in "$@"; do
     *.Rout.fail)
       # Failures and errors with their first lines, warnings as one line
       # each, then the summary at the end.
-      text=$( (grep -n -A10 -E '^── (Failure|Error)' "$f" | head -n 300
+      # Every failure's heading first (GitHub shows at most ten
+      # annotations per step, so the details that follow are cut short).
+      text=$( (echo '--- failures ---'
+               grep -E '^── (Failure|Error)' "$f" | sed 's/ ─*$//' | head -n 170
+               echo '--- details ---'
+               grep -n -A6 -E '^── (Failure|Error)' "$f" | head -n 140
                echo '--- warnings ---'
                grep -n -A1 -E '^── Warning' "$f" | grep -v '^--$' | head -n 60
                echo '--- end of log ---'

@@ -1,19 +1,21 @@
 # Reading and writing network files. Text formats and CSV are handled
 # here; GeoPackage files need sf and live in sf.R.
 
-# Read and write network files (man/read_network.Rd).
-read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
-                         weight = NULL, weight_type = c("distance", "strength")) {
-  weight_type <- match.arg(weight_type)
+# Read and write network files (man/net_read.Rd).
+net_read <- function(file, format = NULL, directed = NULL, nodes = NULL,
+                         source = "source", target = "target", id = "id", weight = NULL,
+                         weight_type = NULL, quiet = FALSE) {
+  if (!is.null(weight_type)) check_choice(weight_type, c("strength", "distance"), "weight_type")
   check_path(file, "file")
   if (!file.exists(file)) {
     stop(sprintf("File `%s` does not exist.", file), call. = FALSE)
   }
   check_flag_or_null(directed, "directed")
-  check_string(weight, "weight", null_ok = TRUE)
+  if (!(length(weight) == 1L && is.na(weight))) check_string(weight, "weight", null_ok = TRUE)
   check_string(format, "format", null_ok = TRUE)
+  check_flag(quiet, "quiet")
   fmt <- resolve_format(format, file, write = FALSE)
-  if (fmt == "gpkg") return(read_gpkg(file, directed, weight, weight_type))
+  if (fmt == "gpkg") return(read_gpkg(file, directed, source, target, id, weight, weight_type, quiet))
 
   if (fmt %in% c("csv", "tsv")) {
     sep <- if (fmt == "tsv") "\t" else ","
@@ -27,8 +29,10 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
       nodes <- utils::read.csv(nodes, stringsAsFactors = FALSE, check.names = FALSE,
                                encoding = "UTF-8")
     }
-    return(netframe(edges, nodes, directed = if (is.null(directed)) TRUE else directed,
-                    weight = pick_weight(edges, weight), weight_type = weight_type))
+    weight <- pick_weight(edges, weight)
+    return(net_frame(edges, nodes, directed = if (is.null(directed)) TRUE else directed,
+                     source = source, target = target, id = id, weight = weight,
+                     weight_type = file_weight_type(weight, weight_type), quiet = quiet))
   }
 
   # A .xml file may be GraphML or DyNetML; the engine reads its root
@@ -36,19 +40,35 @@ read_network <- function(file, format = NULL, directed = NULL, nodes = NULL,
   if (is.null(format) && identical(tolower(tools::file_ext(file)), "xml")) fmt <- NULL
   path <- path.expand(file)
   dir <- if (is.null(directed)) NULL else directed
-  res <- engine_call("read_network", .Call(C_read_network, path, fmt, dir))
+  res <- engine_call("net_read", .Call(C_read_network, path, fmt, dir))
   node_df <- as_frame(res$nodes)
   edge_df <- as_frame(res$edges)
   ids <- integer_ids(node_df$id, edge_df$from, edge_df$to)
   node_df$id <- ids[[1]]
   edge_df$from <- ids[[2]]
   edge_df$to <- ids[[3]]
-  netframe(edge_df, node_df, directed = res$directed, from = "from", to = "to",
-           id = "id", weight = pick_weight(edge_df, weight), weight_type = weight_type,
-           graph = res$graph)
+  # The engine's neutral model names the endpoints `from` and `to`.
+  names(edge_df)[match(c("from", "to"), names(edge_df))] <- c("source", "target")
+  weight <- pick_weight(edge_df, weight)
+  net_frame(edge_df, node_df, directed = res$directed, id = "id", weight = weight,
+            weight_type = file_weight_type(weight, weight_type), quiet = quiet,
+            graph = res$graph)
+}
+
+# The meaning of a weight column read from a file: as given, or an error
+# that names the argument when the file has weights and none was given.
+file_weight_type <- function(weight, weight_type) {
+  if (is.null(weight)) return(NULL)
+  if (is.null(weight_type)) {
+    stop(sprintf(paste0("The file has a weight column `%s`; say what its values mean with ",
+                        "`weight_type = \"strength\"` or `\"distance\"`, or ignore it with ",
+                        "`weight = NA`."), weight), call. = FALSE)
+  }
+  weight_type
 }
 
 pick_weight <- function(edges, weight) {
+  if (length(weight) == 1L && is.na(weight)) return(NULL)
   if (!is.null(weight)) {
     if (!weight %in% names(edges)) {
       stop(sprintf("Edge column `%s` not found in the file.", weight), call. = FALSE)
@@ -58,9 +78,9 @@ pick_weight <- function(edges, weight) {
   if ("weight" %in% names(edges) && is.numeric(edges$weight)) "weight"
 }
 
-# See man/read_network.Rd.
-write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
-  check_netframe(x)
+# See man/net_read.Rd.
+net_write <- function(x, file, format = NULL, weight = NULL, nodes_file = NULL) {
+  check_net_frame(x)
   check_path(file, "file")
   check_string(format, "format", null_ok = TRUE)
   check_string(weight, "weight", null_ok = TRUE)
@@ -77,6 +97,13 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
 
   if (fmt %in% c("csv", "tsv")) {
     sep <- if (fmt == "tsv") "\t" else ","
+    # Edge lists name the endpoints as net_read() and net_frame() expect
+    # by default; attributes of those names get a suffix.
+    en <- names(tables$edges)
+    clash <- en[-(1:2)] %in% c("source", "target")
+    en[-(1:2)][clash] <- paste0(en[-(1:2)][clash], "_attr")
+    en[1:2] <- c("source", "target")
+    names(tables$edges) <- en
     utils::write.table(tables$edges, file, sep = sep, row.names = FALSE,
                        qmethod = "double", fileEncoding = "UTF-8")
     if (!is.null(nodes_file)) {
@@ -90,7 +117,7 @@ write_network <- function(x, file, format = NULL, weight = NULL, nodes_file = NU
   node_cols <- as.list(tables$nodes)
   edge_cols <- as.list(tables$edges)
   path <- path.expand(file)
-  engine_call("write_network", .Call(C_write_network, x$directed, tables$graph, node_cols,
+  engine_call("net_write", .Call(C_write_network, x$directed, tables$graph, node_cols,
                                      edge_cols, path, fmt, weight_col))
   invisible(file)
 }
@@ -142,15 +169,15 @@ export_tables <- function(x, weight) {
   id <- x$roles$id
   node_out <- c(list(id = as.character(nodes[[id]])),
                 export_columns(nodes[setdiff(names(nodes), id)], reserved = "id"))
-  attrs <- edges[setdiff(names(edges), c(x$roles$from, x$roles$to))]
+  attrs <- edges[setdiff(names(edges), c(x$roles$source, x$roles$target))]
   if (!is.null(weight) && weight != "weight") {
     if ("weight" %in% names(attrs)) {
       names(attrs)[names(attrs) == "weight"] <- "weight_attr"
     }
     names(attrs)[names(attrs) == weight] <- "weight"
   }
-  edge_out <- c(list(from = as.character(edges[[x$roles$from]]),
-                     to = as.character(edges[[x$roles$to]])),
+  edge_out <- c(list(from = as.character(edges[[x$roles$source]]),
+                     to = as.character(edges[[x$roles$target]])),
                 export_columns(attrs, reserved = c("from", "to")))
   graph <- Filter(function(v) is.atomic(v) && length(v) == 1L, x$graph)
   graph <- lapply(graph, function(v) export_columns(list(v = v), character())[[1]])

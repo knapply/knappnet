@@ -1,8 +1,8 @@
 # Multidimensional scaling: classical scaling with its print and plot
 # methods, stress, and distance matrices for scaling a network.
 
-# Classical multidimensional scaling (man/classical_mds.Rd).
-classical_mds <- function(d, k = 2) {
+# Classical multidimensional scaling (man/net_mds.Rd).
+net_mds <- function(d, k = 2) {
   d <- as_dissimilarity(d)
   n <- nrow(d)
   k <- check_count(k, "k", min = 1L)
@@ -13,12 +13,12 @@ classical_mds <- function(d, k = 2) {
     stop(sprintf("`k` must be at most %d, one less than the number of points.", n - 1L),
          call. = FALSE)
   }
-  r <- engine_call("classical_mds", .Call(C_classical_mds, d, n, k), edge_rows = FALSE)
+  r <- engine_call("net_mds", .Call(C_classical_mds, d, n, k), edge_rows = FALSE)
   dims <- r[[2L]]
   points <- r[[1L]][, seq_len(dims), drop = FALSE]
   dimnames(points) <- list(rownames(d), if (dims) paste0("Dim", seq_len(dims)))
   stress <- if (dims) {
-    engine_call("classical_mds", .Call(C_mds_stress, d, n, points, dims), edge_rows = FALSE)
+    engine_call("net_mds", .Call(C_mds_stress, d, n, points, dims), edge_rows = FALSE)
   } else {
     NaN
   }
@@ -26,7 +26,7 @@ classical_mds <- function(d, k = 2) {
             class = "classical_mds")
 }
 
-# See man/classical_mds.Rd.
+# See man/net_mds.Rd.
 print.classical_mds <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   cat(sprintf("<classical_mds> %d points in %d dimension%s\n", nrow(x$points), ncol(x$points),
               if (ncol(x$points) == 1L) "" else "s"))
@@ -140,8 +140,8 @@ plot.classical_mds <- function(x, which = c("configuration", "shepard", "scree")
   invisible(x)
 }
 
-# See man/classical_mds.Rd.
-mds_stress <- function(d, points) {
+# See man/net_mds.Rd.
+net_mds_stress <- function(d, points) {
   d <- as_dissimilarity(d)
   n <- nrow(d)
   if (!is.numeric(points) || !is.matrix(points)) {
@@ -155,7 +155,7 @@ mds_stress <- function(d, points) {
     stop("`points` must be finite.", call. = FALSE)
   }
   storage.mode(points) <- "double"
-  engine_call("mds_stress", .Call(C_mds_stress, d, n, points, ncol(points)), edge_rows = FALSE)
+  engine_call("net_mds_stress", .Call(C_mds_stress, d, n, points, ncol(points)), edge_rows = FALSE)
 }
 
 # A dissimilarity matrix as a square double matrix. Structural checks
@@ -173,14 +173,14 @@ as_dissimilarity <- function(d) {
   d
 }
 
-# Distances between nodes for scaling (man/mds_distances.Rd).
-mds_distances <- function(x, method = c("geodesic", "euclidean", "hamming", "correlation"),
+# Distances between nodes for scaling (man/net_mds_distances.Rd).
+net_mds_distances <- function(x, method = c("geodesic", "euclidean", "hamming", "correlation"),
                           unreachable = "max_plus_one", weighted = NULL, weights_as = NULL,
                           threads = 0L) {
-  check_netframe(x)
+  check_net_frame(x)
   method <- match.arg(method)
   if (method == "geodesic") {
-    d <- distances(x, mode = "all", weighted = weighted, weights_as = weights_as,
+    d <- net_distances(x, mode = "all", weighted = weighted, weights_as = weights_as,
                    threads = threads)
     if (any(is.infinite(d))) {
       finite <- d[is.finite(d)]
@@ -199,7 +199,7 @@ mds_distances <- function(x, method = c("geodesic", "euclidean", "hamming", "cor
     }
     return(d)
   }
-  m <- structural_equivalence(x, method = method, weighted = weighted, threads = threads)
+  m <- net_struct_equiv(x, method = method, weighted = weighted, threads = threads)
   if (method == "correlation") {
     m <- 1 - m
     diag(m) <- 0
