@@ -1420,6 +1420,70 @@ int32_t net_tree_isomorphism(const GraphHandle *t1, const GraphHandle *t2,
                              int64_t root1, int64_t root2, int64_t *mapping,
                              int32_t *found, char *err, size_t err_len);
 
+/* ---- Rewiring and small-world coefficients -----------------------------
+ * Degree-preserving swaps as NetworkX performs them, drawing from the
+ * stream of seed (not NetworkX's samples). Rewired graphs come back as
+ * edge lists in from and to (m values each; a rewired simple graph has at
+ * most m edges): (u, v) with u <= v for undirected graphs, sorted, with
+ * their number in *n_edges. Undirected simple graphs (parallel edges
+ * merged, loops kept) except for the directed swap. */
+
+/* nswap double edge swaps (NetworkX's double_edge_swap); fails after
+ * max_tries attempts. */
+int32_t net_double_edge_swap(const GraphHandle *h, int64_t nswap,
+                             int64_t max_tries, uint64_t seed, int64_t *from,
+                             int64_t *to, int64_t *n_edges, char *err,
+                             size_t err_len);
+
+/* Connectivity-preserving swaps (connected_double_edge_swap): nswap
+ * attempts, *swaps of them kept. */
+int32_t net_connected_double_edge_swap(const GraphHandle *h, int64_t nswap,
+                                       uint64_t seed, int64_t *from,
+                                       int64_t *to, int64_t *n_edges,
+                                       int64_t *swaps, char *err,
+                                       size_t err_len);
+
+/* nswap directed three-edge swaps (directed_edge_swap); fails after
+ * max_tries attempts. */
+int32_t net_directed_edge_swap(const GraphHandle *h, int64_t nswap,
+                               int64_t max_tries, uint64_t seed,
+                               int64_t *from, int64_t *to, int64_t *n_edges,
+                               char *err, size_t err_len);
+
+/* A random reference graph (random_reference). */
+int32_t net_random_reference(const GraphHandle *h, int64_t niter,
+                             int32_t connectivity, uint64_t seed,
+                             int64_t *from, int64_t *to, int64_t *n_edges,
+                             char *err, size_t err_len);
+
+/* A lattice reference graph (lattice_reference) towards the n-by-n
+ * distance matrix dist (NULL: ring distance between node positions). */
+int32_t net_lattice_reference(const GraphHandle *h, int64_t niter,
+                              const double *dist, int32_t connectivity,
+                              uint64_t seed, int64_t *from, int64_t *to,
+                              int64_t *n_edges, char *err, size_t err_len);
+
+/* Small-world sigma (NetworkX's sigma; reference r from stream (seed,
+ * r)) into *out. Needs a connected graph. */
+int32_t net_small_world_sigma(const GraphHandle *h, int64_t niter,
+                              int64_t nrand, uint64_t seed, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Small-world omega (NetworkX's omega; round r from streams (seed, 2r)
+ * and (seed, 2r + 1)) into *out. Needs a connected graph. */
+int32_t net_small_world_omega(const GraphHandle *h, int64_t niter,
+                              int64_t nrand, uint64_t seed, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Rich-club coefficient for k = 0, 1, ... (rich_club_coefficient) into
+ * out[0..*count) (out holds n); normalized != 0 divides by its mean over
+ * n_samples graphs rewired with q * m swaps (sample r from stream (seed,
+ * r)). Self-loops are an error. */
+int32_t net_rich_club(const GraphHandle *h, int32_t normalized, int64_t q,
+                      int64_t n_samples, uint64_t seed, int32_t threads,
+                      double *out, int64_t *count, char *err,
+                      size_t err_len);
+
 /* ---- Quadratic assignment procedure (QAP) -------------------------------
  * Matrices are n-by-n doubles in column-major order; NaN marks a missing
  * value and drops the dyad (listwise deletion). mode: 0 = digraph (every

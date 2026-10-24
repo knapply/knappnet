@@ -4,7 +4,7 @@
 //! |---|---|
 //! | Centrality | [`degree`], [`betweenness`], [`closeness`], [`eigenvector`], [`spectral`] (PageRank, Katz, power, HITS), [`reach`] (reach, edge betweenness, information, bridging), [`brokerage`] |
 //! | Structure and description | [`descriptive`] (reciprocity, transitivity, distances), [`squares`] (square clustering, generalized degree), [`topography`] (density, components, centralization), [`triad`], [`mixing`], [`assortativity`] (NetworkX mixing), [`cut_measures`] (conductance, expansion), [`ego`], [`bipartite`], [`linkpred`] (link prediction) |
-//! | Cohesion and groups | [`cores`] (cores, shells, trusses, onion layers), [`cliques`], [`matching`], [`coloring`] (greedy colouring, independent sets), [`factions`] (bicomponents, n-cliques, k-plexes, lambda sets), [`community`] (modularity, Louvain), [`partition`] (Girvan-Newman, leading eigenvector, fast greedy), [`resilience`] (key players, flow betweenness) |
+//! | Cohesion and groups | [`cores`] (cores, shells, trusses, onion layers), [`cliques`], [`matching`], [`coloring`] (greedy colouring, independent sets), [`factions`] (bicomponents, n-cliques, k-plexes, lambda sets), [`community`] (modularity, Louvain), [`partition`] (Girvan-Newman, leading eigenvector, fast greedy), [`resilience`] (key players, flow betweenness), [`rewiring`] (edge swaps, reference graphs, small-world coefficients, rich club) |
 //! | Positions and roles | [`equivalence`] (structural equivalence, CONCOR), [`regular`], [`blockmodel`], [`coreperiphery`], [`scaling`], [`similarity`] (SimRank, Panther), [`edit_distance`], [`isomorphism`] (VF2++, tree isomorphism), [`wl`] (colour refinement, Weisfeiler-Lehman hashes) |
 
 // Centrality.
@@ -37,6 +37,7 @@ pub mod factions;
 pub mod matching;
 pub mod partition;
 pub mod resilience;
+pub mod rewiring;
 
 // Positions and roles.
 pub mod blockmodel;

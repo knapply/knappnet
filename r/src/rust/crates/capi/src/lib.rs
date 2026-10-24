@@ -34,6 +34,7 @@ mod layout;
 mod matching;
 mod positions;
 mod qap;
+mod rewiring;
 mod roles;
 mod similarity;
 mod spectral;

@@ -118,6 +118,34 @@ static int mixing_checks(void) {
   return 0;
 }
 
+/* Swaps, reference graphs, small-world coefficients, and the rich club
+ * on a 6-cycle with two chords. */
+static int rewiring_checks(void) {
+  int64_t src[] = {0, 1, 2, 3, 4, 5, 0, 1};
+  int64_t tgt[] = {1, 2, 3, 4, 5, 0, 3, 4};
+  char err[256];
+  GraphHandle *g = NULL, *d = NULL;
+  if (net_graph_new(6, src, tgt, NULL, 8, 0, &g, err, sizeof err) != 0) return 1;
+  if (net_graph_new(6, src, tgt, NULL, 8, 1, &d, err, sizeof err) != 0) return 1;
+  int64_t from[8], to[8], m = 0, swaps = 0;
+  if (net_double_edge_swap(g, 2, 1000, 1, from, to, &m, err, sizeof err) != 0 || m != 8)
+    return 1;
+  if (net_connected_double_edge_swap(g, 5, 1, from, to, &m, &swaps, err, sizeof err) != 0)
+    return 1;
+  if (net_directed_edge_swap(d, 1, 1000, 1, from, to, &m, err, sizeof err) != 0 || m != 8)
+    return 1;
+  if (net_random_reference(g, 1, 1, 1, from, to, &m, err, sizeof err) != 0) return 1;
+  if (net_lattice_reference(g, 1, NULL, 1, 1, from, to, &m, err, sizeof err) != 0) return 1;
+  double s = 0, w = 0, rc[6];
+  int64_t k = 0;
+  if (net_small_world_sigma(g, 1, 2, 1, 1, &s, err, sizeof err) != 0) return 1;
+  if (net_small_world_omega(g, 1, 2, 1, 1, &w, err, sizeof err) != 0) return 1;
+  if (net_rich_club(g, 0, 10, 1, 1, 1, rc, &k, err, sizeof err) != 0 || k < 1) return 1;
+  net_graph_free(d);
+  net_graph_free(g);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -171,6 +199,10 @@ int main(void) {
   if (s == NULL || s[0] != 'c') return 1;
   net_network_free(r);
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
+  if (rewiring_checks() != 0) {
+    fprintf(stderr, "rewiring checks failed\n");
+    return 1;
+  }
   if (mixing_checks() != 0) {
     fprintf(stderr, "mixing checks failed\n");
     return 1;
