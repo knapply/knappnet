@@ -303,6 +303,7 @@ def test_paths(G):
         run(nx.single_source_shortest_path_length, G, s, cutoff=1)
         run(nx.single_target_shortest_path_length, G, s)
         run(nx.descendants, G, s)
+        run(nx.node_connected_component, G, s)
         run(nx.ancestors, G, s)
         for weight in {None, w}:
             run(nx.shortest_path_length, G, source=s, weight=weight)
@@ -315,6 +316,7 @@ def test_paths(G):
     for weight in {None, w}:
         run(nx.shortest_path_length, G, weight=weight)
         run(nx.average_shortest_path_length, G, weight=weight)
+        run(nx.wiener_index, G, weight=weight)
         for fn in (nx.eccentricity, nx.diameter, nx.radius, nx.center, nx.periphery):
             run(fn, G, weight=weight)
 

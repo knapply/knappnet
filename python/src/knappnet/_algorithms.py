@@ -145,17 +145,17 @@ def _degree_centrality(G, mode):
     return _node_dict(G, [d * s for d in _core.degree(G.core, mode, 1, 0)])
 
 
-@implements("degree_centrality", ANY, "Multigraphs included.")
+@implements("degree_centrality", ANY)
 def degree_centrality(G):
     return _degree_centrality(G, ALL)
 
 
-@implements("in_degree_centrality", chk.all_of(ANY, chk.directed), "Multigraphs included.")
+@implements("in_degree_centrality", chk.all_of(ANY, chk.directed))
 def in_degree_centrality(G):
     return _degree_centrality(G, IN)
 
 
-@implements("out_degree_centrality", chk.all_of(ANY, chk.directed), "Multigraphs included.")
+@implements("out_degree_centrality", chk.all_of(ANY, chk.directed))
 def out_degree_centrality(G):
     return _degree_centrality(G, OUT)
 
@@ -166,7 +166,7 @@ def out_degree_centrality(G):
 @implements(
     "betweenness_centrality",
     chk.all_of(SIMPLE, chk.is_none("k"), chk.equals("endpoints", False), chk.weight_attr()),
-    "k (sampling) and endpoints=True are left to NetworkX.",
+    declined="k (sampling); endpoints=True; multigraphs; weight functions; weights <= 0.",
 )
 def betweenness_centrality(G, k=None, normalized=True, weight=None, endpoints=False,
                            seed=None):
@@ -179,7 +179,7 @@ def betweenness_centrality(G, k=None, normalized=True, weight=None, endpoints=Fa
 @implements(
     "edge_betweenness_centrality",
     chk.all_of(SIMPLE, chk.is_none("k"), chk.weight_attr()),
-    "k (sampling) is left to NetworkX.",
+    declined="k (sampling); multigraphs; weight functions; weights <= 0.",
 )
 def edge_betweenness_centrality(G, k=None, normalized=True, weight=None, seed=None):
     w = _weighted(G, weight)
@@ -191,7 +191,7 @@ def edge_betweenness_centrality(G, k=None, normalized=True, weight=None, seed=No
 @implements(
     "closeness_centrality",
     chk.all_of(SIMPLE, chk.is_none("u", "sp"), chk.weight_attr("distance")),
-    "u (one node) and sp are left to NetworkX.",
+    declined="u (one node); sp; multigraphs; distance functions; weights <= 0.",
 )
 def closeness_centrality(G, u=None, distance=None, wf_improved=True, *, sp=None):
     w = _weighted(G, distance)
@@ -206,7 +206,7 @@ def closeness_centrality(G, u=None, distance=None, wf_improved=True, *, sp=None)
 @implements(
     "harmonic_centrality",
     chk.all_of(SIMPLE, chk.is_none("sources"), chk.weight_attr("distance")),
-    "sources is left to NetworkX; nbunch is supported.",
+    declined="sources; multigraphs; distance functions; weights <= 0.",
 )
 def harmonic_centrality(G, nbunch=None, distance=None, sources=None):
     w = _weighted(G, distance)
@@ -228,9 +228,7 @@ def _all_zero(values):
 @implements(
     "eigenvector_centrality",
     chk.all_of(SIMPLE, chk.weight_attr(), chk.at_least("max_iter", 100)),
-    "Connected (strongly connected, if directed) graphs with positive weights; "
-    "nstart is accepted when it is non-negative. max_iter below the default is "
-    "left to NetworkX.",
+    declined="graphs that are not (strongly) connected; nstart with negative values; max_iter below 100; weights <= 0.",
 )
 def eigenvector_centrality(G, max_iter=100, tol=1e-06, nstart=None, weight=None):
     if nstart is not None:
@@ -243,7 +241,7 @@ def eigenvector_centrality(G, max_iter=100, tol=1e-06, nstart=None, weight=None)
 @implements(
     "eigenvector_centrality_numpy",
     chk.all_of(SIMPLE, chk.weight_attr()),
-    "Connected (strongly connected, if directed) graphs with positive weights.",
+    declined="graphs of at most two nodes; weights <= 0.",
 )
 def eigenvector_centrality_numpy(G, weight=None, max_iter=50, tol=0):
     if len(G) <= 2:
@@ -275,8 +273,7 @@ def _beta_vector(G, beta):
 @implements(
     "katz_centrality",
     chk.all_of(SIMPLE, chk.weight_attr(), chk.at_least("max_iter", 1000)),
-    "alpha below 1 / (largest eigenvalue); nstart only affects convergence. "
-    "max_iter below the default is left to NetworkX.",
+    declined="graphs of one node; alpha >= 1 / (largest eigenvalue), where NetworkX does not converge; max_iter below 1000; negative weights.",
 )
 def katz_centrality(G, alpha=0.1, beta=1.0, max_iter=1000, tol=1e-06, nstart=None,
                     normalized=True, weight=None):
@@ -286,7 +283,7 @@ def katz_centrality(G, alpha=0.1, beta=1.0, max_iter=1000, tol=1e-06, nstart=Non
 @implements(
     "katz_centrality_numpy",
     chk.all_of(SIMPLE, chk.weight_attr()),
-    "alpha below 1 / (largest eigenvalue); other alphas are left to NetworkX.",
+    declined="graphs of one node; alpha >= 1 / (largest eigenvalue); negative weights.",
 )
 def katz_centrality_numpy(G, alpha=0.1, beta=1.0, normalized=True, weight=None):
     return _katz(G, alpha, beta, normalized, weight)
@@ -328,8 +325,7 @@ def _dangling_code(G, dangling, personalization):
 @implements(
     "pagerank",
     chk.all_of(ANY, chk.weight_attr(), chk.at_least("max_iter", 100)),
-    "Multigraphs included; personalization; dangling when it is uniform or equal to "
-    "personalization. 0 < alpha < 1. max_iter below the default is left to NetworkX.",
+    declined="dangling vectors other than uniform or the personalization; alpha outside (0, 1); max_iter below 100; negative weights.",
 )
 def pagerank(G, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstart=None,
              weight="weight", dangling=None):
@@ -354,8 +350,7 @@ def pagerank(G, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstar
     "hits",
     chk.all_of(SIMPLE, chk.is_none("nstart"), chk.at_least("max_iter", 100),
              chk.equals("method", "power_iteration", "svd")),
-    "Graphs whose leading singular value is simple (the scores are then unique). "
-    "nstart and max_iter below the default are left to NetworkX.",
+    declined="nstart; max_iter below 100; graphs whose leading singular value is repeated (scores not unique); multigraphs; negative weights.",
 )
 def hits(G, max_iter=100, tol=1e-08, nstart=None, normalized=True, *,
          method="power_iteration"):
@@ -374,7 +369,7 @@ def hits(G, max_iter=100, tol=1e-08, nstart=None, normalized=True, *,
 @implements(
     "current_flow_closeness_centrality",
     chk.all_of(SIMPLE, chk.undirected, chk.weight_attr(), chk.equals("solver", "lu", "full", "cg")),
-    "Connected graphs with positive weights (information centrality).",
+    declined="graphs of one node; multigraphs; weights <= 0.",
 )
 def current_flow_closeness_centrality(G, weight=None, dtype=float, solver="lu"):
     w = _weighted(G, weight)
@@ -400,25 +395,37 @@ def _group_indices(G, S):
     return idx
 
 
-@implements("group_degree_centrality", SIMPLE)
+@implements(
+    "group_degree_centrality", SIMPLE,
+    declined="multigraphs; groups with repeated members.",
+)
 def group_degree_centrality(G, S):
     idx = _group_indices(G, S)
     return _core.group_centrality(G.core, idx, 0, OUT, 0, 1, threads())
 
 
-@implements("group_in_degree_centrality", chk.all_of(SIMPLE, chk.directed))
+@implements(
+    "group_in_degree_centrality", chk.all_of(SIMPLE, chk.directed),
+    declined="multigraphs; groups with repeated members.",
+)
 def group_in_degree_centrality(G, S):
     idx = _group_indices(G, S)
     return _core.group_centrality(G.core, idx, 0, IN, 0, 1, threads())
 
 
-@implements("group_out_degree_centrality", chk.all_of(SIMPLE, chk.directed))
+@implements(
+    "group_out_degree_centrality", chk.all_of(SIMPLE, chk.directed),
+    declined="multigraphs; groups with repeated members.",
+)
 def group_out_degree_centrality(G, S):
     idx = _group_indices(G, S)
     return _core.group_centrality(G.core, idx, 0, OUT, 0, 1, threads())
 
 
-@implements("group_closeness_centrality", chk.all_of(SIMPLE, chk.weight_attr()))
+@implements(
+    "group_closeness_centrality", chk.all_of(SIMPLE, chk.weight_attr()),
+    declined="multigraphs; groups with repeated members; weights <= 0.",
+)
 def group_closeness_centrality(G, S, weight=None):
     w = _weighted(G, weight)
     _positive_weights(G, w)
@@ -429,7 +436,7 @@ def group_closeness_centrality(G, S, weight=None):
 @implements(
     "group_betweenness_centrality",
     chk.all_of(SIMPLE, chk.equals("endpoints", False), chk.weight_attr()),
-    "One group or a list of groups; endpoints=True is left to NetworkX.",
+    declined="endpoints=True; multigraphs; groups with repeated members; weights <= 0.",
 )
 def group_betweenness_centrality(G, C, normalized=True, weight=None, endpoints=False):
     w = _weighted(G, weight)
@@ -464,7 +471,7 @@ def _structural_holes(G, measure, nodes, weight):
 @implements(
     "constraint",
     chk.all_of(SIMPLE, chk.no_selfloops, chk.weight_attr()),
-    "Graphs without self-loops; positive weights.",
+    declined="self-loops; multigraphs; weights <= 0.",
 )
 def constraint(G, nodes=None, weight=None):
     return _structural_holes(G, 0, nodes, weight)
@@ -484,8 +491,7 @@ def _check_effective_size(a):
 @implements(
     "effective_size",
     chk.all_of(SIMPLE, chk.no_selfloops, chk.weight_attr(), _check_effective_size),
-    "Graphs without self-loops; positive weights. Weighted or directed graphs "
-    "only with nodes given (see the differences page).",
+    declined="self-loops; multigraphs; weighted or directed graphs with nodes=None; weights <= 0.",
 )
 def effective_size(G, nodes=None, weight=None):
     result = _structural_holes(G, 1, nodes, weight)
@@ -501,7 +507,10 @@ def effective_size(G, nodes=None, weight=None):
 # ---- Clustering, reciprocity, triads ---------------------------------------
 
 
-@implements("transitivity", chk.all_of(SIMPLE, chk.undirected), "Undirected graphs.")
+@implements(
+    "transitivity", chk.all_of(SIMPLE, chk.undirected),
+    declined="multigraphs; directed graphs.",
+)
 def transitivity(G):
     t = _core.transitivity(G.core, 1, threads())
     return 0 if t == 0 else t
@@ -510,7 +519,7 @@ def transitivity(G):
 @implements(
     "clustering",
     chk.all_of(SIMPLE, chk.undirected, chk.weight_attr()),
-    "Undirected graphs; weighted clustering with positive weights.",
+    declined="multigraphs; directed graphs; weights <= 0.",
 )
 def clustering(G, nodes=None, weight=None):
     w = _weighted(G, weight)
@@ -523,7 +532,7 @@ def clustering(G, nodes=None, weight=None):
 @implements(
     "average_clustering",
     chk.all_of(SIMPLE, chk.undirected, chk.weight_attr()),
-    "Undirected graphs; weighted clustering with positive weights.",
+    declined="multigraphs; directed graphs; weights <= 0.",
 )
 def average_clustering(G, nodes=None, weight=None, count_zeros=True):
     w = _weighted(G, weight)
@@ -540,11 +549,8 @@ def average_clustering(G, nodes=None, weight=None, count_zeros=True):
     return sum(c) / len(c)
 
 
-@implements(
-    "overall_reciprocity",
-    chk.all_of(SIMPLE, chk.directed),
-    "Directed graphs with at least one edge.",
-)
+@implements("overall_reciprocity",
+    chk.all_of(SIMPLE, chk.directed))
 def overall_reciprocity(G):
     m = G.core.m
     if m == 0:
@@ -560,7 +566,7 @@ def overall_reciprocity(G):
 @implements(
     "reciprocity",
     chk.all_of(SIMPLE, chk.directed, chk.is_none("nodes")),
-    "The overall reciprocity (nodes=None).",
+    declined="nodes (per-node reciprocity).",
 )
 def reciprocity(G, nodes=None):
     return overall_reciprocity(G)
@@ -573,7 +579,7 @@ _TRIADS = ("003", "012", "102", "021D", "021U", "021C", "111D", "111U", "030T",
 @implements(
     "triadic_census",
     chk.all_of(SIMPLE, chk.directed, chk.is_none("nodelist"), chk.no_selfloops),
-    "Graphs without self-loops; nodelist is left to NetworkX.",
+    declined="nodelist; self-loops.",
 )
 def triadic_census(G, nodelist=None):
     counts = _core.triad_census(G.core, threads())
@@ -583,7 +589,7 @@ def triadic_census(G, nodelist=None):
 # ---- Cores and cliques ----------------------------------------------------
 
 
-@implements("core_number", chk.all_of(SIMPLE, chk.no_selfloops), "Graphs without self-loops.")
+@implements("core_number", chk.all_of(SIMPLE, chk.no_selfloops))
 def core_number(G):
     return _node_dict(G, _ints(_core.coreness(G.core, ALL)))
 
@@ -591,7 +597,7 @@ def core_number(G):
 @implements(
     "find_cliques",
     chk.all_of(SIMPLE, chk.undirected, chk.is_none("nodes")),
-    "nodes is left to NetworkX.",
+    declined="nodes; multigraphs.",
 )
 def find_cliques(G, nodes=None):
     return iter(_core.max_cliques(G.core, 0, threads()))
@@ -604,84 +610,96 @@ def _components(G, kind):
     return (set(c) for c in _core.components(G.core, kind))
 
 
-@implements("connected_components", chk.all_of(ANY, chk.undirected), "Multigraphs included.")
+@implements("connected_components", chk.all_of(ANY, chk.undirected))
 def connected_components(G):
     return _components(G, 0)
 
 
-@implements("number_connected_components", chk.all_of(ANY, chk.undirected),
-            "Multigraphs included.")
+@implements("number_connected_components", chk.all_of(ANY, chk.undirected))
 def number_connected_components(G):
     return _core.component_count(G.core, 0)
 
 
-@implements("is_connected", chk.all_of(ANY, chk.undirected), "Multigraphs included.")
+@implements("is_connected", chk.all_of(ANY, chk.undirected))
 def is_connected(G):
     return _core.component_count(G.core, 0) == 1
 
 
-@implements("strongly_connected_components", chk.all_of(ANY, chk.directed),
-            "Multigraphs included; components in NetworkX's order.")
+@implements("node_connected_component",
+            chk.all_of(ANY, chk.undirected, chk.node_in_graph("n")))
+def node_connected_component(G, n):
+    return set(_one_source(G, n, OUT, 0))
+
+
+@implements("strongly_connected_components", chk.all_of(ANY, chk.directed))
 def strongly_connected_components(G):
     return (set(c) for c in _core.strong_components(G.core))
 
 
-@implements("number_strongly_connected_components", chk.all_of(ANY, chk.directed),
-            "Multigraphs included.")
+@implements("number_strongly_connected_components", chk.all_of(ANY, chk.directed))
 def number_strongly_connected_components(G):
     return _core.component_count(G.core, 1)
 
 
-@implements("is_strongly_connected", chk.all_of(ANY, chk.directed), "Multigraphs included.")
+@implements("is_strongly_connected", chk.all_of(ANY, chk.directed))
 def is_strongly_connected(G):
     return _core.component_count(G.core, 1) == 1
 
 
-@implements("weakly_connected_components", chk.all_of(ANY, chk.directed),
-            "Multigraphs included.")
+@implements("weakly_connected_components", chk.all_of(ANY, chk.directed))
 def weakly_connected_components(G):
     return _components(G, 0)
 
 
-@implements("number_weakly_connected_components", chk.all_of(ANY, chk.directed),
-            "Multigraphs included.")
+@implements("number_weakly_connected_components", chk.all_of(ANY, chk.directed))
 def number_weakly_connected_components(G):
     return _core.component_count(G.core, 0)
 
 
-@implements("is_weakly_connected", chk.all_of(ANY, chk.directed), "Multigraphs included.")
+@implements("is_weakly_connected", chk.all_of(ANY, chk.directed))
 def is_weakly_connected(G):
     return _core.component_count(G.core, 0) == 1
 
 
-@implements("articulation_points", chk.all_of(SIMPLE, chk.undirected))
+@implements(
+    "articulation_points", chk.all_of(SIMPLE, chk.undirected),
+    declined="multigraphs.",
+)
 def articulation_points(G):
     cut, _ = _core.cut_structure(G.core)
     return (v for v, flag in zip(G.nodes, cut) if flag)
 
 
-@implements("bridges", chk.all_of(SIMPLE, chk.undirected, chk.is_none("root")),
-            "root is left to NetworkX.")
+@implements(
+    "bridges", chk.all_of(SIMPLE, chk.undirected, chk.is_none("root")),
+    declined="root; multigraphs.",
+)
 def bridges(G, root=None):
     _, flags = _core.cut_structure(G.core)
     return (e for e, flag in zip(_core.edge_keys(G.core), flags) if flag)
 
 
-@implements("has_bridges", chk.all_of(SIMPLE, chk.undirected, chk.is_none("root")),
-            "root is left to NetworkX.")
+@implements(
+    "has_bridges", chk.all_of(SIMPLE, chk.undirected, chk.is_none("root")),
+    declined="root; multigraphs.",
+)
 def has_bridges(G, root=None):
     _, flags = _core.cut_structure(G.core)
     return any(flags)
 
 
-@implements("biconnected_components", chk.all_of(SIMPLE, chk.undirected, chk.no_selfloops),
-            "Graphs without self-loops.")
+@implements(
+    "biconnected_components", chk.all_of(SIMPLE, chk.undirected, chk.no_selfloops),
+    declined="self-loops; multigraphs.",
+)
 def biconnected_components(G):
     return (set(c) for c in _core.bicomponents(G.core))
 
 
-@implements("is_biconnected", chk.all_of(SIMPLE, chk.undirected, chk.no_selfloops),
-            "Graphs without self-loops.")
+@implements(
+    "is_biconnected", chk.all_of(SIMPLE, chk.undirected, chk.no_selfloops),
+    declined="self-loops; multigraphs.",
+)
 def is_biconnected(G):
     comps = _core.bicomponents(G.core)
     return len(comps) == 1 and len(comps[0]) == len(G)
@@ -712,28 +730,30 @@ def _check_cutoff(cutoff):
 
 
 @implements("single_source_shortest_path_length",
-            chk.all_of(ANY, chk.node_in_graph("source")), "Multigraphs included.")
+            chk.all_of(ANY, chk.node_in_graph("source")))
 def single_source_shortest_path_length(G, source, cutoff=None):
     _check_cutoff(cutoff)
     return _one_source(G, source, OUT, 0, cutoff)
 
 
 @implements("single_target_shortest_path_length",
-            chk.all_of(ANY, chk.node_in_graph("target")), "Multigraphs included.")
+            chk.all_of(ANY, chk.node_in_graph("target")))
 def single_target_shortest_path_length(G, target, cutoff=None):
     _check_cutoff(cutoff)
     return _one_source(G, target, IN, 0, cutoff)
 
 
-@implements("all_pairs_shortest_path_length", ANY, "Multigraphs included.")
+@implements("all_pairs_shortest_path_length", ANY)
 def all_pairs_shortest_path_length(G, cutoff=None):
     _check_cutoff(cutoff)
     return _all_pairs(G, 0, cutoff)
 
 
-@implements("single_source_dijkstra_path_length",
+@implements(
+    "single_source_dijkstra_path_length",
             chk.all_of(ANY, chk.node_in_graph("source"), chk.weight_attr()),
-            "Multigraphs included; positive weights.")
+    declined="weight functions; weights <= 0.",
+)
 def single_source_dijkstra_path_length(G, source, cutoff=None, weight="weight"):
     _check_cutoff(cutoff)
     w = _weighted(G, weight)
@@ -741,8 +761,10 @@ def single_source_dijkstra_path_length(G, source, cutoff=None, weight="weight"):
     return _one_source(G, source, OUT, w, cutoff)
 
 
-@implements("all_pairs_dijkstra_path_length", chk.all_of(ANY, chk.weight_attr()),
-            "Multigraphs included; positive weights.")
+@implements(
+    "all_pairs_dijkstra_path_length", chk.all_of(ANY, chk.weight_attr()),
+    declined="weight functions; weights <= 0.",
+)
 def all_pairs_dijkstra_path_length(G, cutoff=None, weight="weight"):
     _check_cutoff(cutoff)
     w = _weighted(G, weight)
@@ -761,9 +783,11 @@ def _check_shortest_path_length(a):
     return None
 
 
-@implements("shortest_path_length",
+@implements(
+    "shortest_path_length",
             chk.all_of(ANY, chk.weight_attr(), _check_shortest_path_length),
-            "Multigraphs included; positive weights.")
+    declined="weight functions; weights <= 0.",
+)
 def shortest_path_length(G, source=None, target=None, weight=None, method="dijkstra"):
     w = _weighted(G, weight)
     _positive_weights(G, w)
@@ -779,18 +803,17 @@ def shortest_path_length(G, source=None, target=None, weight=None, method="dijks
     return d[target]
 
 
-@implements("has_path", chk.all_of(ANY, chk.node_in_graph("source"), chk.node_in_graph("target")),
-            "Multigraphs included.")
+@implements("has_path", chk.all_of(ANY, chk.node_in_graph("source"), chk.node_in_graph("target")))
 def has_path(G, source, target):
     return target in _one_source(G, source, OUT, 0)
 
 
-@implements("descendants", chk.all_of(ANY, chk.node_in_graph("source")), "Multigraphs included.")
+@implements("descendants", chk.all_of(ANY, chk.node_in_graph("source")))
 def descendants(G, source):
     return set(_one_source(G, source, OUT, 0)) - {source}
 
 
-@implements("ancestors", chk.all_of(ANY, chk.node_in_graph("source")), "Multigraphs included.")
+@implements("ancestors", chk.all_of(ANY, chk.node_in_graph("source")))
 def ancestors(G, source):
     return set(_one_source(G, source, IN, 0)) - {source}
 
@@ -801,10 +824,11 @@ def _check_aspl_method(a):
     return None
 
 
-@implements("average_shortest_path_length",
+@implements(
+    "average_shortest_path_length",
             chk.all_of(ANY, chk.weight_attr(), _check_aspl_method),
-            "Connected graphs (strongly connected, if directed); multigraphs included; "
-            "positive weights. Floyd-Warshall methods are left to NetworkX.")
+    declined="Floyd-Warshall methods; weight functions; weights <= 0.",
+)
 def average_shortest_path_length(G, weight=None, method=None):
     if method is None:
         method = "unweighted" if weight is None else "dijkstra"
@@ -819,11 +843,27 @@ def average_shortest_path_length(G, weight=None, method=None):
     return summary[2] / (n * (n - 1))
 
 
-@implements("global_efficiency", chk.all_of(ANY, chk.undirected), "Multigraphs included.")
+@implements("global_efficiency", chk.all_of(ANY, chk.undirected))
 def global_efficiency(G):
     if len(G) < 2:
         return 0
     return _core.compactness(G.core, OUT, 0, threads())
+
+
+@implements(
+    "wiener_index",
+    chk.all_of(ANY, chk.weight_attr()),
+    declined="weight functions; weights <= 0.",
+)
+def wiener_index(G, weight=None):
+    w = _weighted(G, weight)
+    _positive_weights(G, w)
+    if not _connected(G):
+        return float("inf")
+    total = _core.path_summary(G.core, OUT, w, 1, threads())[2]
+    if not w:
+        total = int(total)
+    return total if G.core.directed else total / 2
 
 
 # ---- Distance measures ----------------------------------------------------
@@ -841,30 +881,44 @@ def _eccentricities(G, weight):
 _DM = chk.all_of(ANY, chk.is_none("e"), chk.weight_attr())
 
 
-@implements("eccentricity", chk.all_of(ANY, chk.is_none("v", "sp"), chk.weight_attr()),
-            "Connected graphs; v and sp are left to NetworkX.")
+@implements(
+    "eccentricity", chk.all_of(ANY, chk.is_none("v", "sp"), chk.weight_attr()),
+    declined="v; sp; weight functions; weights <= 0.",
+)
 def eccentricity(G, v=None, sp=None, weight=None):
     return _eccentricities(G, weight)
 
 
-@implements("diameter", _DM, "Connected graphs; e is left to NetworkX.")
+@implements(
+    "diameter", _DM,
+    declined="e; weight functions; weights <= 0.",
+)
 def diameter(G, e=None, usebounds=False, weight=None):
     return max(_eccentricities(G, weight).values())
 
 
-@implements("radius", _DM, "Connected graphs; e is left to NetworkX.")
+@implements(
+    "radius", _DM,
+    declined="e; weight functions; weights <= 0.",
+)
 def radius(G, e=None, usebounds=False, weight=None):
     return min(_eccentricities(G, weight).values())
 
 
-@implements("center", _DM, "Connected graphs; e is left to NetworkX.")
+@implements(
+    "center", _DM,
+    declined="e; weight functions; weights <= 0.",
+)
 def center(G, e=None, usebounds=False, weight=None):
     ecc = _eccentricities(G, weight)
     r = min(ecc.values())
     return [v for v in ecc if ecc[v] == r]
 
 
-@implements("periphery", _DM, "Connected graphs; e is left to NetworkX.")
+@implements(
+    "periphery", _DM,
+    declined="e; weight functions; weights <= 0.",
+)
 def periphery(G, e=None, usebounds=False, weight=None):
     ecc = _eccentricities(G, weight)
     d = max(ecc.values())
@@ -886,8 +940,10 @@ def _check_degree_xy(a):
 _DEG_ASSORT = chk.all_of(SIMPLE, chk.weight_attr(), _check_degree_xy)
 
 
-@implements("degree_assortativity_coefficient", _DEG_ASSORT,
-            "x='out', y='in' for directed graphs; nodes is left to NetworkX.")
+@implements(
+    "degree_assortativity_coefficient", _DEG_ASSORT,
+    declined="x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights.",
+)
 def degree_assortativity_coefficient(G, x="out", y="in", weight=None, nodes=None):
     w = _weighted(G, weight)
     _nonnegative_weights(G, w)
@@ -897,8 +953,10 @@ def degree_assortativity_coefficient(G, x="out", y="in", weight=None, nodes=None
     return r
 
 
-@implements("degree_pearson_correlation_coefficient", _DEG_ASSORT,
-            "x='out', y='in' for directed graphs; nodes is left to NetworkX.")
+@implements(
+    "degree_pearson_correlation_coefficient", _DEG_ASSORT,
+    declined="x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights.",
+)
 def degree_pearson_correlation_coefficient(G, x="out", y="in", weight=None, nodes=None):
     return degree_assortativity_coefficient(G, x, y, weight, nodes)
 
@@ -911,8 +969,11 @@ def _node_values(G, attribute):
         raise NotImplementedError("every node needs the attribute") from err
 
 
-@implements("attribute_assortativity_coefficient",
-            chk.all_of(SIMPLE, chk.is_none("nodes")), "nodes is left to NetworkX.")
+@implements(
+    "attribute_assortativity_coefficient",
+            chk.all_of(SIMPLE, chk.is_none("nodes")),
+    declined="nodes; multigraphs.",
+)
 def attribute_assortativity_coefficient(G, attribute, nodes=None):
     values = _node_values(G, attribute)
     codes = {}
@@ -927,8 +988,11 @@ def attribute_assortativity_coefficient(G, attribute, nodes=None):
     return r
 
 
-@implements("numeric_assortativity_coefficient",
-            chk.all_of(SIMPLE, chk.is_none("nodes")), "nodes is left to NetworkX.")
+@implements(
+    "numeric_assortativity_coefficient",
+            chk.all_of(SIMPLE, chk.is_none("nodes")),
+    declined="nodes; multigraphs.",
+)
 def numeric_assortativity_coefficient(G, attribute, nodes=None):
     values = _node_values(G, attribute)
     try:
@@ -944,8 +1008,10 @@ def numeric_assortativity_coefficient(G, attribute, nodes=None):
 # ---- Communities -------------------------------------------------------------
 
 
-@implements("modularity", chk.all_of(SIMPLE, chk.weight_attr()),
-            "Partitions of the graph (other inputs are left to NetworkX, which raises).")
+@implements(
+    "modularity", chk.all_of(SIMPLE, chk.weight_attr()),
+    declined="multigraphs; negative weights.",
+)
 def modularity(G, communities, weight="weight", resolution=1):
     if not isinstance(communities, list):
         communities = list(communities)
@@ -962,8 +1028,7 @@ def modularity(G, communities, weight="weight", resolution=1):
     "louvain_communities",
     chk.all_of(SIMPLE, chk.undirected, chk.weight_attr(), chk.equals("threshold", 1e-07),
              chk.is_none("max_level")),
-    "Undirected graphs. The engine's own random stream: a seed reproduces the "
-    "engine's result, not NetworkX's.",
+    declined="directed graphs; multigraphs; threshold; max_level; negative weights.",
 )
 def louvain_communities(G, weight="weight", resolution=1, threshold=1e-07, max_level=None,
                         seed=None):
@@ -987,7 +1052,10 @@ def _modes(G, nodes):
 _BIP = chk.all_of(SIMPLE, chk.undirected)
 
 
-@implements("bipartite_degree_centrality", _BIP)
+@implements(
+    "bipartite_degree_centrality", _BIP,
+    declined="directed graphs; multigraphs.",
+)
 def bipartite_degree_centrality(G, nodes):
     types, top = _modes(G, nodes)
     if not top or len(top) == len(G):
@@ -996,7 +1064,10 @@ def bipartite_degree_centrality(G, nodes):
     return _node_dict(G, vals)
 
 
-@implements("bipartite_betweenness_centrality", _BIP)
+@implements(
+    "bipartite_betweenness_centrality", _BIP,
+    declined="directed graphs; multigraphs.",
+)
 def bipartite_betweenness_centrality(G, nodes):
     types, top = _modes(G, nodes)
     if not top or len(top) == len(G):
@@ -1005,7 +1076,10 @@ def bipartite_betweenness_centrality(G, nodes):
     return _node_dict(G, vals)
 
 
-@implements("bipartite_closeness_centrality", _BIP)
+@implements(
+    "bipartite_closeness_centrality", _BIP,
+    declined="directed graphs; multigraphs.",
+)
 def bipartite_closeness_centrality(G, nodes, normalized=True):
     types, top = _modes(G, nodes)
     if not top or len(top) == len(G):

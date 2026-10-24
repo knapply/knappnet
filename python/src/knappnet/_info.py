@@ -25,7 +25,7 @@ def get_info():
             "min_nodes": 64,
         },
         "functions": {
-            name: {"additional_docs": notes} if notes else {}
-            for name, notes in sorted(NOTES.items())
+            name: {"additional_docs": "Left to NetworkX: " + declined} if declined else {}
+            for name, declined in sorted(NOTES.items())
         },
     }

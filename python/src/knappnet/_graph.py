@@ -99,7 +99,7 @@ CHECKS = {}  # NetworkX dispatch name -> can_run check (bound arguments -> reaso
 NOTES = {}  # NetworkX dispatch name -> what is supported, for the docs
 
 
-def implements(name, check=None, notes=""):
+def implements(name, check=None, declined=""):
     """Registers an implementation of the NetworkX function ``name``.
 
     ``check`` receives the call's arguments bound to NetworkX's signature
@@ -113,7 +113,7 @@ def implements(name, check=None, notes=""):
             raise ValueError(f"{name} implemented twice")
         IMPLEMENTATIONS[name] = fn
         CHECKS[name] = check
-        NOTES[name] = notes
+        NOTES[name] = declined
         return fn
 
     return wrap
