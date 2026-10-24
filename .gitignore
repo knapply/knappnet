@@ -10,3 +10,8 @@ ci-logs/
 bench/results/*-quick.csv
 docs/map.json
 check-logs/
+python/build/
+python/src/*.egg-info/
+python/src/knappnet/*.so
+python/src/knappnet/*.pyd
+python/.venv/
