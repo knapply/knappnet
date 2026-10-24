@@ -41,6 +41,14 @@ difference.
 * Cohesive subgroups: `net_coreness()` (k-cores), `net_max_cliques()` and
   `net_clique_number()`, `net_modularity()` (with resolution and the directed
   form), and `net_louvain()` with a reproducible seed.
+* More community detection: `net_leiden()` (modularity or the Constant Potts
+  Model), `net_walktrap()` with its dendrogram, `net_label_prop()` (four
+  variants), `net_infomap()` and `net_map_equation()`, `net_spinglass()`
+  (including negative weights), `net_optimal()` (exact maximum modularity),
+  `net_fluid()`, and `net_voronoi()`; `net_compare_partitions()` (variation of
+  information, normalized mutual information, split-join distance, Rand,
+  adjusted Rand, and adjusted mutual information); and `net_cut_dendrogram()`
+  and `net_to_hclust()` for the merges of hierarchical methods.
 * Brokerage: Burt's `net_constraint()`, `net_effective_size()`, and `net_efficiency()`,
   and Gould-Fernandez `net_brokerage()` roles.
 * Positions: `net_struct_equiv()` (Euclidean, correlation, Hamming)

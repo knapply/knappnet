@@ -175,9 +175,19 @@ reference:
   - net_lambda_sets
   - net_modularity
   - net_louvain
+  - net_leiden
+  - net_walktrap
+  - net_infomap
+  - net_label_prop
+  - net_spinglass
+  - net_fluid
+  - net_voronoi
+  - net_optimal
   - net_girvan_newman
   - net_factions
   - net_hclust
+  - net_cut_dendrogram
+  - net_compare_partitions
 - title: Positions and brokerage
   desc: >-
     Structural holes, brokerage roles, equivalence, and blockmodels.
