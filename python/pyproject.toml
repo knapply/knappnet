@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Proprietary. All rights reserved. See LICENSE." }
 authors = [{ name = "Brendan Knapp" }]
-dependencies = ["networkx>=3.5"]
+dependencies = ["networkx>=3.4"]
 classifiers = [
     "License :: Other/Proprietary License",
     "Private :: Do Not Upload",

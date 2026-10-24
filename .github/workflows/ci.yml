@@ -114,7 +114,7 @@ jobs:
           - {os: ubuntu-latest, python: "3.13"}
           - {os: macos-latest, python: "3.13"}
           - {os: windows-latest, python: "3.13"}
-          - {os: ubuntu-latest, python: "3.10", networkx: "networkx==3.5"}
+          - {os: ubuntu-latest, python: "3.10", networkx: "networkx==3.4.2"}
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

@@ -349,7 +349,7 @@ def pagerank(G, alpha=0.85, personalization=None, max_iter=100, tol=1e-06, nstar
 @implements(
     "hits",
     chk.all_of(SIMPLE, chk.is_none("nstart"), chk.at_least("max_iter", 100),
-             chk.equals("method", "power_iteration", "svd")),
+             chk.equals("method", None, "power_iteration")),
     declined="nstart; max_iter below 100; graphs whose leading singular value is repeated (scores not unique); multigraphs; negative weights.",
 )
 def hits(G, max_iter=100, tol=1e-08, nstart=None, normalized=True, *,
@@ -1018,6 +1018,9 @@ def modularity(G, communities, weight="weight", resolution=1):
     memb = _membership(G, communities)
     if memb is None:
         raise NotImplementedError("not a partition; NetworkX raises")
+    if G.core.m == 0:
+        # NetworkX 3.7 returns 0 here and earlier versions raise.
+        raise NotImplementedError("graphs without edges are left to NetworkX")
     w = _weighted(G, weight)
     _nonnegative_weights(G, w)
     q = _core.modularity(G.core, memb, float(resolution), w)

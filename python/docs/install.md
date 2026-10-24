@@ -5,7 +5,8 @@ knappnet is built from the repository; it is not on PyPI.
 ## Requirements
 
 - CPython 3.10 or later (one build serves every later version).
-- NetworkX 3.5 or later. The backend is tested with NetworkX 3.7.
+- NetworkX 3.4 or later (3.4 is the last release for Python 3.10). The
+  backend is tested with NetworkX 3.4.2 and 3.7.
 - A Rust toolchain, 1.70 or later (<https://rustup.rs>). The engine has no
   third-party crates, so the build needs no network access for Rust.
 - A C compiler: GCC or Clang on Linux, the Xcode command line tools on
