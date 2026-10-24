@@ -1,0 +1,819 @@
+# Variants of shortest-path betweenness (sources and targets, sampled
+# sources, endpoints), percolation and load centrality, edge load,
+# current-flow measures, resistance distance, Kemeny's constant,
+# second-order centrality, communicability, dispersion, VoteRank,
+# Laplacian centrality, trophic levels, and reaching centrality. Format:
+# see ../README.md; engine runners in ../bindings/centrality_extra.py,
+# which documents the options, the node sets (`even`, `thirds`), the
+# percolation states, and the sampled sources and pairs.
+#
+# NaN (and a NetworkX error) is written as -999 and infinity as -1000 by
+# the runner and every oracle.
+#
+# Oracles: `definition` is centrality_extra_definition_oracle.py;
+# `networkx` is centrality_extra_networkx_oracle.py.
+
+cx_bc_all_distinct:
+  engine: {fn: cx_betweenness_subset, rescale: unordered, parallel: distinct}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over pairs of sigma_sv sigma_vt / sigma_st, sigma counting parallel edges (exact arithmetic)"
+    networkx:
+      call: "nx.betweenness_centrality(G, normalized = False)"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX counts a pair of adjacent nodes once however many
+        parallel edges join them; this variant counts each parallel edge
+        as a distinct shortest path (igraph).
+
+cx_bc_all_distinct_weighted:
+  engine: {fn: cx_betweenness_subset, rescale: unordered, parallel: distinct, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_all_distinct with weighted lengths"
+    networkx:
+      call: "nx.betweenness_centrality(G, normalized = False, weight = 'weight')"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX counts a pair of adjacent nodes once however many
+        parallel edges join them; this variant counts each parallel edge
+        as a distinct shortest path (igraph).
+
+cx_ebc_all_distinct:
+  engine: {fn: cx_betweenness_subset, output: edges, rescale: unordered, parallel: distinct}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over pairs of sigma_su sigma_vt / sigma_st for each shortest parallel edge"
+    networkx:
+      call: "nx.edge_betweenness_centrality(G, normalized = False)"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX counts parallel edges as one path and shares the pair's
+        value equally among them; this variant gives each parallel edge
+        its own value (igraph).
+
+cx_bc_subset_nx:
+  engine: {fn: cx_betweenness_subset, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "pairs s in even, t in thirds; node-sequence path counts; NetworkX's subset rescaling"
+    networkx:
+      call: "nx.betweenness_centrality_subset(G, even, thirds, normalized = False)"
+
+cx_bc_subset_nx_normalized:
+  engine: {fn: cx_betweenness_subset, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, tie: exact, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_subset_nx, normalized"
+    networkx:
+      call: "nx.betweenness_centrality_subset(G, even, thirds, normalized = True)"
+
+cx_bc_subset_nx_weighted:
+  engine: {fn: cx_betweenness_subset, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, tie: exact, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_subset_nx with weighted lengths"
+    networkx:
+      call: "nx.betweenness_centrality_subset(G, even, thirds, weight = 'weight')"
+
+cx_ebc_subset_nx:
+  engine: {fn: cx_betweenness_subset, output: edges, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, edge_split: networkx, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.edge_betweenness_centrality_subset(G, even, thirds, normalized = False)"
+
+cx_ebc_subset_nx_weighted:
+  engine: {fn: cx_betweenness_subset, output: edges, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, edge_split: networkx, tie: exact, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.edge_betweenness_centrality_subset(G, even, thirds, weight = 'weight')"
+
+cx_bc_sampled:
+  engine: {fn: cx_betweenness_subset, sample: 7, seed: 3, rescale: networkx, parallel: collapse, tie: exact, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sources: the 7 nodes random.Random(3).sample(range(n), 7) picks; NetworkX's rescaling for samples"
+    networkx:
+      call: "nx.betweenness_centrality(G, k = 7, seed = 3)"
+
+cx_bc_sampled_raw:
+  engine: {fn: cx_betweenness_subset, sample: 7, seed: 3, rescale: networkx, parallel: collapse, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_sampled, unnormalized"
+    networkx:
+      call: "nx.betweenness_centrality(G, k = 7, normalized = False, seed = 3)"
+
+cx_bc_sampled_endpoints:
+  engine: {fn: cx_betweenness_subset, sample: 7, seed: 3, rescale: networkx, parallel: collapse, tie: exact, normalized: true, endpoints: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_sampled, with endpoints"
+    networkx:
+      call: "nx.betweenness_centrality(G, k = 7, endpoints = True, seed = 3)"
+
+cx_bc_sampled_weighted:
+  engine: {fn: cx_betweenness_subset, sample: 7, seed: 3, rescale: networkx, parallel: collapse, tie: exact, normalized: true, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_bc_sampled with weighted lengths"
+    networkx:
+      call: "nx.betweenness_centrality(G, k = 7, weight = 'weight', seed = 3)"
+
+cx_ebc_sampled:
+  engine: {fn: cx_betweenness_subset, output: edges, sample: 7, seed: 3, rescale: networkx, parallel: collapse, tie: exact, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "edge shares for the sampled sources; NetworkX's rescaling"
+    networkx:
+      call: "nx.edge_betweenness_centrality(G, k = 7, seed = 3)"
+
+cx_percolation:
+  engine: {fn: cx_percolation, parallel: collapse, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over pairs of sigma_sv sigma_vt / sigma_st x_s / (sum x - x_v), / (n - 2)"
+    networkx:
+      call: "nx.percolation_centrality(G, states = {v: ((37 v) mod 11) / 10})"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        With one node NetworkX multiplies by 1/(n - 2) = -1 and returns
+        -0; the measure is undefined for n <= 2 and the engine returns NaN
+        (NetworkX raises ZeroDivisionError for n = 2, which the oracle
+        records as undefined).
+
+cx_percolation_weighted:
+  engine: {fn: cx_percolation, parallel: collapse, tie: exact, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_percolation with weighted lengths"
+    networkx:
+      call: "nx.percolation_centrality(G, states = ..., weight = 'weight')"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        With one node NetworkX multiplies by 1/(n - 2) = -1 and returns
+        -0; the measure is undefined for n <= 2 and the engine returns NaN
+        (NetworkX raises ZeroDivisionError for n = 2, which the oracle
+        records as undefined).
+
+cx_load:
+  engine: {fn: cx_load}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "for every pair, a unit of flow pushed back from t to s and split equally among predecessors (exact arithmetic)"
+    networkx:
+      call: "nx.load_centrality(G, normalized = False)"
+
+cx_load_normalized:
+  engine: {fn: cx_load, normalized: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_load, divided by (n - 1)(n - 2)"
+    networkx:
+      call: "nx.load_centrality(G)"
+
+cx_load_cutoff:
+  engine: {fn: cx_load, cutoff: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_load over targets within distance 2"
+    networkx:
+      call: "nx.load_centrality(G, normalized = False, cutoff = 2)"
+
+cx_load_weighted:
+  engine: {fn: cx_load, weighted: true, networkx_ties: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.load_centrality(G, normalized = False, weight = 'weight')"
+
+cx_edge_load:
+  engine: {fn: cx_edge_load}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.edge_load_centrality(G), values for (u, v) and (v, u) of every edge"
+
+cx_edge_load_cutoff:
+  engine: {fn: cx_edge_load, cutoff: 2}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.edge_load_centrality(G, cutoff = 2)"
+
+cx_cfb:
+  engine: {fn: cx_current_flow}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "throughput summed over pairs, currents from the Laplacian pseudo-inverse (numpy)"
+    networkx:
+      call: "nx.current_flow_betweenness_centrality(G)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfb_raw:
+  engine: {fn: cx_current_flow, normalized: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_cfb, unnormalized"
+    networkx:
+      call: "nx.current_flow_betweenness_centrality(G, normalized = False)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfb_weighted:
+  engine: {fn: cx_current_flow, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_cfb with conductances w"
+    networkx:
+      call: "nx.current_flow_betweenness_centrality(G, weight = 'weight')"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_ecfb:
+  engine: {fn: cx_current_flow, output: edges}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "half the absolute edge current summed over pairs, normalized"
+    networkx:
+      call: "nx.edge_current_flow_betweenness_centrality(G)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_ecfb_raw:
+  engine: {fn: cx_current_flow, output: edges, normalized: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_ecfb, unnormalized"
+    networkx:
+      call: "nx.edge_current_flow_betweenness_centrality(G, normalized = False)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfb_subset_nx:
+  engine: {fn: cx_current_flow_subset, networkx: true}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    networkx:
+      call: "nx.current_flow_betweenness_centrality_subset(G, even, thirds)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_ecfb_subset_nx:
+  engine: {fn: cx_current_flow_subset, networkx: true, output: edges}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    networkx:
+      call: "nx.edge_current_flow_betweenness_centrality_subset(G, even, thirds)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfb_approx:
+  engine: {fn: cx_current_flow_approx, seed: 1, epsilon: 0.5}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "mean throughput over the same pairs times n(n - 1)/((n - 1)(n - 2))"
+    networkx:
+      call: "nx.approximate_current_flow_betweenness_centrality(G, epsilon = 0.5, seed = 1), the runner passing the same pairs"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfc:
+  engine: {fn: cx_current_flow_closeness}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "1 / sum of resistance distances from the Laplacian pseudo-inverse"
+    networkx:
+      call: "nx.current_flow_closeness_centrality(G)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cfc_weighted:
+  engine: {fn: cx_current_flow_closeness, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_cfc with conductances w"
+    networkx:
+      call: "nx.current_flow_closeness_centrality(G, weight = 'weight')"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_second_order:
+  engine: {fn: cx_second_order}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "one linear solve per node for mean first passage times (Kermarrec et al. 2011)"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        A single node has no random walk to take a step on.
+    networkx:
+      call: "nx.second_order_centrality(G)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_second_order_weighted:
+  engine: {fn: cx_second_order, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_second_order with weights"
+      undefined_on: [single_node]
+      undefined_reason: >-
+        A single node has no random walk to take a step on.
+    networkx:
+      call: "nx.second_order_centrality(G, weight = 'weight')"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_cbc:
+  engine: {fn: cx_communicability_betweenness}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "scipy.linalg.expm of the adjacency with and without each node's edges"
+    networkx:
+      call: "nx.communicability_betweenness_centrality(G)"
+      undefined_when: [disconnected, multi_edges]
+      undefined_on: [single_node]
+      undefined_reason: >-
+        NetworkX defines these measures for connected simple graphs and
+        raises an error otherwise (the engine returns NaN on disconnected
+        networks); on a single node NetworkX divides by (n - 1)(n - 2) = 0
+        or forms a random walk without steps.
+
+cx_resistance:
+  engine: {fn: cx_resistance}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "L+_ii + L+_jj - 2 L+_ij per component (numpy pseudo-inverse), Inf between components"
+    networkx:
+      call: "nx.resistance_distance(G)"
+      undefined_when: [disconnected]
+      undefined_reason: >-
+        NetworkX's resistance_distance and kemeny_constant raise an error
+        on disconnected graphs; the engine gives infinite resistance
+        between components and NaN for Kemeny's constant.
+
+cx_resistance_weighted:
+  engine: {fn: cx_resistance, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_resistance with resistances w"
+    networkx:
+      call: "nx.resistance_distance(G, weight = 'weight', invert_weight = True)"
+      undefined_when: [disconnected]
+      undefined_reason: >-
+        NetworkX's resistance_distance and kemeny_constant raise an error
+        on disconnected graphs; the engine gives infinite resistance
+        between components and NaN for Kemeny's constant.
+
+cx_effective_resistance:
+  engine: {fn: cx_effective_resistance}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "sum of resistance distances over unordered pairs"
+    networkx:
+      call: "nx.effective_graph_resistance(G)"
+
+cx_effective_resistance_weighted:
+  engine: {fn: cx_effective_resistance, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_effective_resistance with resistances w"
+    networkx:
+      call: "nx.effective_graph_resistance(G, weight = 'weight')"
+
+cx_kemeny:
+  engine: {fn: cx_kemeny}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "trace of the fundamental matrix (I - P + 1 pi')^-1 minus 1"
+    networkx:
+      call: "nx.kemeny_constant(G)"
+      undefined_when: [disconnected]
+      undefined_reason: >-
+        NetworkX's resistance_distance and kemeny_constant raise an error
+        on disconnected graphs; the engine gives infinite resistance
+        between components and NaN for Kemeny's constant.
+
+cx_kemeny_weighted:
+  engine: {fn: cx_kemeny, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-08, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "as cx_kemeny with weights"
+    networkx:
+      call: "nx.kemeny_constant(G, weight = 'weight')"
+      undefined_when: [disconnected]
+      undefined_reason: >-
+        NetworkX's resistance_distance and kemeny_constant raise an error
+        on disconnected graphs; the engine gives infinite resistance
+        between components and NaN for Kemeny's constant.
+
+cx_communicability:
+  engine: {fn: cx_communicability}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-09, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "scipy.linalg.expm of the binary adjacency"
+    networkx:
+      call: "nx.communicability(G)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's communicability is not implemented for multigraphs.
+
+cx_dispersion:
+  engine: {fn: cx_dispersion}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "pairs of common neighbors that are not adjacent and share no neighbor of u but u and v"
+      undefined_when: [directed, loops]
+      undefined_reason: >-
+        Dispersion is defined for undirected networks without self-loops.
+    networkx:
+      call: "nx.dispersion(G)[u][v] for every ordered pair of adjacent nodes"
+      differs_when: [directed, loops]
+      reason: >-
+        On directed networks, and at nodes with self-loops, NetworkX's pair
+        test is not symmetric in the two common neighbors, and NetworkX
+        takes each pair in the iteration order of a Python set of node
+        labels; the engine takes the pair with the smaller node index
+        first. On undirected networks without self-loops the test is
+        symmetric and the values agree.
+
+cx_dispersion_raw:
+  engine: {fn: cx_dispersion, normalized: false}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_dispersion, unnormalized"
+      undefined_when: [directed, loops]
+      undefined_reason: >-
+        Dispersion is defined for undirected networks without self-loops.
+    networkx:
+      call: "nx.dispersion(G, normalized = False)"
+      differs_when: [directed, loops]
+      reason: >-
+        On directed networks, and at nodes with self-loops, NetworkX's pair
+        test is not symmetric in the two common neighbors, and NetworkX
+        takes each pair in the iteration order of a Python set of node
+        labels; the engine takes the pair with the smaller node index
+        first. On undirected networks without self-loops the test is
+        symmetric and the values agree.
+
+cx_dispersion_params:
+  engine: {fn: cx_dispersion, alpha: 2.0, b: 1.0, c: 0.5}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_dispersion with alpha 2, b 1, c 0.5"
+      undefined_when: [directed, loops]
+      undefined_reason: >-
+        Dispersion is defined for undirected networks without self-loops.
+    networkx:
+      call: "nx.dispersion(G, alpha = 2, b = 1, c = 0.5)"
+      differs_when: [directed, loops]
+      reason: >-
+        On directed networks, and at nodes with self-loops, NetworkX's pair
+        test is not symmetric in the two common neighbors, and NetworkX
+        takes each pair in the iteration order of a Python set of node
+        labels; the engine takes the pair with the smaller node index
+        first. On undirected networks without self-loops the test is
+        symmetric and the values agree.
+
+cx_voterank:
+  engine: {fn: cx_voterank}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.voterank(G)"
+
+cx_laplacian:
+  engine: {fn: cx_laplacian}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Laplacian energy before and after deleting each node, from explicit matrices"
+    networkx:
+      call: "nx.laplacian_centrality(G, weight = None)"
+
+cx_laplacian_raw:
+  engine: {fn: cx_laplacian, normalized: false}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_laplacian, unnormalized"
+    networkx:
+      call: "nx.laplacian_centrality(G, normalized = False, weight = None)"
+
+cx_laplacian_weighted:
+  engine: {fn: cx_laplacian, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_laplacian with weights"
+    networkx:
+      call: "nx.laplacian_centrality(G, weight = 'weight')"
+
+cx_trophic_levels:
+  engine: {fn: cx_trophic, what: levels}
+  applies_to: directed
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Gaussian elimination in exact arithmetic"
+    networkx:
+      call: "nx.trophic_levels(G) (an error is undefined)"
+
+cx_trophic_levels_weighted:
+  engine: {fn: cx_trophic, what: levels, weighted: true}
+  applies_to: directed
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_trophic_levels with weights"
+    networkx:
+      call: "nx.trophic_levels(G, weight = 'weight')"
+
+cx_trophic_differences:
+  engine: {fn: cx_trophic, what: differences}
+  applies_to: directed
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "differences of the exact levels"
+    networkx:
+      call: "nx.trophic_differences(G)[(u, v)] for every edge"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's trophic_differences unpacks MultiDiGraph edges as pairs
+        and fails on multigraphs.
+
+cx_trophic_incoherence:
+  engine: {fn: cx_trophic, what: incoherence}
+  applies_to: directed
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "population standard deviation of the exact differences without self-loops"
+    networkx:
+      call: "nx.trophic_incoherence_parameter(G)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's trophic_differences unpacks MultiDiGraph edges as pairs
+        and fails on multigraphs.
+
+cx_trophic_incoherence_cannibalism:
+  engine: {fn: cx_trophic, what: incoherence, cannibalism: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_trophic_incoherence keeping self-loops"
+    networkx:
+      call: "nx.trophic_incoherence_parameter(G, cannibalism = True)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's trophic_differences unpacks MultiDiGraph edges as pairs
+        and fails on multigraphs.
+
+cx_reaching_local:
+  engine: {fn: cx_reaching}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "share of nodes reached (directed) or sum of 1/d over reached nodes (undirected), / (n - 1)"
+    networkx:
+      call: "nx.local_reaching_centrality(G, v) for every v (an error is undefined)"
+
+cx_reaching_global:
+  engine: {fn: cx_reaching, what: global}
+  applies_to: any
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum of max - C_R(v) over nodes / (n - 1)"
+    networkx:
+      call: "nx.global_reaching_centrality(G)"
+
+cx_reaching_local_weighted:
+  engine: {fn: cx_reaching, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.local_reaching_centrality(G, v, weight = 'weight')"
+      differs_on: [weighted_dir]
+      reason: >-
+        With integer weights some nodes have several shortest paths (lengths
+        W/w) whose edges have different mean weights. Each tool averages the
+        path its search finds first: NetworkX settles ties in insertion
+        order, the engine by node index (weighted_dir has two such pairs
+        from node 3, checked with nx.all_shortest_paths).
+
+cx_reaching_global_weighted:
+  engine: {fn: cx_reaching, what: global, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-09, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.global_reaching_centrality(G, weight = 'weight')"
+      differs_on: [weighted_dir]
+      reason: >-
+        With integer weights some nodes have several shortest paths (lengths
+        W/w) whose edges have different mean weights. Each tool averages the
+        path its search finds first: NetworkX settles ties in insertion
+        order, the engine by node index (weighted_dir has two such pairs
+        from node 3, checked with nx.all_shortest_paths).
+
+cx_ebc_subset_proportional:
+  engine: {fn: cx_betweenness_subset, output: edges, sources: even, targets: thirds, rescale: networkx_subset, parallel: collapse, edge_split: proportional, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "edge shares sigma_su sigma_vt / sigma_st for s in even, t in thirds (the formula NetworkX documents), NetworkX's subset rescaling"
+
+cx_load_weighted_definition:
+  engine: {fn: cx_load, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cx_load with weighted lengths; every predecessor receives its share"
+
+cx_cfb_subset:
+  engine: {fn: cx_current_flow_subset}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "throughput over ordered pairs s in even, t in thirds, s != t, endpoints excluded, / (n - 1)(n - 2)"
+
+cx_ecfb_subset:
+  engine: {fn: cx_current_flow_subset, output: edges}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-8, abs: 1.0e-10}
+  oracles:
+    definition:
+      call: "half the absolute edge current over ordered pairs s in even, t in thirds, s != t, / (n - 1)(n - 2)"

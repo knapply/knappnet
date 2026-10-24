@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 14874 match, 63 documented differences, 0 FAIL, 4223 not run, 289 awaiting a manual run (UCINET), 1639 undefined for the oracle.
+Totals: 20808 match, 97 documented differences, 0 FAIL, 4223 not run, 289 awaiting a manual run (UCINET), 2214 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -40,6 +40,72 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `avg_deg_conn_in_in` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
 | `avg_deg_conn_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
 | `avg_deg_conn_subset` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+
+## centrality_extra
+
+| Measure | definition | networkx |
+|---|---|---|
+| `cx_bc_all_distinct` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `cx_bc_all_distinct_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `cx_ebc_all_distinct` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `cx_bc_subset_nx` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_bc_subset_nx_normalized` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_bc_subset_nx_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `cx_ebc_subset_nx` |  | 28 / 0 / 0 / 0 |
+| `cx_ebc_subset_nx_weighted` |  | 7 / 0 / 0 / 0 |
+| `cx_bc_sampled` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_bc_sampled_raw` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_bc_sampled_endpoints` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_bc_sampled_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `cx_ebc_sampled` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_percolation` | 28 / 0 / 0 / 0 | 27 / 0 / 0 / 0 |
+| `cx_percolation_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `cx_load` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_load_normalized` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_load_cutoff` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_load_weighted` |  | 7 / 0 / 0 / 0 |
+| `cx_edge_load` |  | 28 / 0 / 0 / 0 |
+| `cx_edge_load_cutoff` |  | 28 / 0 / 0 / 0 |
+| `cx_cfb` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_cfb_raw` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_cfb_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_ecfb` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_ecfb_raw` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_cfb_subset_nx` |  | 15 / 0 / 0 / 0 |
+| `cx_ecfb_subset_nx` |  | 15 / 0 / 0 / 0 |
+| `cx_cfb_approx` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_cfc` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_cfc_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_second_order` | 18 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_second_order_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_cbc` | 19 / 0 / 0 / 0 | 15 / 0 / 0 / 0 |
+| `cx_resistance` | 19 / 0 / 0 / 0 | 16 / 0 / 0 / 0 |
+| `cx_resistance_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_effective_resistance` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `cx_effective_resistance_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_kemeny` | 19 / 0 / 0 / 0 | 16 / 0 / 0 / 0 |
+| `cx_kemeny_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_communicability` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `cx_dispersion` | 18 / 0 / 0 / 0 | 23 / 5 / 0 / 0 |
+| `cx_dispersion_raw` | 18 / 0 / 0 / 0 | 23 / 5 / 0 / 0 |
+| `cx_dispersion_params` | 18 / 0 / 0 / 0 | 23 / 5 / 0 / 0 |
+| `cx_voterank` |  | 28 / 0 / 0 / 0 |
+| `cx_laplacian` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `cx_laplacian_raw` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `cx_laplacian_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cx_trophic_levels` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `cx_trophic_levels_weighted` | 2 / 0 / 0 / 0 | 2 / 0 / 0 / 0 |
+| `cx_trophic_differences` | 9 / 0 / 0 / 0 | 8 / 0 / 0 / 0 |
+| `cx_trophic_incoherence` | 9 / 0 / 0 / 0 | 8 / 0 / 0 / 0 |
+| `cx_trophic_incoherence_cannibalism` | 9 / 0 / 0 / 0 | 8 / 0 / 0 / 0 |
+| `cx_reaching_local` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_reaching_global` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cx_reaching_local_weighted` |  | 6 / 1 / 0 / 0 |
+| `cx_reaching_global_weighted` |  | 6 / 1 / 0 / 0 |
+| `cx_ebc_subset_proportional` | 28 / 0 / 0 / 0 |  |
+| `cx_load_weighted_definition` | 7 / 0 / 0 / 0 |  |
+| `cx_cfb_subset` | 19 / 0 / 0 / 0 |  |
+| `cx_ecfb_subset` | 19 / 0 / 0 / 0 |  |
 
 ## communities
 
@@ -92,6 +158,35 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `compare_adjusted_rand` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 27 |  |
 | `compare_ami` | 28 / 0 / 0 / 0 |  |  |
 
+## connectivity
+
+| Measure | definition | networkx |
+|---|---|---|
+| `conn_local_node` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_local_edge` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_node` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_edge` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_all_pairs_node` | 10 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_average_node` | 10 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_st_edge_cut` |  | 28 / 0 / 0 / 0 |
+| `conn_st_node_cut_networkx` |  | 28 / 0 / 0 / 0 |
+| `conn_st_node_cut` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_node_cut` | 14 / 0 / 0 / 0 | 24 / 0 / 0 / 0 |
+| `conn_node_cut_networkx` |  | 24 / 0 / 0 / 0 |
+| `conn_edge_cut` | 14 / 0 / 0 / 0 | 24 / 0 / 0 / 0 |
+| `conn_node_disjoint_paths` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_edge_disjoint_paths` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_k_components` | 6 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `conn_k_edge_components_2` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_k_edge_components_3` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `conn_local_bridges` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `conn_condensation_input` |  | 9 / 0 / 0 / 0 |
+| `conn_condensation_sorted` |  | 9 / 0 / 0 / 0 |
+| `conn_strong_partition` | 9 / 0 / 0 / 0 |  |
+| `conn_attracting` |  | 9 / 0 / 0 / 0 |
+| `conn_attracting_flags` | 9 / 0 / 0 / 0 |  |
+| `conn_semiconnected` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+
 ## core
 
 | Measure | definition | igraph | networkx | sna |
@@ -133,6 +228,24 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `cut_measures_overlap` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
 | `cut_measures_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
 
+## cycles
+
+| Measure | definition | networkx |
+|---|---|---|
+| `cyc_basis` |  | 18 / 1 / 0 / 0 |
+| `cyc_basis_check` | 19 / 0 / 0 / 0 |  |
+| `cyc_min_basis_weights` | 19 / 0 / 0 / 0 | 18 / 1 / 0 / 0 |
+| `cyc_min_basis_weights_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `cyc_min_basis_check` | 19 / 0 / 0 / 0 |  |
+| `cyc_simple` | 12 / 0 / 0 / 0 | 14 / 0 / 0 / 0 |
+| `cyc_simple_bound4` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_chordless` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_chordless_bound5` | 12 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cyc_girth` | 28 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `cyc_find_cycle` |  | 28 / 0 / 0 / 0 |
+| `cyc_find_cycle_reverse` |  | 9 / 0 / 0 / 0 |
+| `cyc_find_cycle_ignore` |  | 9 / 0 / 0 / 0 |
+
 ## descriptive
 
 | Measure | definition | igraph | networkx | sna |
@@ -172,6 +285,53 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `reachability_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |
 | `cut_points` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |
 | `bridges` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 21 | 28 / 0 / 0 / 0 |  |
+
+## distance_measures
+
+| Measure | definition | networkx |
+|---|---|---|
+| `dm_center` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_center_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dm_center_reachable` | 28 / 0 / 0 / 0 |  |
+| `dm_periphery` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_periphery_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dm_periphery_reachable` | 28 / 0 / 0 / 0 |  |
+| `dm_barycenter` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_barycenter_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dm_wiener` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_wiener_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dm_wiener_strength` | 7 / 0 / 0 / 0 |  |
+| `dm_schultz` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `dm_schultz_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `dm_gutman` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `dm_gutman_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `dm_hyper_wiener` | 19 / 0 / 0 / 0 |  |
+| `dm_hyper_wiener_networkx` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `dm_harmonic_diameter` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_harmonic_diameter_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dm_global_efficiency` | 28 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `dm_global_efficiency_weighted` | 7 / 0 / 0 / 0 |  |
+| `dm_local_efficiency` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `dm_local_efficiency_definition` | 19 / 0 / 0 / 0 |  |
+| `dm_closeness_vitality` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dm_closeness_vitality_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+
+## flow
+
+| Measure | definition | networkx |
+|---|---|---|
+| `flow_max_value` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_value_multi` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_flow_valid` |  | 28 / 0 / 0 / 0 |
+| `flow_max_flow_valid_multi` |  | 28 / 0 / 0 / 0 |
+| `flow_min_cut_largest` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_cut_smallest` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_cut_largest_multi` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_node_cut` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_node_cut_weighted` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_flow_min_cost` | 9 / 0 / 0 / 0 | 8 / 0 / 0 / 0 |
+| `flow_gomory_hu_tree` |  | 19 / 0 / 0 / 0 |
+| `flow_gomory_hu_values` | 9 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
 
 ## groups
 
@@ -278,6 +438,45 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `mis_check` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
 | `square_clustering` | 19 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
 | `generalized_degree` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+
+## paths
+
+| Measure | definition | networkx |
+|---|---|---|
+| `paths_sssp_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_sssp_unweighted_in` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_sssp_unweighted_all` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_sssp_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_sssp_strength` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_sssp_cutoff_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_sssp_cutoff_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_multi_source_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_multi_source_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_predecessors_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_predecessors_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_all_pairs_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_all_pairs_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_bidirectional_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_bidirectional_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_astar_half` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_astar_exact` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_bellman_ford_potential` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_goldberg_radzik_potential` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_bellman_ford_shift` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_goldberg_radzik_shift` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_negative_cycle_shift` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_negative_cycle_potential` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_johnson_potential` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_johnson_shift` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_floyd_warshall_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_floyd_warshall_shift` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_floyd_warshall_potential` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `paths_count_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_count_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_all_shortest_unweighted` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_all_shortest_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `paths_k_shortest_unweighted` | 10 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `paths_k_shortest_weighted` | 0 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
 
 ## positions
 
@@ -568,6 +767,41 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `centralization_closeness_sna` | 28 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 28 |  |
 | `centralization_closeness_ucinet` | 28 / 0 / 0 / 0 |  |  |  | 0 / 0 / 0 / 0 |
 
+## trees
+
+| Measure | definition | networkx |
+|---|---|---|
+| `tree_mst_weight` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `tree_mst_weight_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `tree_maxst_weight_weighted` | 5 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `tree_mst_edges_kruskal` |  | 19 / 0 / 0 / 0 |
+| `tree_mst_edges_prim` |  | 19 / 0 / 0 / 0 |
+| `tree_mst_edges_boruvka` |  | 19 / 0 / 0 / 0 |
+| `tree_maxst_edges_kruskal` |  | 19 / 0 / 0 / 0 |
+| `tree_max_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_min_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_minimal_branching` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_max_arborescence` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `tree_min_arborescence` | 4 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_topological_sort` |  | 28 / 0 / 0 / 0 |
+| `dag_generations` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_lexicographic` |  | 28 / 0 / 0 / 0 |
+| `dag_all_topological` |  | 28 / 0 / 0 / 0 |
+| `dag_is_dag` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_closure_cycles` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_closure_never` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_closure_always` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_reduction` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_longest_path` |  | 28 / 0 / 0 / 0 |
+| `dag_longest_path_weighted` |  | 7 / 0 / 0 / 0 |
+| `dag_longest_length` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_longest_length_weighted` | 1 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `dag_immediate_dominators` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_dominance_frontiers` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `dag_lca` |  | 17 / 11 / 0 / 0 |
+| `dag_lca_check` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `dag_tree_lca` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+
 ## twomode
 
 | Measure | definition | igraph | networkx |
@@ -607,11 +841,18 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 
 ## Documented convention differences
 
+- `dag_lca` vs networkx on `davis_twomode` (listed): index 509: engine 13.0, networkx 16.0
 - `assortativity_nominal_networkx` vs networkx on `empty` (edge_case): item 0: engine (), networkx 0.0
 - `modularity` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
 - `modularity_resolution` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity_resolution` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
+- `cx_dispersion` vs networkx on `gnp_dir_dense` (directed): index 144: engine 0.125, networkx 0.0
+- `cx_dispersion_raw` vs networkx on `gnp_dir_dense` (directed): index 1: engine 0.0, networkx 1.0
+- `cx_dispersion_params` vs networkx on `gnp_dir_dense` (directed): index 427: engine 0.9473684210526315, networkx 0.42105263157894735
+- `dag_lca` vs networkx on `gnp_dir_sparse` (listed): index 1129: engine 4.0, networkx 9.0
+- `dag_lca` vs networkx on `gnp_und_sparse` (listed): index 3007: engine 4.0, networkx 48.0
+- `dag_lca` vs networkx on `karate` (listed): index 552: engine 23.0, networkx 24.0
 - `avg_nbr_deg` vs networkx on `multi_loops_dir` (multi_edges): index 13: engine 6.0, networkx 3.0
 - `avg_nbr_deg_in_in` vs networkx on `multi_loops_dir` (multi_edges): index 2: engine 4.666666666666667, networkx 2.6666666666666665
 - `avg_nbr_deg_total` vs networkx on `multi_loops_dir` (multi_edges): index 16: engine 7.75, networkx 4.5
@@ -621,6 +862,11 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `avg_deg_conn_out_out` vs networkx on `multi_loops_dir` (multi_edges): item 1: engine (2.0, 4.2), networkx (2.0, 3.6)
 - `avg_deg_conn_in_in` vs networkx on `multi_loops_dir` (multi_edges): item 3: engine (3.0, 3.8333333333333335), networkx (3.0, 2.5)
 - `avg_deg_conn_subset` vs networkx on `multi_loops_dir` (multi_edges): item 4: engine (8.0, 3.625), networkx (8.0, 2.125)
+- `cx_bc_all_distinct` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.562335703512176, networkx 53.91666666666667
+- `cx_ebc_all_distinct` vs networkx on `multi_loops_dir` (multi_edges): index 55: engine 10.771428571428572, networkx 15.666666666666666
+- `cx_dispersion` vs networkx on `multi_loops_dir` (directed, loops): index 14: engine 0.6666666666666666, networkx 0.0
+- `cx_dispersion_raw` vs networkx on `multi_loops_dir` (directed, loops): index 14: engine 2.0, networkx 0.0
+- `cx_dispersion_params` vs networkx on `multi_loops_dir` (directed, loops): index 50: engine 8.0, networkx 5.555555555555555
 - `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.56233570351218, networkx 53.91666666666667
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.1390711570278134, networkx 0.15765107212475635
 - `core_shell` vs networkx on `multi_loops_dir` (loops, multi_edges): index 13: engine 16, networkx 15.0
@@ -637,6 +883,11 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `avg_nbr_deg_subset` vs networkx on `multi_loops_und` (multi_edges): index 1: engine 12.0, networkx 8.25
 - `avg_deg_conn` vs networkx on `multi_loops_und` (multi_edges): item 2: engine (4.0, 10.5), networkx (4.0, 8.625)
 - `avg_deg_conn_subset` vs networkx on `multi_loops_und` (multi_edges): item 0: engine (4.0, 10.5), networkx (4.0, 8.625)
+- `cx_bc_all_distinct` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909125, networkx 25.2452380952381
+- `cx_ebc_all_distinct` vs networkx on `multi_loops_und` (multi_edges): index 42: engine 6.757435545415085, networkx 8.586904761904762
+- `cx_dispersion` vs networkx on `multi_loops_und` (loops): index 8: engine 0.3333333333333333, networkx 1.0
+- `cx_dispersion_raw` vs networkx on `multi_loops_und` (loops): index 8: engine 1.0, networkx 3.0
+- `cx_dispersion_params` vs networkx on `multi_loops_und` (loops): index 8: engine 1.1428571428571428, networkx 4.571428571428571
 - `label_prop_semisync` vs networkx on `multi_loops_und` (loops, multi_edges): index 10: engine 4.0, networkx 0.0
 - `label_prop_quality_retention` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.2753848379629629, networkx 0.13746527777777778
 - `label_prop_quality_fast` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.17135223765432098, networkx 0.057544367283950626
@@ -645,6 +896,8 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.1211123145959598, networkx 0.14763297131718187
 - `core_shell` vs networkx on `multi_loops_und` (loops, multi_edges): length 16 vs 19
 - `core_crust` vs networkx on `multi_loops_und` (loops, multi_edges): length 4 vs 1
+- `cyc_basis` vs networkx on `multi_loops_und` (multi_edges): length 54 vs 34
+- `cyc_min_basis_weights` vs networkx on `multi_loops_und` (multi_edges): length 54 vs 34
 - `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
 - `effective_size` vs networkx on `multi_loops_und` (loops): item 0: engine 3.1666666666666665, networkx 3.0416666666666665
 - `efficiency` vs networkx on `multi_loops_und` (loops): item 0: engine 0.7916666666666666, networkx 0.7604166666666666
@@ -653,6 +906,11 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `edge_betweenness` vs networkx on `multi_loops_und` (multi_edges): index 42: engine 6.757435545415085, networkx 8.586904761904762
 - `edge_betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 42: engine 0.03556545023902676, networkx 0.04519423558897243
 - `coreness_all` vs networkx on `multi_loops_und` (loops, multi_edges): index 3: engine 5.0, networkx 3.0
+- `cx_dispersion` vs networkx on `real_weights_dir` (directed): index 18: engine 0.0, networkx 0.5
+- `cx_dispersion_raw` vs networkx on `real_weights_dir` (directed): index 18: engine 0.0, networkx 1.0
+- `cx_dispersion_params` vs networkx on `real_weights_dir` (directed): index 121: engine 8.0, networkx 5.555555555555555
+- `dag_lca` vs networkx on `real_weights_dir` (listed): index 702: engine 5.0, networkx 8.0
+- `dag_lca` vs networkx on `real_weights_und` (listed): index 705: engine 3.0, networkx 18.0
 - `assortativity_nominal_networkx` vs networkx on `single_node` (edge_case): item 0: engine (), networkx 0.0
 - `modularity` vs definition on `single_node` (edge_case): index 0: engine nan, definition nan
 - `modularity` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
@@ -666,7 +924,17 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `louvain_quality_resolution` vs networkx on `single_node` (edge_case): index 0: engine nan, networkx 0.0
 - `density` vs networkx on `single_node` (edge_case): index 0: engine -1.0, networkx 0.0
 - `density_simple` vs networkx on `single_node` (edge_case): index 0: engine -1.0, networkx 0.0
+- `dag_lca` vs networkx on `southern_women` (listed): index 509: engine 13.0, networkx 16.0
+- `dag_lca` vs networkx on `twomode_random` (listed): index 220: engine 5.0, networkx 12.0
+- `dag_lca` vs networkx on `uniform_weights` (listed): index 797: engine 2.0, networkx 9.0
+- `cx_dispersion` vs networkx on `weighted_dir` (directed): index 169: engine 0.5, networkx 0.0
+- `cx_dispersion_raw` vs networkx on `weighted_dir` (directed): index 169: engine 1.0, networkx 0.0
+- `cx_dispersion_params` vs networkx on `weighted_dir` (directed): index 169: engine 1.6, networkx 0.4
+- `cx_reaching_local_weighted` vs networkx on `weighted_dir` (listed): index 30: engine 1.2380600009788092, networkx 1.2255704008221995
+- `cx_reaching_global_weighted` vs networkx on `weighted_dir` (listed): index 0: engine 0.23619909427369737, networkx 0.23697534957100067
 - `betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 13: engine 328.5, networkx 331.0
 - `edge_betweenness_weighted_strength` vs networkx on `weighted_dir` (integer_weights): index 38: engine 49.5, networkx 47.5
+- `dag_lca` vs networkx on `weighted_dir` (listed): index 1018: engine 5.0, networkx 12.0
 - `betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 37: engine 114.16666666666666, networkx 115.25
 - `edge_betweenness_weighted_strength` vs networkx on `weighted_und` (integer_weights): index 68: engine 45.5, networkx 46.75
+- `dag_lca` vs networkx on `weighted_und` (listed): index 969: engine 1.0, networkx 11.0

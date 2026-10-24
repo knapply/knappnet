@@ -1,0 +1,283 @@
+# Center, periphery, barycenter; the Wiener, Schultz, Gutman, and
+# hyper-Wiener indices; harmonic diameter; global and local efficiency; and
+# closeness vitality. Format: see ../README.md; engine runners in
+# ../bindings/distance_measures.py.
+#
+# Node sets are compared as sorted node indices (empty when a measure needs
+# a strongly connected network). NaN is written as -999, infinity as -1000,
+# and minus infinity as -1001, by the runner and every oracle.
+#
+# Oracles: `definition` is distance_measures_definition_oracle.py (exact
+# distances by Floyd-Warshall in rational arithmetic); `networkx` is
+# distance_measures_networkx_oracle.py.
+
+dm_center:
+  engine: {fn: dm_center}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "nodes of smallest eccentricity from exact distances; empty unless strongly connected"
+    networkx:
+      call: "nx.center(G) (empty when NetworkX raises on a disconnected network)"
+
+dm_center_weighted:
+  engine: {fn: dm_center, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_center with weighted lengths"
+    networkx:
+      call: "nx.center(G, weight = 'weight')"
+
+dm_center_reachable:
+  engine: {fn: dm_center, reachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "smallest eccentricity over the nodes each node reaches"
+
+dm_periphery:
+  engine: {fn: dm_periphery}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "nodes of largest eccentricity; empty unless strongly connected"
+    networkx:
+      call: "nx.periphery(G)"
+
+dm_periphery_weighted:
+  engine: {fn: dm_periphery, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_periphery with weighted lengths"
+    networkx:
+      call: "nx.periphery(G, weight = 'weight')"
+
+dm_periphery_reachable:
+  engine: {fn: dm_periphery, reachable: ignore}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "largest eccentricity over the nodes each node reaches"
+
+dm_barycenter:
+  engine: {fn: dm_barycenter, tie: exact}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "nodes of smallest total distance; empty unless strongly connected"
+    networkx:
+      call: "nx.barycenter(G) (empty on NetworkXNoPath)"
+
+dm_barycenter_weighted:
+  engine: {fn: dm_barycenter, tie: exact, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_barycenter with weighted lengths"
+    networkx:
+      call: "nx.barycenter(G, weight = 'weight')"
+
+dm_wiener:
+  engine: {fn: dm_index, index: wiener}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum of exact distances over unordered (directed: ordered) pairs; Inf unless strongly connected"
+    networkx:
+      call: "nx.wiener_index(G)"
+
+dm_wiener_weighted:
+  engine: {fn: dm_index, index: wiener, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_wiener with weighted lengths"
+    networkx:
+      call: "nx.wiener_index(G, weight = 'weight')"
+
+dm_wiener_strength:
+  engine: {fn: dm_index, index: wiener, weighted: true, weights_as: strength}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_wiener with lengths 1/w"
+
+dm_schultz:
+  engine: {fn: dm_index, index: schultz}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over unordered pairs of (deg u + deg v) d(u, v)"
+    networkx:
+      call: "nx.schultz_index(G)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's schultz_index, gutman_index, and hyper_wiener_index are
+        not implemented for multigraphs.
+
+dm_schultz_weighted:
+  engine: {fn: dm_index, index: schultz, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_schultz with weighted distances and vertex degrees"
+    networkx:
+      call: "nx.schultz_index(G, weight = 'weight')"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's schultz_index, gutman_index, and hyper_wiener_index are
+        not implemented for multigraphs.
+
+dm_gutman:
+  engine: {fn: dm_index, index: gutman}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over unordered pairs of deg u deg v d(u, v)"
+    networkx:
+      call: "nx.gutman_index(G)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's schultz_index, gutman_index, and hyper_wiener_index are
+        not implemented for multigraphs.
+
+dm_gutman_weighted:
+  engine: {fn: dm_index, index: gutman, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_gutman with weighted distances and vertex degrees"
+    networkx:
+      call: "nx.gutman_index(G, weight = 'weight')"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's schultz_index, gutman_index, and hyper_wiener_index are
+        not implemented for multigraphs.
+
+dm_hyper_wiener:
+  engine: {fn: dm_index, index: hyper_wiener}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(1/2) sum over unordered pairs of d + d^2 (Randic 1993; Klein, Lukovits, and Gutman 1995)"
+
+dm_hyper_wiener_networkx:
+  engine: {fn: dm_index, index: hyper_wiener_networkx}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over unordered pairs of d + d^2"
+    networkx:
+      call: "nx.hyper_wiener_index(G)"
+      undefined_when: [multi_edges]
+      undefined_reason: >-
+        NetworkX's schultz_index, gutman_index, and hyper_wiener_index are
+        not implemented for multigraphs.
+
+dm_harmonic_diameter:
+  engine: {fn: dm_index, index: harmonic_diameter}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "n(n - 1) / sum over ordered pairs of 1/d"
+    networkx:
+      call: "nx.harmonic_diameter(G)"
+
+dm_harmonic_diameter_weighted:
+  engine: {fn: dm_index, index: harmonic_diameter, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_harmonic_diameter with weighted lengths"
+    networkx:
+      call: "nx.harmonic_diameter(G, weight = 'weight')"
+
+dm_global_efficiency:
+  engine: {fn: dm_index, index: global_efficiency}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "mean of 1/d over ordered pairs of distinct nodes"
+    networkx:
+      call: "nx.global_efficiency(G)"
+      undefined_when: [directed]
+      undefined_reason: >-
+        NetworkX's global_efficiency is not implemented for directed graphs.
+
+dm_global_efficiency_weighted:
+  engine: {fn: dm_index, index: global_efficiency, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_global_efficiency with weighted lengths"
+
+dm_local_efficiency:
+  engine: {fn: dm_local_efficiency, loop_is_neighbor: true}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "mean over nodes of the global efficiency of the subgraph induced by its neighbors, a looped node among its own neighbors"
+    networkx:
+      call: "nx.local_efficiency(G)"
+
+dm_local_efficiency_definition:
+  engine: {fn: dm_local_efficiency}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_local_efficiency with neighbors other than the node itself"
+
+dm_closeness_vitality:
+  engine: {fn: dm_closeness_vitality}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Wiener index of G minus that of G without the node, from exact distances"
+    networkx:
+      call: "nx.closeness_vitality(G) (an error is undefined)"
+
+dm_closeness_vitality_weighted:
+  engine: {fn: dm_closeness_vitality, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as dm_closeness_vitality with weighted lengths"
+    networkx:
+      call: "nx.closeness_vitality(G, weight = 'weight')"
