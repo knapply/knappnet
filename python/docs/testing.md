@@ -25,6 +25,10 @@ NETWORKX_TEST_BACKEND=knappnet NETWORKX_FALLBACK_TO_NX=True \
     python -m pytest --pyargs networkx -p no:cacheprovider
 ```
 
+`tools/python_check.sh` does all of this in a fresh virtual environment
+(`--networkx 'networkx==3.4.2' --python 3.10` tests other versions), and
+is the `python` step of `tools/local_check.sh`.
+
 Tests that check behaviour knappnet deliberately does not share (see
 [differences](differences.md)) are marked as expected failures by the
 backend's `on_start_tests` hook (`knappnet/_testing.py`).
