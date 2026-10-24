@@ -435,3 +435,100 @@ conservative.
   m = 2000: 2.6 s on 1 thread, 0.61 s on 8. NetworkX `minimum_cycle_basis`
   n = 300: 85 s vs 0.09 s (~900x). Further: Mehlhorn and Michail's
   O(m^2 n / log n) variants and isometric-cycle candidate sets.
+
+## Link prediction, hashing, similarity, isomorphism, cores, mixing, cuts, matching, colouring, rewiring
+
+Measured with `cargo run --release --example bench_similarity` (median of
+3) on the btower bench runner (8 dedicated CPUs; "t=8" is every core), and,
+for the NetworkX ratios, the engine through the C ABI and NetworkX 3.7 on
+the same random graphs on the 2-vCPU VM, one thread each. Sizes: G(n, m)
+random graphs and Barabasi-Albert graphs (BA, 5 edges per node).
+
+### Per kernel
+
+- Link prediction for given pairs: one intersection of sorted neighbour
+  rows per pair (bit rows with popcount on dense graphs, through
+  `bitset::NeighborSets`); 10^6 pairs on n = 10^5, m = 5 x 10^5: 0.093 s,
+  0.016 s at t=8 (fill_chunks over the pairs; results per pair, so any
+  thread count gives the same bits). For every non-edge each node's
+  two-step neighbourhood is tallied once (common-neighbour counts and the
+  method's sums in increasing neighbour order, bitwise equal to the pair
+  path), so a row costs the sum of the neighbours' degrees plus n instead
+  of one intersection per pair: Jaccard over all 4.4 x 10^6 non-edges of
+  n = 3000, m = 6 x 10^4 went from 3.7 s to 0.09 s on the VM (0.045 s,
+  0.010 s at t=8 on btower); NetworkX 49 s (~350x). The output is n^2/2
+  pairs, so this is output-bound beyond n ~ 10^5; common-neighbour
+  centrality adds one BFS per node (O(n m)).
+- Weisfeiler-Lehman graph hash (NetworkX-exact strings, BLAKE2b):
+  n = 10^5, m = 5 x 10^5: 0.25 s (t=8 0.23 s before removing a string
+  allocation per neighbour, which halved the time on the VM and let the
+  per-node hashing scale; the sort of each round's labels and the initial
+  adjacency remain sequential). NetworkX 1.34 s on the VM vs 0.46 s.
+  n = 4 x 10^5, m = 2 x 10^6: 1.5 s, 276 MB (the labels are 2 x 16-byte
+  hex strings per node and round, as NetworkX's are). Integer colour
+  refinement (`wl::Refiner`, shared with CATREGE) avoids strings entirely
+  and is the kernel for graph kernels and incremental relabelling.
+- SimRank, dense n x n iteration with sparse W: O(iterations n m);
+  n = 2000, m = 10^4: 0.38 s, 0.11 s at t=8 (rows in parallel, each entry
+  in a fixed order); 97 MB (three n^2 matrices). NetworkX (NumPy, dense
+  W) 8.9 s vs 0.68 s on the VM. Beyond n ~ 2 x 10^4 the n^2 output is the
+  limit; single-source or top-k SimRank (random-walk estimators) would be
+  the scalable variants.
+- VF2++: about 20 ns per candidate pair tested; all 10 400 labelled
+  4-cycle monomorphisms of G(10^5, 5 x 10^5) in 1.0 s (btower), 2.1 s on
+  the VM. The search is sequential; a parallel version would split the
+  candidates of the first node (results are a set, so the order could be
+  restored by sorting).
+- Truss numbers (support peeling with a bucket queue, O(m^1.5)): BA
+  n = 2 x 10^5, m = 10^6: 0.48 s, 61 MB; 4 x 10^6 edges: 2.7 s, 242 MB.
+  NetworkX `k_truss(G, 4)` (one k, repeated scans) 8.9 s vs 0.88 s (all k)
+  on the VM. Supports could be computed in parallel by edge.
+- Onion layers (queue of nodes at or below the current core): 14 ms for
+  BA m = 10^6, 0.11 s for 4 x 10^6; NetworkX re-sorts the remaining
+  degrees every layer: 1.9 s vs 33 ms (~60x).
+- Square clustering (NetworkX's closed form, per node in parallel with a
+  marker array): BA n = 2 x 10^5: 2.9 s, 0.41 s at t=8 (7x); 4 x 10^6
+  edges: 26.5 s, 4.0 s at t=8. Cost is the sum over nodes of the two-step
+  neighbourhood, dominated by hubs. NetworkX on BA n = 2 x 10^4: 3.6 s vs
+  0.22 s.
+- Mixing: degree pairs, assortativity, average neighbour degree, average
+  degree connectivity, and cut measures are single passes over the arcs
+  (BA m = 10^6: 7 to 22 ms). NetworkX degree assortativity on the same
+  graph: 4.0 s vs 26 ms (~150x).
+- Greedy colouring: DSATUR with a lazy max-heap keyed by (saturation,
+  degree, -index), O((n + m) log n), reproducing NetworkX's colouring;
+  BA n = 2 x 10^5: 0.27 s. NetworkX's DSATUR rebuilds the saturation of
+  every uncoloured node at each step (O(n^2)): n = 5000 takes 24 s vs
+  6.5 ms (identical colourings), and n = 2 x 10^5 did not finish in an
+  hour. Smallest last: 0.18 s; NetworkX 6.9 s vs 0.34 s.
+- Maximum-weight matching (Edmonds' blossom algorithm in Galil's O(n^3)
+  form): n = 2000, m = 6000: 0.12 s vs NetworkX 4.3 s (~37x); n = 2 x
+  10^4, m = 6 x 10^4: 6.6 s. Each stage resets labels, best edges, and
+  allowed-edge flags over all nodes and edges, and each dual adjustment
+  scans every vertex and blossom; touched lists for the resets and
+  priority queues for the four kinds of dual step (Gabow 1990's
+  O(n (m + n log n)) organization) are the known remedy.
+- Double edge swaps on `rewiring::SwapGraph` (edge hash for O(1) tests,
+  position maps for O(1) removal, degree-proportional draws from the edge
+  ends): 10^6 swaps on n = 10^5, m = 5 x 10^5: 1.08 s (63 MB); NetworkX
+  10^5 swaps 1.5 s vs 0.38 s for 10^5 on the VM. Swaps are inherently
+  sequential; reference graphs and the small-world means run one
+  reference per thread (streams (seed, r)), so sigma, omega, and the
+  normalized rich club scale with the number of references.
+
+### Primitives worth sharing (added in this round)
+
+- `bitset::NeighborSets`: distinct neighbour rows plus optional bit rows
+  with `common_count` and `for_each_common`; the basis for every pair
+  similarity (link prediction now, Jaccard/cosine node similarity and
+  graph kernels next).
+- `wl::Refiner`: colour refinement over any neighbourhood with set or
+  multiset aggregation and a dictionary that persists across rounds and
+  graphs; CATREGE now runs on it, and it is ready for WL subtree kernels
+  and for refining incrementally after edge insertions (only nodes within
+  r hops of a change can change colour in r rounds).
+- `rewiring::SwapGraph`: a mutable simple graph with constant-time edge
+  tests, insertions, and removals and uniform neighbour draws; the
+  natural store for streaming edge updates and for MCMC null models.
+- `isomorphism::Matcher`: a resumable search (the C ABI hands out
+  mappings in caller-sized batches), so very large enumerations stream.

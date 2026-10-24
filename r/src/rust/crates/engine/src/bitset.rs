@@ -22,6 +22,10 @@
 //! Searches follow a [`View`] of a graph: its out-arcs, its in-arcs, or
 //! both (direction ignored), read from the graph's own adjacency lists, so
 //! no reversed or symmetrized copy of the graph is built.
+//!
+//! [`NeighborSets`] holds every node's distinct neighbours as sorted rows
+//! and, on dense networks, as bit rows, for set measures over pairs of
+//! nodes (common neighbours, unions, link prediction).
 
 use crate::graph::{Csr, Graph};
 use crate::metrics::degree::DegreeMode;
