@@ -415,3 +415,29 @@ takes precedence.
 8. A DuckDB extension, then Arrow-based connectors for data warehouses.
 9. Temporal analysis with node-aligned window measures.
 10. Python package with notebooks.
+
+## Fitting into existing workflows
+
+The goal is that adopting knappnet changes as little of an existing
+script as possible, and that every switch is backed by published
+evidence (identical results from the validation suite, and timings).
+
+- Every function accepts igraph, network, tbl_graph, sfnetwork, and
+  matrix objects directly and can return results in the input's node
+  order, or write them back as attributes of the input object.
+- Convention modes that reproduce igraph, sna, and UCINET values exactly
+  (`conventions =`), documented by the validation report.
+- tidygraph verbs that work inside `mutate()`.
+- Model interfaces that accept the incumbent specifications: ergm
+  formulas, and RSiena data and effects objects (with RSiena's own
+  estimator driven by the knappnet simulator where its interface allows).
+- Python: a NetworkX backend (NetworkX 3 backend dispatch), so existing
+  code speeds up without edits; pandas, Polars, and Arrow inputs;
+  python-igraph objects accepted directly.
+- File formats used by desktop tools: Pajek, UCINET DL and ##h/##d,
+  GEXF, GraphML, DyNetML (ORA).
+- A migration helper that reads an R or Python script and lists the
+  knappnet equivalent of each igraph, sna, network, or NetworkX call.
+- Evidence: "Coming from igraph / statnet / RSiena / NetworkX / UCINET"
+  articles with side-by-side code, identical output, and timing tables;
+  textbook chapter replications; a public benchmark page.
