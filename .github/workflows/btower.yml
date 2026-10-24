@@ -24,12 +24,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run
+        env:
+          COMMAND: ${{ inputs.command }}
         run: |
           set -o pipefail
-          bash -c "${{ inputs.command }}" 2>&1 | tee btower.log
+          bash -c "$COMMAND" 2>&1 | tee btower.log
       - name: Annotate
         if: always()
-        run: LEVEL=notice tools/ci_annotate.sh btower btower.log || true
+        # The last 300 lines as notices of 60 lines each, readable from the
+        # run summary and the check-run annotations API.
+        run: |
+          tail -n 300 btower.log | split -l 60 - part.
+          for f in part.*; do
+            printf '::notice title=btower %s::%s\n' "$f" "$(sed 's/%/%25/g' "$f" | awk 'BEGIN{ORS="%0A"}1')"
+          done
       - uses: actions/upload-artifact@v4
         if: always() && inputs.artifact != ''
         with:
