@@ -9,16 +9,17 @@
 Needs the Python package installed (python -m pip install ./python); the
 other backends are optional (tools/bench_backends.sh installs them): knappnet,
 parallel (nx-parallel), graphblas (graphblas-algorithms), and cugraph
-(nx-cugraph, needs a GPU). One table row per function, graph, and backend:
+(nx-cugraph, needs a GPU). One table row per function and graph; the
+networkx column is NetworkX's own implementation (backend="networkx"), and
+each backend column gives first / cached / convert seconds and, in
+brackets, NetworkX's time over the cached time:
 
-- networkx: NetworkX's own implementation (backend="networkx");
 - first: the backend on a graph that has not been converted yet (conversion
   plus the call);
 - cached: the same call again, reusing the conversion NetworkX caches in
   G.__networkx_cache__;
 - convert: the backend's conversion alone, where it exposes one;
-- x cached, x first: NetworkX's time divided by the backend's;
-- agree: the backend's result matches NetworkX's.
+- DISAGREES marks a result that differs from NetworkX's.
 
 A backend that is not installed, does not implement the function, or does
 not take the arguments is reported as n/a.
@@ -321,6 +322,8 @@ def main():
                         help="backends to time next to NetworkX itself "
                              f"(default: {' '.join(EXTRA_BACKENDS)}); one that is not "
                              "installed, or does not implement a function, is reported n/a")
+    parser.add_argument("--part", default=None, metavar="I/N",
+                        help="run only every N-th function, starting at I (to split a run)")
     args = parser.parse_args()
     budget = args.budget or (5.0 if args.quick else 60.0)
     import knappnet  # noqa: F401  (fails early if the package is missing)
@@ -333,13 +336,19 @@ def main():
           f"Python {platform.python_version()}, {os.cpu_count()} CPUs, "
           f"knappnet threads={nx.config.backends.knappnet.threads or 'all'}); "
           f"NetworkX budget {budget:g} s; backends: {', '.join(versions)}")
-    print("| function | graph | n | m | backend | first s | cached s | convert s | "
-          "x cached | x first | agree |")
-    print("|" + "---|" * 11)
+    print("| function | graph | n | m | networkx s | "
+          + " | ".join(f"{b} first / cached / convert s (x cached)" for b in args.backends)
+          + " |")
+    print("|" + "---|" * (5 + len(args.backends)))
     graphs = {}
     timed_out = {}  # function -> (n, m) of the graph on which NetworkX ran out of time
     failures = 0
-    for name, (fn, directed, limits) in FUNCTIONS.items():
+    names = list(FUNCTIONS)
+    if args.part:
+        index, parts = (int(x) for x in args.part.split("/"))
+        names = names[index::parts]
+    for name in names:
+        fn, directed, limits = FUNCTIONS[name]
         if args.only and not any(o in name for o in args.only):
             continue
         for kind, n, deg in tiers(args.quick):
@@ -351,7 +360,6 @@ def main():
             G = graphs[key]
             size = (G.number_of_nodes(), G.number_of_edges())
             weight = "weight" if "weighted" in name or name == "pagerank" else None
-            head = f"| {name} | {kind}{' dir.' if directed else ''} | {size[0]} | {size[1]} |"
             G.__networkx_cache__.clear()
             fail = timed_out.get(name)
             if fail and size[0] >= fail[0] and size[1] >= fail[1]:
@@ -360,40 +368,38 @@ def main():
                 t_nx, res_nx = run_limited(lambda: materialize(fn(G, "networkx")), budget)
                 if t_nx is None and not fail:
                     timed_out[name] = size
-            print(f"{head} networkx | {f'{t_nx:.3g}' if t_nx else f'>{budget:g}'} | - | - "
-                  f"| 1x | 1x | - |", flush=True)
+            cells = []
             for backend in args.backends:
                 if not installed(backend) or not implements(backend, name):
-                    print(f"{head} {backend} | n/a | n/a | n/a | n/a | n/a | n/a |", flush=True)
+                    cells.append("n/a")
                     continue
                 t_conv = conversion_time(backend_converter(backend), G, weight)
+                conv = fmt(t_conv) if t_conv else "-"
                 G.__networkx_cache__.clear()
                 try:
                     t_first, res = run_limited(lambda: materialize(fn(G, backend)), budget)
                     if t_first is None:
-                        print(f"{head} {backend} | >{budget:g} | - | "
-                              f"{fmt(t_conv) if t_conv else '-'} | - | - | - |", flush=True)
+                        cells.append(f">{budget:g} / - / {conv}")
                         continue
                     t_cached = median_time(lambda: materialize(fn(G, backend)))
                 except Exception:  # an argument or input the backend does not take
-                    print(f"{head} {backend} | n/a | n/a | n/a | n/a | n/a | n/a |", flush=True)
+                    cells.append("n/a")
                     continue
                 if t_nx is None:
-                    ok = "-"
-                    sp_c = f">{budget / t_cached:,.0f}x" if t_cached < budget else "-"
-                    sp_f = f">{budget / t_first:,.0f}x" if t_first < budget else "-"
+                    sp = f">{budget / t_cached:,.0f}x" if t_cached < budget else "-"
+                    mark = ""
                 else:
                     if name in LOOSE:
                         good = abs(res - res_nx) <= LOOSE[name]
                     else:
                         good = agree(res, res_nx)
-                    ok = "yes" if good else "NO"
                     failures += not good
-                    sp_c = f"{t_nx / t_cached:,.1f}x"
-                    sp_f = f"{t_nx / t_first:,.1f}x"
-                print(f"{head} {backend} | {fmt(t_first)} | {fmt(t_cached)} | "
-                      f"{fmt(t_conv) if t_conv else '-'} | {sp_c} | {sp_f} | {ok} |",
-                      flush=True)
+                    sp = f"{t_nx / t_cached:,.1f}x"
+                    mark = "" if good else " DISAGREES"
+                cells.append(f"{fmt(t_first)} / {fmt(t_cached)} / {conv} ({sp}){mark}")
+            nx_s = fmt(t_nx) if t_nx else f">{budget:g}"
+            print(f"| {name} | {kind}{' dir.' if directed else ''} | {size[0]} | {size[1]} "
+                  f"| {nx_s} | " + " | ".join(cells) + " |", flush=True)
     return 1 if failures else 0
 
 

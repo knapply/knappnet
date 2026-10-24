@@ -23,4 +23,4 @@ case "$KIND" in
   *) echo "usage: $0 cpu|gpu [bench options]" >&2; exit 2 ;;
 esac
 "$PY" -m pip list 2>/dev/null | grep -i -E "^(networkx|nx-|graphblas|python-graphblas|cugraph|knappnet)" || true
-NX_CUGRAPH_AUTOCONFIG=False "$PY" bench/networkx_backend.py --backends $BACKENDS "$@"
+NX_CUGRAPH_AUTOCONFIG=False "$PY" bench/networkx_backend.py --backends $BACKENDS "$@" 2>/dev/null
