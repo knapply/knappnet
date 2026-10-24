@@ -142,7 +142,9 @@ FUNCTIONS = {
         lambda G, b: nx.edge_betweenness_centrality(G, backend=b), False, BETWEENNESS),
     "closeness_centrality": (lambda G, b: nx.closeness_centrality(G, backend=b), False, {}),
     "harmonic_centrality": (lambda G, b: nx.harmonic_centrality(G, backend=b), False, {}),
-    "pagerank": (lambda G, b: nx.pagerank(G, tol=1e-10, backend=b), False, {}),
+    # NetworkX stops when the L1 change is below n * tol; tol=1e-13 gives
+    # agreement to about 1e-7 relative with the engine (which solves to 1e-12).
+    "pagerank": (lambda G, b: nx.pagerank(G, tol=1e-13, max_iter=10000, backend=b), False, {}),
     "eigenvector_centrality_numpy": (
         lambda G, b: nx.eigenvector_centrality_numpy(G, backend=b), False, {}),
     "hits": (lambda G, b: nx.hits(G, max_iter=10000, tol=1e-10, backend=b), True, {}),
