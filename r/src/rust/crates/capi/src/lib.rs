@@ -20,8 +20,10 @@ use engine::metrics::degree::{degree, strength, DegreeMode};
 use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
+mod assortativity;
 mod communities;
 mod cores;
+mod cut_measures;
 mod cyber;
 mod descriptive;
 mod files;
@@ -29,6 +31,7 @@ mod frame;
 mod groups;
 mod isomorphism;
 mod layout;
+mod matching;
 mod positions;
 mod qap;
 mod roles;

@@ -632,6 +632,83 @@ int32_t net_group_shares(const GraphHandle *h, const int64_t *groups,
                          int64_t k, int32_t direction, double *out,
                          char *err, size_t err_len);
 
+/* NetworkX-style mixing (its assortativity package): degree kinds x, y,
+ * source, target are 1 = out, 2 = in, 3 = in+out (ignored for undirected
+ * graphs; degrees count parallel edges and an undirected loop twice);
+ * nodes (n_nodes values) restricts to a subset, NULL for all. Pairs run
+ * along every arc leaving a node of the subset (to a node of the subset
+ * for degrees, to any node for attributes, as NetworkX does). */
+
+/* Degree mixing counts: the distinct degrees met, increasing, into
+ * values[0..*k) and pair counts into counts[i * k + j] (row-major k by
+ * k). When *k > cap only *k is written; call again with cap >= *k. */
+int32_t net_degree_mixing(const GraphHandle *h, int32_t x, int32_t y,
+                          int32_t weighted, const int64_t *nodes,
+                          int64_t n_nodes, int64_t cap, double *values,
+                          double *counts, int64_t *k, char *err,
+                          size_t err_len);
+
+/* Attribute mixing counts of node values labels (n values), as for
+ * net_degree_mixing. */
+int32_t net_attribute_mixing(const GraphHandle *h, const double *labels,
+                             const int64_t *nodes, int64_t n_nodes,
+                             int64_t cap, double *values, double *counts,
+                             int64_t *k, char *err, size_t err_len);
+
+/* Assortativity over a subset as NetworkX's coefficients: coefficient 0 =
+ * degree (x, y, weighted), 1 = attribute (nominal values), 2 = numeric
+ * values (pairs with a value outside the subset's values dropped, as
+ * NetworkX does). NaN when undefined. */
+int32_t net_assortativity_subset(const GraphHandle *h, int32_t coefficient,
+                                 int32_t x, int32_t y, int32_t weighted,
+                                 const double *values, const int64_t *nodes,
+                                 int64_t n_nodes, double *out, char *err,
+                                 size_t err_len);
+
+/* Average neighbour degree (NetworkX's average_neighbor_degree) of the
+ * subset's nodes, in order, into out (n_nodes values, or n). */
+int32_t net_average_neighbor_degree(const GraphHandle *h, int32_t source,
+                                    int32_t target, int32_t weighted,
+                                    const int64_t *nodes, int64_t n_nodes,
+                                    double *out, char *err, size_t err_len);
+
+/* Average degree connectivity (NetworkX's average_degree_connectivity):
+ * distinct source degrees, increasing, into degrees[0..*count) and k_nn
+ * into values (both hold n). Source in+out of a directed graph follows
+ * successors only, as NetworkX does. */
+int32_t net_average_degree_connectivity(const GraphHandle *h, int32_t source,
+                                        int32_t target, int32_t weighted,
+                                        const int64_t *nodes, int64_t n_nodes,
+                                        double *degrees, double *values,
+                                        int64_t *count, char *err,
+                                        size_t err_len);
+
+/* Cut measures between node sets s (ns nodes) and t (nt nodes; NULL for
+ * the complement of s), as NetworkX's algorithms.cuts: out[0..9) = cut
+ * size (both directions in a directed graph), volume of S, volume of T
+ * (out-degrees in a directed graph), normalized cut size, conductance,
+ * edge expansion, mixing expansion (cut / 2m), node expansion, boundary
+ * expansion. weighted != 0 adds weights; IEEE inf or NaN where NetworkX
+ * divides by zero. */
+int32_t net_cut_measures(const GraphHandle *h, const int64_t *s, int64_t ns,
+                         const int64_t *t, int64_t nt, int32_t weighted,
+                         double *out, char *err, size_t err_len);
+
+/* Square clustering of every node (NetworkX's square_clustering;
+ * successor sets in a directed graph) into out[0..n). */
+int32_t net_square_clustering(const GraphHandle *h, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Generalized degree (NetworkX's generalized_degree): node v's entries
+ * are offsets[v] .. offsets[v + 1] of ks (a triangle count k, increasing)
+ * and counts (neighbours sharing k triangles with v). *total receives the
+ * number of entries (at most 2m); when it exceeds cap only *total is
+ * written. */
+int32_t net_generalized_degree(const GraphHandle *h, int32_t threads,
+                               int64_t *offsets, int64_t *ks, int64_t *counts,
+                               int64_t cap, int64_t *total, char *err,
+                               size_t err_len);
+
 /* ---- Ego networks and two-mode networks ---------------------------------
  * types holds one value per node, 0 for the first mode and 1 for the
  * second; two-mode measure 0 = degree, 1 = closeness, 2 = betweenness;
@@ -752,6 +829,50 @@ int32_t net_k_truss(const GraphHandle *h, int64_t k, int64_t *edges,
  * undirected graph, self-loops ignored, into out[0..n). */
 int32_t net_onion_layers(const GraphHandle *h, int64_t *out, char *err,
                          size_t err_len);
+
+/* Matchings of the undirected graph (self-loops never matched; the best
+ * copy of parallel edges stands for them): matched edge indices,
+ * increasing, into edges[0..*found) (edges holds m). */
+
+/* Maximum-weight matching (Edmonds' blossom algorithm); max_cardinality
+ * != 0 maximizes weight among the largest matchings. */
+int32_t net_max_weight_matching(const GraphHandle *h, int32_t weighted,
+                                int32_t max_cardinality, int64_t *edges,
+                                int64_t *found, char *err, size_t err_len);
+
+/* Least-weight matching among the largest (NetworkX's
+ * min_weight_matching). */
+int32_t net_min_weight_matching(const GraphHandle *h, int32_t weighted,
+                                int64_t *edges, int64_t *found, char *err,
+                                size_t err_len);
+
+/* Greedy maximal matching over the edges in order (NetworkX's
+ * maximal_matching over G.edges()). */
+int32_t net_maximal_matching(const GraphHandle *h, int64_t *edges,
+                             int64_t *found, char *err, size_t err_len);
+
+/* out[0..3) = 1 or 0: the k pairs (us[i], vs[i]) are a matching, a
+ * maximal matching, a perfect matching (NetworkX's is_matching,
+ * is_maximal_matching, is_perfect_matching). */
+int32_t net_check_matching(const GraphHandle *h, const int64_t *us,
+                           const int64_t *vs, int64_t k, int32_t *out,
+                           char *err, size_t err_len);
+
+/* Greedy colouring (colours from 0) into out[0..n). strategy: 0 = largest
+ * first, 1 = random sequential (seed), 2 = smallest last, 3 = independent
+ * set, 4 = connected sequential breadth-first, 5 = depth-first, 6 =
+ * saturation largest first (DSATUR). 2 to 5 need an undirected graph. */
+int32_t net_greedy_color(const GraphHandle *h, int32_t strategy,
+                         uint64_t seed, int64_t *out, char *err,
+                         size_t err_len);
+
+/* A random maximal independent set containing start (n_start nodes, an
+ * independent set; one random node when 0), increasing, into
+ * nodes[0..*found) (nodes holds n). */
+int32_t net_maximal_independent_set(const GraphHandle *h, const int64_t *start,
+                                    int64_t n_start, uint64_t seed,
+                                    int64_t *nodes, int64_t *found, char *err,
+                                    size_t err_len);
 
 /* Maximal cliques; release with net_groups_free. */
 typedef struct GroupsHandle GroupsHandle;

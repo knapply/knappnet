@@ -75,6 +75,49 @@ static int structure_checks(void) {
   return 0;
 }
 
+/* Mixing, cuts, matchings, colourings, and squares on a path 0-1-2-3. */
+static int mixing_checks(void) {
+  int64_t src[] = {0, 1, 2};
+  int64_t tgt[] = {1, 2, 3};
+  char err[256];
+  GraphHandle *g = NULL;
+  if (net_graph_new(4, src, tgt, NULL, 3, 0, &g, err, sizeof err) != 0) return 1;
+  double vals[4], counts[16], r = 0, avg[4], ks[4], kv[4], cut[9], sq[4];
+  int64_t k = 0, nk = 0;
+  if (net_degree_mixing(g, 1, 2, 0, NULL, 0, 4, vals, counts, &k, err, sizeof err) != 0 ||
+      k != 2) return 1;
+  double labels[] = {0, 1, 0, 1};
+  if (net_attribute_mixing(g, labels, NULL, 0, 4, vals, counts, &k, err, sizeof err) != 0)
+    return 1;
+  if (net_assortativity_subset(g, 0, 1, 2, 0, NULL, NULL, 0, &r, err, sizeof err) != 0)
+    return 1;
+  if (net_average_neighbor_degree(g, 1, 1, 0, NULL, 0, avg, err, sizeof err) != 0 ||
+      avg[0] != 2.0) return 1;
+  if (net_average_degree_connectivity(g, 3, 3, 0, NULL, 0, ks, kv, &nk, err, sizeof err) != 0 ||
+      nk != 2) return 1;
+  int64_t s[] = {0, 1};
+  if (net_cut_measures(g, s, 2, NULL, 0, 0, cut, err, sizeof err) != 0 || cut[0] != 1.0)
+    return 1;
+  int64_t edges[3], found = 0, colours[4], nodes[4];
+  if (net_max_weight_matching(g, 0, 0, edges, &found, err, sizeof err) != 0 || found != 2)
+    return 1;
+  if (net_min_weight_matching(g, 0, edges, &found, err, sizeof err) != 0 || found != 2)
+    return 1;
+  if (net_maximal_matching(g, edges, &found, err, sizeof err) != 0 || found != 2) return 1;
+  int64_t us[] = {0, 2}, vs[] = {1, 3};
+  int32_t chk[3];
+  if (net_check_matching(g, us, vs, 2, chk, err, sizeof err) != 0 || !chk[2]) return 1;
+  if (net_greedy_color(g, 6, 0, colours, err, sizeof err) != 0) return 1;
+  if (net_maximal_independent_set(g, NULL, 0, 1, nodes, &found, err, sizeof err) != 0)
+    return 1;
+  if (net_square_clustering(g, 1, sq, err, sizeof err) != 0) return 1;
+  int64_t off[5], gk[6], gc[6], total = 0;
+  if (net_generalized_degree(g, 1, off, gk, gc, 6, &total, err, sizeof err) != 0 ||
+      total != 4) return 1;
+  net_graph_free(g);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -128,6 +171,10 @@ int main(void) {
   if (s == NULL || s[0] != 'c') return 1;
   net_network_free(r);
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
+  if (mixing_checks() != 0) {
+    fprintf(stderr, "mixing checks failed\n");
+    return 1;
+  }
   if (structure_checks() != 0) {
     fprintf(stderr, "structure checks failed\n");
     return 1;

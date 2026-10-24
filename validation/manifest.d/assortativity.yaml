@@ -1,0 +1,339 @@
+# Degree and attribute mixing as NetworkX 3.7's assortativity package
+# computes it: mixing dicts, assortativity coefficients over node subsets,
+# average neighbour degree (Barrat et al. 2004), and average degree
+# connectivity (Pastor-Satorras, Vazquez, and Vespignani 2001). Format:
+# see ../README.md; runners, derived inputs, and encodings in
+# ../bindings/assortativity.py.
+#
+# The NetworkX oracle reads each fixture as a Graph or DiGraph, or a
+# MultiGraph or MultiDiGraph when it has parallel edges (pairs then come
+# once per edge, as the engine counts them). NaN is written as -999.
+
+mixing_degree:
+  engine: {fn: mixing, kind: degree}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pair counts of (out-degree, in-degree) along arcs (degree, degree when undirected) (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_mixing_dict(G)"
+
+mixing_degree_in_out:
+  engine: {fn: mixing, kind: degree, x: in, y: out}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pair counts of (in-degree of the source, out-degree of the target) (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_mixing_dict(G, x = 'in', y = 'out')"
+
+mixing_degree_weighted:
+  engine: {fn: mixing, kind: degree, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "pair counts of strengths (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_mixing_dict(G, weight = 'weight')"
+
+mixing_degree_subset:
+  engine: {fn: mixing, kind: degree, subset: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pair counts along arcs between even nodes (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_mixing_dict(G, nodes = even nodes)"
+
+mixing_attribute:
+  engine: {fn: mixing, kind: attribute}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pair counts of labels v % 3 along arcs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.attribute_mixing_dict(G, 'label')"
+
+mixing_attribute_subset:
+  engine: {fn: mixing, kind: attribute, subset: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pair counts along arcs leaving even nodes (to any node) (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.attribute_mixing_dict(G, 'label', nodes = even nodes)"
+
+assort_degree:
+  engine: {fn: assort, coefficient: degree}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of the degree pairs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G)"
+
+assort_degree_in_in:
+  engine: {fn: assort, coefficient: degree, x: in, y: in}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation of (in-degree, in-degree) pairs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G, x = 'in', y = 'in')"
+
+assort_degree_out_out:
+  engine: {fn: assort, coefficient: degree, x: out, y: out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation of (out-degree, out-degree) pairs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G, x = 'out', y = 'out')"
+
+assort_degree_weighted:
+  engine: {fn: assort, coefficient: degree, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation of strength pairs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G, weight = 'weight')"
+
+assort_degree_subset:
+  engine: {fn: assort, coefficient: degree, subset: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation of degree pairs between even nodes (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_assortativity_coefficient(G, nodes = even nodes)"
+
+assort_degree_pearson:
+  engine: {fn: assort, coefficient: degree}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Pearson correlation of the degree pairs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.degree_pearson_correlation_coefficient(G)"
+
+assort_attribute:
+  engine: {fn: assort, coefficient: attribute}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(trace e - sum a b) / (1 - sum a b) of the normalized label mixing matrix (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.attribute_assortativity_coefficient(G, 'label')"
+
+assort_attribute_subset:
+  engine: {fn: assort, coefficient: attribute, subset: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "nominal coefficient over arcs leaving even nodes (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.attribute_assortativity_coefficient(G, 'label', nodes = even nodes)"
+
+assort_numeric:
+  engine: {fn: assort, coefficient: numeric}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation of the values (7 v) % 5 along arcs (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.numeric_assortativity_coefficient(G, 'value')"
+
+assort_numeric_subset:
+  engine: {fn: assort, coefficient: numeric, subset: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "correlation over arcs leaving even nodes, pairs with a value no even node has dropped (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.numeric_assortativity_coefficient(G, 'value', nodes = even nodes)"
+
+avg_nbr_deg:
+  engine: {fn: avg_nbr_deg}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "mean target degree over arcs from each node, divided by its source degree (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G)"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_nbr_deg_in_in:
+  engine: {fn: avg_nbr_deg, source: in, target: in}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "over predecessors, in-degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G, source = 'in', target = 'in')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_nbr_deg_total:
+  engine: {fn: avg_nbr_deg, source: in+out, target: in+out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "over successors and predecessors, total degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G, source = 'in+out', target = 'in+out')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_nbr_deg_out_in:
+  engine: {fn: avg_nbr_deg, source: out, target: in}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "over successors, in-degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G, source = 'out', target = 'in')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_nbr_deg_weighted:
+  engine: {fn: avg_nbr_deg, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "weight times target degree, over the weighted source degree (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G, weight = 'weight')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_nbr_deg_subset:
+  engine: {fn: avg_nbr_deg, subset: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the even nodes' values (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_neighbor_degree(G, nodes = even nodes)"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_deg_conn:
+  engine: {fn: avg_deg_conn}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "per degree k: sum of neighbour degrees over sum of degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_degree_connectivity(G)"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_deg_conn_out_out:
+  engine: {fn: avg_deg_conn, source: out, target: out}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "successors, out-degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_degree_connectivity(G, source = 'out', target = 'out')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_deg_conn_in_in:
+  engine: {fn: avg_deg_conn, source: in, target: in}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "predecessors, in-degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_degree_connectivity(G, source = 'in', target = 'in')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_deg_conn_weighted:
+  engine: {fn: avg_deg_conn, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "weighted sums over weighted degrees (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_degree_connectivity(G, weight = 'weight')"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
+
+avg_deg_conn_subset:
+  engine: {fn: avg_deg_conn, subset: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the even nodes only (assortativity_definition_oracle.py)"
+    networkx:
+      call: "nx.average_degree_connectivity(G, nodes = even nodes)"
+      differs_when: [multi_edges]
+      reason: >-
+        On a multigraph NetworkX sums over distinct neighbours while
+        dividing by the degree with multiplicity; the engine counts every
+        parallel edge in both.
