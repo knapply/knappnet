@@ -17,9 +17,9 @@ value; "weight functions" means a callable passed as `weight`.
 
 | Status | Functions |
 |---|---|
-| implemented | 22 |
-| partial | 48 |
-| missing | 727 |
+| implemented | 23 |
+| partial | 202 |
+| missing | 572 |
 | total | 797 |
 
 ### algorithms.approximation (0 of 31)
@@ -58,22 +58,22 @@ value; "weight functions" means a callable passed as `weight`.
 | `treewidth_min_degree` | `algorithms.approximation.treewidth.treewidth_min_degree` | missing |  |
 | `treewidth_min_fill_in` | `algorithms.approximation.treewidth.treewidth_min_fill_in` | missing |  |
 
-### algorithms.assortativity (4 of 12)
+### algorithms.assortativity (10 of 12)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `attribute_assortativity_coefficient` | `algorithms.assortativity.correlation.attribute_assortativity_coefficient` | partial | Left to NetworkX: nodes; multigraphs. |
-| `attribute_mixing_dict` | `algorithms.assortativity.mixing.attribute_mixing_dict` | missing |  |
-| `attribute_mixing_matrix` | `algorithms.assortativity.mixing.attribute_mixing_matrix` | missing | Engine: net_mixing_matrix |
-| `average_degree_connectivity` | `algorithms.assortativity.connectivity.average_degree_connectivity` | missing |  |
-| `average_neighbor_degree` | `algorithms.assortativity.neighbor_degree.average_neighbor_degree` | missing |  |
-| `degree_assortativity_coefficient` | `algorithms.assortativity.correlation.degree_assortativity_coefficient` | partial | Left to NetworkX: x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights. |
-| `degree_mixing_dict` | `algorithms.assortativity.mixing.degree_mixing_dict` | missing |  |
-| `degree_mixing_matrix` | `algorithms.assortativity.mixing.degree_mixing_matrix` | missing | Engine: net_mixing_matrix |
-| `degree_pearson_correlation_coefficient` | `algorithms.assortativity.correlation.degree_pearson_correlation_coefficient` | partial | Left to NetworkX: x, y other than 'out', 'in' on directed graphs; nodes; multigraphs; negative weights. |
+| `attribute_assortativity_coefficient` | `algorithms.assortativity.correlation.attribute_assortativity_coefficient` | partial | Left to NetworkX: multigraphs; nodes without the attribute. |
+| `attribute_mixing_dict` | `algorithms.assortativity.mixing.attribute_mixing_dict` | partial | Left to NetworkX: multigraphs; unhashable attribute values. |
+| `attribute_mixing_matrix` | `algorithms.assortativity.mixing.attribute_mixing_matrix` | partial | Left to NetworkX: multigraphs; unhashable attribute values; no mapping. |
+| `average_degree_connectivity` | `algorithms.assortativity.connectivity.average_degree_connectivity` | partial | Left to NetworkX: multigraphs; weight functions; a single node as nodes. |
+| `average_neighbor_degree` | `algorithms.assortativity.neighbor_degree.average_neighbor_degree` | partial | Left to NetworkX: multigraphs; weight functions; a single node as nodes. |
+| `degree_assortativity_coefficient` | `algorithms.assortativity.correlation.degree_assortativity_coefficient` | partial | Left to NetworkX: x, y other than 'in' and 'out' on directed graphs; multigraphs; negative weights. |
+| `degree_mixing_dict` | `algorithms.assortativity.mixing.degree_mixing_dict` | partial | Left to NetworkX: multigraphs; weights. |
+| `degree_mixing_matrix` | `algorithms.assortativity.mixing.degree_mixing_matrix` | partial | Left to NetworkX: multigraphs; weights; no mapping. |
+| `degree_pearson_correlation_coefficient` | `algorithms.assortativity.correlation.degree_pearson_correlation_coefficient` | partial | Left to NetworkX: x, y other than 'in' and 'out' on directed graphs; multigraphs; negative weights. |
 | `node_attribute_xy` | `algorithms.assortativity.pairs.node_attribute_xy` | missing |  |
 | `node_degree_xy` | `algorithms.assortativity.pairs.node_degree_xy` | missing |  |
-| `numeric_assortativity_coefficient` | `algorithms.assortativity.correlation.numeric_assortativity_coefficient` | partial | Left to NetworkX: nodes; multigraphs. |
+| `numeric_assortativity_coefficient` | `algorithms.assortativity.correlation.numeric_assortativity_coefficient` | partial | Left to NetworkX: multigraphs; nodes without the attribute. |
 
 ### algorithms.asteroidal (0 of 3)
 
@@ -135,13 +135,13 @@ value; "weight functions" means a callable passed as `weight`.
 | `edge_boundary` | `algorithms.boundary.edge_boundary` | missing |  |
 | `node_boundary` | `algorithms.boundary.node_boundary` | missing |  |
 
-### algorithms.bridges (2 of 3)
+### algorithms.bridges (3 of 3)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `bridges` | `algorithms.bridges.bridges` | partial | Left to NetworkX: root; multigraphs. |
 | `has_bridges` | `algorithms.bridges.has_bridges` | partial | Left to NetworkX: root; multigraphs. |
-| `local_bridges` | `algorithms.bridges.local_bridges` | missing |  |
+| `local_bridges` | `algorithms.bridges.local_bridges` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; weight. |
 
 ### algorithms.broadcasting (0 of 2)
 
@@ -150,30 +150,30 @@ value; "weight functions" means a callable passed as `weight`.
 | `tree_broadcast_center` | `algorithms.broadcasting.tree_broadcast_center` | missing |  |
 | `tree_broadcast_time` | `algorithms.broadcasting.tree_broadcast_time` | missing |  |
 
-### algorithms.centrality (17 of 43)
+### algorithms.centrality (39 of 43)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `approximate_current_flow_betweenness_centrality` | `algorithms.centrality.current_flow_betweenness.approximate_current_flow_betweenness_centrality` | missing |  |
 | `betweenness_centrality` | `algorithms.centrality.betweenness.betweenness_centrality` | partial | Left to NetworkX: k (sampling); endpoints=True; multigraphs; weight functions; weights <= 0. |
-| `betweenness_centrality_subset` | `algorithms.centrality.betweenness_subset.betweenness_centrality_subset` | missing |  |
+| `betweenness_centrality_subset` | `algorithms.centrality.betweenness_subset.betweenness_centrality_subset` | partial | Left to NetworkX: weight functions; weights <= 0; repeated sources; sources or targets that are not nodes. |
 | `closeness_centrality` | `algorithms.centrality.closeness.closeness_centrality` | partial | Left to NetworkX: u (one node); sp; multigraphs; distance functions; weights <= 0. |
-| `communicability_betweenness_centrality` | `algorithms.centrality.subgraph_alg.communicability_betweenness_centrality` | missing |  |
-| `current_flow_betweenness_centrality` | `algorithms.centrality.current_flow_betweenness.current_flow_betweenness_centrality` | missing |  |
-| `current_flow_betweenness_centrality_subset` | `algorithms.centrality.current_flow_betweenness_subset.current_flow_betweenness_centrality_subset` | missing |  |
+| `communicability_betweenness_centrality` | `algorithms.centrality.subgraph_alg.communicability_betweenness_centrality` | partial | Left to NetworkX: directed graphs; multigraphs. |
+| `current_flow_betweenness_centrality` | `algorithms.centrality.current_flow_betweenness.current_flow_betweenness_centrality` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs; graphs of fewer than three nodes; self-loops. |
+| `current_flow_betweenness_centrality_subset` | `algorithms.centrality.current_flow_betweenness_subset.current_flow_betweenness_centrality_subset` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs; graphs of fewer than three nodes; self-loops. |
 | `current_flow_closeness_centrality` | `algorithms.centrality.current_flow_closeness.current_flow_closeness_centrality` | partial | Left to NetworkX: graphs of one node; multigraphs; weights <= 0. |
 | `degree_centrality` | `algorithms.centrality.degree_alg.degree_centrality` | implemented |  |
-| `dispersion` | `algorithms.centrality.dispersion.dispersion` | missing |  |
+| `dispersion` | `algorithms.centrality.dispersion.dispersion` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops. |
 | `edge_betweenness_centrality` | `algorithms.centrality.betweenness.edge_betweenness_centrality` | partial | Left to NetworkX: k (sampling); multigraphs; weight functions; weights <= 0. |
-| `edge_betweenness_centrality_subset` | `algorithms.centrality.betweenness_subset.edge_betweenness_centrality_subset` | missing |  |
-| `edge_current_flow_betweenness_centrality` | `algorithms.centrality.current_flow_betweenness.edge_current_flow_betweenness_centrality` | missing |  |
-| `edge_current_flow_betweenness_centrality_subset` | `algorithms.centrality.current_flow_betweenness_subset.edge_current_flow_betweenness_centrality_subset` | missing |  |
-| `edge_load_centrality` | `algorithms.centrality.load.edge_load_centrality` | missing |  |
+| `edge_betweenness_centrality_subset` | `algorithms.centrality.betweenness_subset.edge_betweenness_centrality_subset` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; repeated sources; sources or targets that are not nodes. |
+| `edge_current_flow_betweenness_centrality` | `algorithms.centrality.current_flow_betweenness.edge_current_flow_betweenness_centrality` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs; graphs of fewer than three nodes; self-loops. |
+| `edge_current_flow_betweenness_centrality_subset` | `algorithms.centrality.current_flow_betweenness_subset.edge_current_flow_betweenness_centrality_subset` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs; graphs of fewer than three nodes; self-loops. |
+| `edge_load_centrality` | `algorithms.centrality.load.edge_load_centrality` | partial | Left to NetworkX: multigraphs; cutoff of 0. |
 | `eigenvector_centrality` | `algorithms.centrality.eigenvector.eigenvector_centrality` | partial | Left to NetworkX: graphs that are not (strongly) connected; nstart with negative values; max_iter below 100; weights <= 0. |
 | `eigenvector_centrality_numpy` | `algorithms.centrality.eigenvector.eigenvector_centrality_numpy` | partial | Left to NetworkX: graphs of at most two nodes; weights <= 0. |
-| `estrada_index` | `algorithms.centrality.subgraph_alg.estrada_index` | missing |  |
+| `estrada_index` | `algorithms.centrality.subgraph_alg.estrada_index` | partial | Left to NetworkX: directed graphs; multigraphs. |
 | `flow_matrix_row` | `algorithms.centrality.flow_matrix.flow_matrix_row` | missing |  |
-| `global_reaching_centrality` | `algorithms.centrality.reaching.global_reaching_centrality` | missing |  |
+| `global_reaching_centrality` | `algorithms.centrality.reaching.global_reaching_centrality` | partial | Left to NetworkX: multigraphs; weights; graphs without edges. |
 | `group_betweenness_centrality` | `algorithms.centrality.group.group_betweenness_centrality` | partial | Left to NetworkX: endpoints=True; multigraphs; groups with repeated members; weights <= 0. |
 | `group_closeness_centrality` | `algorithms.centrality.group.group_closeness_centrality` | partial | Left to NetworkX: multigraphs; groups with repeated members; weights <= 0. |
 | `group_degree_centrality` | `algorithms.centrality.group.group_degree_centrality` | partial | Left to NetworkX: multigraphs; groups with repeated members. |
@@ -184,19 +184,19 @@ value; "weight functions" means a callable passed as `weight`.
 | `incremental_closeness_centrality` | `algorithms.centrality.closeness.incremental_closeness_centrality` | missing |  |
 | `katz_centrality` | `algorithms.centrality.katz.katz_centrality` | partial | Left to NetworkX: graphs of one node; alpha >= 1 / (largest eigenvalue), where NetworkX does not converge; max_iter below 1000; negative weights. |
 | `katz_centrality_numpy` | `algorithms.centrality.katz.katz_centrality_numpy` | partial | Left to NetworkX: graphs of one node; alpha >= 1 / (largest eigenvalue); negative weights. |
-| `laplacian_centrality` | `algorithms.centrality.laplacian.laplacian_centrality` | missing |  |
-| `local_reaching_centrality` | `algorithms.centrality.reaching.local_reaching_centrality` | missing |  |
-| `newman_betweenness_centrality` | `algorithms.centrality.load.newman_betweenness_centrality` | missing |  |
+| `laplacian_centrality` | `algorithms.centrality.laplacian.laplacian_centrality` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; nodelist; graphs without edges. |
+| `local_reaching_centrality` | `algorithms.centrality.reaching.local_reaching_centrality` | partial | Left to NetworkX: multigraphs; weights; paths; graphs without edges. |
+| `newman_betweenness_centrality` | `algorithms.centrality.load.newman_betweenness_centrality` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; cutoff of 0. |
 | `out_degree_centrality` | `algorithms.centrality.degree_alg.out_degree_centrality` | implemented |  |
-| `percolation_centrality` | `algorithms.centrality.percolation.percolation_centrality` | missing |  |
+| `percolation_centrality` | `algorithms.centrality.percolation.percolation_centrality` | partial | Left to NetworkX: weight functions; weights <= 0; graphs with fewer than three nodes; states that are not complete. |
 | `prominent_group` | `algorithms.centrality.group.prominent_group` | missing |  |
-| `second_order_centrality` | `algorithms.centrality.second_order.second_order_centrality` | missing |  |
-| `subgraph_centrality` | `algorithms.centrality.subgraph_alg.subgraph_centrality` | missing |  |
-| `subgraph_centrality_exp` | `algorithms.centrality.subgraph_alg.subgraph_centrality_exp` | missing |  |
-| `trophic_differences` | `algorithms.centrality.trophic.trophic_differences` | missing |  |
-| `trophic_incoherence_parameter` | `algorithms.centrality.trophic.trophic_incoherence_parameter` | missing |  |
-| `trophic_levels` | `algorithms.centrality.trophic.trophic_levels` | missing |  |
-| `voterank` | `algorithms.centrality.voterank_alg.voterank` | missing |  |
+| `second_order_centrality` | `algorithms.centrality.second_order.second_order_centrality` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; disconnected graphs; negative weights. |
+| `subgraph_centrality` | `algorithms.centrality.subgraph_alg.subgraph_centrality` | partial | Left to NetworkX: directed graphs; multigraphs. |
+| `subgraph_centrality_exp` | `algorithms.centrality.subgraph_alg.subgraph_centrality_exp` | partial | Left to NetworkX: directed graphs; multigraphs. |
+| `trophic_differences` | `algorithms.centrality.trophic.trophic_differences` | partial | Left to NetworkX: undirected graphs; multigraphs; weight functions; graphs where some node cannot be reached from a basal node. |
+| `trophic_incoherence_parameter` | `algorithms.centrality.trophic.trophic_incoherence_parameter` | partial | Left to NetworkX: undirected graphs; multigraphs; weight functions; graphs where some node cannot be reached from a basal node. |
+| `trophic_levels` | `algorithms.centrality.trophic.trophic_levels` | partial | Left to NetworkX: undirected graphs; multigraphs; weight functions; graphs where some node cannot be reached from a basal node. |
+| `voterank` | `algorithms.centrality.voterank_alg.voterank` | implemented |  |
 
 ### algorithms.chains (0 of 1)
 
@@ -226,34 +226,34 @@ value; "weight functions" means a callable passed as `weight`.
 | `max_weight_clique` | `algorithms.clique.max_weight_clique` | missing | Engine: net_max_cliques (unweighted) |
 | `node_clique_number` | `algorithms.clique.node_clique_number` | missing | Engine: net_max_cliques |
 
-### algorithms.cluster (3 of 7)
+### algorithms.cluster (5 of 7)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `all_triangles` | `algorithms.cluster.all_triangles` | missing |  |
 | `average_clustering` | `algorithms.cluster.average_clustering` | partial | Left to NetworkX: multigraphs; directed graphs; weights <= 0. |
 | `clustering` | `algorithms.cluster.clustering` | partial | Left to NetworkX: multigraphs; directed graphs; weights <= 0. |
-| `generalized_degree` | `algorithms.cluster.generalized_degree` | missing |  |
-| `square_clustering` | `algorithms.cluster.square_clustering` | missing |  |
+| `generalized_degree` | `algorithms.cluster.generalized_degree` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops. |
+| `square_clustering` | `algorithms.cluster.square_clustering` | partial | Left to NetworkX: multigraphs; self-loops. |
 | `transitivity` | `algorithms.cluster.transitivity` | partial | Left to NetworkX: multigraphs; directed graphs. |
 | `triangles` | `algorithms.cluster.triangles` | missing | Engine: triangle counts inside net_transitivity / net_clustering (not exported) |
 
-### algorithms.coloring (0 of 5)
+### algorithms.coloring (1 of 5)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `equitable_color` | `algorithms.coloring.equitable_coloring.equitable_color` | missing |  |
-| `greedy_color` | `algorithms.coloring.greedy_coloring.greedy_color` | missing |  |
+| `greedy_color` | `algorithms.coloring.greedy_coloring.greedy_color` | partial | Left to NetworkX: multigraphs; self-loops; interchange; strategies other than largest_first and saturation_largest_first. |
 | `is_coloring` | `algorithms.coloring.equitable_coloring.is_coloring` | missing |  |
 | `is_equitable` | `algorithms.coloring.equitable_coloring.is_equitable` | missing |  |
 | `pad_graph` | `algorithms.coloring.equitable_coloring.pad_graph` | missing |  |
 
-### algorithms.communicability_alg (0 of 2)
+### algorithms.communicability_alg (2 of 2)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `communicability` | `algorithms.communicability_alg.communicability` | missing |  |
-| `communicability_exp` | `algorithms.communicability_alg.communicability_exp` | missing |  |
+| `communicability` | `algorithms.communicability_alg.communicability` | partial | Left to NetworkX: directed graphs; multigraphs. |
+| `communicability_exp` | `algorithms.communicability_alg.communicability_exp` | partial | Left to NetworkX: directed graphs; multigraphs. |
 
 ### algorithms.community (2 of 24)
 
@@ -284,61 +284,61 @@ value; "weight functions" means a callable passed as `weight`.
 | `overlapping_modularity` | `algorithms.community.quality.overlapping_modularity` | missing |  |
 | `partition_quality` | `algorithms.community.quality.partition_quality` | missing |  |
 
-### algorithms.components (13 of 20)
+### algorithms.components (18 of 20)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `articulation_points` | `algorithms.components.biconnected.articulation_points` | partial | Left to NetworkX: multigraphs. |
-| `attracting_components` | `algorithms.components.attracting.attracting_components` | missing |  |
+| `attracting_components` | `algorithms.components.attracting.attracting_components` | partial | Left to NetworkX: undirected graphs; multigraphs. |
 | `biconnected_component_edges` | `algorithms.components.biconnected.biconnected_component_edges` | missing |  |
 | `biconnected_components` | `algorithms.components.biconnected.biconnected_components` | partial | Left to NetworkX: self-loops; multigraphs. |
-| `condensation` | `algorithms.components.strongly_connected.condensation` | missing |  |
+| `condensation` | `algorithms.components.strongly_connected.condensation` | partial | Left to NetworkX: undirected graphs; multigraphs; scc. |
 | `connected_components` | `algorithms.components.connected.connected_components` | implemented |  |
-| `is_attracting_component` | `algorithms.components.attracting.is_attracting_component` | missing |  |
+| `is_attracting_component` | `algorithms.components.attracting.is_attracting_component` | partial | Left to NetworkX: undirected graphs; multigraphs. |
 | `is_biconnected` | `algorithms.components.biconnected.is_biconnected` | partial | Left to NetworkX: self-loops; multigraphs. |
 | `is_connected` | `algorithms.components.connected.is_connected` | implemented |  |
-| `is_semiconnected` | `algorithms.components.semiconnected.is_semiconnected` | missing |  |
+| `is_semiconnected` | `algorithms.components.semiconnected.is_semiconnected` | partial | Left to NetworkX: undirected graphs; multigraphs. |
 | `is_strongly_connected` | `algorithms.components.strongly_connected.is_strongly_connected` | implemented |  |
 | `is_weakly_connected` | `algorithms.components.weakly_connected.is_weakly_connected` | implemented |  |
 | `kosaraju_strongly_connected_components` | `algorithms.components.strongly_connected.kosaraju_strongly_connected_components` | missing |  |
 | `node_connected_component` | `algorithms.components.connected.node_connected_component` | implemented |  |
-| `number_attracting_components` | `algorithms.components.attracting.number_attracting_components` | missing |  |
+| `number_attracting_components` | `algorithms.components.attracting.number_attracting_components` | partial | Left to NetworkX: undirected graphs; multigraphs. |
 | `number_connected_components` | `algorithms.components.connected.number_connected_components` | implemented |  |
 | `number_strongly_connected_components` | `algorithms.components.strongly_connected.number_strongly_connected_components` | implemented |  |
 | `number_weakly_connected_components` | `algorithms.components.weakly_connected.number_weakly_connected_components` | implemented |  |
 | `strongly_connected_components` | `algorithms.components.strongly_connected.strongly_connected_components` | implemented |  |
 | `weakly_connected_components` | `algorithms.components.weakly_connected.weakly_connected_components` | implemented |  |
 
-### algorithms.connectivity (0 of 34)
+### algorithms.connectivity (15 of 34)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `all_node_cuts` | `algorithms.connectivity.kcutsets.all_node_cuts` | missing |  |
-| `all_pairs_node_connectivity` | `algorithms.connectivity.connectivity.all_pairs_node_connectivity` | missing |  |
-| `average_node_connectivity` | `algorithms.connectivity.connectivity.average_node_connectivity` | missing |  |
+| `all_pairs_node_connectivity` | `algorithms.connectivity.connectivity.all_pairs_node_connectivity` | partial | Left to NetworkX: multigraphs; flow_func; nbunch with items outside the graph. |
+| `average_node_connectivity` | `algorithms.connectivity.connectivity.average_node_connectivity` | partial | Left to NetworkX: multigraphs; flow_func. |
 | `bridge_augmentation` | `algorithms.connectivity.edge_augmentation.bridge_augmentation` | missing |  |
-| `bridge_components` | `algorithms.connectivity.edge_kcomponents.bridge_components` | missing |  |
+| `bridge_components` | `algorithms.connectivity.edge_kcomponents.bridge_components` | partial | Left to NetworkX: directed graphs; multigraphs. |
 | `build_auxiliary_edge_connectivity` | `algorithms.connectivity.utils.build_auxiliary_edge_connectivity` | missing |  |
 | `build_auxiliary_node_connectivity` | `algorithms.connectivity.utils.build_auxiliary_node_connectivity` | missing |  |
 | `collapse` | `algorithms.connectivity.edge_augmentation.collapse` | missing |  |
 | `complement_edges` | `algorithms.connectivity.edge_augmentation.complement_edges` | missing |  |
-| `edge_connectivity` | `algorithms.connectivity.connectivity.edge_connectivity` | missing | Engine: net_lambda_connectivity (all pairs) |
+| `edge_connectivity` | `algorithms.connectivity.connectivity.edge_connectivity` | partial | Left to NetworkX: multigraphs; self-loops; flow_func; cutoff; incomplete or equal terminals. |
 | `edge_disjoint_paths` | `algorithms.connectivity.disjoint_paths.edge_disjoint_paths` | missing |  |
 | `general_k_edge_subgraphs` | `algorithms.connectivity.edge_kcomponents.general_k_edge_subgraphs` | missing |  |
 | `greedy_k_edge_augmentation` | `algorithms.connectivity.edge_augmentation.greedy_k_edge_augmentation` | missing |  |
-| `is_k_edge_connected` | `algorithms.connectivity.edge_augmentation.is_k_edge_connected` | missing |  |
-| `is_locally_k_edge_connected` | `algorithms.connectivity.edge_augmentation.is_locally_k_edge_connected` | missing |  |
-| `k_components` | `algorithms.connectivity.kcomponents.k_components` | missing |  |
+| `is_k_edge_connected` | `algorithms.connectivity.edge_augmentation.is_k_edge_connected` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; k below 1. |
+| `is_locally_k_edge_connected` | `algorithms.connectivity.edge_augmentation.is_locally_k_edge_connected` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; k below 1; equal terminals. |
+| `k_components` | `algorithms.connectivity.kcomponents.k_components` | partial | Left to NetworkX: directed graphs; multigraphs; flow_func. |
 | `k_edge_augmentation` | `algorithms.connectivity.edge_augmentation.k_edge_augmentation` | missing |  |
-| `k_edge_components` | `algorithms.connectivity.edge_kcomponents.k_edge_components` | missing |  |
+| `k_edge_components` | `algorithms.connectivity.edge_kcomponents.k_edge_components` | partial | Left to NetworkX: directed graphs; multigraphs; k below 1. For k of 3 or more the components come in the engine's order. |
 | `k_edge_subgraphs` | `algorithms.connectivity.edge_kcomponents.k_edge_subgraphs` | missing |  |
-| `local_edge_connectivity` | `algorithms.connectivity.connectivity.local_edge_connectivity` | missing | Engine: net_lambda_connectivity (all pairs) |
-| `local_node_connectivity` | `algorithms.connectivity.connectivity.local_node_connectivity` | missing |  |
-| `minimum_edge_cut` | `algorithms.connectivity.cuts.minimum_edge_cut` | missing |  |
-| `minimum_node_cut` | `algorithms.connectivity.cuts.minimum_node_cut` | missing |  |
-| `minimum_st_edge_cut` | `algorithms.connectivity.cuts.minimum_st_edge_cut` | missing |  |
-| `minimum_st_node_cut` | `algorithms.connectivity.cuts.minimum_st_node_cut` | missing |  |
-| `node_connectivity` | `algorithms.connectivity.connectivity.node_connectivity` | missing |  |
+| `local_edge_connectivity` | `algorithms.connectivity.connectivity.local_edge_connectivity` | partial | Left to NetworkX: multigraphs; flow_func, auxiliary, residual and cutoff; equal terminals. |
+| `local_node_connectivity` | `algorithms.connectivity.connectivity.local_node_connectivity` | partial | Left to NetworkX: multigraphs; flow_func, auxiliary, residual and cutoff; equal terminals. |
+| `minimum_edge_cut` | `algorithms.connectivity.cuts.minimum_edge_cut` | partial | Left to NetworkX: multigraphs; flow_func; global cuts (no s and t). |
+| `minimum_node_cut` | `algorithms.connectivity.cuts.minimum_node_cut` | partial | Left to NetworkX: multigraphs; flow_func; global cuts (no s and t). |
+| `minimum_st_edge_cut` | `algorithms.connectivity.cuts.minimum_st_edge_cut` | partial | Left to NetworkX: multigraphs; flow_func, auxiliary and residual; equal terminals. |
+| `minimum_st_node_cut` | `algorithms.connectivity.cuts.minimum_st_node_cut` | partial | Left to NetworkX: multigraphs; flow_func, auxiliary and residual; equal terminals. |
+| `node_connectivity` | `algorithms.connectivity.connectivity.node_connectivity` | partial | Left to NetworkX: multigraphs; flow_func; incomplete or equal terminals. |
 | `node_disjoint_paths` | `algorithms.connectivity.disjoint_paths.node_disjoint_paths` | missing |  |
 | `one_edge_augmentation` | `algorithms.connectivity.edge_augmentation.one_edge_augmentation` | missing |  |
 | `partial_k_edge_augmentation` | `algorithms.connectivity.edge_augmentation.partial_k_edge_augmentation` | missing |  |
@@ -348,17 +348,17 @@ value; "weight functions" means a callable passed as `weight`.
 | `weighted_bridge_augmentation` | `algorithms.connectivity.edge_augmentation.weighted_bridge_augmentation` | missing |  |
 | `weighted_one_edge_augmentation` | `algorithms.connectivity.edge_augmentation.weighted_one_edge_augmentation` | missing |  |
 
-### algorithms.core (1 of 7)
+### algorithms.core (7 of 7)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `core_number` | `algorithms.core.core_number` | implemented |  |
-| `k_core` | `algorithms.core.k_core` | missing | Engine: net_coreness (returns a graph) |
-| `k_corona` | `algorithms.core.k_corona` | missing | Engine: net_coreness (returns a graph) |
-| `k_crust` | `algorithms.core.k_crust` | missing | Engine: net_coreness (returns a graph) |
-| `k_shell` | `algorithms.core.k_shell` | missing | Engine: net_coreness (returns a graph) |
-| `k_truss` | `algorithms.core.k_truss` | missing |  |
-| `onion_layers` | `algorithms.core.onion_layers` | missing |  |
+| `k_core` | `algorithms.core.k_core` | partial | Left to NetworkX: multigraphs; self-loops; core_number. |
+| `k_corona` | `algorithms.core.k_corona` | partial | Left to NetworkX: multigraphs; self-loops; core_number. |
+| `k_crust` | `algorithms.core.k_crust` | partial | Left to NetworkX: multigraphs; self-loops; core_number. |
+| `k_shell` | `algorithms.core.k_shell` | partial | Left to NetworkX: multigraphs; self-loops; core_number. |
+| `k_truss` | `algorithms.core.k_truss` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops. |
+| `onion_layers` | `algorithms.core.onion_layers` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops. |
 
 ### algorithms.covering (0 of 2)
 
@@ -367,27 +367,27 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_edge_cover` | `algorithms.covering.is_edge_cover` | missing |  |
 | `min_edge_cover` | `algorithms.covering.min_edge_cover` | missing |  |
 
-### algorithms.cuts (0 of 8)
+### algorithms.cuts (8 of 8)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `boundary_expansion` | `algorithms.cuts.boundary_expansion` | missing |  |
-| `conductance` | `algorithms.cuts.conductance` | missing |  |
-| `cut_size` | `algorithms.cuts.cut_size` | missing |  |
-| `edge_expansion` | `algorithms.cuts.edge_expansion` | missing |  |
-| `mixing_expansion` | `algorithms.cuts.mixing_expansion` | missing |  |
-| `node_expansion` | `algorithms.cuts.node_expansion` | missing |  |
-| `normalized_cut_size` | `algorithms.cuts.normalized_cut_size` | missing |  |
-| `volume` | `algorithms.cuts.volume` | missing |  |
+| `boundary_expansion` | `algorithms.cuts.boundary_expansion` | partial | Left to NetworkX: multigraphs; unusual S. |
+| `conductance` | `algorithms.cuts.conductance` | partial | Left to NetworkX: multigraphs; weight functions; unusual S or T; zero volume. |
+| `cut_size` | `algorithms.cuts.cut_size` | partial | Left to NetworkX: multigraphs; weight functions; unusual S or T. |
+| `edge_expansion` | `algorithms.cuts.edge_expansion` | partial | Left to NetworkX: multigraphs; weight functions; unusual S or T. |
+| `mixing_expansion` | `algorithms.cuts.mixing_expansion` | partial | Left to NetworkX: multigraphs; weight functions; unusual S or T. |
+| `node_expansion` | `algorithms.cuts.node_expansion` | partial | Left to NetworkX: multigraphs; unusual S. |
+| `normalized_cut_size` | `algorithms.cuts.normalized_cut_size` | partial | Left to NetworkX: multigraphs; weight functions; unusual S or T; zero volume. |
+| `volume` | `algorithms.cuts.volume` | partial | Left to NetworkX: multigraphs; weight functions; unusual S. |
 
-### algorithms.cycles (0 of 7)
+### algorithms.cycles (3 of 7)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `chordless_cycles` | `algorithms.cycles.chordless_cycles` | missing |  |
-| `cycle_basis` | `algorithms.cycles.cycle_basis` | missing |  |
-| `find_cycle` | `algorithms.cycles.find_cycle` | missing |  |
-| `girth` | `algorithms.cycles.girth` | missing |  |
+| `cycle_basis` | `algorithms.cycles.cycle_basis` | partial | Left to NetworkX: directed graphs; multigraphs; graphs whose adjacency is not in input order. |
+| `find_cycle` | `algorithms.cycles.find_cycle` | partial | Left to NetworkX: multigraphs; a source that is not a single node; graphs whose adjacency is not in input order. |
+| `girth` | `algorithms.cycles.girth` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops. |
 | `minimum_cycle_basis` | `algorithms.cycles.minimum_cycle_basis` | missing |  |
 | `recursive_simple_cycles` | `algorithms.cycles.recursive_simple_cycles` | missing |  |
 | `simple_cycles` | `algorithms.cycles.simple_cycles` | missing |  |
@@ -400,32 +400,32 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_d_separator` | `algorithms.d_separation.is_d_separator` | missing |  |
 | `is_minimal_d_separator` | `algorithms.d_separation.is_minimal_d_separator` | missing |  |
 
-### algorithms.dag (2 of 20)
+### algorithms.dag (12 of 20)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `all_topological_sorts` | `algorithms.dag.all_topological_sorts` | missing |  |
+| `all_topological_sorts` | `algorithms.dag.all_topological_sorts` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle; graphs whose adjacency is not in input order; more than 100000 orders. |
 | `ancestors` | `algorithms.dag.ancestors` | implemented |  |
 | `antichain_width` | `algorithms.dag.antichain_width` | missing |  |
 | `antichains` | `algorithms.dag.antichains` | missing |  |
 | `colliders` | `algorithms.dag.colliders` | missing |  |
-| `dag_longest_path` | `algorithms.dag.dag_longest_path` | missing |  |
-| `dag_longest_path_length` | `algorithms.dag.dag_longest_path_length` | missing |  |
+| `dag_longest_path` | `algorithms.dag.dag_longest_path` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle; topo_order; non-finite weights. |
+| `dag_longest_path_length` | `algorithms.dag.dag_longest_path_length` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle; weight functions; non-finite weights. |
 | `dag_to_branching` | `algorithms.dag.dag_to_branching` | missing |  |
 | `descendants` | `algorithms.dag.descendants` | implemented |  |
-| `has_cycle` | `algorithms.dag.has_cycle` | missing |  |
+| `has_cycle` | `algorithms.dag.has_cycle` | partial | Left to NetworkX: undirected graphs; multigraphs. |
 | `is_aperiodic` | `algorithms.dag.is_aperiodic` | missing |  |
-| `is_directed_acyclic_graph` | `algorithms.dag.is_directed_acyclic_graph` | missing |  |
-| `lexicographical_topological_sort` | `algorithms.dag.lexicographical_topological_sort` | missing |  |
+| `is_directed_acyclic_graph` | `algorithms.dag.is_directed_acyclic_graph` | partial | Left to NetworkX: multigraphs. |
+| `lexicographical_topological_sort` | `algorithms.dag.lexicographical_topological_sort` | partial | Left to NetworkX: undirected graphs; multigraphs; key; graphs with a cycle; nodes not in ascending order. |
 | `root_to_leaf_paths` | `algorithms.dag.root_to_leaf_paths` | missing |  |
-| `topological_generations` | `algorithms.dag.topological_generations` | missing |  |
-| `topological_sort` | `algorithms.dag.topological_sort` | missing |  |
-| `transitive_closure` | `algorithms.dag.transitive_closure` | missing |  |
+| `topological_generations` | `algorithms.dag.topological_generations` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle; graphs whose adjacency is not in input order. |
+| `topological_sort` | `algorithms.dag.topological_sort` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle; graphs whose adjacency is not in input order. |
+| `transitive_closure` | `algorithms.dag.transitive_closure` | partial | Left to NetworkX: undirected graphs; multigraphs; reflexive other than None, True and False. |
 | `transitive_closure_dag` | `algorithms.dag.transitive_closure_dag` | missing |  |
-| `transitive_reduction` | `algorithms.dag.transitive_reduction` | missing |  |
+| `transitive_reduction` | `algorithms.dag.transitive_reduction` | partial | Left to NetworkX: undirected graphs; multigraphs; graphs with a cycle. |
 | `v_structures` | `algorithms.dag.v_structures` | missing |  |
 
-### algorithms.distance_measures (5 of 10)
+### algorithms.distance_measures (9 of 10)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
@@ -433,12 +433,12 @@ value; "weight functions" means a callable passed as `weight`.
 | `centroid` | `algorithms.distance_measures.centroid` | missing |  |
 | `diameter` | `algorithms.distance_measures.diameter` | partial | Left to NetworkX: e; weight functions; weights <= 0. |
 | `eccentricity` | `algorithms.distance_measures.eccentricity` | partial | Left to NetworkX: v; sp; weight functions; weights <= 0. |
-| `effective_graph_resistance` | `algorithms.distance_measures.effective_graph_resistance` | missing |  |
-| `harmonic_diameter` | `algorithms.distance_measures.harmonic_diameter` | missing | Engine: net_distances |
-| `kemeny_constant` | `algorithms.distance_measures.kemeny_constant` | missing |  |
+| `effective_graph_resistance` | `algorithms.distance_measures.effective_graph_resistance` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0. |
+| `harmonic_diameter` | `algorithms.distance_measures.harmonic_diameter` | partial | Left to NetworkX: sp; weight functions; weights <= 0. |
+| `kemeny_constant` | `algorithms.distance_measures.kemeny_constant` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; disconnected graphs; negative weights. |
 | `periphery` | `algorithms.distance_measures.periphery` | partial | Left to NetworkX: e; weight functions; weights <= 0. |
 | `radius` | `algorithms.distance_measures.radius` | partial | Left to NetworkX: e; weight functions; weights <= 0. |
-| `resistance_distance` | `algorithms.distance_measures.resistance_distance` | missing |  |
+| `resistance_distance` | `algorithms.distance_measures.resistance_distance` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0; disconnected graphs. |
 
 ### algorithms.distance_regular (0 of 3)
 
@@ -448,12 +448,12 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_distance_regular` | `algorithms.distance_regular.is_distance_regular` | missing |  |
 | `is_strongly_regular` | `algorithms.distance_regular.is_strongly_regular` | missing |  |
 
-### algorithms.dominance (0 of 2)
+### algorithms.dominance (2 of 2)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `dominance_frontiers` | `algorithms.dominance.dominance_frontiers` | missing |  |
-| `immediate_dominators` | `algorithms.dominance.immediate_dominators` | missing |  |
+| `dominance_frontiers` | `algorithms.dominance.dominance_frontiers` | partial | Left to NetworkX: undirected graphs; multigraphs; a start that is not a node. |
+| `immediate_dominators` | `algorithms.dominance.immediate_dominators` | partial | Left to NetworkX: undirected graphs; multigraphs; a start that is not a node. |
 
 ### algorithms.dominating (0 of 4)
 
@@ -464,13 +464,13 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_connected_dominating_set` | `algorithms.dominating.is_connected_dominating_set` | missing |  |
 | `is_dominating_set` | `algorithms.dominating.is_dominating_set` | missing |  |
 
-### algorithms.efficiency_measures (1 of 3)
+### algorithms.efficiency_measures (2 of 3)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `efficiency` | `algorithms.efficiency_measures.efficiency` | missing |  |
 | `global_efficiency` | `algorithms.efficiency_measures.global_efficiency` | implemented |  |
-| `local_efficiency` | `algorithms.efficiency_measures.local_efficiency` | missing |  |
+| `local_efficiency` | `algorithms.efficiency_measures.local_efficiency` | partial | Left to NetworkX: directed graphs; multigraphs. |
 
 ### algorithms.euler (0 of 6)
 
@@ -483,7 +483,7 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_eulerian` | `algorithms.euler.is_eulerian` | missing |  |
 | `is_semieulerian` | `algorithms.euler.is_semieulerian` | missing |  |
 
-### algorithms.flow (0 of 19)
+### algorithms.flow (5 of 19)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
@@ -495,24 +495,24 @@ value; "weight functions" means a callable passed as `weight`.
 | `detect_unboundedness` | `algorithms.flow.utils.detect_unboundedness` | missing |  |
 | `dinitz` | `algorithms.flow.dinitz_alg.dinitz` | missing |  |
 | `edmonds_karp` | `algorithms.flow.edmondskarp.edmonds_karp` | missing |  |
-| `gomory_hu_tree` | `algorithms.flow.gomory_hu.gomory_hu_tree` | missing |  |
+| `gomory_hu_tree` | `algorithms.flow.gomory_hu.gomory_hu_tree` | partial | Left to NetworkX: directed graphs; multigraphs; flow_func; negative or infinite capacities. |
 | `max_flow_min_cost` | `algorithms.flow.mincost.max_flow_min_cost` | missing |  |
 | `maximum_flow` | `algorithms.flow.maxflow.maximum_flow` | missing |  |
-| `maximum_flow_value` | `algorithms.flow.maxflow.maximum_flow_value` | missing |  |
+| `maximum_flow_value` | `algorithms.flow.maxflow.maximum_flow_value` | partial | Left to NetworkX: multigraphs; flow_func; extra keyword arguments; negative capacities; unbounded flows. |
 | `min_cost_flow` | `algorithms.flow.mincost.min_cost_flow` | missing |  |
-| `min_cost_flow_cost` | `algorithms.flow.mincost.min_cost_flow_cost` | missing |  |
-| `minimum_cut` | `algorithms.flow.maxflow.minimum_cut` | missing |  |
-| `minimum_cut_value` | `algorithms.flow.maxflow.minimum_cut_value` | missing |  |
+| `min_cost_flow_cost` | `algorithms.flow.mincost.min_cost_flow_cost` | partial | Left to NetworkX: undirected graphs; multigraphs; self-loops; infeasible, unbounded or non-numeric inputs. |
+| `minimum_cut` | `algorithms.flow.maxflow.minimum_cut` | partial | Left to NetworkX: multigraphs; flow_func; extra keyword arguments; negative capacities; unbounded flows. |
+| `minimum_cut_value` | `algorithms.flow.maxflow.minimum_cut_value` | partial | Left to NetworkX: multigraphs; flow_func; extra keyword arguments; negative capacities; unbounded flows. |
 | `network_simplex` | `algorithms.flow.networksimplex.network_simplex` | missing |  |
 | `preflow_push` | `algorithms.flow.preflowpush.preflow_push` | missing |  |
 | `shortest_augmenting_path` | `algorithms.flow.shortestaugmentingpath.shortest_augmenting_path` | missing |  |
 
-### algorithms.graph_hashing (0 of 2)
+### algorithms.graph_hashing (2 of 2)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `weisfeiler_lehman_graph_hash` | `algorithms.graph_hashing.weisfeiler_lehman_graph_hash` | missing |  |
-| `weisfeiler_lehman_subgraph_hashes` | `algorithms.graph_hashing.weisfeiler_lehman_subgraph_hashes` | missing |  |
+| `weisfeiler_lehman_graph_hash` | `algorithms.graph_hashing.weisfeiler_lehman_graph_hash` | partial | Left to NetworkX: multigraphs; missing or non-ASCII attributes; digest_size outside 1..64. |
+| `weisfeiler_lehman_subgraph_hashes` | `algorithms.graph_hashing.weisfeiler_lehman_subgraph_hashes` | partial | Left to NetworkX: multigraphs; missing or non-ASCII attributes; digest_size outside 1..64. |
 
 ### algorithms.graphical (0 of 6)
 
@@ -546,25 +546,25 @@ value; "weight functions" means a callable passed as `weight`.
 | `isolates` | `algorithms.isolate.isolates` | missing |  |
 | `number_of_isolates` | `algorithms.isolate.number_of_isolates` | missing |  |
 
-### algorithms.isomorphism (0 of 16)
+### algorithms.isomorphism (7 of 16)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `could_be_isomorphic` | `algorithms.isomorphism.isomorph.could_be_isomorphic` | missing |  |
-| `fast_could_be_isomorphic` | `algorithms.isomorphism.isomorph.fast_could_be_isomorphic` | missing |  |
-| `faster_could_be_isomorphic` | `algorithms.isomorphism.isomorph.faster_could_be_isomorphic` | missing |  |
-| `is_isomorphic` | `algorithms.isomorphism.isomorph.is_isomorphic` | missing |  |
+| `could_be_isomorphic` | `algorithms.isomorphism.isomorph.could_be_isomorphic` | partial | Left to NetworkX: multigraphs; directed graphs with t or c. |
+| `fast_could_be_isomorphic` | `algorithms.isomorphism.isomorph.fast_could_be_isomorphic` | partial | Left to NetworkX: multigraphs; directed graphs. |
+| `faster_could_be_isomorphic` | `algorithms.isomorphism.isomorph.faster_could_be_isomorphic` | partial | Left to NetworkX: multigraphs. |
+| `is_isomorphic` | `algorithms.isomorphism.isomorph.is_isomorphic` | partial | Left to NetworkX: multigraphs; node_match and edge_match; graphs of different types. |
 | `root_trees` | `algorithms.isomorphism.tree_isomorphism.root_trees` | missing |  |
 | `rooted_tree_isomorphism` | `algorithms.isomorphism.tree_isomorphism.rooted_tree_isomorphism` | missing |  |
 | `tree_isomorphism` | `algorithms.isomorphism.tree_isomorphism.tree_isomorphism` | missing |  |
 | `vf2pp_all_isomorphisms` | `algorithms.isomorphism.vf2pp.vf2pp_all_isomorphisms` | missing |  |
 | `vf2pp_all_monomorphisms` | `algorithms.isomorphism.vf2pp.vf2pp_all_monomorphisms` | missing |  |
 | `vf2pp_all_subgraph_isomorphisms` | `algorithms.isomorphism.vf2pp.vf2pp_all_subgraph_isomorphisms` | missing |  |
-| `vf2pp_is_isomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_is_isomorphic` | missing |  |
-| `vf2pp_is_monomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_is_monomorphic` | missing |  |
+| `vf2pp_is_isomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_is_isomorphic` | partial | Left to NetworkX: multigraphs; graphs of different types. |
+| `vf2pp_is_monomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_is_monomorphic` | partial | Left to NetworkX: multigraphs; graphs of different types. |
 | `vf2pp_isomorphism` | `algorithms.isomorphism.vf2pp.vf2pp_isomorphism` | missing |  |
 | `vf2pp_monomorphism` | `algorithms.isomorphism.vf2pp.vf2pp_monomorphism` | missing |  |
-| `vf2pp_subgraph_is_isomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_subgraph_is_isomorphic` | missing |  |
+| `vf2pp_subgraph_is_isomorphic` | `algorithms.isomorphism.vf2pp.vf2pp_subgraph_is_isomorphic` | partial | Left to NetworkX: multigraphs; graphs of different types. |
 | `vf2pp_subgraph_isomorphism` | `algorithms.isomorphism.vf2pp.vf2pp_subgraph_isomorphism` | missing |  |
 
 ### algorithms.link_analysis (2 of 3)
@@ -575,36 +575,36 @@ value; "weight functions" means a callable passed as `weight`.
 | `hits` | `algorithms.link_analysis.hits_alg.hits` | partial | Left to NetworkX: nstart; max_iter below 100; graphs whose leading singular value is repeated (scores not unique); multigraphs; negative weights. |
 | `pagerank` | `algorithms.link_analysis.pagerank_alg.pagerank` | partial | Left to NetworkX: dangling vectors other than uniform or the personalization; alpha outside (0, 1); max_iter below 100; negative weights. |
 
-### algorithms.link_prediction (0 of 8)
+### algorithms.link_prediction (8 of 8)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `adamic_adar_index` | `algorithms.link_prediction.adamic_adar_index` | missing |  |
-| `cn_soundarajan_hopcroft` | `algorithms.link_prediction.cn_soundarajan_hopcroft` | missing |  |
-| `common_neighbor_centrality` | `algorithms.link_prediction.common_neighbor_centrality` | missing |  |
-| `jaccard_coefficient` | `algorithms.link_prediction.jaccard_coefficient` | missing |  |
-| `preferential_attachment` | `algorithms.link_prediction.preferential_attachment` | missing |  |
-| `ra_index_soundarajan_hopcroft` | `algorithms.link_prediction.ra_index_soundarajan_hopcroft` | missing |  |
-| `resource_allocation_index` | `algorithms.link_prediction.resource_allocation_index` | missing |  |
-| `within_inter_cluster` | `algorithms.link_prediction.within_inter_cluster` | missing |  |
+| `adamic_adar_index` | `algorithms.link_prediction.adamic_adar_index` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; an ebunch that is not a collection of pairs. |
+| `cn_soundarajan_hopcroft` | `algorithms.link_prediction.cn_soundarajan_hopcroft` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; nodes without a community; unhashable communities. |
+| `common_neighbor_centrality` | `algorithms.link_prediction.common_neighbor_centrality` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; an ebunch that is not a collection of pairs. |
+| `jaccard_coefficient` | `algorithms.link_prediction.jaccard_coefficient` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; an ebunch that is not a collection of pairs. |
+| `preferential_attachment` | `algorithms.link_prediction.preferential_attachment` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; an ebunch that is not a collection of pairs. |
+| `ra_index_soundarajan_hopcroft` | `algorithms.link_prediction.ra_index_soundarajan_hopcroft` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; nodes without a community; unhashable communities. |
+| `resource_allocation_index` | `algorithms.link_prediction.resource_allocation_index` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; an ebunch that is not a collection of pairs. |
+| `within_inter_cluster` | `algorithms.link_prediction.within_inter_cluster` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; nodes without a community; delta <= 0. |
 
-### algorithms.lowest_common_ancestors (0 of 3)
+### algorithms.lowest_common_ancestors (2 of 3)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `all_pairs_lowest_common_ancestor` | `algorithms.lowest_common_ancestors.all_pairs_lowest_common_ancestor` | missing |  |
-| `lowest_common_ancestor` | `algorithms.lowest_common_ancestors.lowest_common_ancestor` | missing |  |
+| `all_pairs_lowest_common_ancestor` | `algorithms.lowest_common_ancestors.all_pairs_lowest_common_ancestor` | partial | Left to NetworkX: undirected graphs; multigraphs; a node with several parents; graphs with a cycle. |
+| `lowest_common_ancestor` | `algorithms.lowest_common_ancestors.lowest_common_ancestor` | partial | Left to NetworkX: undirected graphs; multigraphs; a node with several parents; graphs with a cycle. |
 | `tree_all_pairs_lowest_common_ancestor` | `algorithms.lowest_common_ancestors.tree_all_pairs_lowest_common_ancestor` | missing |  |
 
-### algorithms.matching (0 of 6)
+### algorithms.matching (4 of 6)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `is_matching` | `algorithms.matching.is_matching` | missing |  |
-| `is_maximal_matching` | `algorithms.matching.is_maximal_matching` | missing |  |
-| `is_perfect_matching` | `algorithms.matching.is_perfect_matching` | missing |  |
+| `is_matching` | `algorithms.matching.is_matching` | partial | Left to NetworkX: directed graphs; multigraphs; malformed matchings. |
+| `is_maximal_matching` | `algorithms.matching.is_maximal_matching` | partial | Left to NetworkX: directed graphs; multigraphs; malformed matchings. |
+| `is_perfect_matching` | `algorithms.matching.is_perfect_matching` | partial | Left to NetworkX: directed graphs; multigraphs; malformed matchings. |
 | `max_weight_matching` | `algorithms.matching.max_weight_matching` | missing |  |
-| `maximal_matching` | `algorithms.matching.maximal_matching` | missing |  |
+| `maximal_matching` | `algorithms.matching.maximal_matching` | partial | Left to NetworkX: directed graphs; multigraphs. |
 | `min_weight_matching` | `algorithms.matching.min_weight_matching` | missing |  |
 
 ### algorithms.minors (0 of 3)
@@ -704,76 +704,76 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_regular` | `algorithms.regular.is_regular` | missing |  |
 | `k_factor` | `algorithms.regular.k_factor` | missing |  |
 
-### algorithms.richclub (0 of 1)
+### algorithms.richclub (1 of 1)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `rich_club_coefficient` | `algorithms.richclub.rich_club_coefficient` | missing |  |
+| `rich_club_coefficient` | `algorithms.richclub.rich_club_coefficient` | partial | Left to NetworkX: directed graphs; multigraphs; self-loops; normalized=True (it rewires with NetworkX's random stream). |
 
-### algorithms.shortest_paths (8 of 47)
+### algorithms.shortest_paths (35 of 47)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `all_pairs_all_shortest_paths` | `algorithms.shortest_paths.generic.all_pairs_all_shortest_paths` | missing |  |
-| `all_pairs_bellman_ford_path` | `algorithms.shortest_paths.weighted.all_pairs_bellman_ford_path` | missing |  |
-| `all_pairs_bellman_ford_path_length` | `algorithms.shortest_paths.weighted.all_pairs_bellman_ford_path_length` | missing |  |
-| `all_pairs_dijkstra` | `algorithms.shortest_paths.weighted.all_pairs_dijkstra` | missing |  |
-| `all_pairs_dijkstra_path` | `algorithms.shortest_paths.weighted.all_pairs_dijkstra_path` | missing |  |
+| `all_pairs_bellman_ford_path` | `algorithms.shortest_paths.weighted.all_pairs_bellman_ford_path` | partial | Left to NetworkX: multigraphs; weight functions; negative cycles; graphs with tied shortest paths. |
+| `all_pairs_bellman_ford_path_length` | `algorithms.shortest_paths.weighted.all_pairs_bellman_ford_path_length` | partial | Left to NetworkX: weight functions; negative cycles. |
+| `all_pairs_dijkstra` | `algorithms.shortest_paths.weighted.all_pairs_dijkstra` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; graphs with tied shortest paths. |
+| `all_pairs_dijkstra_path` | `algorithms.shortest_paths.weighted.all_pairs_dijkstra_path` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; graphs with tied shortest paths. |
 | `all_pairs_dijkstra_path_length` | `algorithms.shortest_paths.weighted.all_pairs_dijkstra_path_length` | partial | Left to NetworkX: weight functions; weights <= 0. |
-| `all_pairs_shortest_path` | `algorithms.shortest_paths.unweighted.all_pairs_shortest_path` | missing |  |
+| `all_pairs_shortest_path` | `algorithms.shortest_paths.unweighted.all_pairs_shortest_path` | partial | Left to NetworkX: multigraphs; graphs with tied shortest paths. |
 | `all_pairs_shortest_path_length` | `algorithms.shortest_paths.unweighted.all_pairs_shortest_path_length` | implemented |  |
 | `all_shortest_paths` | `algorithms.shortest_paths.generic.all_shortest_paths` | missing |  |
 | `astar_path` | `algorithms.shortest_paths.astar.astar_path` | missing |  |
 | `astar_path_length` | `algorithms.shortest_paths.astar.astar_path_length` | missing |  |
 | `average_shortest_path_length` | `algorithms.shortest_paths.generic.average_shortest_path_length` | partial | Left to NetworkX: Floyd-Warshall methods; weight functions; weights <= 0. |
-| `bellman_ford_path` | `algorithms.shortest_paths.weighted.bellman_ford_path` | missing |  |
-| `bellman_ford_path_length` | `algorithms.shortest_paths.weighted.bellman_ford_path_length` | missing |  |
-| `bellman_ford_predecessor_and_distance` | `algorithms.shortest_paths.weighted.bellman_ford_predecessor_and_distance` | missing |  |
-| `bidirectional_dijkstra` | `algorithms.shortest_paths.weighted.bidirectional_dijkstra` | missing |  |
-| `bidirectional_shortest_path` | `algorithms.shortest_paths.unweighted.bidirectional_shortest_path` | missing |  |
-| `dijkstra_path` | `algorithms.shortest_paths.weighted.dijkstra_path` | missing |  |
-| `dijkstra_path_length` | `algorithms.shortest_paths.weighted.dijkstra_path_length` | missing |  |
-| `dijkstra_predecessor_and_distance` | `algorithms.shortest_paths.weighted.dijkstra_predecessor_and_distance` | missing |  |
+| `bellman_ford_path` | `algorithms.shortest_paths.weighted.bellman_ford_path` | partial | Left to NetworkX: multigraphs; weight functions; negative cycles; pairs with tied shortest paths or no path. |
+| `bellman_ford_path_length` | `algorithms.shortest_paths.weighted.bellman_ford_path_length` | partial | Left to NetworkX: weight functions; negative cycles; unreachable targets. |
+| `bellman_ford_predecessor_and_distance` | `algorithms.shortest_paths.weighted.bellman_ford_predecessor_and_distance` | partial | Left to NetworkX: multigraphs; weight functions; target; negative cycles; sources with tied shortest paths. |
+| `bidirectional_dijkstra` | `algorithms.shortest_paths.weighted.bidirectional_dijkstra` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; pairs with tied shortest paths or no path. |
+| `bidirectional_shortest_path` | `algorithms.shortest_paths.unweighted.bidirectional_shortest_path` | partial | Left to NetworkX: multigraphs; pairs with tied shortest paths or no path. |
+| `dijkstra_path` | `algorithms.shortest_paths.weighted.dijkstra_path` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; pairs with tied shortest paths or no path. |
+| `dijkstra_path_length` | `algorithms.shortest_paths.weighted.dijkstra_path_length` | partial | Left to NetworkX: weight functions; weights <= 0; unreachable targets. |
+| `dijkstra_predecessor_and_distance` | `algorithms.shortest_paths.weighted.dijkstra_predecessor_and_distance` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; sources with tied shortest paths. |
 | `find_negative_cycle` | `algorithms.shortest_paths.weighted.find_negative_cycle` | missing |  |
-| `floyd_warshall` | `algorithms.shortest_paths.dense.floyd_warshall` | missing |  |
-| `floyd_warshall_numpy` | `algorithms.shortest_paths.dense.floyd_warshall_numpy` | missing |  |
-| `floyd_warshall_predecessor_and_distance` | `algorithms.shortest_paths.dense.floyd_warshall_predecessor_and_distance` | missing |  |
+| `floyd_warshall` | `algorithms.shortest_paths.dense.floyd_warshall` | partial | Left to NetworkX: weight functions; negative cycles. |
+| `floyd_warshall_numpy` | `algorithms.shortest_paths.dense.floyd_warshall_numpy` | partial | Left to NetworkX: weight functions; negative cycles; nodelist other than None. |
+| `floyd_warshall_predecessor_and_distance` | `algorithms.shortest_paths.dense.floyd_warshall_predecessor_and_distance` | partial | Left to NetworkX: weight functions; negative cycles. |
 | `floyd_warshall_tree` | `algorithms.shortest_paths.dense.floyd_warshall_tree` | missing |  |
 | `goldberg_radzik` | `algorithms.shortest_paths.weighted.goldberg_radzik` | missing |  |
 | `has_path` | `algorithms.shortest_paths.generic.has_path` | implemented |  |
 | `johnson` | `algorithms.shortest_paths.weighted.johnson` | missing |  |
 | `multi_source_dijkstra` | `algorithms.shortest_paths.weighted.multi_source_dijkstra` | missing |  |
 | `multi_source_dijkstra_path` | `algorithms.shortest_paths.weighted.multi_source_dijkstra_path` | missing |  |
-| `multi_source_dijkstra_path_length` | `algorithms.shortest_paths.weighted.multi_source_dijkstra_path_length` | missing |  |
-| `negative_edge_cycle` | `algorithms.shortest_paths.weighted.negative_edge_cycle` | missing |  |
-| `predecessor` | `algorithms.shortest_paths.unweighted.predecessor` | missing |  |
+| `multi_source_dijkstra_path_length` | `algorithms.shortest_paths.weighted.multi_source_dijkstra_path_length` | partial | Left to NetworkX: weight functions; weights <= 0. |
+| `negative_edge_cycle` | `algorithms.shortest_paths.weighted.negative_edge_cycle` | partial | Left to NetworkX: weight functions. |
+| `predecessor` | `algorithms.shortest_paths.unweighted.predecessor` | partial | Left to NetworkX: multigraphs; return_seen; target; sources with tied shortest paths. |
 | `reconstruct_path` | `algorithms.shortest_paths.dense.reconstruct_path` | missing |  |
-| `shortest_path` | `algorithms.shortest_paths.generic.shortest_path` | missing |  |
+| `shortest_path` | `algorithms.shortest_paths.generic.shortest_path` | partial | Left to NetworkX: multigraphs; method='bellman-ford'; weight functions; weights <= 0; pairs with tied shortest paths or no path. |
 | `shortest_path_length` | `algorithms.shortest_paths.generic.shortest_path_length` | partial | Left to NetworkX: weight functions; weights <= 0. |
 | `single_source_all_shortest_paths` | `algorithms.shortest_paths.generic.single_source_all_shortest_paths` | missing |  |
-| `single_source_bellman_ford` | `algorithms.shortest_paths.weighted.single_source_bellman_ford` | missing |  |
-| `single_source_bellman_ford_path` | `algorithms.shortest_paths.weighted.single_source_bellman_ford_path` | missing |  |
-| `single_source_bellman_ford_path_length` | `algorithms.shortest_paths.weighted.single_source_bellman_ford_path_length` | missing |  |
-| `single_source_dijkstra` | `algorithms.shortest_paths.weighted.single_source_dijkstra` | missing |  |
-| `single_source_dijkstra_path` | `algorithms.shortest_paths.weighted.single_source_dijkstra_path` | missing |  |
+| `single_source_bellman_ford` | `algorithms.shortest_paths.weighted.single_source_bellman_ford` | partial | Left to NetworkX: multigraphs; weight functions; negative cycles; sources with tied shortest paths; unreachable targets. |
+| `single_source_bellman_ford_path` | `algorithms.shortest_paths.weighted.single_source_bellman_ford_path` | partial | Left to NetworkX: multigraphs; weight functions; negative cycles; sources with tied shortest paths. |
+| `single_source_bellman_ford_path_length` | `algorithms.shortest_paths.weighted.single_source_bellman_ford_path_length` | partial | Left to NetworkX: weight functions; negative cycles. |
+| `single_source_dijkstra` | `algorithms.shortest_paths.weighted.single_source_dijkstra` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; sources with tied shortest paths; unreachable targets. |
+| `single_source_dijkstra_path` | `algorithms.shortest_paths.weighted.single_source_dijkstra_path` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; sources with tied shortest paths. |
 | `single_source_dijkstra_path_length` | `algorithms.shortest_paths.weighted.single_source_dijkstra_path_length` | partial | Left to NetworkX: weight functions; weights <= 0. |
-| `single_source_shortest_path` | `algorithms.shortest_paths.unweighted.single_source_shortest_path` | missing |  |
+| `single_source_shortest_path` | `algorithms.shortest_paths.unweighted.single_source_shortest_path` | partial | Left to NetworkX: multigraphs; sources with tied shortest paths. |
 | `single_source_shortest_path_length` | `algorithms.shortest_paths.unweighted.single_source_shortest_path_length` | implemented |  |
-| `single_target_shortest_path` | `algorithms.shortest_paths.unweighted.single_target_shortest_path` | missing |  |
+| `single_target_shortest_path` | `algorithms.shortest_paths.unweighted.single_target_shortest_path` | partial | Left to NetworkX: multigraphs; targets with tied shortest paths. |
 | `single_target_shortest_path_length` | `algorithms.shortest_paths.unweighted.single_target_shortest_path_length` | implemented |  |
 
-### algorithms.similarity (0 of 8)
+### algorithms.similarity (2 of 8)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
 | `generate_random_paths` | `algorithms.similarity.generate_random_paths` | missing |  |
-| `graph_edit_distance` | `algorithms.similarity.graph_edit_distance` | missing |  |
+| `graph_edit_distance` | `algorithms.similarity.graph_edit_distance` | partial | Left to NetworkX: multigraphs; self-loops; match functions and cost functions; timeout. |
 | `optimal_edit_paths` | `algorithms.similarity.optimal_edit_paths` | missing |  |
 | `optimize_edit_paths` | `algorithms.similarity.optimize_edit_paths` | missing |  |
 | `optimize_graph_edit_distance` | `algorithms.similarity.optimize_graph_edit_distance` | missing |  |
 | `panther_similarity` | `algorithms.similarity.panther_similarity` | missing |  |
 | `panther_vector_similarity` | `algorithms.similarity.panther_vector_similarity` | missing |  |
-| `simrank_similarity` | `algorithms.similarity.simrank_similarity` | missing |  |
+| `simrank_similarity` | `algorithms.similarity.simrank_similarity` | partial | Left to NetworkX: multigraphs; graphs with a weight edge attribute; a failure to converge. |
 
 ### algorithms.simple_paths (0 of 4)
 
@@ -871,7 +871,7 @@ value; "weight functions" means a callable passed as `weight`.
 | `edge_dfs` | `algorithms.traversal.edgedfs.edge_dfs` | missing |  |
 | `generic_bfs_edges` | `algorithms.traversal.breadth_first_search.generic_bfs_edges` | missing |  |
 
-### algorithms.tree (0 of 28)
+### algorithms.tree (5 of 28)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
@@ -886,16 +886,16 @@ value; "weight functions" means a callable passed as `weight`.
 | `is_tree` | `algorithms.tree.recognition.is_tree` | missing |  |
 | `join_trees` | `algorithms.tree.operations.join_trees` | missing |  |
 | `junction_tree` | `algorithms.tree.decomposition.junction_tree` | missing |  |
-| `kruskal_mst_edges` | `algorithms.tree.mst.kruskal_mst_edges` | missing |  |
+| `kruskal_mst_edges` | `algorithms.tree.mst.kruskal_mst_edges` | partial | Left to NetworkX: directed graphs; multigraphs; partition; non-finite weights. |
 | `maximum_branching` | `algorithms.tree.branchings.maximum_branching` | missing |  |
 | `maximum_spanning_arborescence` | `algorithms.tree.branchings.maximum_spanning_arborescence` | missing |  |
-| `maximum_spanning_edges` | `algorithms.tree.mst.maximum_spanning_edges` | missing |  |
-| `maximum_spanning_tree` | `algorithms.tree.mst.maximum_spanning_tree` | missing |  |
+| `maximum_spanning_edges` | `algorithms.tree.mst.maximum_spanning_edges` | partial | Left to NetworkX: directed graphs; multigraphs; algorithms other than Kruskal; non-finite weights. |
+| `maximum_spanning_tree` | `algorithms.tree.mst.maximum_spanning_tree` | partial | Left to NetworkX: directed graphs; multigraphs; algorithms other than Kruskal; non-finite weights. |
 | `minimal_branching` | `algorithms.tree.branchings.minimal_branching` | missing |  |
 | `minimum_branching` | `algorithms.tree.branchings.minimum_branching` | missing |  |
 | `minimum_spanning_arborescence` | `algorithms.tree.branchings.minimum_spanning_arborescence` | missing |  |
-| `minimum_spanning_edges` | `algorithms.tree.mst.minimum_spanning_edges` | missing |  |
-| `minimum_spanning_tree` | `algorithms.tree.mst.minimum_spanning_tree` | missing |  |
+| `minimum_spanning_edges` | `algorithms.tree.mst.minimum_spanning_edges` | partial | Left to NetworkX: directed graphs; multigraphs; algorithms other than Kruskal; non-finite weights. |
+| `minimum_spanning_tree` | `algorithms.tree.mst.minimum_spanning_tree` | partial | Left to NetworkX: directed graphs; multigraphs; algorithms other than Kruskal; non-finite weights. |
 | `number_of_spanning_trees` | `algorithms.tree.mst.number_of_spanning_trees` | missing |  |
 | `partition_spanning_tree` | `algorithms.tree.mst.partition_spanning_tree` | missing |  |
 | `prim_mst_edges` | `algorithms.tree.mst.prim_mst_edges` | missing |  |
@@ -914,11 +914,11 @@ value; "weight functions" means a callable passed as `weight`.
 | `triadic_census` | `algorithms.triads.triadic_census` | partial | Left to NetworkX: nodelist; self-loops. |
 | `triads_by_type` | `algorithms.triads.triads_by_type` | missing |  |
 
-### algorithms.vitality (0 of 1)
+### algorithms.vitality (1 of 1)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `closeness_vitality` | `algorithms.vitality.closeness_vitality` | missing |  |
+| `closeness_vitality` | `algorithms.vitality.closeness_vitality` | partial | Left to NetworkX: multigraphs; weight functions; weights <= 0; wiener_index. |
 
 ### algorithms.voronoi (0 of 1)
 
@@ -933,13 +933,13 @@ value; "weight functions" means a callable passed as `weight`.
 | `number_of_walks` | `algorithms.walks.number_of_walks` | missing |  |
 | `random_walk` | `algorithms.walks.random_walk` | missing |  |
 
-### algorithms.wiener (1 of 4)
+### algorithms.wiener (4 of 4)
 
 | Dispatch name | Function | Status | Notes |
 |---|---|---|---|
-| `gutman_index` | `algorithms.wiener.gutman_index` | missing |  |
-| `hyper_wiener_index` | `algorithms.wiener.hyper_wiener_index` | missing |  |
-| `schultz_index` | `algorithms.wiener.schultz_index` | missing |  |
+| `gutman_index` | `algorithms.wiener.gutman_index` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0. |
+| `hyper_wiener_index` | `algorithms.wiener.hyper_wiener_index` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0. |
+| `schultz_index` | `algorithms.wiener.schultz_index` | partial | Left to NetworkX: directed graphs; multigraphs; weight functions; weights <= 0. |
 | `wiener_index` | `algorithms.wiener.wiener_index` | partial | Left to NetworkX: weight functions; weights <= 0. |
 
 ### classes.digraph (0 of 1)

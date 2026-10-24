@@ -79,6 +79,49 @@ disagrees with its own per-node computation (used when `nodes` is given)
 and with Burt's definition. knappnet leaves those calls to NetworkX and
 runs the others, which agree with NetworkX's per-node computation.
 
+## Path-valued results
+
+A function that returns shortest paths themselves (`shortest_path`,
+`dijkstra_path`, `bellman_ford_path`, predecessor dicts, and so on) runs on
+the engine only when every shortest path it must report is unique.
+NetworkX picks among equally short paths by the order in which it explores
+the graph, which the engine does not follow, so calls where ties exist are
+left to NetworkX. Lengths are never affected.
+
+## Adjacency order
+
+Some results depend on the order in which NetworkX visits neighbors:
+topological sorts, `find_cycle`, `cycle_basis`, `maximal_matching`, the
+greedy colouring order, and the spanning tree chosen among equal weights.
+The engine reproduces that order only when the graph's adjacency lists are
+in the order its edge list would produce (always so for graphs built by
+adding the edges in node order); other graphs are left to NetworkX.
+
+## Order within lists
+
+`k_edge_components` for `k >= 3` and `k_components` return the same sets as
+NetworkX, in a different order inside the lists. `transitive_closure`
+inserts the new edges in node order, so the edge order of the returned
+graph can differ (nodes, edges, and attributes are the same).
+
+## Functions left to NetworkX
+
+These families depend on the iteration order of sets or on NetworkX's own
+random number generator, or mutate their input, and are not run on the
+engine: `simple_cycles` and `chordless_cycles`, Panther similarity,
+rewiring and small-world functions (`double_edge_swap`, `random_reference`,
+`lattice_reference`, `sigma`, `omega`, and relatives), normalized rich
+club coefficients, `maximal_independent_set`, random-sequential and
+connected-sequential colourings, and the other greedy colouring
+strategies, matching functions that return sets of edges, branchings and
+arborescences, flow dicts (`maximum_flow`, `min_cost_flow`),
+vertex- and edge-disjoint path enumeration, global minimum node and edge
+cuts, tree and VF2++ isomorphism mappings, weighted reaching centrality,
+and the approximate current-flow functions. The engine prices self-loops
+in graph edit distance differently from NetworkX, so graphs with
+self-loops are left to NetworkX. Multigraphs and weight functions are
+declined by every function that has not been checked on them.
+
 ## Functions not run on the engine
 
 Some calls are always left to NetworkX because the engine would give a

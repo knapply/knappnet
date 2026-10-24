@@ -96,6 +96,11 @@ def materialize(x):
 def agree(a, b):
     """Loose comparison of results (values to 1e-6, collections unordered)."""
     a, b = materialize(a), materialize(b)
+    if hasattr(b, "shape"):
+        return a.shape == b.shape and bool(((a - b) ** 2).max() < 1e-9 if a.size else True)
+    if isinstance(b, nx.Graph):
+        return (type(a) is type(b) and set(a) == set(b)
+                and {frozenset(e) for e in a.edges} == {frozenset(e) for e in b.edges})
     if isinstance(b, dict):
         return set(a) == set(b) and all(agree(a[k], b[k]) for k in b)
     if isinstance(b, tuple):
@@ -177,6 +182,63 @@ FUNCTIONS = {
     "louvain_communities": (
         lambda G, b: nx.community.modularity(
             G, nx.community.louvain_communities(G, seed=1, backend=b)), False, {}),
+    # Shortest paths.
+    "single_source_bellman_ford_path_length (weighted)": (
+        lambda G, b: nx.single_source_bellman_ford_path_length(
+            G, next(iter(G)), weight="weight", backend=b), False, {}),
+    "floyd_warshall (weighted)": (
+        lambda G, b: nx.floyd_warshall(G, weight="weight", backend=b), False,
+        {"max_n": 1500}),
+    # Centrality extras.
+    "load_centrality": (lambda G, b: nx.load_centrality(G, backend=b), False, BETWEENNESS),
+    "betweenness_centrality_subset": (
+        lambda G, b: nx.betweenness_centrality_subset(
+            G, list(G)[:50], list(G)[-50:], backend=b), False, {"max_n": 20000}),
+    "current_flow_betweenness_centrality": (
+        lambda G, b: nx.current_flow_betweenness_centrality(G, backend=b), False,
+        {"max_n": 1000}),
+    "second_order_centrality": (
+        lambda G, b: nx.second_order_centrality(G, backend=b), False, {"max_n": 1000}),
+    # Distance indices.
+    "hyper_wiener_index": (lambda G, b: nx.hyper_wiener_index(G, backend=b), False,
+                           {"max_n": 20000}),
+    "local_efficiency": (lambda G, b: nx.local_efficiency(G, backend=b), False,
+                         {"max_n": 3000}),
+    # Cores, mixing, cuts, colouring.
+    "k_truss": (lambda G, b: nx.k_truss(G, 4, backend=b), False, {}),
+    "onion_layers": (lambda G, b: nx.onion_layers(G, backend=b), False, {}),
+    "average_neighbor_degree": (lambda G, b: nx.average_neighbor_degree(G, backend=b),
+                                False, {}),
+    "square_clustering": (lambda G, b: nx.square_clustering(G, backend=b), False,
+                          {"max_n": 3000}),
+    "conductance": (lambda G, b: nx.conductance(G, list(G)[::2], backend=b), False, {}),
+    "greedy_color": (lambda G, b: nx.greedy_color(G, "largest_first", backend=b), False,
+                     {}),
+    # Similarity and isomorphism.
+    "jaccard_coefficient": (lambda G, b: list(nx.jaccard_coefficient(G, backend=b)), False,
+                            {"max_n": 3000}),
+    "weisfeiler_lehman_graph_hash": (
+        lambda G, b: nx.weisfeiler_lehman_graph_hash(G, backend=b), False, {}),
+    "simrank_similarity": (lambda G, b: nx.simrank_similarity(G, backend=b), False,
+                           {"max_n": 300}),
+    "vf2pp_is_isomorphic": (
+        lambda G, b: nx.vf2pp_is_isomorphic(G, G.copy(), backend=b), False, {}),
+    # Flow and connectivity.
+    "maximum_flow_value": (
+        lambda G, b: nx.maximum_flow_value(G, next(iter(G)), list(G)[-1],
+                                           capacity="weight", backend=b), True, {}),
+    "edge_connectivity": (lambda G, b: nx.edge_connectivity(G, backend=b), False,
+                          {"max_n": 3000}),
+    "gomory_hu_tree": (lambda G, b: nx.gomory_hu_tree(G, capacity="weight", backend=b),
+                       False, {"max_n": 300}),
+    "condensation": (lambda G, b: nx.condensation(G, backend=b), True, {}),
+    # Trees, DAGs and cycles.
+    "minimum_spanning_tree (weighted)": (
+        lambda G, b: nx.minimum_spanning_tree(G, weight="weight", backend=b), False, {}),
+    "cycle_basis": (lambda G, b: nx.cycle_basis(G, backend=b), False, {}),
+    "transitive_reduction (DAG)": (
+        lambda G, b: nx.transitive_reduction(nx.condensation(G, backend=b), backend=b),
+        True, {"max_n": 3000}),
 }
 
 # Louvain's partitions differ by design (different random streams); compare
