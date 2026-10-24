@@ -163,3 +163,19 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   s approaches n; sampling sources within the ego network is the scalable
   substitute.
 
+
+## Round 3 (btower, 8-CPU bench runner)
+
+- `distances(sources)` writes rows in place (`parallel::fill_chunks`),
+  64 rows per multi-source search, into one zeroed (lazily mapped)
+  matrix: no per-row vectors, no copy into the matrix. sparse100k, 500
+  sources: 0.39 s -> 0.30 s at one thread, 0.26 s -> 0.16 s at 8;
+  allocations 941 -> 61. The output is 8 bytes x sources x n (400 MB
+  here), so "bytes per (n + m)" is inherent to a dense distance matrix;
+  the benchmark's 763 MB peak is that matrix plus the benchmark's own copy
+  of it for fingerprinting. Scaling is bounded by writing the 400 MB
+  (first-touch page faults and memory bandwidth), not by the searches.
+- Dijkstra settles nodes from a radix heap (Ahuja, Mehlhorn, Orlin and
+  Tarjan 1990) keyed by the 128-bit integer (order-preserving distance
+  bits, node index), which removes nodes in exactly the order of the
+  former indexed 4-ary heap, so results are unchanged. Measured below.

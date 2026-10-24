@@ -232,3 +232,68 @@ one core).
 5. Methods inherently O(n^2) (CONCOR, structural-equivalence matrices,
    full stress, QAP on all dyads) need blocking and output streaming, or
    sampling; they do not reach billion-edge scale as exact methods.
+
+## Thread policy and round-3 measurements (btower, 8-CPU bench runner)
+
+Measured with `bench_models MODE=scaling` (median of 3) on the branch and
+on main in the same job; "t=8" is 8 threads.
+
+- Every parallel call now sizes its thread count by its work
+  (`parallel::threads_for`: at most one thread per `GRAIN` = 2^17
+  elementary steps; `search_work` and `ball_steps` estimate graph
+  searches). Threads are started per call (some microseconds each), so
+  this removes the slowdowns of small calls without changing any result.
+  Girvan-Newman, dense n = 60: 0.30x at 16 threads (main) -> 0.97x at 8
+  (one thread; each round's betweenness is too small to split).
+- `parallel::for_each_claimed` / `map_items`: threads claim strided chunks
+  of items dynamically, for merges that do not depend on the schedule
+  (sorted outputs, integer sums, results keyed by item). Used for
+  multi-start tabu searches, maximal cliques, ego networks, and the triad
+  census. Strided chunks matter on preferential-attachment graphs, whose
+  hubs are numbered first: with contiguous chunks pa100k `ego_summary`
+  fell to 2.8x at 16 threads; strided, 6.6x at 8.
+- `parallel::crew`: one group of threads runs all phases of an iterative
+  method and meets at a spinning barrier between phases, instead of
+  starting threads per phase. Sparse stress (n = 10k) runs its sweeps on a
+  crew: 1.1x at 16 threads (main) -> 4.0x at 16 (0.276 s -> 0.069 s),
+  results identical bit for bit. The barrier spins about 4k times, then
+  yields, so oversubscribed machines (CRAN's 2-core checks) are not
+  starved.
+- Small multi-start problems (factions, core-periphery at n = 200, about
+  10 ms in all) and maximal cliques at n = 150 (7 ms) stay at 2-6x: 20
+  starts over 8-16 threads is at most 2.5 rounds, and clique subproblems
+  are few and uneven. Not worth more threads.
+- CONCOR column correlations: now 64 x 64 tiles of pairs per task (packed
+  rows and columns stay in cache), column centring and the symmetric
+  assembly in parallel too, sums in their old order (identical results).
+  Dense n = 1k depth 3: see the table in the round-3 report; the remaining
+  limit is the number of splits with small b at depth 3 and per-iteration
+  serial checks.
+- Remaining: PageRank, eigenvector (Lanczos), Katz, and HITS still start
+  threads once per matrix-vector product. With the work threshold they no
+  longer slow down (x0.3-0.5 at 16 threads on n = 1k-10k before, x1.0
+  now), but n = 100k gains only 1.4-2x. Running each solver on a `crew`
+  (blocked sums in a fixed order) is the next step; it changes the
+  rounding of the sums, so results would move within tolerance.
+
+### Ego betweenness on bit rows
+
+- Directed (and order > 1) ego betweenness used Brandes per ego. Now: one
+  search from ego and one against the arcs give d(ego, .), sigma(ego, .),
+  d(., ego), sigma(., ego); ego is on a shortest i-j path iff
+  d(i, ego) + d(ego, j) = d(i, j), with sigma(i, ego) sigma(ego, j) paths
+  through it (Brandes 2001), so each alter's search stops at depth
+  d(i, ego) + max d(ego, j) and counts paths only to the nodes that can
+  have ego on their way (and their ancestors), on bit rows
+  (`bitset::RowPaths`, POPCNT build at run time). O(s^2/64) per alter.
+- densedir1k (n = 1000, density 0.3, mode all): 86.6 s -> 2.23 s at one
+  thread, 7.04 s (16 threads) -> 0.30 s (8 threads); meddir3k 0.70 s ->
+  0.44 s; dense1k (undirected pairs, POPCNT build) 0.61 s -> 0.54 s.
+- Working set per thread: two s x s bit matrices (2 x 8 MB at the cap
+  s = 8192) plus O(s) search state.
+
+### Triad census
+
+- Flat adjacency with offsets and one reused union buffer: allocations
+  271,608 -> 30 on densedir1k (159k -> 22 on dense1k), and 1.99 s -> 1.73 s
+  at one thread; pa100k 0.77 s -> 0.64 s, 8 threads 0.12 s -> 0.08 s.
