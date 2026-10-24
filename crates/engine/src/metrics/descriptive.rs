@@ -111,7 +111,7 @@ use crate::metrics::closeness::oriented;
 use crate::metrics::degree::DegreeMode;
 use crate::metrics::topography::{components, ComponentKind};
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, RadixHeap, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 // ---- Reciprocity ---------------------------------------------------------------
 
@@ -1116,7 +1116,7 @@ struct Search {
     done: Vec<bool>,
     order: Vec<u32>,
     buckets: Vec<Vec<u32>>,
-    heap: RadixHeap,
+    heap: IndexedHeap,
 }
 
 impl Search {
@@ -1127,7 +1127,7 @@ impl Search {
             done: vec![false; n],
             order: Vec::new(),
             buckets: Vec::new(),
-            heap: RadixHeap::new(n),
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -1236,7 +1236,7 @@ impl Search {
         }
     }
 
-    /// Dijkstra's algorithm with a radix heap
+    /// Dijkstra's algorithm with an indexed 4-ary heap
     /// (`dijkstra1959note`).
     fn dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize, limit: f64) {
         let adj = g.out();
@@ -1247,7 +1247,7 @@ impl Search {
             if d > limit {
                 // Every node within the limit is settled; forget the rest.
                 self.dist[v] = f64::INFINITY;
-                for w in self.heap.nodes() {
+                for &(_, w) in self.heap.entries() {
                     self.dist[w as usize] = f64::INFINITY;
                 }
                 self.heap.clear();

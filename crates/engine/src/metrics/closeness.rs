@@ -59,7 +59,7 @@ use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
 use crate::parallel;
-use crate::weights::{path_lengths, Lengths, PathAlgorithm, RadixHeap, WeightKind};
+use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
 
 /// How closeness treats nodes that cannot be reached. See the module
 /// documentation for the formulas.
@@ -353,7 +353,7 @@ struct Search {
     done: Vec<bool>,
     touched: Vec<u32>,
     buckets: Vec<Vec<u32>>,
-    heap: RadixHeap,
+    heap: IndexedHeap,
 }
 
 impl Search {
@@ -365,7 +365,7 @@ impl Search {
             done: vec![false; n],
             touched: Vec::new(),
             buckets: Vec::new(),
-            heap: RadixHeap::new(n),
+            heap: IndexedHeap::new(n),
         }
     }
 
@@ -431,7 +431,7 @@ impl Search {
         }
     }
 
-    /// Dijkstra's algorithm with a radix heap
+    /// Dijkstra's algorithm with an indexed 4-ary heap
     /// (`dijkstra1959note`).
     fn dijkstra(&mut self, g: &Graph, lens: &[f64], s: usize) -> Profile {
         let adj = g.out();
