@@ -180,9 +180,14 @@ pub fn edge_betweenness(g: &Graph, opts: EdgeBetweennessOptions) -> Result<Vec<f
     // Sources are summed in fixed groups merged in group order, so the
     // result does not depend on the thread count.
     let mut eb = vec![0.0; m];
+    let threads = parallel::threads_for(
+        opts.threads,
+        n,
+        parallel::search_work(n, n, g.out().arc_count()),
+    );
     parallel::sum_in_order(
         n,
-        opts.threads,
+        threads,
         || EdgeWorkspace::new(n),
         || vec![0.0; m],
         |ws, acc: &mut Vec<f64>, s| {

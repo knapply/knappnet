@@ -229,9 +229,15 @@ pub fn neighborhoods(
         check_ego(g, e)?;
     }
     let n = g.node_count();
+    let ball = parallel::ball_steps(n, g.out().arc_count(), opts.order);
+    let threads = parallel::threads_for(
+        opts.threads,
+        egos.len(),
+        (egos.len() as u64).saturating_mul(ball),
+    );
     let partials = parallel::for_each_item(
         egos.len(),
-        opts.threads,
+        threads,
         || (Bfs::new(n), Vec::new()),
         |(bfs, found): &mut (Bfs, Vec<(usize, Vec<u32>)>), i| {
             bfs.run(g, egos[i], opts.order, opts.mode);
@@ -280,11 +286,13 @@ pub fn neighborhood_sizes(
     // count.
     let view = View::new(g, opts.mode);
     let max_level = opts.order.min(u32::MAX as usize - 1) as u32;
+    let ball = parallel::ball_steps(n, view.arc_count(), opts.order);
+    let threads = parallel::threads_for(opts.threads, count, (count as u64).saturating_mul(ball));
     if !batches_pay(view, max_level) {
         // Small neighborhoods that rarely overlap: one search per ego.
         let partials = parallel::for_each_item(
             count,
-            opts.threads,
+            threads,
             || (Bfs::new(n), Vec::new()),
             |(bfs, found): &mut (Bfs, Vec<(usize, usize)>), i| {
                 bfs.run(g, sources[i] as usize, opts.order, opts.mode);
@@ -307,7 +315,7 @@ pub fn neighborhood_sizes(
     }
     let partials = parallel::for_each_item(
         (count + BATCH - 1) / BATCH,
-        opts.threads,
+        threads,
         || (MultiBfs::new(n), Vec::new()),
         |(ms, found): &mut (MultiBfs, Vec<(usize, [usize; BATCH])>), b| {
             let lo = b * BATCH;
@@ -690,9 +698,22 @@ pub fn ego_summary(g: &Graph, opts: EgoOptions) -> Result<EgoSummary> {
         ));
     }
     let n = g.node_count();
-    let partials = parallel::for_each_item(
+    // Building an ego network scans the arcs of its members; ego
+    // betweenness then costs about one more step per member and arc for
+    // every member.
+    let ball = parallel::ball_steps(n, g.out().arc_count(), opts.order);
+    let size = (ball as f64).sqrt() as u64 + 1;
+    let per_ego = if opts.betweenness {
+        ball.saturating_mul(size)
+    } else {
+        ball
+    };
+    let threads = parallel::threads_for(opts.threads, n, (n as u64).saturating_mul(per_ego));
+    // Ego networks differ widely in size (hubs), so threads claim egos;
+    // every result is stored by ego.
+    let partials = parallel::for_each_claimed(
         n,
-        opts.threads,
+        threads,
         || EgoWork::new(n),
         |ws, ego| ws.measure(g, ego, &opts),
     );

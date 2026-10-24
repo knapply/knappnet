@@ -379,7 +379,14 @@ pub fn core_periphery(g: &Graph, opts: CorePeripheryOptions) -> Result<CorePerip
     } else {
         opts.tenure
     };
-    let parts = parallel::for_each_item(opts.starts, opts.threads, Vec::new, |acc, s| {
+    // Starts differ in length, so threads claim them as they finish; runs
+    // are sorted by start below.
+    let threads = parallel::threads_for(
+        opts.threads,
+        opts.starts,
+        (opts.starts as u64).saturating_mul((n * n) as u64 * 16),
+    );
+    let parts = parallel::for_each_claimed(opts.starts, threads, Vec::new, |acc, s| {
         acc.push((s, search(&model, &opts, tenure, s)));
     });
     let mut runs: Vec<(usize, (f64, Vec<bool>))> = parts.into_iter().flatten().collect();

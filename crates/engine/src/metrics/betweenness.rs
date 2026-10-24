@@ -69,9 +69,14 @@ pub fn betweenness(g: &Graph, opts: BetweennessOptions) -> Result<Vec<f64>> {
     // Sources are summed in fixed groups merged in group order, so the
     // result does not depend on the thread count.
     let mut bc = vec![0.0; n];
+    let threads = parallel::threads_for(
+        opts.threads,
+        n,
+        parallel::search_work(n, n, g.out().arc_count()),
+    );
     parallel::sum_in_order(
         n,
-        opts.threads,
+        threads,
         || Workspace::new(n),
         || vec![0.0; n],
         |ws, acc: &mut Vec<f64>, s| {

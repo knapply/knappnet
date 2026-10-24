@@ -225,9 +225,6 @@ pub struct Eigenvector {
     pub connected: bool,
 }
 
-/// Arcs whose number exceeds this use several threads per step.
-pub(crate) const PARALLEL_ARCS: usize = 1 << 16;
-
 /// Eigenvector centrality. See the module documentation for conventions.
 pub fn eigenvector_centrality(g: &Graph, opts: EigenvectorOptions) -> Result<Eigenvector> {
     if opts.tol.is_nan() || opts.tol <= 0.0 || opts.max_iter == 0 {
@@ -539,11 +536,7 @@ impl SparseOp {
             }
             offsets.push(cols.len());
         }
-        let threads = if cols.len() >= PARALLEL_ARCS {
-            parallel::resolve_threads(threads, dim)
-        } else {
-            1
-        };
+        let threads = parallel::threads_for(threads, dim, cols.len() as u64);
         SparseOp {
             offsets,
             cols,
@@ -620,11 +613,7 @@ impl SparseOp {
             }
             offsets.push(cols.len());
         }
-        let threads = if cols.len() >= PARALLEL_ARCS {
-            self.threads.max(1)
-        } else {
-            1
-        };
+        let threads = parallel::threads_for(self.threads.max(1), rows.len(), cols.len() as u64);
         SparseOp {
             offsets,
             cols,
@@ -932,7 +921,7 @@ impl Blocks {
         Blocks {
             dim,
             count,
-            threads: threads.max(1).min(count.max(1)),
+            threads: parallel::threads_for(threads.max(1), count, dim as u64),
         }
     }
 
