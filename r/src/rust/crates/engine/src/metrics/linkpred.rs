@@ -40,8 +40,11 @@
 //!
 //! All non-edges are the unordered pairs u < v of distinct non-adjacent
 //! nodes, in lexicographic order (NetworkX's `non_edges` yields the same
-//! pairs in set order). Common neighbours are population counts of ANDed
-//! bit rows ([`crate::bitset::NeighborSets`]) on dense networks.
+//! pairs in set order). For given pairs, common neighbours are population
+//! counts of ANDed bit rows ([`crate::bitset::NeighborSets`]) on dense
+//! networks and merges of sorted rows otherwise; for all non-edges, each
+//! node's two-step neighbourhood is tallied once, so a row of n scores
+//! costs the sum of its neighbours' degrees plus n.
 
 use crate::bitset::NeighborSets;
 use crate::error::{Error, Result};
@@ -458,13 +461,20 @@ pub fn link_scores_non_edges(
     parallel::for_each_claimed(
         n,
         threads,
-        || (vec![u32::MAX; if needs_dist { n } else { 0 }], Vec::new()),
-        |(dist, queue), u| {
+        || {
+            (
+                vec![u32::MAX; if needs_dist { n } else { 0 }],
+                Vec::new(),
+                Accumulator::new(n),
+            )
+        },
+        |(dist, queue, acc), u| {
             let taken = slots[u].lock().unwrap_or_else(|e| e.into_inner()).take();
             let (a, b, c) = taken.expect("each row is filled once");
             if needs_dist {
                 bfs(&sc.sets, u, dist, queue);
             }
+            acc.gather(&sc, u);
             let row = sc.sets.row(u);
             let mut r = row.partition_point(|&w| w as usize <= u);
             let mut k = 0;
@@ -475,12 +485,135 @@ pub fn link_scores_non_edges(
                 }
                 a[k] = u as u32;
                 b[k] = v as u32;
-                c[k] = sc.score(u, v, dist.get(v).copied().unwrap_or(0));
+                c[k] = acc.score(&sc, u, v, dist.get(v).copied().unwrap_or(0));
                 k += 1;
             }
+            acc.clear();
         },
     );
     Ok(())
+}
+
+/// Common-neighbour tallies of one node u with every node reached in two
+/// steps: for x, the number of common neighbours w ≠ u, how many of them
+/// share u's community, and the method's sum over them (1 / k_w, 1 /
+/// ln k_w, or 1 / k_w over the same community), each added in increasing
+/// order of w as [`Scorer::score`] adds them, so the scores are bitwise
+/// the same. One pass over the two-step neighbourhood replaces an
+/// intersection per pair: O(Σ_{w ∈ N(u)} k_w + n) per node.
+struct Accumulator {
+    count: Vec<u32>,
+    same: Vec<u32>,
+    sum: Vec<f64>,
+    touched: Vec<u32>,
+}
+
+impl Accumulator {
+    fn new(n: usize) -> Accumulator {
+        Accumulator {
+            count: vec![0; n],
+            same: vec![0; n],
+            sum: vec![0.0; n],
+            touched: Vec::new(),
+        }
+    }
+
+    fn gather(&mut self, sc: &Scorer, u: usize) {
+        let s = &sc.sets;
+        let comm = |w: usize| sc.communities.map_or(0, |c| c[w]);
+        let cu = comm(u);
+        for &w in s.row(u) {
+            let w = w as usize;
+            if w == u {
+                continue;
+            }
+            let same_w = comm(w) == cu;
+            let term = match sc.opts.method {
+                LinkMethod::AdamicAdar => 1.0 / (s.simple_degree(w) as f64).ln(),
+                LinkMethod::ResourceAllocation => 1.0 / s.simple_degree(w) as f64,
+                LinkMethod::RaSoundarajanHopcroft if same_w => 1.0 / s.simple_degree(w) as f64,
+                _ => 0.0,
+            };
+            for &x in s.row(w) {
+                let x = x as usize;
+                if self.count[x] == 0 {
+                    self.touched.push(x as u32);
+                }
+                self.count[x] += 1;
+                if same_w {
+                    self.same[x] += 1;
+                }
+                if term != 0.0 {
+                    self.sum[x] += term;
+                }
+            }
+        }
+    }
+
+    fn clear(&mut self) {
+        for &x in &self.touched {
+            let x = x as usize;
+            self.count[x] = 0;
+            self.same[x] = 0;
+            self.sum[x] = 0.0;
+        }
+        self.touched.clear();
+    }
+
+    /// The score of the non-edge (u, v) from the tallies.
+    fn score(&self, sc: &Scorer, u: usize, v: usize, dist: u32) -> f64 {
+        let s = &sc.sets;
+        let comm = |w: usize| sc.communities.map_or(0, |c| c[w]);
+        let cn = self.count[v] as usize;
+        let same = self.same[v] as usize;
+        match sc.opts.method {
+            LinkMethod::CommonNeighbors => cn as f64,
+            LinkMethod::Jaccard => {
+                let union = s.len(u) + s.len(v) - cn;
+                if union == 0 {
+                    0.0
+                } else {
+                    cn as f64 / union as f64
+                }
+            }
+            LinkMethod::AdamicAdar | LinkMethod::ResourceAllocation => self.sum[v],
+            LinkMethod::PreferentialAttachment => {
+                (s.simple_degree(u) as f64) * (s.simple_degree(v) as f64)
+            }
+            LinkMethod::CommonNeighborCentrality => {
+                let alpha = sc.opts.alpha;
+                if alpha == 1.0 {
+                    return cn as f64;
+                }
+                let d = if dist == u32::MAX {
+                    f64::INFINITY
+                } else {
+                    dist as f64
+                };
+                alpha * cn as f64 + (1.0 - alpha) * sc.n as f64 / d
+            }
+            LinkMethod::CnSoundarajanHopcroft => {
+                if comm(u) == comm(v) {
+                    (cn + same) as f64
+                } else {
+                    cn as f64
+                }
+            }
+            LinkMethod::RaSoundarajanHopcroft => {
+                if comm(u) == comm(v) {
+                    self.sum[v]
+                } else {
+                    0.0
+                }
+            }
+            LinkMethod::WithinInterCluster => {
+                if comm(u) != comm(v) {
+                    return 0.0;
+                }
+                same as f64 / ((cn - same) as f64 + sc.opts.delta)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
