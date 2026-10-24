@@ -357,9 +357,10 @@ conservative.
 - Girth: BFS from every node with pruning at the best cycle so far;
   n = 10^4, m = 3 x 10^4: 0.4 ms (the bound prunes almost everything).
 - Bounded simple cycles (DFS above the start node): n = 10^4, m = 3 x 10^4,
-  length <= 5: 1.9 s before and markedly less after dropping the
-  per-start strong component search, which is only needed for Johnson's
-  unbounded search; NetworkX on n = 1000: 11.8 s vs 23 ms.
+  length <= 5: 1.9 s on btower with a strong component search per start
+  node (O(nm) in all), 0.30 s on the slower VM after dropping it (it is
+  only needed for Johnson's unbounded search); NetworkX on n = 1000:
+  11.8 s vs 20 ms.
 - Chordless cycles (path extension with neighbour counters): length <= 6,
   n = 10^4: 0.34 s; NetworkX n = 1000: 5.4 s vs 27 ms.
 - Minimum cycle basis (de Pina): one Dijkstra per witness edge endpoint

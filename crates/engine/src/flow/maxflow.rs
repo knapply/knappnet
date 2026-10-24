@@ -14,7 +14,9 @@
 //! - Capacities: one per edge, in input order, non-negative and possibly
 //!   infinite; without capacities every edge has capacity 1. NetworkX
 //!   (`hagberg2008exploring`) reads a missing `capacity` attribute as
-//!   infinite; a binding reproduces that by passing `inf`.
+//!   infinite, which a binding reproduces by passing `inf`, and silently
+//!   drops edges of negative capacity, which this module refuses (a
+//!   binding passes 0 for them).
 //! - Self-loops carry no flow and never belong to a cut (NetworkX drops
 //!   them from its residual network).
 //! - Parallel edges are separate edges whose capacities add up. NetworkX
