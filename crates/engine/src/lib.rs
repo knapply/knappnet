@@ -13,6 +13,7 @@
 //! | Storage and shared machinery | [`graph`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
 //! | Data model and validation | [`frame`] (typed node and edge tables, roles, declared properties, diagnostics, graph construction) |
 //! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
+//! | Flows and cuts | [`flow`] (maximum flow, minimum cuts, minimum-cost flow, Gomory-Hu trees) |
 //! | Network files | [`io`] |
 //! | Measures (centrality, cohesion, positions, structure) | [`metrics`] |
 //! | Statistical models | [`qap`] |
@@ -33,6 +34,9 @@ pub mod parallel;
 pub mod rng;
 pub mod union_find;
 pub mod weights;
+
+// Flows and cuts.
+pub mod flow;
 
 // Files.
 pub mod io;

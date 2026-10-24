@@ -1440,6 +1440,97 @@ int32_t net_random_sbm(int64_t k, const int64_t *sizes, const double *probs,
                        uint64_t seed, int32_t threads, EdgeListsHandle **out,
                        char *err, size_t err_len);
 
+/* ---- Flows and cuts -----------------------------------------------------
+ * sources and sinks hold 0-based node indices (at least one each, disjoint,
+ * no repeats). Capacities hold one value per edge in input order,
+ * non-negative and possibly INFINITY; for maximum flows and cuts a NULL
+ * capacity gives every edge capacity 1, for minimum-cost flows a NULL
+ * capacity is infinite and a NULL cost 0 (NetworkX's defaults). Self-loops
+ * carry no flow; parallel edges add their capacities. side: 0 = smallest
+ * source side of a minimum cut (nodes reachable from the sources in the
+ * residual network), 1 = largest source side (NetworkX's minimum_cut).
+ * An unbounded problem (a path or cycle of infinite capacity) is an error.
+ * Output arrays documented as "may be NULL" are skipped when NULL.
+ *
+ * A list collection holds integer lists, each with one double attached
+ * (its meaning depends on the function): query the sizes, allocate, then
+ * copy. List i is items[offsets[i] .. offsets[i + 1]). */
+
+/* A collection of integer lists; release with net_lists_free. */
+typedef struct ListsHandle ListsHandle;
+
+/* Number of lists, or -1 for a NULL handle. */
+int64_t net_lists_count(const ListsHandle *h);
+
+/* Total number of items over all lists, or -1 for a NULL handle. */
+int64_t net_lists_total(const ListsHandle *h);
+
+/* offsets must hold count + 1 values, items total values, and values
+ * (may be NULL) count values. */
+int32_t net_lists_copy(const ListsHandle *h, int64_t *offsets, int64_t *items,
+                       double *values, char *err, size_t err_len);
+
+/* Releases a list collection (NULL is allowed). */
+void net_lists_free(ListsHandle *h);
+
+/* Maximum flow from the sources to the sinks (Dinic): the value to *value
+ * and the flow on each edge to edge_flow (m doubles, may be NULL; for
+ * undirected edges the net flow from the first to the second endpoint). */
+int32_t net_max_flow(const GraphHandle *h, const int64_t *sources,
+                     int64_t n_sources, const int64_t *sinks, int64_t n_sinks,
+                     const double *capacity, double *value, double *edge_flow,
+                     char *err, size_t err_len);
+
+/* Minimum cut between the sources and the sinks: its capacity to *value,
+ * 1/0 per node to source_side (n, may be NULL), and 1/0 per edge to
+ * cut_edges (m, may be NULL; edges of positive capacity leaving the
+ * source side, either way if undirected). */
+int32_t net_min_cut(const GraphHandle *h, const int64_t *sources,
+                    int64_t n_sources, const int64_t *sinks, int64_t n_sinks,
+                    const double *capacity, int32_t side, double *value,
+                    int32_t *source_side, int32_t *cut_edges, char *err,
+                    size_t err_len);
+
+/* Minimum cut with node capacities (node_capacity: n doubles, NULL = 1)
+ * and edge capacities (edge_capacity: m doubles, NULL = infinite, so only
+ * nodes are cut), found by splitting every node; terminals are never cut.
+ * Its capacity to *value, 1/0 flags to cut_nodes (n, may be NULL) and
+ * cut_edges (m, may be NULL). */
+int32_t net_min_node_cut_capacitated(const GraphHandle *h,
+                                     const int64_t *sources, int64_t n_sources,
+                                     const int64_t *sinks, int64_t n_sinks,
+                                     const double *node_capacity,
+                                     const double *edge_capacity, int32_t side,
+                                     double *value, int32_t *cut_nodes,
+                                     int32_t *cut_edges, char *err,
+                                     size_t err_len);
+
+/* Minimum-cost flow of a directed network (network simplex) meeting
+ * demand (n doubles: positive receives, negative supplies, summing to 0):
+ * the cost to *total_cost and the edge flows to edge_flow (m, may be
+ * NULL). */
+int32_t net_min_cost_flow(const GraphHandle *h, const double *demand,
+                          const double *capacity, const double *cost,
+                          double *total_cost, double *edge_flow, char *err,
+                          size_t err_len);
+
+/* Maximum flow from source to sink of least cost (directed networks): the
+ * flow value to *value, its cost to *total_cost, edge flows to edge_flow
+ * (m, may be NULL). */
+int32_t net_max_flow_min_cost(const GraphHandle *h, int64_t source,
+                              int64_t sink, const double *capacity,
+                              const double *cost, double *value,
+                              double *total_cost, double *edge_flow, char *err,
+                              size_t err_len);
+
+/* Gomory-Hu tree of an undirected network rooted at node 0 (Gusfield's
+ * method; NetworkX's gomory_hu_tree for nodes in order): parent[v] is v's
+ * tree neighbour toward the root (-1 for the root) and weight[v] the
+ * weight of that edge (0 for the root); n values each. */
+int32_t net_gomory_hu_tree(const GraphHandle *h, const double *capacity,
+                           int64_t *parent, double *weight, char *err,
+                           size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

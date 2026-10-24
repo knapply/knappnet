@@ -5,7 +5,7 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 9570 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1309 undefined for the oracle.
+Totals: 9984 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1418 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
 
@@ -114,6 +114,23 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `reachability_all` | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 | 9 / 0 / 0 / 0 |  |
 | `cut_points` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 |
 | `bridges` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 21 | 28 / 0 / 0 / 0 |  |
+
+## flow
+
+| Measure | definition | networkx |
+|---|---|---|
+| `flow_max_value` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_value_multi` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_flow_valid` |  | 28 / 0 / 0 / 0 |
+| `flow_max_flow_valid_multi` |  | 28 / 0 / 0 / 0 |
+| `flow_min_cut_largest` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_cut_smallest` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_cut_largest_multi` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_node_cut` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_min_node_cut_weighted` | 14 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `flow_max_flow_min_cost` | 9 / 0 / 0 / 0 | 8 / 0 / 0 / 0 |
+| `flow_gomory_hu_tree` |  | 19 / 0 / 0 / 0 |
+| `flow_gomory_hu_values` | 9 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
 
 ## groups
 
@@ -447,8 +464,8 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `modularity` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
 - `modularity_resolution` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity_resolution` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
-- `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.562335703512176, networkx 53.91666666666667
-- `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.13907115702781336, networkx 0.15765107212475635
+- `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.56233570351218, networkx 53.91666666666667
+- `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.1390711570278134, networkx 0.15765107212475635
 - `constraint` vs networkx on `multi_loops_dir` (loops): index 18: engine 0.375, networkx 0.6613136574074073
 - `effective_size` vs networkx on `multi_loops_dir` (loops): index 19: engine 3.0, networkx 2.7222222222222223
 - `efficiency` vs networkx on `multi_loops_dir` (loops): index 19: engine 1.0, networkx 0.9074074074074074
@@ -461,8 +478,8 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `label_prop_quality_retention` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.2753848379629629, networkx 0.13746527777777778
 - `label_prop_quality_fast` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.17135223765432098, networkx 0.057544367283950626
 - `leiden_quality` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.3554398148148148, networkx 0.31441454475308644
-- `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909122, networkx 25.2452380952381
-- `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.12111231459595977, networkx 0.14763297131718187
+- `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909125, networkx 25.2452380952381
+- `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.1211123145959598, networkx 0.14763297131718187
 - `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
 - `effective_size` vs networkx on `multi_loops_und` (loops): item 0: engine 3.1666666666666665, networkx 3.0416666666666665
 - `efficiency` vs networkx on `multi_loops_und` (loops): item 0: engine 0.7916666666666666, networkx 0.7604166666666666
