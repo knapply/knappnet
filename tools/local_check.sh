@@ -6,7 +6,7 @@
 #   tools/local_check.sh                 # everything
 #   tools/local_check.sh engine valid    # only steps whose name contains a word
 #
-# Steps: lint, engine, abi, docs, oracles, compare, checks,
+# Steps: lint, engine, abi, docs, oracles, compare, checks, python,
 # rcheck. Needs Rust, Python with validation/requirements.txt, and R with
 # the oracle packages (the btower runner image has all of them).
 set -u
@@ -45,6 +45,13 @@ step oracles 'python3 validation/run_oracles.py'
 step compare 'python3 validation/compare.py --strict'
 step checks 'python3 -W ignore validation/io_check.py && python3 validation/qap_check.py \
   && python3 validation/cug_check.py && python3 validation/layout_check.py'
+# The NetworkX backend: built into a virtual environment in the workspace
+# (.venv-python), its tests, then NetworkX's whole test suite through it.
+step python 'python3 -m venv .venv-python && PY=.venv-python/bin/python \
+  && $PY -m pip install -q networkx pytest numpy scipy && $PY -m pip install -q ./python \
+  && $PY -m pytest -q python/tests \
+  && NETWORKX_TEST_BACKEND=knappnet NETWORKX_FALLBACK_TO_NX=True \
+     $PY -m pytest -q -p no:cacheprovider --pyargs networkx'
 step rcheck 'cd r && rm -f knappnet_*.tar.gz && R CMD build --no-build-vignettes . \
   && _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-manual --ignore-vignettes knappnet_*.tar.gz \
   && ! grep -q "Status:.*WARNING" knappnet.Rcheck/00check.log'
@@ -58,6 +65,7 @@ for f in "$LOG"/*.log; do
   case "$name" in
     compare) grep -E '^(FAIL|match )' "$f" | head -60 ;;
     engine) grep -E 'panicked|FAILED|^failures:|error(\[|:)' "$f" | head -40 ;;
+    python) grep -E '^(FAILED|ERROR)|error:|Error:|[0-9]+ (passed|failed)' "$f" | head -40 ;;
     rcheck) sed -n '/Status:/p;/^\* checking .*\.\.\. \(ERROR\|WARNING\)/,/^\* /p' r/knappnet.Rcheck/00check.log 2>/dev/null | head -60
             grep -E 'Failure|Error' r/knappnet.Rcheck/tests/testthat.Rout.fail 2>/dev/null | head -30 ;;
     *) grep -E -i 'error|warning|fail|diff' "$f" | head -40 ;;

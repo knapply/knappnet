@@ -3,6 +3,8 @@
 #   lint         format, clippy, docs, crate packaging, WebAssembly build,
 #                bibliography, manifest, scaffold, R docs, R sources in sync
 #   engine       cargo test and the C ABI smoke test on Linux, macOS, Windows
+#   python       the NetworkX backend: build, its tests against NetworkX, and
+#                part of NetworkX's own test suite run through the backend
 #   validation   every oracle regenerated and compared with the engine on
 #                Linux, macOS, Windows, plus the checks outside the manifest
 #   r-package    R CMD check --as-cran on current R everywhere and, on Linux,
@@ -95,6 +97,56 @@ jobs:
       - name: Data model C ABI
         if: runner.os != 'Windows'
         run: ./tools/check_frame_abi.sh
+
+  python:
+    # About 6 minutes per platform. The package is built from source (Cargo
+    # compiles the C ABI, setuptools the extension) and checked against
+    # NetworkX: python/tests compares every implemented function with
+    # NetworkX, then a subset of NetworkX's own tests runs through the
+    # backend (python/docs/testing.md; the full suite runs on btower). The
+    # oldest supported Python and NetworkX are tested on Linux.
+    name: python (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: "3.13"}
+          - {os: macos-latest, python: "3.13"}
+          - {os: windows-latest, python: "3.13"}
+          - {os: ubuntu-latest, python: "3.10", networkx: "networkx==3.5"}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build and install
+        run: |
+          python -m pip install ${{ matrix.networkx || 'networkx' }} pytest numpy scipy
+          bash tools/ci_log.sh build python -m pip install -v ./python
+      - name: Backend against NetworkX
+        run: bash tools/ci_log.sh tests python -m pytest python/tests -q
+      - name: NetworkX's tests through the backend (subset)
+        env:
+          NETWORKX_TEST_BACKEND: knappnet
+          NETWORKX_FALLBACK_TO_NX: "True"
+        run: >-
+          bash tools/ci_log.sh nxsuite python -m pytest -q -p no:cacheprovider
+          --pyargs networkx.algorithms.centrality networkx.algorithms.components
+          networkx.algorithms.shortest_paths networkx.algorithms.assortativity
+          networkx.algorithms.link_analysis networkx.algorithms.community
+          networkx.algorithms.tests.test_cluster networkx.algorithms.tests.test_core
+          networkx.algorithms.tests.test_triads networkx.algorithms.tests.test_bridges
+          networkx.algorithms.tests.test_distance_measures
+          networkx.algorithms.tests.test_efficiency
+          networkx.algorithms.tests.test_structuralholes
+          networkx.algorithms.tests.test_reciprocity networkx.algorithms.tests.test_wiener
+          networkx.algorithms.tests.test_clique networkx.algorithms.bipartite
+      - name: Show failures
+        if: failure()
+        run: bash tools/ci_annotate.sh python ci-logs/*.log
 
   validation:
     # About 15 minutes per platform with cached R packages (the cache is
