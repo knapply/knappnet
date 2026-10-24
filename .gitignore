@@ -16,3 +16,4 @@ python/src/knappnet/*.so
 python/src/knappnet/*.pyd
 python/.venv/
 .venv-python/
+.venv-uv/

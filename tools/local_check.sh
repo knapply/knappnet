@@ -45,13 +45,9 @@ step oracles 'python3 validation/run_oracles.py'
 step compare 'python3 validation/compare.py --strict'
 step checks 'python3 -W ignore validation/io_check.py && python3 validation/qap_check.py \
   && python3 validation/cug_check.py && python3 validation/layout_check.py'
-# The NetworkX backend: built into a virtual environment in the workspace
-# (.venv-python), its tests, then NetworkX's whole test suite through it.
-step python 'python3 -m venv .venv-python && PY=.venv-python/bin/python \
-  && $PY -m pip install -q networkx pytest numpy scipy && $PY -m pip install -q ./python \
-  && $PY -m pytest -q python/tests \
-  && NETWORKX_TEST_BACKEND=knappnet NETWORKX_FALLBACK_TO_NX=True \
-     $PY -m pytest -q -p no:cacheprovider --pyargs networkx'
+# The NetworkX backend: built into .venv-python, its tests, then NetworkX's
+# whole test suite through it (tools/python_check.sh).
+step python 'bash tools/python_check.sh'
 step rcheck 'cd r && rm -f knappnet_*.tar.gz && R CMD build --no-build-vignettes . \
   && _R_CHECK_FORCE_SUGGESTS_=false R CMD check --no-manual --ignore-vignettes knappnet_*.tar.gz \
   && ! grep -q "Status:.*WARNING" knappnet.Rcheck/00check.log'
