@@ -1659,6 +1659,7 @@ static PyObject *py_twomode_centrality(PyObject *mod, PyObject *args) {
 #include "_core_paths.inc"
 #include "_core_cx.inc"
 #include "_core_mix.inc"
+#include "_core_graphops.inc"
 
 /* ---- Module ------------------------------------------------------------- */
 
@@ -1708,6 +1709,7 @@ static PyMethodDef methods[] = {
     PATHS_METHODS
     CX_METHODS
     MIX_METHODS
+    GRAPHOPS_METHODS
     {NULL, NULL, 0, NULL},
 };
 

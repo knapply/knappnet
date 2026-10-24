@@ -25,7 +25,7 @@ class BackendGraph:
     __networkx_backend__ = BACKEND_NAME
     __networkx_cache__ = None
 
-    __slots__ = ("graph", "core", "weight", "default", "attrs", "_order")
+    __slots__ = ("graph", "core", "weight", "default", "attrs", "_order", "_cores")
 
     def __init__(self, graph, core, weight, default, attrs=None):
         self.graph = graph
@@ -36,6 +36,27 @@ class BackendGraph:
         # core holds the first when there is only one.
         self.attrs = attrs or ({weight: default} if weight is not None else {})
         self._order = None
+        self._cores = None
+
+    def weighted_core(self, attr, default):
+        """A core whose edge weights are the attribute ``attr`` (``default``
+        where missing); the core itself if it already holds them."""
+        if attr is None or (attr == self.weight and self.core.weighted):
+            return self.core
+        if self._cores is None:
+            self._cores = {}
+        key = (attr, float(default))
+        core = self._cores.get(key)
+        if core is None:
+            G = self.graph
+            directed = self.core.directed
+            try:
+                core = _core.from_networkx(G._node, G._succ if directed else G._adj, directed,
+                                           G.is_multigraph(), attr, float(default))
+            except (TypeError, ValueError) as err:
+                raise NotImplementedError("edge attribute is not a number") from err
+            self._cores[key] = core
+        return core
 
     def edge_values(self, attr, default):
         """One float per edge of the core, in its edge order: the edge

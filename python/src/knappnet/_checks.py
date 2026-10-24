@@ -17,6 +17,9 @@ import networkx as nx
 
 def graph_of(a, name="G"):
     G = a.get(name)
+    if G is None and name == "G":
+        # Functions whose graph parameter has another name.
+        G = next((a[k] for k in ("flowG", "FG", "G1") if a.get(k) is not None), None)
     if getattr(G, "__networkx_backend__", None) == "knappnet":
         return G.graph
     return G
