@@ -23,7 +23,14 @@
 //!   non-adjacent pairs of alters of 1 / (number of their common
 //!   neighbours in the ego network, ego included), Everett and Borgatti's
 //!   (2005) formula; that form is used when it is cheaper (dense ego
-//!   networks). Both give the same value up to rounding.
+//!   networks). Other dense ego networks (directed, or of order above 1)
+//!   use the distances and shortest-path counts to and from ego: ego is on
+//!   a shortest path from i to j exactly when d(i, ego) + d(ego, j) =
+//!   d(i, j), with sigma(i, ego) sigma(ego, j) of the sigma_ij paths
+//!   through it (Brandes 2001, section 3), so one search from each alter,
+//!   stopped at depth d(i, ego) + max_j d(ego, j) and run on bit rows,
+//!   replaces the full accumulation. All forms give the same value up to
+//!   rounding.
 //!
 //! Burt's structural-hole measures, which are also egocentric, live in
 //! [`crate::metrics::brokerage`].
@@ -53,7 +60,7 @@
 //! - `mindist` in [`neighborhood`] drops nodes closer than `mindist` steps,
 //!   as igraph's `mindist`; `mindist = 1` drops ego itself.
 
-use crate::bitset::{batches_pay, for_each_bit, MultiBfs, Step, View, BATCH};
+use crate::bitset::{batches_pay, for_each_bit, BitMatrix, MultiBfs, RowPaths, Step, View, BATCH};
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::degree::DegreeMode;
@@ -346,6 +353,16 @@ struct EgoWork {
     /// Bit rows of the ego network's adjacency, for
     /// [`EgoWork::ego_betweenness_pairs`].
     rows: Vec<u64>,
+    /// The ego network's arcs and their transpose as bit matrices, and
+    /// search scratch space, for [`EgoWork::ego_betweenness_rows`].
+    out_bits: BitMatrix,
+    in_bits: BitMatrix,
+    paths: RowPaths,
+    /// Distance and number of shortest paths from ego, and to ego.
+    from_ego: Vec<(u32, f64)>,
+    to_ego: Vec<(u32, f64)>,
+    /// The nodes at each distance from ego, as bits.
+    ego_levels: Vec<u64>,
     /// (ego, [size, ties, pairs, density, components, betweenness]).
     found: Vec<(u32, [f64; 6])>,
 }
@@ -363,6 +380,12 @@ impl EgoWork {
             delta: Vec::new(),
             queue: Vec::new(),
             rows: Vec::new(),
+            out_bits: BitMatrix::new(0),
+            in_bits: BitMatrix::new(0),
+            paths: RowPaths::new(),
+            from_ego: Vec::new(),
+            to_ego: Vec::new(),
+            ego_levels: Vec::new(),
             found: Vec::new(),
         }
     }
@@ -438,6 +461,11 @@ impl EgoWork {
             0.0
         } else if !directed && opts.order == 1 && s <= PAIR_MAX && s * s < 256 * self.adj.len() {
             self.ego_betweenness_pairs(s)
+        } else if s <= PAIR_MAX && s * ((s + 63) / 64) + 32 < self.adj.len() {
+            // A search on bit rows costs about s / 64 words per node plus a
+            // fixed overhead, against one step per arc for a list-based
+            // search; measured break-even on G(n, p) ego networks.
+            self.ego_betweenness_rows(s, directed)
         } else {
             self.ego_betweenness(s, directed)
         };
@@ -471,19 +499,92 @@ impl EgoWork {
                 row[b as usize / 64] |= 1 << (b % 64);
             }
         }
-        let mut total = 0.0;
-        for i in 1..s {
-            let ri = &self.rows[i * words..(i + 1) * words];
-            for j in i + 1..s {
-                if ri[j / 64] >> (j % 64) & 1 == 1 {
-                    continue;
-                }
-                let rj = &self.rows[j * words..(j + 1) * words];
-                let common: u32 = ri.iter().zip(rj).map(|(x, y)| (x & y).count_ones()).sum();
-                total += 1.0 / common as f64;
+        pair_shares(&self.rows, words, s)
+    }
+
+    /// Ego betweenness of any ego network, directed or not, from the
+    /// distances and shortest-path counts through ego.
+    ///
+    /// Ego (local node 0) lies on a shortest path from i to j exactly when
+    /// d(i, ego) + d(ego, j) = d(i, j), and then
+    /// sigma_ij(ego) = sigma(i, ego) sigma(ego, j) (Brandes 2001,
+    /// `brandes2001faster`, section 3), so ego's share of the pair is
+    /// sigma(i, ego) sigma(ego, j) / sigma_ij. One search from ego along
+    /// the arcs and one against them give d(ego, .), sigma(ego, .),
+    /// d(., ego), and sigma(., ego). Since d(i, j) <= d(i, ego) + d(ego, j)
+    /// always, the search from each source i only needs to run to depth
+    /// d(i, ego) + max_j d(ego, j), and j counts exactly when it is found
+    /// at depth d(i, ego) + d(ego, j); sources that cannot reach ego are
+    /// skipped. In a first-order ego network with `mode = "out"` every
+    /// d(ego, j) is 1, so a search stops one level past ego. Searches run
+    /// on bit rows ([`RowPaths`]), which costs O(s^2 / 64) word operations
+    /// per source instead of O(m) for a list-based search with Brandes'
+    /// backward pass. The sum is the same as [`EgoWork::ego_betweenness`]
+    /// up to rounding.
+    fn ego_betweenness_rows(&mut self, s: usize, directed: bool) -> f64 {
+        self.out_bits.reset(s);
+        self.in_bits.reset(s);
+        for a in 0..s {
+            for &b in &self.adj[self.offsets[a]..self.offsets[a + 1]] {
+                self.out_bits.set(a, b as usize);
+                self.in_bits.set(b as usize, a);
             }
         }
-        total
+        let words = self.out_bits.words_per_row();
+        self.paths
+            .run(&self.out_bits, &self.in_bits, s, 0, u32::MAX);
+        let reach = self.paths.depth() - 1;
+        self.from_ego.clear();
+        self.from_ego
+            .extend((0..s).map(|v| (self.paths.level(v), self.paths.sigma(v))));
+        self.ego_levels.clear();
+        for l in 0..=reach {
+            self.ego_levels.extend_from_slice(self.paths.level_bits(l));
+        }
+        self.paths
+            .run(&self.in_bits, &self.out_bits, s, 0, u32::MAX);
+        self.to_ego.clear();
+        self.to_ego
+            .extend((0..s).map(|v| (self.paths.level(v), self.paths.sigma(v))));
+        let mut total = 0.0;
+        for src in 1..s {
+            let (h, through) = self.to_ego[src];
+            if h == u32::MAX || reach == 0 {
+                continue;
+            }
+            let h = h as usize;
+            // The nodes ego can be on the way to: those at depth
+            // d(src, ego) + d(ego, j) for some j, which are the only
+            // counts needed.
+            let ego_levels = &self.ego_levels;
+            self.paths.run_for(
+                &self.out_bits,
+                &self.in_bits,
+                s,
+                src,
+                (h + reach) as u32,
+                |l, w| {
+                    if l > h && l - h <= reach {
+                        ego_levels[(l - h) * words + w]
+                    } else {
+                        0
+                    }
+                },
+            );
+            for l in h + 1..=h + reach {
+                for &j in self.paths.nodes_at(l) {
+                    let (d, onward) = self.from_ego[j as usize];
+                    if d as usize == l - h {
+                        total += through * onward / self.paths.sigma(j as usize);
+                    }
+                }
+            }
+        }
+        if directed {
+            total
+        } else {
+            total / 2.0
+        }
     }
 
     /// Dependency of local node 0 (ego) summed over every other source,
@@ -543,6 +644,42 @@ impl EgoWork {
             total / 2.0
         }
     }
+}
+
+/// Sum over non-adjacent pairs of alters (local nodes 1..s) of
+/// 1 / (number of common neighbours), from bit rows of `words` words.
+/// Population counts dominate, so on x86-64 processors with the POPCNT
+/// instruction this runs through a copy compiled to use it; both copies
+/// perform the same operations on the same integers.
+fn pair_shares(rows: &[u64], words: usize, s: usize) -> f64 {
+    #[inline(always)]
+    fn body(rows: &[u64], words: usize, s: usize) -> f64 {
+        let mut total = 0.0;
+        for i in 1..s {
+            let ri = &rows[i * words..(i + 1) * words];
+            for j in i + 1..s {
+                if ri[j / 64] >> (j % 64) & 1 == 1 {
+                    continue;
+                }
+                let rj = &rows[j * words..(j + 1) * words];
+                let common: u32 = ri.iter().zip(rj).map(|(x, y)| (x & y).count_ones()).sum();
+                total += 1.0 / common as f64;
+            }
+        }
+        total
+    }
+    #[cfg(target_arch = "x86_64")]
+    {
+        #[target_feature(enable = "popcnt")]
+        unsafe fn fast(rows: &[u64], words: usize, s: usize) -> f64 {
+            body(rows, words, s)
+        }
+        if std::is_x86_feature_detected!("popcnt") {
+            // SAFETY: the processor supports POPCNT.
+            return unsafe { fast(rows, words, s) };
+        }
+    }
+    body(rows, words, s)
 }
 
 /// Egocentric measures of every node. See the module documentation.
@@ -615,6 +752,96 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn row_ego_betweenness_equals_brandes() {
+        // Directed and undirected networks with parallel edges and loops,
+        // every mode, first and second order, sparse to dense.
+        let mut rng = crate::rng::Stream::new(11, 0);
+        for &(n, m) in &[
+            (12usize, 20usize),
+            (30, 120),
+            (40, 700),
+            (25, 400),
+            (70, 2500),
+        ] {
+            for directed in [true, false] {
+                let s: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+                let t: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+                let g = Graph::from_edges(n, &s, &t, None, directed).unwrap();
+                for mode in [DegreeMode::Out, DegreeMode::In, DegreeMode::All] {
+                    for order in [1, 2] {
+                        let opts = EgoOptions {
+                            order,
+                            mode,
+                            ..EgoOptions::default()
+                        };
+                        let mut w = EgoWork::new(n);
+                        for ego in 0..n {
+                            w.measure(&g, ego, &opts);
+                            let size = w.offsets.len() - 1;
+                            if size <= 2 {
+                                continue;
+                            }
+                            let (a, b) = (
+                                w.ego_betweenness_rows(size, directed),
+                                w.ego_betweenness(size, directed),
+                            );
+                            assert!(
+                                (a - b).abs() <= 1e-12 * b.abs().max(1.0),
+                                "n {n} m {m} {mode:?} order {order} ego {ego}: {a} vs {b}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn row_paths_count_shortest_paths() {
+        // A directed 3 x 3 grid from corner 0 has binomial path counts, and
+        // a long path forces many levels across word boundaries.
+        let mut out = BitMatrix::new(9);
+        let mut inc = BitMatrix::new(9);
+        for r in 0..3 {
+            for c in 0..3 {
+                let v = 3 * r + c;
+                for w in [(c < 2).then(|| v + 1), (r < 2).then(|| v + 3)]
+                    .into_iter()
+                    .flatten()
+                {
+                    out.set(v, w);
+                    inc.set(w, v);
+                }
+            }
+        }
+        let mut p = RowPaths::new();
+        p.run(&out, &inc, 9, 0, u32::MAX);
+        assert_eq!(p.depth(), 5);
+        assert_eq!(p.sigma(8), 6.0);
+        assert_eq!(p.sigma(4), 2.0);
+        assert_eq!(p.nodes_at(2), &[2, 4, 6]);
+        p.run(&out, &inc, 9, 4, 1);
+        assert_eq!(
+            (p.level(5), p.level(8), p.level(0)),
+            (1, u32::MAX, u32::MAX)
+        );
+        let n = 150;
+        let mut out = BitMatrix::new(n);
+        let mut inc = BitMatrix::new(n);
+        for v in 0..n - 1 {
+            out.set(v, v + 1);
+            inc.set(v + 1, v);
+        }
+        p.run(&out, &inc, n, 0, u32::MAX);
+        assert_eq!(
+            (p.depth(), p.level(n - 1), p.sigma(n - 1)),
+            (n, n as u32 - 1, 1.0)
+        );
+        p.run(&out, &inc, n, n - 1, u32::MAX);
+        assert_eq!((p.depth(), p.level(0)), (1, u32::MAX));
     }
 
     fn g(n: usize, s: &[i64], t: &[i64], directed: bool) -> Graph {
