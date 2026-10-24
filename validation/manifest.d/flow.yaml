@@ -1,0 +1,166 @@
+# Maximum flows and minimum cuts (Ford and Fulkerson 1956; Dinic 1970),
+# minimum-cost flows (network simplex; Ahuja, Magnanti and Orlin 1993), and
+# Gomory-Hu trees (Gomory and Hu 1961; Gusfield 1990). Format: see
+# ../README.md; engine runners in ../bindings/flow.py, which also defines
+# the flow problem every oracle reproduces: source 0 and sink n - 1
+# (sources 0, 1 and sinks n - 2, n - 1 for `multi`), capacities the
+# fixture's weights or 1, costs ((7 e) mod 11) - 3 for edge e, node
+# capacities (v mod 3) + 1.
+#
+# Results that do not exist (too few nodes for the terminals, adjacent
+# terminals for a node cut) are written as -1 by the runner and by every
+# oracle.
+#
+# NetworkX's flow functions refuse multigraphs, so its oracle merges
+# parallel edges into one edge whose capacity is their sum and drops
+# self-loops, which is how the engine reads them; minimum-cost flows run on
+# the multigraph itself, which NetworkX's network simplex accepts.
+#
+# The definition oracle enumerates every cut by brute force on fixtures of
+# at most 16 nodes (max-flow min-cut theorem; the smallest and largest
+# source sides of a minimum cut are the intersection and the union of all
+# minimum cuts' source sides), and solves minimum-cost flows as linear
+# programs with scipy's HiGHS solver.
+
+flow_max_value:
+  engine: {fn: max_flow}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "least capacity of an s-t cut over every node subset (flow_definition_oracle.py)"
+      undefined_on: &large [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                            gnp_und_sparse, karate, les_miserables, real_weights_dir,
+                            real_weights_und, southern_women, twomode_random,
+                            uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        enumerating every node subset is limited to fixtures of at most 20
+        nodes
+    networkx:
+      call: "nx.maximum_flow_value(G, 0, n - 1, capacity = 'capacity')"
+
+flow_max_value_multi:
+  engine: {fn: max_flow, multi: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "least capacity of a cut separating {0, 1} from {n - 2, n - 1} over every node subset"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nx.maximum_flow_value(H, 'S', 'T'), H = G plus arcs S -> 0, S -> 1, n - 2 -> T, n - 1 -> T without a capacity (infinite)"
+
+flow_max_flow_valid:
+  engine: {fn: max_flow_check}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    networkx:
+      call: "[nx.maximum_flow_value(G, 0, n - 1), 1]: the engine's edge flows must respect capacities, conserve flow, and carry the maximum value"
+
+flow_max_flow_valid_multi:
+  engine: {fn: max_flow_check, multi: true}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    networkx:
+      call: "[nx.maximum_flow_value(H, 'S', 'T'), 1] with H as for flow_max_value_multi"
+
+flow_min_cut_largest:
+  engine: {fn: min_cut, side: largest}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "union of the source sides of every minimum cut"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nx.minimum_cut(G, 0, n - 1)[1][0] as 1/0 flags"
+
+flow_min_cut_smallest:
+  engine: {fn: min_cut, side: smallest}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "intersection of the source sides of every minimum cut"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nodes reachable from 0 over arcs with flow < capacity in nx.flow.edmonds_karp(G, 0, n - 1)"
+
+flow_min_cut_largest_multi:
+  engine: {fn: min_cut, side: largest, multi: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "union of the source sides of every minimum cut separating {0, 1} from {n - 2, n - 1}"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nx.minimum_cut(H, 'S', 'T')[1][0] without S, as 1/0 flags"
+
+flow_min_node_cut:
+  engine: {fn: min_node_cut}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "fewest nodes other than 0 and n - 1 whose removal leaves no path from 0 to n - 1 (every subset); -1 if 0 -> n - 1 is an edge"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "len(nx.connectivity.minimum_st_node_cut(G, 0, n - 1)) on the simple graph; -1 if G.has_edge(0, n - 1)"
+
+flow_min_node_cut_weighted:
+  engine: {fn: min_node_cut, weighted: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "least total capacity (v mod 3) + 1 of a node set separating 0 from n - 1 (every subset)"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nx.minimum_cut_value(H, '0B', '(n-1)A') on the split digraph H: arcs vA -> vB of capacity (v mod 3) + 1 and uB -> vA for each arc u -> v without a capacity (infinite)"
+
+flow_max_flow_min_cost:
+  engine: {fn: max_flow_min_cost}
+  applies_to: directed
+  tolerance: {rel: 1.0e-9, abs: 1.0e-9}
+  oracles:
+    definition:
+      call: "two linear programs (maximum flow, then least cost at that flow) solved by scipy.optimize.linprog(method = 'highs')"
+    networkx:
+      call: "F = nx.maximum_flow_value(G, 0, n - 1); nx.min_cost_flow_cost(M) on the multigraph M with demand -F at 0 and F at n - 1"
+      undefined_on: [real_weights_dir]
+      undefined_reason: >-
+        NetworkX's network simplex reports this real-valued problem
+        infeasible (NetworkXUnfeasible): its documentation warns that it may
+        fail on floating-point capacities and suggests integers. The linear
+        program of the definition oracle confirms the engine's value and
+        cost.
+
+flow_gomory_hu_tree:
+  engine: {fn: gomory_hu}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    networkx:
+      call: "nx.gomory_hu_tree(G, capacity = 'capacity').edges(data = 'weight'), as (u, v, weight) with u < v"
+
+flow_gomory_hu_values:
+  engine: {fn: gomory_hu_values}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "least capacity of a u-v cut over every node subset, for every pair u < v (n <= 12)"
+      undefined_on: *large
+      undefined_reason: as for flow_max_value
+    networkx:
+      call: "nx.minimum_cut_value(G, u, v) for every pair u < v"

@@ -10,6 +10,8 @@ crates/engine     Rust. Graph storage and algorithms. No dependencies.
                   Published to crates.io under the project name.
 crates/capi       Rust. A small C ABI over the engine (crates/capi/include/netcapi.h).
 r/                The R package. C glue (r/src/*.c) calls the C ABI.
+python/           The Python package: a NetworkX backend. A C extension
+                  (python/src/knappnet/_core.c) calls the C ABI.
 validation/       Fixtures, golden results from reference tools, comparison
                   (validation/README.md).
 bench/            Benchmarks against other tools (bench.yml; the quick tier
@@ -46,8 +48,46 @@ are hand-written Rd files in `r/man/`, the only source of documentation
 function signatures, `NAMESPACE`, and the pkgdown index consistent.
 
 Language bindings never call the engine directly; they go through the C ABI.
-Python bindings will use the same ABI, so every language shares one tested
+The Python package uses the same ABI, so every language shares one tested
 surface.
+
+### Python: a NetworkX backend over the C ABI
+
+The Python package adds no API of its own. It is a backend for NetworkX's
+dispatch mechanism (NetworkX 3.x, entry point group `networkx.backends`):
+NetworkX code runs unchanged, and dispatchable functions run on the engine
+when the backend is selected. `python/docs/` describes its use and
+`docs/drafts/networkx_coverage.md` lists what is covered.
+
+It is a CPython extension in C over the C ABI, built with setuptools after
+Cargo compiles `crates/capi` as a static library, rather than a PyO3
+crate built with maturin. The reasons:
+
+- **One surface.** The rule above holds: Python reaches the engine through
+  the same ABI as R, validated by the same harness. A PyO3 crate would be
+  a second, Rust-level binding to keep in step with the first.
+- **No third-party crates.** PyO3 would bring the workspace its first
+  external dependencies (and their transitive ones) and network access
+  for every build; the C extension needs only CPython's headers and a C
+  compiler (plus the Rust toolchain that any build of the engine needs).
+- **One build per platform.** The extension uses CPython's limited API
+  (3.10), so one build serves CPython 3.10 and later.
+- **The hot path is in C anyway.** Converting a NetworkX graph means
+  walking its dict-of-dicts adjacency through the CPython API; doing that
+  in C is as fast as in Rust, and results come back as plain lists and
+  dicts.
+
+The extension reads `G._node` and `G._adj` (or `G._succ`) in one pass,
+extracting the edge list and at most one numeric edge attribute; undirected
+edges are numbered as `G.edges()` lists them, so per-edge results map back
+without a lookup. NetworkX caches the converted graph in
+`G.__networkx_cache__`. Engine calls release the GIL. The backend declines
+(`can_run`) any call whose arguments or inputs the engine cannot reproduce
+exactly, and engine errors raise a subclass of `NotImplementedError`, so
+NetworkX falls back to its own implementation, which also reports invalid
+input in its own terms. The design of the dispatch hooks follows NetworkX's
+backend documentation and `networkx/utils/backends.py` (BSD-3-Clause;
+read, not copied).
 
 ### Why a C ABI instead of a binding generator
 

@@ -7,6 +7,9 @@ cited by author and year in an R help page or a vignette instead.
 
 | Key | Reference | Cited in |
 |---|---|---|
+| `aho1972transitive` | Aho, Garey, and Ullman (1972). The Transitive Reduction of a Directed Graph. *SIAM Journal on Computing*. | `crates/engine/src/metrics/dag.rs` |
+| `aho1976finding` | Aho, Hopcroft, and Ullman (1976). On Finding Lowest Common Ancestors in Trees. *SIAM Journal on Computing*. | `crates/engine/src/metrics/dag.rs` |
+| `ahuja1993network` | Ahuja, Magnanti, and Orlin (1993). Network Flows: Theory, Algorithms, and Applications. *Prentice Hall*. | `crates/engine/src/flow/mincost.rs` |
 | `alba1973graph` | Alba (1973). A Graph-Theoretic Definition of a Sociometric Clique. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/factions/ncliques.rs` |
 | `albert2000error` | Albert, Jeong, and Barabási (2000). Error and Attack Tolerance of Complex Networks. *Nature*. |  |
 | `almeidasilva2024network` | Almeida-Silva (2024). Network Analysis in R. *https://almeidasilvaf.github.io/NAR/*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -32,6 +35,7 @@ cited by author and year in an R help page or a vignette instead.
 | `battiston2020networks` | Battiston et al. (2020). Networks beyond Pairwise Interactions: Structure and Dynamics. *Physics Reports*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `beamer2012direction` | Beamer, Asanović, and Patterson (2012). Direction-Optimizing Breadth-First Search. *Proceedings of the International Conference on High Performance Computing, Networking, Storage and Analysis (SC '12)*. | `crates/engine/src/bitset.rs`, `docs/ARCHITECTURE.md` |
 | `bellman1958routing` | Bellman (1958). On a Routing Problem. *Quarterly of Applied Mathematics*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/negative.rs` |
+| `bender2005lowest` | Bender et al. (2005). Lowest Common Ancestors in Trees and Directed Acyclic Graphs. *Journal of Algorithms*. | `crates/engine/src/metrics/dag.rs` |
 | `bentley1975multidimensional` | Bentley (1975). Multidimensional binary search trees used for associative searching. *Communications of the ACM*. | `crates/engine/src/spatial.rs` |
 | `bentley1987sample` | Bentley and Floyd (1987). Programming Pearls: A Sample of Brilliance. *Communications of the ACM*. | `crates/engine/src/generate.rs` |
 | `bianconi2021higher` | Bianconi (2021). Higher-Order Networks: An Introduction to Simplicial Complexes. *Cambridge University Press*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md` |
@@ -57,6 +61,7 @@ cited by author and year in an R help page or a vignette instead.
 | `borgatti2011analyzing` | Borgatti and Halgin (2011). Analyzing Affiliation Networks. *The SAGE Handbook of Social Network Analysis*. | `crates/engine/src/metrics/bipartite.rs` |
 | `borgatti2022analyzing` | Borgatti et al. (2022). Analyzing Social Networks Using R. *SAGE*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `borgatti2026xucinet` | Borgatti, Agneessens, and Everett (2026). xucinet: UCINET-Style Social Network Analysis in R. *https://github.com/StephenBorgatti/xucinet*. | `crates/engine/src/conventions.rs`, `crates/engine/src/metrics/closeness.rs` |
+| `boruvka1926jistem` | Borůvka (1926). O jistém problému minimáln\'m. *Práce Moravské Př\'rodovědecké Společnosti*. | `crates/engine/src/metrics/trees.rs` |
 | `bostock2011d3` | Bostock, Ogievetsky, and Heer (2011). D3: Data-Driven Documents. *IEEE Transactions on Visualization and Computer Graphics*. | `crates/engine/src/io/nodelink.rs` |
 | `bowdler1968ql` | Bowdler et al. (1968). The QR and QL Algorithms for Symmetric Matrices. *Numerische Mathematik*. | `crates/engine/src/linalg.rs` |
 | `boyd2010computing` | Boyd et al. (2010). Computing Continuous Core/Periphery Structures for Social Relations Data with MINRES/SVD. *Social Networks*. | `crates/engine/src/metrics/coreperiphery/continuous.rs` |
@@ -80,36 +85,46 @@ cited by author and year in an R help page or a vignette instead.
 | `butts2008network` | Butts (2008). network: A Package for Managing Relational Data in R. *Journal of Statistical Software*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/frame/roles.rs`, `crates/engine/src/frame/validate.rs`, `docs/ARCHITECTURE.md`, and 3 more |
 | `butts2008sna` | Butts (2008). Social Network Analysis with sna. *Journal of Statistical Software*. | `crates/engine/src/conventions.rs`, `crates/engine/src/metrics/reach.rs`, `crates/engine/src/metrics/regular.rs` |
 | `butts2026networkdynamic` | Butts et al. (2026). networkDynamic: Dynamic Extensions for Network Objects. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/temporal/windows.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and 1 more |
+| `camerini1979note` | Camerini, Fratta, and Maffioli (1979). A Note on Finding Optimum Branchings. *Networks*. | `crates/engine/src/metrics/trees.rs` |
 | `cartwright1956structural` | Cartwright and Harary (1956). Structural Balance: A Generalization of Heider's Theory. *Psychological Review*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `casteigts2012time` | Casteigts et al. (2012). Time-Varying Graphs and Dynamic Networks. *International Journal of Parallel, Emergent and Distributed Systems*. |  |
 | `cherkassky1996shortest` | Cherkassky, Goldberg, and Radzik (1996). Shortest Paths Algorithms: Theory and Experimental Evaluation. *Mathematical Programming*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/negative.rs` |
 | `cherkassky1999negative` | Cherkassky and Goldberg (1999). Negative-Cycle Detection Algorithms. *Mathematical Programming*. | `crates/engine/src/paths/negative.rs` |
 | `chiba1985arboricity` | Chiba and Nishizeki (1985). Arboricity and Subgraph Listing Algorithms. *SIAM Journal on Computing*. | `crates/engine/src/metrics/descriptive.rs` |
+| `chu1965shortest` | Chu and Liu (1965). On the Shortest Arborescence of a Directed Graph. *Scientia Sinica*. | `crates/engine/src/metrics/trees.rs` |
 | `clauset2004finding` | Clauset, Newman, and Moore (2004). Finding Community Structure in Very Large Networks. *Physical Review E*. | `crates/engine/src/metrics/partition/fast_greedy.rs` |
 | `clauset2009powerlaw` | Clauset, Shalizi, and Newman (2009). Power-Law Distributions in Empirical Data. *SIAM Review*. | `docs/ROADMAP.md` |
 | `clementini1993smallset` | Clementini, Di Felice, and van Oosterom (1993). A Small Set of Formal Topological Relationships Suitable for End-User Interaction. *Advances in Spatial Databases*. | `r/R/sf.R` |
 | `coffman1980performance` | Coffman et al. (1980). Performance Bounds for Level-Oriented Two-Dimensional Packing Algorithms. *SIAM Journal on Computing*. | `crates/engine/src/layout/mod.rs` |
 | `collatz1942einschliessungssatz` | Collatz (1942). Einschlieungssatz für die charakteristischen Zahlen von Matrizen. *Mathematische Zeitschrift*. | `crates/engine/src/metrics/eigenvector.rs`, `crates/engine/src/metrics/spectral.rs` |
 | `comrey1962minimum` | Comrey (1962). The Minimum Residual Method of Factor Analysis. *Psychological Reports*. | `crates/engine/src/metrics/coreperiphery/continuous.rs` |
+| `cooper2001simple` | Cooper, Harvey, and Kennedy (2001). A Simple, Fast Dominance Algorithm. *Rice University, Department of Computer Science*. | `crates/engine/src/metrics/dag.rs` |
 | `cordasco2010community` | Cordasco and Gargano (2010). Community Detection via Semi-Synchronous Label Propagation Algorithms. *2010 IEEE International Workshop on: Business Applications of Social Network Analysis (BASNA)*. | `crates/engine/src/metrics/partition/label_propagation.rs` |
 | `csardi2006igraph` | Csardi and Nepusz (2006). The igraph Software Package for Complex Network Research. *InterJournal, Complex Systems*. | `crates/engine/src/conventions.rs`, `crates/engine/src/frame/mod.rs`, `crates/engine/src/frame/multiplicity.rs`, `crates/engine/src/metrics/topography.rs`, and 1 more |
+| `cunningham1976network` | Cunningham (1976). A Network Simplex Method. *Mathematical Programming*. | `crates/engine/src/flow/mincost.rs` |
 | `cunningham2016understanding` | Cunningham, Everton, and Murphy (2016). Understanding Dark Networks: A Strategic Framework for the Use of Social Network Analysis. *Rowman & Littlefield*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
+| `cytron1991efficiently` | Cytron et al. (1991). Efficiently Computing Static Single Assignment Form and the Control Dependence Graph. *ACM Transactions on Programming Languages and Systems*. | `crates/engine/src/metrics/dag.rs` |
 | `daniel1976reorthogonalization` | Daniel et al. (1976). Reorthogonalization and Stable Algorithms for Updating the Gram-Schmidt QR Factorization. *Mathematics of Computation*. | `crates/engine/src/metrics/eigenvector.rs` |
 | `danon2005comparing` | Danon et al. (2005). Comparing Community Structure Identification. *Journal of Statistical Mechanics: Theory and Experiment*. | `crates/engine/src/metrics/partition/compare.rs` |
+| `dantzig1951application` | Dantzig (1951). Application of the Simplex Method to a Transportation Problem. *Activity Analysis of Production and Allocation*. | `crates/engine/src/flow/mincost.rs` |
 | `davis1941deep` | Davis, Gardner, and Gardner (1941). Deep South: A Social Anthropological Study of Caste and Class. *University of Chicago Press*. | `docs/ROADMAP.md`, `validation/fixtures.py` |
 | `davis2019algorithm` | Davis (2019). Algorithm 1000: SuiteSparse:GraphBLAS: Graph Algorithms in the Language of Sparse Linear Algebra. *ACM Transactions on Mathematical Software*. | `docs/ARCHITECTURE.md` |
 | `dedomenico2013mathematical` | De Domenico et al. (2013). Mathematical Formulation of Multilayer Networks. *Physical Review X*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/ROADMAP.md` |
 | `dekker2007sensitivity` | Dekker, Krackhardt, and Snijders (2007). Sensitivity of MRQAP Tests to Collinearity and Autocorrelation Conditions. *Psychometrika*. | `crates/engine/src/qap.rs`, `docs/ROADMAP.md` |
 | `denooy2018exploratory` | de Nooy, Mrvar, and Batagelj (2018). Exploratory Social Network Analysis with Pajek. *Cambridge University Press*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/frame/multiplicity.rs`, `crates/engine/src/io/pajek.rs`, `docs/DATA_MODEL.md` |
+| `depina1995applications` | de Pina (1995). Applications of Shortest Path Methods. | `crates/engine/src/metrics/cycles.rs` |
 | `deritei2014community` | Deritei et al. (2014). Community Detection by Graph Voronoi Diagrams. *New Journal of Physics*. | `crates/engine/src/metrics/partition/voronoi.rs` |
 | `desmarais2012statistical` | Desmarais and Cranmer (2012). Statistical Mechanics of Networks: Estimation and Uncertainty. *Physica A: Statistical Mechanics and its Applications*. |  |
 | `dial1969algorithm` | Dial (1969). Algorithm 360: Shortest-Path Forest with Topological Ordering. *Communications of the ACM*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/metrics/closeness.rs`, `crates/engine/src/metrics/descriptive.rs`, `crates/engine/src/metrics/path_centrality.rs`, and 4 more |
+| `dias2013efficient` | Dias et al. (2013). Efficient Enumeration of Chordless Cycles. | `crates/engine/src/metrics/cycles.rs` |
 | `dijkstra1959note` | Dijkstra (1959). A Note on Two Problems in Connexion with Graphs. *Numerische Mathematik*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/metrics/closeness.rs`, `crates/engine/src/metrics/descriptive.rs`, `crates/engine/src/paths/mod.rs`, and 2 more |
-| `dinic1970algorithm` | Dinic (1970). Algorithm for Solution of a Problem of Maximum Flow in a Network with Power Estimation. *Soviet Mathematics Doklady*. | `crates/engine/src/metrics/resilience.rs` |
+| `dinic1970algorithm` | Dinic (1970). Algorithm for Solution of a Problem of Maximum Flow in a Network with Power Estimation. *Soviet Mathematics Doklady*. | `crates/engine/src/flow/maxflow.rs`, `crates/engine/src/flow/network.rs`, `crates/engine/src/metrics/resilience.rs` |
 | `doreian1996partitioning` | Doreian and Mrvar (1996). A Partitioning Approach to Structural Balance. *Social Networks*. | `docs/ROADMAP.md` |
 | `doreian2005generalized` | Doreian, Batagelj, and Ferligoj (2005). Generalized Blockmodeling. *Cambridge University Press*. | `crates/engine/src/metrics/factions/kgroups.rs`, `docs/ROADMAP.md` |
 | `dreyfus1969appraisal` | Dreyfus (1969). An Appraisal of Some Shortest-Path Algorithms. *Operations Research*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/search.rs` |
 | `durstenfeld1964algorithm` | Durstenfeld (1964). Algorithm 235: Random Permutation. *Communications of the ACM*. | `crates/engine/src/rng.rs` |
+| `easley2010networks` | Easley and Kleinberg (2010). Networks, Crowds, and Markets: Reasoning about a Highly Connected World. *Cambridge University Press*. | `crates/engine/src/metrics/connectivity/components.rs` |
+| `edmonds1967optimum` | Edmonds (1967). Optimum Branchings. *Journal of Research of the National Bureau of Standards, Section B*. | `crates/engine/src/metrics/trees.rs` |
 | `edmonds1972theoretical` | Edmonds and Karp (1972). Theoretical Improvements in Algorithmic Efficiency for Network Flow Problems. *Journal of the ACM*. | `crates/engine/src/metrics/factions/lambda.rs`, `validation/oracles/resilience_definition_oracle.py` |
 | `egenhofer1991pointset` | Egenhofer and Franzosa (1991). Point-Set Topological Spatial Relations. *International Journal of Geographical Information Systems*. | `r/R/sf.R` |
 | `ellens2011effective` | Ellens et al. (2011). Effective Graph Resistance. *Linear Algebra and its Applications*. | `crates/engine/src/metrics/current_flow.rs` |
@@ -117,8 +132,11 @@ cited by author and year in an R help page or a vignette instead.
 | `epskamp2012qgraph` | Epskamp et al. (2012). qgraph: Network Visualizations of Relationships in Psychometric Data. *Journal of Statistical Software*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `erdos1959random` | Erdős and Rényi (1959). On Random Graphs I. *Publicationes Mathematicae Debrecen*. | `crates/engine/src/generate.rs` |
 | `erwig2000graph` | Erwig (2000). The Graph Voronoi Diagram with Applications. *Networks*. | `crates/engine/src/paths/search.rs` |
+| `esfahanian1984computing` | Esfahanian and Hakimi (1984). On Computing the Connectivities of Graphs and Digraphs. *Networks*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `estrada2008communicability` | Estrada and Hatano (2008). Communicability in Complex Networks. *Physical Review E*. | `crates/engine/src/metrics/communicability.rs` |
 | `estrada2009communicability` | Estrada, Higham, and Hatano (2009). Communicability Betweenness in Complex Networks. *Physica A: Statistical Mechanics and its Applications*. | `crates/engine/src/metrics/communicability.rs` |
+| `even1975algorithm` | Even (1975). An Algorithm for Determining Whether the Connectivity of a Graph is at Least k. *SIAM Journal on Computing*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
+| `even1975network` | Even and Tarjan (1975). Network Flow and Testing Graph Connectivity. *SIAM Journal on Computing*. | `crates/engine/src/flow/network.rs`, `crates/engine/src/metrics/connectivity.rs`, `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/disjoint.rs`, and 1 more |
 | `everett1985role` | Everett (1985). Role similarity and complexity in social networks. *Social Networks*. | `crates/engine/src/metrics/regular.rs` |
 | `everett1994regular` | Everett and Borgatti (1994). Regular equivalence: General theory. *The Journal of Mathematical Sociology*. | `crates/engine/src/metrics/regular.rs` |
 | `everett1999centrality` | Everett and Borgatti (1999). The Centrality of Groups and Classes. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/resilience.rs` |
@@ -127,13 +145,15 @@ cited by author and year in an R help page or a vignette instead.
 | `everton2012disrupting` | Everton (2012). Disrupting Dark Networks. *Cambridge University Press*. | `crates/engine/src/metrics/resilience.rs`, `docs/ROADMAP.md` |
 | `fararo1984tripartite` | Fararo and Doreian (1984). Tripartite Structural Analysis: Generalizing the Breiger-Wilson Formalism. *Social Networks*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md` |
 | `floyd1962algorithm` | Floyd (1962). Algorithm 97: Shortest Path. *Communications of the ACM*. | `crates/engine/src/paths/dense.rs`, `crates/engine/src/paths/mod.rs` |
-| `ford1956maximal` | Ford and Fulkerson (1956). Maximal Flow Through a Network. *Canadian Journal of Mathematics*. | `crates/engine/src/metrics/factions/lambda.rs`, `crates/engine/src/metrics/resilience.rs` |
+| `ford1956maximal` | Ford and Fulkerson (1956). Maximal Flow Through a Network. *Canadian Journal of Mathematics*. | `crates/engine/src/flow/maxflow.rs`, `crates/engine/src/flow/network.rs`, `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs`, and 2 more |
+| `ford1962flows` | Ford and Fulkerson (1962). Flows in Networks. *Princeton University Press*. | `crates/engine/src/flow/maxflow.rs`, `crates/engine/src/metrics/connectivity/disjoint.rs` |
 | `frank1986markov` | Frank and Strauss (1986). Markov Graphs. *Journal of the American Statistical Association*. |  |
 | `freeman1977set` | Freeman (1977). A Set of Measures of Centrality Based on Betweenness. *Sociometry*. | `crates/engine/src/metrics/betweenness.rs`, `crates/engine/src/metrics/partition/girvan_newman.rs`, `crates/engine/src/metrics/reach.rs` |
 | `freeman1978centrality` | Freeman (1978). Centrality in Social Networks: Conceptual Clarification. *Social Networks*. | `crates/engine/src/conventions.rs`, `crates/engine/src/metrics/closeness.rs`, `crates/engine/src/metrics/topography.rs`, `docs/ROADMAP.md` |
 | `freeman1991centrality` | Freeman, Borgatti, and White (1991). Centrality in Valued Graphs: A Measure of Betweenness Based on Network Flow. *Social Networks*. | `crates/engine/src/metrics/resilience.rs` |
 | `friedman1977algorithm` | Friedman, Bentley, and Finkel (1977). An algorithm for finding best matches in logarithmic expected time. *ACM Transactions on Mathematical Software*. | `crates/engine/src/spatial.rs` |
 | `fruchterman1991graph` | Fruchterman and Reingold (1991). Graph Drawing by Force-Directed Placement. *Software: Practice and Experience*. | `crates/engine/src/layout/force.rs`, `crates/engine/src/layout/mod.rs` |
+| `gabow1986efficient` | Gabow et al. (1986). Efficient Algorithms for Finding Minimum Spanning Trees in Undirected and Directed Graphs. *Combinatorica*. | `crates/engine/src/metrics/trees.rs` |
 | `gansner2000open` | Gansner and North (2000). An Open Graph Visualization System and Its Applications to Software Engineering. *Software: Practice and Experience*. | `crates/engine/src/io/dot.rs` |
 | `gansner2005graph` | Gansner, Koren, and North (2005). Graph Drawing by Stress Majorization. *Graph Drawing (GD 2004)*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/layout/stress.rs` |
 | `garlaschelli2004patterns` | Garlaschelli and Loffredo (2004). Patterns of Link Reciprocity in Directed Networks. *Physical Review Letters*. | `crates/engine/src/metrics/descriptive.rs` |
@@ -152,13 +172,16 @@ cited by author and year in an R help page or a vignette instead.
 | `goh2008burstiness` | Goh and Barabási (2008). Burstiness and Memory in Complex Systems. *EPL (Europhysics Letters)*. | `crates/engine/src/temporal/events.rs`, `crates/engine/src/temporal/mod.rs` |
 | `goldberg1993heuristic` | Goldberg and Radzik (1993). A Heuristic Improvement of the Bellman-Ford Algorithm. *Applied Mathematics Letters*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/negative.rs` |
 | `golub2013matrix` | Golub and Van Loan (2013). Matrix Computations. *Johns Hopkins University Press*. | `crates/engine/src/linalg.rs`, `crates/engine/src/metrics/reach.rs` |
-| `gomory1961multi` | Gomory and Hu (1961). Multi-Terminal Network Flows. *Journal of the Society for Industrial and Applied Mathematics*. | `crates/engine/src/metrics/factions/lambda.rs` |
+| `gomory1961multi` | Gomory and Hu (1961). Multi-Terminal Network Flows. *Journal of the Society for Industrial and Applied Mathematics*. | `crates/engine/src/flow/gomory_hu.rs`, `crates/engine/src/metrics/connectivity/kedge.rs`, `crates/engine/src/metrics/factions/lambda.rs` |
 | `gould1989structures` | Gould and Fernandez (1989). Structures of Mediation: A Formal Approach to Brokerage in Transaction Networks. *Sociological Methodology*. | `crates/engine/src/metrics/brokerage.rs` |
 | `gower1966some` | Gower (1966). Some distance properties of latent root and vector methods used in multivariate analysis. *Biometrika*. | `crates/engine/src/metrics/scaling.rs` |
+| `granovetter1973strength` | Granovetter (1973). The Strength of Weak Ties. *American Journal of Sociology*. | `crates/engine/src/metrics/connectivity/components.rs` |
 | `gray1953pulse` | Gray (1953). Pulse Code Communication. *U.S. Patent 2,632,058*. |  |
-| `gusfield1990very` | Gusfield (1990). Very Simple Methods for All Pairs Network Flow Analysis. *SIAM Journal on Computing*. | `crates/engine/src/metrics/factions/lambda.rs` |
+| `grigoriadis1986efficient` | Grigoriadis (1986). An Efficient Implementation of the Network Simplex Method. *Netflow at Pisa*. | `crates/engine/src/flow/mincost.rs` |
+| `gupta2021finding` | Gupta and Suzumura (2021). Finding All Bounded-Length Simple Cycles in a Directed Graph. | `crates/engine/src/metrics/cycles.rs` |
+| `gusfield1990very` | Gusfield (1990). Very Simple Methods for All Pairs Network Flow Analysis. *SIAM Journal on Computing*. | `crates/engine/src/flow/gomory_hu.rs`, `crates/engine/src/metrics/factions/lambda.rs` |
 | `gutman1994selected` | Gutman (1994). Selected Properties of the Schultz Molecular Topological Index. *Journal of Chemical Information and Computer Sciences*. | `crates/engine/src/metrics/distance_measures.rs` |
-| `hagberg2008exploring` | Hagberg, Schult, and Swart (2008). Exploring Network Structure, Dynamics, and Function using NetworkX. *Proceedings of the 7th Python in Science Conference (SciPy 2008)*. | `crates/engine/src/conventions.rs`, `crates/engine/src/frame/mod.rs`, `crates/engine/src/paths/mod.rs`, `docs/DATA_MODEL.md` |
+| `hagberg2008exploring` | Hagberg, Schult, and Swart (2008). Exploring Network Structure, Dynamics, and Function using NetworkX. *Proceedings of the 7th Python in Science Conference (SciPy 2008)*. | `crates/engine/src/conventions.rs`, `crates/engine/src/flow/gomory_hu.rs`, `crates/engine/src/flow/maxflow.rs`, `crates/engine/src/flow/mincost.rs`, and 12 more |
 | `hage1983structural` | Hage and Harary (1983). Structural Models in Anthropology. *Cambridge University Press*. |  |
 | `hage1995eccentricity` | Hage and Harary (1995). Eccentricity and Centrality in Networks. *Social Networks*. | `crates/engine/src/metrics/descriptive.rs`, `crates/engine/src/metrics/distance_measures.rs` |
 | `handcock2003assessing` | Handcock (2003). Assessing Degeneracy in Statistical Models of Social Networks. *Center for Statistics and the Social Sciences, University of Washington*. |  |
@@ -167,6 +190,8 @@ cited by author and year in an R help page or a vignette instead.
 | `hanneke2010discrete` | Hanneke, Fu, and Xing (2010). Discrete Temporal Models of Social Networks. *Electronic Journal of Statistics*. |  |
 | `hanneman2005introduction` | Hanneman and Riddle (2005). Introduction to Social Network Methods. *University of California, Riverside; https://faculty.ucr.edu/~hanneman/nettext/*. | `crates/engine/src/metrics/factions/kgroups.rs`, `docs/ROADMAP.md` |
 | `harary1953notion` | Harary (1953). On the Notion of Balance of a Signed Graph. *Michigan Mathematical Journal*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
+| `harary1965structural` | Harary, Norman, and Cartwright (1965). Structural Models: An Introduction to the Theory of Directed Graphs. *Wiley*. | `crates/engine/src/metrics/connectivity/components.rs` |
+| `harary1969graph` | Harary (1969). Graph Theory. *Addison-Wesley*. | `crates/engine/src/metrics/connectivity/values.rs` |
 | `hart1968formal` | Hart, Nilsson, and Raphael (1968). A Formal Basis for the Heuristic Determination of Minimum Cost Paths. *IEEE Transactions on Systems Science and Cybernetics*. | `crates/engine/src/paths/astar.rs`, `crates/engine/src/paths/mod.rs` |
 | `hastings1970monte` | Hastings (1970). Monte Carlo Sampling Methods Using Markov Chains and Their Applications. *Biometrika*. |  |
 | `hestenes1952methods` | Hestenes and Stiefel (1952). Methods of Conjugate Gradients for Solving Linear Systems. *Journal of Research of the National Bureau of Standards*. | `crates/engine/src/linalg.rs`, `crates/engine/src/metrics/current_flow.rs` |
@@ -189,19 +214,25 @@ cited by author and year in an R help page or a vignette instead.
 | `hunter2008ergm` | Hunter et al. (2008). ergm: A Package to Fit, Simulate and Diagnose Exponential-Family Models for Networks. *Journal of Statistical Software*. | `docs/ROADMAP.md` |
 | `hunter2008goodness` | Hunter, Goodreau, and Handcock (2008). Goodness of Fit of Social Network Models. *Journal of the American Statistical Association*. |  |
 | `hwang2008bridging` | Hwang et al. (2008). Bridging centrality: Graph mining from element level to group level. *Proceedings of the 14th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*. | `crates/engine/src/metrics/reach.rs` |
+| `itai1978finding` | Itai and Rodeh (1978). Finding a Minimum Circuit in a Graph. *SIAM Journal on Computing*. | `crates/engine/src/metrics/cycles.rs` |
 | `johnson1967hierarchical` | Johnson (1967). Hierarchical Clustering Schemes. *Psychometrika*. |  |
+| `johnson1975finding` | Johnson (1975). Finding All the Elementary Circuits of a Directed Graph. *SIAM Journal on Computing*. | `crates/engine/src/metrics/cycles.rs` |
 | `johnson1975priority` | Johnson (1975). Priority Queues with Update and Finding Minimum Spanning Trees. *Information Processing Letters*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/search.rs`, `crates/engine/src/weights.rs`, `crates/engine/tests/paths_properties.rs` |
 | `johnson1977efficient` | Johnson (1977). Efficient Algorithms for Shortest Paths in Sparse Networks. *Journal of the ACM*. | `crates/engine/src/paths/mod.rs`, `crates/engine/src/paths/negative.rs` |
 | `johnson2014trophic` | Johnson et al. (2014). Trophic Coherence Determines Food-Web Stability. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/hierarchy.rs` |
 | `kadushin2012understanding` | Kadushin (2012). Understanding Social Networks: Theories, Concepts, and Findings. *Oxford University Press*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
+| `kahn1962topological` | Kahn (1962). Topological Sorting of Large Networks. *Communications of the ACM*. | `crates/engine/src/metrics/dag.rs` |
 | `kaiser2008mean` | Kaiser (2008). Mean Clustering Coefficients: The Role of Isolated Nodes and Leafs on Clustering Measures for Small-World Networks. *New Journal of Physics*. | `crates/engine/src/metrics/descriptive.rs` |
 | `kamada1989algorithm` | Kamada and Kawai (1989). An Algorithm for Drawing General Undirected Graphs. *Information Processing Letters*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/layout/stress.rs`, `docs/ROADMAP.md` |
 | `katz1953new` | Katz (1953). A New Status Index Derived from Sociometric Analysis. *Psychometrika*. | `crates/engine/src/metrics/spectral.rs` |
+| `kavitha2009cycle` | Kavitha et al. (2009). Cycle Bases in Graphs: Characterization, Algorithms, Complexity, and Applications. *Computer Science Review*. | `crates/engine/src/metrics/cycles.rs` |
+| `kemeny1960finite` | Kemeny and Snell (1960). Finite Markov Chains. *Van Nostrand*. | `crates/engine/src/metrics/connectivity/components.rs` |
 | `kempe2002connectivity` | Kempe, Kleinberg, and Kumar (2002). Connectivity and Inference Problems for Temporal Networks. *Journal of Computer and System Sciences*. | `crates/engine/src/temporal/mod.rs`, `crates/engine/src/temporal/paths.rs` |
 | `kepner2011graph` | Kepner and Gilbert (2011). Graph Algorithms in the Language of Linear Algebra. *Society for Industrial and Applied Mathematics*. | `crates/engine/src/metrics/equivalence.rs` |
 | `kepner2016mathematical` | Kepner et al. (2016). Mathematical Foundations of the GraphBLAS. *2016 IEEE High Performance Extreme Computing Conference (HPEC)*. | `docs/ARCHITECTURE.md` |
 | `kermarrec2011second` | Kermarrec et al. (2011). Second Order Centrality: Distributed Assessment of Nodes Criticity in Complex Networks. *Computer Communications*. | `crates/engine/src/metrics/current_flow.rs` |
 | `kim2016measuring` | Kim and Jo (2016). Measuring Burstiness for Finite Event Sequences. *Physical Review E*. |  |
+| `kirchhoff1847ueber` | Kirchhoff (1847). Ueber die Auflösung der Gleichungen, auf welche man bei der Untersuchung der linearen Vertheilung galvanischer Ströme geführt wird. *Annalen der Physik*. | `crates/engine/src/metrics/cycles.rs` |
 | `kirkpatrick1983optimization` | Kirkpatrick, Gelatt, and Vecchi (1983). Optimization by Simulated Annealing. *Science*. | `crates/engine/src/metrics/partition/spinglass.rs` |
 | `kivela2014multilayer` | Kivelä et al. (2014). Multilayer Networks. *Journal of Complex Networks*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `klein1993resistance` | Klein and Randić (1993). Resistance Distance. *Journal of Mathematical Chemistry*. | `crates/engine/src/metrics/current_flow.rs` |
@@ -209,6 +240,7 @@ cited by author and year in an R help page or a vignette instead.
 | `kleinberg1999authoritative` | Kleinberg (1999). Authoritative Sources in a Hyperlinked Environment. *Journal of the ACM*. | `crates/engine/src/metrics/spectral.rs` |
 | `knapp2019homophily` | Knapp (2019). homophily: Measuring Network Homophily. *https://github.com/knapply/homophily*. | `crates/engine/src/metrics/mixing.rs` |
 | `knecht2008friendship` | Knecht (2008). Friendship Selection and Friends' Influence. Dynamics of Networks and Actor Attributes in Early Adolescence. |  |
+| `knuth1974structured` | Knuth and Szwarcfiter (1974). A Structured Program to Generate All Topological Sorting Arrangements. *Information Processing Letters*. | `crates/engine/src/metrics/dag.rs` |
 | `knuth1993stanford` | Knuth (1993). The Stanford GraphBase: A Platform for Combinatorial Computing. *Addison-Wesley*. | `docs/ROADMAP.md`, `validation/fixtures.py` |
 | `knuth2011art` | Knuth (2011). The Art of Computer Programming, Volume 4A: Combinatorial Algorithms, Part 1. *Addison-Wesley*. |  |
 | `koschade2006social` | Koschade (2006). A Social Network Analysis of Jemaah Islamiyah: The Applications to Counterterrorism and Intelligence. *Studies in Conflict & Terrorism*. |  |
@@ -219,6 +251,7 @@ cited by author and year in an R help page or a vignette instead.
 | `krackhardt1988informal` | Krackhardt and Stern (1988). Informal Networks and Organizational Crises: An Experimental Simulation. *Social Psychology Quarterly*. | `crates/engine/src/metrics/mixing.rs` |
 | `krackhardt1988predicting` | Krackhardt (1988). Predicting with Networks: Nonparametric Multiple Regression Analysis of Dyadic Data. *Social Networks*. | `crates/engine/src/qap.rs`, `docs/ROADMAP.md` |
 | `krackhardt1990assessing` | Krackhardt (1990). Assessing the Political Landscape: Structure, Cognition, and Power in Organizations. *Administrative Science Quarterly*. | `docs/ROADMAP.md`, `validation/fixtures.py` |
+| `kruskal1956shortest` | Kruskal (1956). On the Shortest Spanning Subtree of a Graph and the Traveling Salesman Problem. *Proceedings of the American Mathematical Society*. | `crates/engine/src/metrics/trees.rs` |
 | `kruskal1964multidimensional` | Kruskal (1964). Multidimensional scaling by optimizing goodness of fit to a nonmetric hypothesis. *Psychometrika*. | `crates/engine/src/metrics/scaling.rs`, `docs/ROADMAP.md` |
 | `lancichinetti2008benchmark` | Lancichinetti, Fortunato, and Radicchi (2008). Benchmark Graphs for Testing Community Detection Algorithms. *Physical Review E*. |  |
 | `lanczos1950iteration` | Lanczos (1950). An Iteration Method for the Solution of the Eigenvalue Problem of Linear Differential and Integral Operators. *Journal of Research of the National Bureau of Standards*. | `crates/engine/src/metrics/eigenvector.rs` |
@@ -249,12 +282,14 @@ cited by author and year in an R help page or a vignette instead.
 | `mckay2014practical` | McKay and Piperno (2014). Practical graph isomorphism, II. *Journal of Symbolic Computation*. | `crates/engine/src/metrics/regular.rs` |
 | `mcpherson2001birds` | McPherson, Smith-Lovin, and Cook (2001). Birds of a Feather: Homophily in Social Networks. *Annual Review of Sociology*. | `crates/engine/src/metrics/mixing.rs` |
 | `meila2007comparing` | Meilă (2007). Comparing Clusterings–-An Information Based Distance. *Journal of Multivariate Analysis*. | `crates/engine/src/metrics/partition/compare.rs` |
+| `menger1927allgemeinen` | Menger (1927). Zur allgemeinen Kurventheorie. *Fundamenta Mathematicae*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/disjoint.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `metropolis1953equation` | Metropolis et al. (1953). Equation of State Calculations by Fast Computing Machines. *The Journal of Chemical Physics*. |  |
 | `mises1929praktische` | von Mises and Pollaczek-Geiringer (1929). Praktische Verfahren der Gleichungsauflösung. *ZAMM – Zeitschrift für Angewandte Mathematik und Mechanik*. | `crates/engine/src/layout/stress.rs`, `crates/engine/src/metrics/eigenvector.rs` |
 | `mokken1979cliques` | Mokken (1979). Cliques, Clubs and Clans. *Quality and Quantity*. | `crates/engine/src/metrics/factions/ncliques.rs` |
 | `molloy1995critical` | Molloy and Reed (1995). A Critical Point for Random Graphs with a Given Degree Sequence. *Random Structures & Algorithms*. | `crates/engine/src/generate.rs` |
 | `molnar2024community` | Molnár et al. (2024). Community Detection in Directed Weighted Networks Using Voronoi Partitioning. *Scientific Reports*. | `crates/engine/src/metrics/partition/voronoi.rs` |
 | `mones2012hierarchy` | Mones, Vicsek, and Vicsek (2012). Hierarchy Measure for Complex Networks. *PLoS ONE*. | `crates/engine/src/metrics/hierarchy.rs` |
+| `moody2003structural` | Moody and White (2003). Structural Cohesion and Embeddedness: A Hierarchical Concept of Social Groups. *American Sociological Review*. | `crates/engine/src/metrics/connectivity/kcomponents.rs` |
 | `moritz2000geodetic` | Moritz (2000). Geodetic Reference System 1980. *Journal of Geodesy*. | `crates/engine/src/spatial.rs` |
 | `morris2008specification` | Morris, Handcock, and Hunter (2008). Specification of Exponential-Family Random Graph Models: Terms and Computational Aspects. *Journal of Statistical Software*. |  |
 | `mucha2010community` | Mucha et al. (2010). Community Structure in Time-Dependent, Multiscale, and Multiplex Networks. *Science*. | `docs/DATA_MODEL.md` |
@@ -283,6 +318,8 @@ cited by author and year in an R help page or a vignette instead.
 | `padgett1993robust` | Padgett and Ansell (1993). Robust Action and the Rise of the Medici, 1400–1434. *American Journal of Sociology*. | `docs/ROADMAP.md`, `validation/fixtures.py` |
 | `pan2011path` | Pan and Saramäki (2011). Path Lengths, Correlations, and Centrality in Temporal Networks. *Physical Review E*. | `crates/engine/src/temporal/mod.rs`, `crates/engine/src/temporal/paths.rs` |
 | `pares2018fluid` | Parés et al. (2018). Fluid Communities: A Competitive, Scalable and Diverse Community Detection Algorithm. *Complex Networks & Their Applications VI (COMPLEX NETWORKS 2017)*. | `crates/engine/src/metrics/partition/fluid.rs` |
+| `paton1969algorithm` | Paton (1969). An Algorithm for Finding a Fundamental Set of Cycles of a Graph. *Communications of the ACM*. | `crates/engine/src/metrics/cycles.rs` |
+| `pearce2016space` | Pearce (2016). A Space-Efficient Algorithm for Finding Strongly Connected Components. *Information Processing Letters*. | `crates/engine/src/metrics/connectivity/components.rs` |
 | `pebesma2018sf` | Pebesma (2018). Simple Features for R: Standardized Support for Spatial Vector Data. *The R Journal*. | `docs/DATA_MODEL.md`, `r/R/sf.R` |
 | `pedersen2017tidygraph` | Pedersen (2017). tidygraph: A Tidy API for Graph Manipulation. | `docs/ROADMAP.md` |
 | `peixoto2014graphtool` | Peixoto (2014). The graph-tool python library. *figshare*. |  |
@@ -292,6 +329,8 @@ cited by author and year in an R help page or a vignette instead.
 | `piraveenan2013percolation` | Piraveenan, Prokopenko, and Hossain (2013). Percolation Centrality: Quantifying Graph-Theoretic Impact of Nodes during Percolation in Networks. *PLoS ONE*. | `crates/engine/src/metrics/path_centrality.rs` |
 | `polyak1992acceleration` | Polyak and Juditsky (1992). Acceleration of Stochastic Approximation by Averaging. *SIAM Journal on Control and Optimization*. |  |
 | `pons2006computing` | Pons and Latapy (2006). Computing Communities in Large Networks Using Random Walks. *Journal of Graph Algorithms and Applications*. | `crates/engine/src/metrics/partition/walktrap.rs` |
+| `prim1957shortest` | Prim (1957). Shortest Connection Networks and Some Generalizations. *Bell System Technical Journal*. | `crates/engine/src/metrics/trees.rs` |
+| `purdom1970transitive` | Purdom (1970). A Transitive Closure Algorithm. *BIT Numerical Mathematics*. | `crates/engine/src/metrics/dag.rs` |
 | `qi2012laplacian` | Qi et al. (2012). Laplacian Centrality: A New Centrality Measure for Weighted Networks. *Information Sciences*. | `crates/engine/src/metrics/spreading.rs` |
 | `radicchi2004defining` | Radicchi et al. (2004). Defining and Identifying Communities in Networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/partition/voronoi.rs` |
 | `raghavan2007near` | Raghavan, Albert, and Kumara (2007). Near Linear Time Algorithm to Detect Community Structures in Large-Scale Networks. *Physical Review E*. | `crates/engine/src/metrics/partition/label_propagation.rs` |
@@ -311,9 +350,11 @@ cited by author and year in an R help page or a vignette instead.
 | `sabidussi1966centrality` | Sabidussi (1966). The Centrality Index of a Graph. *Psychometrika*. | `crates/engine/src/metrics/closeness.rs` |
 | `salmon2011parallel` | Salmon et al. (2011). Parallel Random Numbers: As Easy as 1, 2, 3. *Proceedings of the 2011 International Conference for High Performance Computing, Networking, Storage and Analysis (SC '11)*. | `crates/engine/src/rng.rs` |
 | `sampson1968novitiate` | Sampson (1968). A Novitiate in a Period of Change: An Experimental and Case Study of Social Relationships. |  |
+| `schnorr1979bottlenecks` | Schnorr (1979). Bottlenecks and Edge Connectivity in Unsymmetrical Networks. *SIAM Journal on Computing*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `schultz1989topological` | Schultz (1989). Topological Organic Chemistry. 1. Graph Theory and Topological Indices of Alkanes. *Journal of Chemical Information and Computer Sciences*. | `crates/engine/src/metrics/distance_measures.rs` |
 | `schweinberger2007markov` | Schweinberger and Snijders (2007). Markov Models for Digraph Panel Data: Monte Carlo-Based Derivative Estimation. *Computational Statistics & Data Analysis*. |  |
 | `schweinberger2011instability` | Schweinberger (2011). Instability, Sensitivity, and Degeneracy of Discrete Exponential Families. *Journal of the American Statistical Association*. |  |
+| `sedgewick2011algorithms` | Sedgewick and Wayne (2011). Algorithms. *Addison-Wesley*. | `crates/engine/src/metrics/dag.rs` |
 | `seidman1978graph` | Seidman and Foster (1978). A Graph-Theoretic Generalization of the Clique Concept. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/factions/kplex.rs` |
 | `seidman1983network` | Seidman (1983). Network Structure and Minimum Degree. *Social Networks*. | `crates/engine/src/metrics/cores.rs`, `crates/engine/src/metrics/factions/kplex.rs` |
 | `shafie2026r4sna` | Shafie and Schoch (2026). R for Social Network Analysis. *https://schochastics.github.io/R4SNA/*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -335,12 +376,14 @@ cited by author and year in an R help page or a vignette instead.
 | `stewart2002krylov` | Stewart (2002). A Krylov–Schur Algorithm for Large Eigenproblems. *SIAM Journal on Matrix Analysis and Applications*. | `crates/engine/src/metrics/eigenvector.rs` |
 | `strauss1990pseudolikelihood` | Strauss and Ikeda (1990). Pseudolikelihood Estimation for Social Networks. *Journal of the American Statistical Association*. |  |
 | `sugiyama1981methods` | Sugiyama, Tagawa, and Toda (1981). Methods for Visual Understanding of Hierarchical System Structures. *IEEE Transactions on Systems, Man, and Cybernetics*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/layout/simple.rs`, `docs/ROADMAP.md` |
-| `tarjan1972depth` | Tarjan (1972). Depth-First Search and Linear Graph Algorithms. *SIAM Journal on Computing*. | `crates/engine/src/metrics/topography.rs` |
+| `tarjan1972depth` | Tarjan (1972). Depth-First Search and Linear Graph Algorithms. *SIAM Journal on Computing*. | `crates/engine/src/metrics/connectivity/components.rs`, `crates/engine/src/metrics/topography.rs` |
 | `tarjan1975efficiency` | Tarjan (1975). Efficiency of a Good But Not Linear Set Union Algorithm. *Journal of the ACM*. | `crates/engine/src/metrics/topography.rs`, `crates/engine/src/union_find.rs` |
+| `tarjan1977finding` | Tarjan (1977). Finding Optimum Branchings. *Networks*. | `crates/engine/src/metrics/trees.rs` |
 | `then2014more` | Then et al. (2014). The More the Merrier: Efficient Multi-Source Graph Traversal. *Proceedings of the VLDB Endowment*. | `crates/engine/src/bitset.rs`, `crates/engine/src/metrics/closeness.rs`, `crates/engine/tests/paths_properties.rs` |
 | `thompson2017static` | Thompson, Brantefors, and Fransson (2017). From Static to Temporal Network Theory: Applications to Functional Brain Connectivity. *Network Neuroscience*. | `docs/DECISIONS.md` |
 | `tomita2006worst` | Tomita, Tanaka, and Takahashi (2006). The Worst-Case Time Complexity for Generating All Maximal Cliques and Computational Experiments. *Theoretical Computer Science*. | `crates/engine/src/metrics/cliques.rs` |
 | `torgerson1952multidimensional` | Torgerson (1952). Multidimensional scaling: I. Theory and method. *Psychometrika*. | `crates/engine/src/metrics/scaling.rs` |
+| `torrents2015structural` | Torrents and Ferraro (2015). Structural Cohesion: Visualization and Heuristics for Fast Computation. *Journal of Social Structure*. | `crates/engine/src/metrics/connectivity/kcomponents.rs` |
 | `torres2021why` | Torres et al. (2021). The Why, How, and When of Representations for Complex Systems. *SIAM Review*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `traag2009community` | Traag and Bruggeman (2009). Community Detection in Networks with Positive and Negative Links. *Physical Review E*. | `crates/engine/src/metrics/partition/spinglass.rs` |
 | `traag2011narrow` | Traag, Van Dooren, and Nesterov (2011). Narrow Scope for Resolution-Limit-Free Community Detection. *Physical Review E*. | `crates/engine/src/metrics/partition/leiden.rs` |
@@ -359,8 +402,9 @@ cited by author and year in an R help page or a vignette instead.
 | `verfaillie1996russian` | Verfaillie, Lemaître, and Schiex (1996). Russian Doll Search for Solving Constraint Optimization Problems. *Proceedings of the Thirteenth National Conference on Artificial Intelligence (AAAI-96)*. | `crates/engine/src/metrics/partition/optimal.rs` |
 | `vinh2010information` | Vinh, Epps, and Bailey (2010). Information Theoretic Measures for Clusterings Comparison: Variants, Properties, Normalization and Correction for Chance. *Journal of Machine Learning Research*. | `crates/engine/src/metrics/partition/compare.rs` |
 | `wang2013exponential` | Wang et al. (2013). Exponential Random Graph Models for Multilevel Networks. *Social Networks*. |  |
+| `wang2015simple` | Wang et al. (2015). A Simple Algorithm for Finding All k-Edge-Connected Components. *PLOS ONE*. | `crates/engine/src/metrics/connectivity/kedge.rs` |
 | `ward1963hierarchical` | Ward (1963). Hierarchical Grouping to Optimize an Objective Function. *Journal of the American Statistical Association*. |  |
-| `warshall1962theorem` | Warshall (1962). A Theorem on Boolean Matrices. *Journal of the ACM*. | `crates/engine/src/paths/dense.rs`, `crates/engine/src/paths/mod.rs` |
+| `warshall1962theorem` | Warshall (1962). A Theorem on Boolean Matrices. *Journal of the ACM*. | `crates/engine/src/metrics/dag.rs`, `crates/engine/src/paths/dense.rs`, `crates/engine/src/paths/mod.rs` |
 | `wasserman1994social` | Wasserman and Faust (1994). Social Network Analysis: Methods and Applications. *Cambridge University Press*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `crates/engine/src/metrics/blockmodel.rs`, `crates/engine/src/metrics/closeness.rs`, and 9 more |
 | `wasserman1996logit` | Wasserman and Pattison (1996). Logit Models and Logistic Regressions for Social Networks: I. An Introduction to Markov Graphs and p^*. *Psychometrika*. |  |
 | `watts1998collective` | Watts and Strogatz (1998). Collective Dynamics of `Small-World' Networks. *Nature*. | `crates/engine/src/generate.rs`, `crates/engine/src/metrics/coreperiphery/small_world.rs`, `crates/engine/src/metrics/descriptive.rs` |

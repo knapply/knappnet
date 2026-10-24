@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "knappnet"
+version = "0.0.1"
+description = "A NetworkX backend running NetworkX algorithms on a compiled, multithreaded engine"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Proprietary. All rights reserved. See LICENSE." }
+authors = [{ name = "Brendan Knapp" }]
+dependencies = ["networkx>=3.4"]
+classifiers = [
+    "License :: Other/Proprietary License",
+    "Private :: Do Not Upload",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Rust",
+    "Programming Language :: C",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.optional-dependencies]
+test = ["pytest", "numpy", "scipy"]
+
+[project.urls]
+Homepage = "https://github.com/knapply/knappnet"
+Documentation = "https://github.com/knapply/knappnet/tree/main/python/docs"
+
+[project.entry-points."networkx.backends"]
+knappnet = "knappnet.backend:BackendInterface"
+
+[project.entry-points."networkx.backend_info"]
+knappnet = "knappnet._info:get_info"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+packages = ["knappnet"]
+
+[tool.setuptools.package-data]
+knappnet = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
