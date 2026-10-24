@@ -18,6 +18,21 @@
 # first). Networks with structurally equivalent nodes have such ties;
 # igraph documents no tie rule, so on those fixtures it may merge in
 # another order.
+#
+# Pons and Latapy (2006) merge, at every step, the two adjacent groups
+# whose merge increases sigma least (smallest delta sigma). igraph
+# sometimes does not. On weighted_und (t = 4) its third merge joins 25 and
+# 30 (exact delta sigma 2.648e-6), although groups 1 and {23, 35} are
+# adjacent with 2.130e-6, a gap of 20% and far beyond rounding; igraph
+# merges that pair two steps later. On twomode_weighted (t = 2) its fourth
+# and ninth merges skip pairs whose delta sigma is 29% and 5% smaller. On
+# weighted_und the skipped pair joins node 1 to the group {23, 35} formed
+# by the previous merge, of which node 1 touches only 23 (so its delta
+# sigma cannot come from the paper's update formula for a group adjacent
+# to both merged groups and must be computed from the merged probability
+# vector). The exact merge
+# sequence is computed independently by the definition oracle, which the
+# engine matches; these departures are listed as documented differences.
 
 walktrap:
   engine: {fn: walktrap, steps: 4}
@@ -63,8 +78,13 @@ walktrap_merges:
       call: "the exact merge sequence, in igraph's numbering (merge i creates group n + i)"
     igraph:
       call: "cluster_walktrap(g, weights = NULL, steps = 4)$merges - 1"
-      differs_on: *walktrap_ties
-      reason: *walktrap_tie_reason
+      differs_on: [complete6, davis_twomode, karate, kite, les_miserables, path10,
+                   southern_women, star8, two_triangles_isolate, twomode_random, weighted_und]
+      reason: &walktrap_order_reason >-
+        exact ties between pairs of groups occur during the merges, which
+        the engine breaks by group names and igraph by an undocumented
+        rule; on weighted_und igraph merges a pair that does not have the
+        smallest delta sigma (see the note above the Walktrap entries)
       undefined_when: [loops, multi_edges, disconnected]
       undefined_reason: >-
         loops and parallel edges as for walktrap; on disconnected networks igraph completes the
@@ -80,8 +100,13 @@ walktrap_steps2:
       call: "Pons and Latapy (2006) with t = 2 in exact arithmetic"
     igraph:
       call: "max(modularity(cluster_walktrap(g, weights = NULL, steps = 2)))"
-      differs_on: *walktrap_ties
-      reason: *walktrap_tie_reason
+      differs_on: [complete6, davis_twomode, karate, kite, les_miserables, path10,
+                   southern_women, star8, two_triangles_isolate, twomode_random,
+                   twomode_weighted]
+      reason: >-
+        as for walktrap_merges: ties broken differently, and on
+        twomode_weighted igraph merges pairs that do not have the smallest
+        delta sigma, which leads to a different best level
       undefined_when: [loops, multi_edges]
       undefined_reason: as for walktrap
 

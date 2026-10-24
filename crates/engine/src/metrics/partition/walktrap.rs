@@ -43,6 +43,12 @@
 //!   floating point, so values within a relative 1e-9 of the smallest
 //!   are taken as tied. igraph documents no tie rule and may merge tied
 //!   pairs in a different order.
+//! - igraph's `cluster_walktrap()` occasionally merges a pair that is not
+//!   the minimum: on some networks its merge sequence skips an adjacent
+//!   pair whose exact delta sigma is smaller by far more than rounding
+//!   (20% in one validation case) and merges it a few steps later. The
+//!   merges here follow the paper's rule exactly, as checked against an
+//!   implementation in exact rational arithmetic.
 //! - Only adjacent groups merge, so a network with c components gets
 //!   n - c merges (an incomplete dendrogram).
 //! - Modularity along the merges is [`crate::metrics::community::modularity`]
