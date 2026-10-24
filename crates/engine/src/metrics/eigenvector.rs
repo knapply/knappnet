@@ -536,7 +536,8 @@ impl SparseOp {
             }
             offsets.push(cols.len());
         }
-        let threads = parallel::threads_for(threads, dim, cols.len() as u64);
+        // A product streams the arcs at well under a step each.
+        let threads = parallel::threads_for(threads, dim, cols.len() as u64 / 2);
         SparseOp {
             offsets,
             cols,
@@ -613,7 +614,7 @@ impl SparseOp {
             }
             offsets.push(cols.len());
         }
-        let threads = parallel::threads_for(self.threads.max(1), rows.len(), cols.len() as u64);
+        let threads = parallel::threads_for(self.threads.max(1), rows.len(), cols.len() as u64 / 2);
         SparseOp {
             offsets,
             cols,

@@ -699,16 +699,65 @@ pub fn distance_rows(
 
 /// Distance matrix with one row per source (every node when `sources` is
 /// `None`) and one column per node. See the module documentation.
+///
+/// Rows are written in place by the searches (64 rows per multi-source
+/// search when unweighted), so the matrix is the only large allocation and
+/// its memory is first touched by the threads that fill it.
 pub fn distances(g: &Graph, sources: Option<&[u32]>, opts: PathOptions) -> Result<Dense> {
     let n = g.node_count();
-    let rows = sources.map_or(n, |s| s.len());
-    let mut m = Dense::zeros(rows, n);
-    distance_rows(g, sources, opts, |k, row| {
-        for (j, &d) in row.iter().enumerate() {
-            m.set(k, j, d);
-        }
-    })?;
-    Ok(m)
+    let sources = check_sources(n, sources)?;
+    let p = prepare(g, &opts)?;
+    let h = p.h.as_ref();
+    let view = p.view();
+    let threads = parallel::threads_for(
+        opts.threads,
+        sources.len(),
+        parallel::search_work(sources.len(), n, view.arc_count()),
+    );
+    // Zeroed allocations are mapped lazily, so this does not touch memory.
+    let mut data = vec![0.0f64; sources.len() * n];
+    if n > 0 && matches!(p.lengths, Lengths::Uniform) {
+        parallel::fill_chunks(
+            &mut data,
+            BATCH * n,
+            threads,
+            || MultiBfs::new(n),
+            |ms, b, out| {
+                let group = &sources[b * BATCH..(b * BATCH + BATCH).min(sources.len())];
+                out.fill(f64::INFINITY);
+                for (i, &s) in group.iter().enumerate() {
+                    out[i * n + s as usize] = 0.0;
+                }
+                ms.run(view, group, u32::MAX, |step| {
+                    if let Step::Reached {
+                        level,
+                        node,
+                        sources,
+                    } = step
+                    {
+                        let d = level as f64 * p.unit;
+                        for_each_bit(sources, |i| out[i * n + node as usize] = d);
+                    }
+                });
+            },
+        );
+    } else if n > 0 {
+        parallel::fill_chunks(
+            &mut data,
+            n,
+            threads,
+            || Search::new(n),
+            |ws, k, row| {
+                row.fill(f64::INFINITY);
+                ws.run(h, &p.lengths, sources[k] as usize);
+                for &v in &ws.order {
+                    row[v as usize] = ws.distance(v as usize, &p.lengths) * p.unit;
+                }
+                ws.reset();
+            },
+        );
+    }
+    Dense::from_row_major(sources.len(), n, data)
 }
 
 /// What one single-source search records.

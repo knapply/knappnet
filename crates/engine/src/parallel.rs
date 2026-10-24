@@ -111,9 +111,12 @@ where
 /// Runs `work(state, item)` for every item in `0..items`, where each thread
 /// owns one `state` created by `init`, and returns the per-thread states.
 ///
-/// Unlike [`for_each_item`], threads claim items dynamically (in small
-/// chunks of consecutive items), which balances items of very different
-/// cost, but which thread processes which item varies from run to run.
+/// Unlike [`for_each_item`], threads claim items dynamically, which
+/// balances items of very different cost, but which thread processes which
+/// item varies from run to run. A claim takes a strided chunk (items c,
+/// c + k, c + 2k, ... for k chunks), so costly items that are numbered
+/// together (the hubs of a preferential-attachment network come first) are
+/// spread over many claims.
 /// Use it only when the merged result cannot depend on that: integer sums,
 /// maxima, results keyed by item, collections sorted afterwards.
 pub fn for_each_claimed<S, I, W>(items: usize, threads: usize, init: I, work: W) -> Vec<S>
@@ -131,7 +134,7 @@ where
         }
         return vec![state];
     }
-    let chunk = (items / (threads * 64)).max(1);
+    let chunks = items.min(threads * 64);
     let next = AtomicUsize::new(0);
     std::thread::scope(|scope| {
         let handles: Vec<_> = (0..threads)
@@ -140,11 +143,11 @@ where
                 scope.spawn(move || {
                     let mut state = init();
                     loop {
-                        let lo = next.fetch_add(chunk, Ordering::Relaxed);
-                        if lo >= items {
+                        let c = next.fetch_add(1, Ordering::Relaxed);
+                        if c >= chunks {
                             break;
                         }
-                        for item in lo..(lo + chunk).min(items) {
+                        for item in (c..items).step_by(chunks) {
                             work(&mut state, item);
                         }
                     }
@@ -186,6 +189,48 @@ where
         .into_iter()
         .map(|t| t.expect("every item is computed"))
         .collect()
+}
+
+/// Calls `f(state, c, chunk)` for every chunk `c` of `chunk` consecutive
+/// elements of `out` (the last may be shorter), where each thread owns one
+/// `state` created by `init`. Threads claim chunks dynamically and write
+/// their results in place, so a large output is filled (and its memory
+/// first touched) in parallel without intermediate copies; each element is
+/// written by exactly one call, so the result does not depend on the
+/// thread count as long as each chunk's values depend only on the chunk.
+pub fn fill_chunks<T, S, I, F>(out: &mut [T], chunk: usize, threads: usize, init: I, f: F)
+where
+    T: Send,
+    S: Send,
+    I: Fn() -> S + Sync,
+    F: Fn(&mut S, usize, &mut [T]) + Sync,
+{
+    let chunk = chunk.max(1);
+    let count = (out.len() + chunk - 1) / chunk;
+    let threads = resolve_threads(threads, count);
+    if threads <= 1 {
+        let mut state = init();
+        for (c, part) in out.chunks_mut(chunk).enumerate() {
+            f(&mut state, c, part);
+        }
+        return;
+    }
+    let queue = std::sync::Mutex::new(out.chunks_mut(chunk).enumerate());
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            let (queue, init, f) = (&queue, &init, &f);
+            scope.spawn(move || {
+                let mut state = init();
+                loop {
+                    let next = queue.lock().unwrap_or_else(|e| e.into_inner()).next();
+                    match next {
+                        Some((c, part)) => f(&mut state, c, part),
+                        None => break,
+                    }
+                }
+            });
+        }
+    });
 }
 
 /// One member of a [`crew`]: its index, the crew's size, and the barrier
@@ -574,6 +619,25 @@ mod tests {
                 }
             });
             assert!(cells.iter().all(|x| x.load(Ordering::Relaxed) == 50));
+        }
+    }
+
+    #[test]
+    fn chunks_are_filled_once() {
+        for t in [1usize, 4] {
+            let mut v = vec![0usize; 1003];
+            fill_chunks(
+                &mut v,
+                10,
+                t,
+                || (),
+                |_, c, part| {
+                    for (i, x) in part.iter_mut().enumerate() {
+                        *x += c * 10 + i;
+                    }
+                },
+            );
+            assert_eq!(v, (0..1003).collect::<Vec<_>>());
         }
     }
 

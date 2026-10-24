@@ -335,19 +335,56 @@ fn iterate(init: &Dense, block: &[usize], opts: ConcorOptions) -> Iteration {
 /// have correlation 0 with every column, including themselves.
 fn column_correlations(m: &Dense, threads: usize) -> Dense {
     let b = m.rows();
-    // Centred columns, stored as rows for contiguous access.
-    let mut centred = Dense::zeros(b, b);
+    let threads = parallel::threads_for(
+        threads,
+        b,
+        (b as u64).saturating_mul(b as u64).saturating_mul(b as u64) / 2,
+    );
+    // Centred columns, stored as rows for contiguous access, GROUP columns
+    // per task. Each task reads the rows of `m` in order, so every column's
+    // mean and sum of squares add their terms in row order, as one sum per
+    // column would.
+    let mut centred_data = vec![0.0; b * b];
     let mut norm = vec![0.0; b];
-    for (c, nc) in norm.iter_mut().enumerate() {
-        let mean = (0..b).map(|r| m.get(r, c)).sum::<f64>() / b as f64;
-        let mut ss = 0.0;
-        for r in 0..b {
-            let x = m.get(r, c) - mean;
-            centred.set(c, r, x);
-            ss += x * x;
-        }
-        *nc = ss.sqrt();
+    if b > 0 {
+        let start: f64 = std::iter::empty::<f64>().sum();
+        let mut norms = vec![0.0; b];
+        let mut both: Vec<(&mut [f64], &mut [f64])> = centred_data
+            .chunks_mut(GROUP * b)
+            .zip(norms.chunks_mut(GROUP))
+            .collect();
+        parallel::fill_chunks(
+            &mut both,
+            1,
+            threads,
+            Vec::new,
+            |mean: &mut Vec<f64>, g, part| {
+                let (rows, ns) = (&mut *part[0].0, &mut *part[0].1);
+                let c0 = g * GROUP;
+                let w = ns.len();
+                mean.clear();
+                mean.resize(w, start);
+                for r in 0..b {
+                    for (acc, &x) in mean.iter_mut().zip(&m.row(r)[c0..c0 + w]) {
+                        *acc += x;
+                    }
+                }
+                mean.iter_mut().for_each(|x| *x /= b as f64);
+                ns.iter_mut().for_each(|x| *x = 0.0);
+                for r in 0..b {
+                    for (c, &x) in m.row(r)[c0..c0 + w].iter().enumerate() {
+                        let y = x - mean[c];
+                        rows[c * b + r] = y;
+                        ns[c] += y * y;
+                    }
+                }
+                ns.iter_mut().for_each(|x| *x = x.sqrt());
+            },
+        );
+        drop(both);
+        norm = norms;
     }
+    let centred = Dense::from_row_major(b, b, centred_data).expect("square");
     // Correlation is symmetric and each dot product is the same sequence
     // of exactly rounded products whichever column comes first, so only
     // j >= i is computed and mirrored. The products are tiled: each block
@@ -382,11 +419,6 @@ fn column_correlations(m: &Dense, threads: usize) -> Dense {
     let tasks: Vec<(usize, usize)> = (0..groups)
         .flat_map(|gi| (gi..groups).map(move |gj| (gi, gj)))
         .collect();
-    let threads = parallel::threads_for(
-        threads,
-        tasks.len(),
-        (b as u64).saturating_mul(b as u64).saturating_mul(b as u64) / 2,
-    );
     let tiles = parallel::map_items(
         tasks.len(),
         threads,
@@ -419,18 +451,30 @@ fn column_correlations(m: &Dense, threads: usize) -> Dense {
             tile
         },
     );
-    let mut out = vec![0.0; b * b];
-    for (&(gi, gj), tile) in tasks.iter().zip(&tiles) {
-        let (r0, r1) = (gi * GROUP, ((gi + 1) * GROUP).min(b));
-        let (c0, c1) = (gj * GROUP, ((gj + 1) * GROUP).min(b));
-        for i in r0..r1 {
-            for j in c0.max(i)..c1 {
-                let x = tile[(i - r0) * GROUP + (j - c0)];
-                out[i * b + j] = x;
-                out[j * b + i] = x;
-            }
-        }
+    // Each row of the result reads its entries from the tiles on and above
+    // the diagonal, the row's own for j >= i and the mirrored ones below.
+    let mut index = vec![usize::MAX; groups * groups];
+    for (t, &(gi, gj)) in tasks.iter().enumerate() {
+        index[gi * groups + gj] = t;
     }
+    let mut out = vec![0.0; b * b];
+    parallel::fill_chunks(
+        &mut out,
+        b,
+        threads,
+        || (),
+        |_, i, row| {
+            let gi = i / GROUP;
+            for (j, x) in row.iter_mut().enumerate() {
+                let gj = j / GROUP;
+                *x = if j >= i {
+                    tiles[index[gi * groups + gj]][(i - gi * GROUP) * GROUP + (j - gj * GROUP)]
+                } else {
+                    tiles[index[gj * groups + gi]][(j - gj * GROUP) * GROUP + (i - gi * GROUP)]
+                };
+            }
+        },
+    );
     Dense::from_row_major(b, b, out).expect("square")
 }
 
