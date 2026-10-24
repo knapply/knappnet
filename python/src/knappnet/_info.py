@@ -6,7 +6,7 @@ in its documentation and to set up ``nx.config.backends.knappnet``.
 
 
 def get_info():
-    from . import _algorithms  # noqa: F401  (registers the implementations)
+    from . import _modules  # noqa: F401  (registers the implementations)
     from ._graph import NOTES
 
     return {

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import networkx as nx
 
-from . import _algorithms  # noqa: F401  (registers the implementations)
+from . import _modules  # noqa: F401  (registers the implementations)
 from ._checks import plain_storage
 from ._graph import (
     BACKEND_NAME,

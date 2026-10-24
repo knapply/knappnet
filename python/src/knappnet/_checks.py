@@ -156,3 +156,40 @@ def node_in_graph(param, name="G"):
         return f"{param} is not a node of the graph"
 
     return check
+
+
+def nodes_in_graph(*params, name="G"):
+    """Every named argument is a node of the graph."""
+    checks = [node_in_graph(p, name) for p in params]
+    return all_of(*checks)
+
+
+def nodes_all_in_graph(param, name="G", allow_empty=False):
+    """The argument is a non-empty container of nodes of the graph."""
+
+    def check(a):
+        G = graph_of(a, name)
+        try:
+            items = list(a.get(param))
+        except TypeError:
+            return f"{param} must be a collection of nodes"
+        if not items and not allow_empty:
+            return f"{param} is empty"
+        try:
+            if all(v in G for v in items):
+                return None
+        except TypeError:
+            pass
+        return f"{param} has an item that is not a node of the graph"
+
+    return check
+
+
+def numeric_or_none(param):
+    def check(a):
+        v = a.get(param)
+        if v is None or (isinstance(v, (int, float)) and not isinstance(v, bool)):
+            return None
+        return f"{param} must be a number or None"
+
+    return check

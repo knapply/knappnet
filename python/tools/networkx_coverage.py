@@ -22,7 +22,7 @@ from pathlib import Path
 
 import networkx as nx
 
-from knappnet import _algorithms  # noqa: F401
+from knappnet import _modules  # noqa: F401
 from knappnet._graph import IMPLEMENTATIONS, NOTES
 
 ROOT = Path(__file__).resolve().parents[2]

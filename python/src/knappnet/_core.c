@@ -43,6 +43,7 @@ typedef struct {
     int64_t loops; /* number of self-loops */
     double wmin, wmax; /* weight range (1 when unweighted) */
     int wfinite;  /* every weight finite */
+    int64_t wzeros; /* number of zero weights */
     PyObject *nodes; /* list of node labels, index order */
     PyObject *index; /* dict: node label -> index */
 } GraphObject;
@@ -112,6 +113,11 @@ static PyObject *graph_get_wmax(PyObject *self, void *closure) {
     return PyFloat_FromDouble(((GraphObject *)self)->wmax);
 }
 
+static PyObject *graph_get_wzeros(PyObject *self, void *closure) {
+    (void)closure;
+    return PyLong_FromLongLong(((GraphObject *)self)->wzeros);
+}
+
 static PyObject *graph_get_wfinite(PyObject *self, void *closure) {
     (void)closure;
     return PyBool_FromLong(((GraphObject *)self)->wfinite);
@@ -122,6 +128,7 @@ static PyGetSetDef graph_getset[] = {
     {"loops", graph_get_loops, NULL, "number of self-loops", NULL},
     {"wmin", graph_get_wmin, NULL, "smallest weight (1 if unweighted)", NULL},
     {"wmax", graph_get_wmax, NULL, "largest weight (1 if unweighted)", NULL},
+    {"wzeros", graph_get_wzeros, NULL, "number of zero weights", NULL},
     {"wfinite", graph_get_wfinite, NULL, "whether every weight is finite", NULL},
     {"n", graph_get_n, NULL, "number of nodes", NULL},
     {"m", graph_get_m, NULL, "number of edges", NULL},
@@ -359,6 +366,7 @@ static PyObject *from_networkx(PyObject *mod, PyObject *args) {
     g->wmin = 1.0;
     g->wmax = 1.0;
     g->wfinite = 1;
+    g->wzeros = 0;
     for (int64_t e = 0; e < b.len; e++)
         if (b.src[e] == b.tgt[e]) g->loops++;
     if (weighted && b.len > 0) {
@@ -367,6 +375,7 @@ static PyObject *from_networkx(PyObject *mod, PyObject *args) {
         for (int64_t e = 0; e < b.len; e++) {
             double x = b.w[e];
             if (!isfinite(x)) g->wfinite = 0;
+            if (x == 0.0) g->wzeros++;
             if (x < g->wmin) g->wmin = x;
             if (x > g->wmax) g->wmax = x;
         }
@@ -1644,6 +1653,12 @@ static PyObject *py_twomode_centrality(PyObject *mod, PyObject *args) {
     return finish_doubles(out, g->n);
 }
 
+/* ---- Wrappers by area ---------------------------------------------------- */
+
+#include "_core_util.inc"
+#include "_core_paths.inc"
+#include "_core_cx.inc"
+
 /* ---- Module ------------------------------------------------------------- */
 
 static PyMethodDef methods[] = {
@@ -1688,6 +1703,9 @@ static PyMethodDef methods[] = {
     {"structural_holes", py_structural_holes, METH_VARARGS, NULL},
     {"twomode_density", py_twomode_density, METH_VARARGS, NULL},
     {"twomode_centrality", py_twomode_centrality, METH_VARARGS, NULL},
+    UTIL_METHODS
+    PATHS_METHODS
+    CX_METHODS
     {NULL, NULL, 0, NULL},
 };
 
@@ -1699,6 +1717,13 @@ static int module_exec(PyObject *m) {
         return -1;
     }
     Py_INCREF(GraphType);
+    PathGraphType = (PyTypeObject *)PyType_FromSpec(&path_graph_spec);
+    if (!PathGraphType) return -1;
+    if (PyModule_AddObject(m, "PathGraph", (PyObject *)PathGraphType) < 0) {
+        Py_DECREF(PathGraphType);
+        return -1;
+    }
+    Py_INCREF(PathGraphType);
     EngineError = PyErr_NewExceptionWithDoc(
         "knappnet._core.EngineError",
         "The engine declined the call; NetworkX runs its own implementation.",
