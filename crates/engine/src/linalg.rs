@@ -291,7 +291,7 @@ pub fn spd_inverse_parallel(a: &Dense, threads: usize) -> Option<Dense> {
             }
             crew.wait();
             let d = f64::from_bits(s[j].load(Ordering::Relaxed));
-            if !(d > 0.0) || !d.is_finite() {
+            if d.is_nan() || d <= 0.0 || !d.is_finite() {
                 failed.store(true, Ordering::Relaxed);
                 return;
             }
