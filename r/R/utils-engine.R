@@ -45,9 +45,12 @@ require_undirected <- function(x, what) {
 # an external pointer, which does not survive saveRDS(); a dead handle is
 # rebuilt transparently, through the frame, so the tables are validated
 # again. The cache is shared by copies of `x` (it is an environment), so
-# the handle is also rebuilt when the weights or the number of nodes or
-# edges no longer match what it was built from, for example after
-# `x$edges$w <- 2 * x$edges$w`.
+# the handle is also rebuilt when the endpoint, identifier, or weight
+# columns or the number of nodes or edges no longer match what it was built
+# from, for example after `x$edges$w <- 2 * x$edges$w` or an edited target.
+# The cache keeps references to those columns: R shares an unmodified
+# column, so identical() returns at once when nothing changed and compares
+# contents only after an edit.
 #
 # The graph holds the observed ties only. Measures refuse a network with
 # unresolved missing data (unobserved pairs or non-respondents,
@@ -59,11 +62,13 @@ engine_graph <- function(x, missing_ok = FALSE) {
   if (!missing_ok) require_resolved(x)
   cache <- x$cache
   w <- if (is.null(x$roles$weight)) NULL else x$edges[[x$roles$weight]]
+  cols <- list(x$edges[[x$roles$source]], x$edges[[x$roles$target]],
+               if (is.null(x$roles$id)) NULL else x$nodes[[x$roles$id]])
   ptr <- cache$ptr
   fresh <- !is.null(ptr) && .Call(C_graph_alive, ptr) &&
     !is.null(cache$frame) && .Call(C_graph_alive, cache$frame) &&
     identical(cache$n, nrow(x$nodes)) && identical(cache$m, nrow(x$edges)) &&
-    identical(cache$weights, w)
+    identical(cache$weights, w) && identical(cache$cols, cols)
   if (!fresh) {
     m <- length(x$index$src)
     if (m && max(x$index$src, x$index$tgt) >= nrow(x$nodes)) index_error()
@@ -88,6 +93,7 @@ engine_graph <- function(x, missing_ok = FALSE) {
     cache$n <- nrow(x$nodes)
     cache$m <- nrow(x$edges)
     cache$weights <- w
+    cache$cols <- cols
     cache$graph_rows <- if (is.null(idx$graph_rows)) NULL else idx$graph_rows + 1L
   }
   ptr
