@@ -7,8 +7,8 @@
 //! network (Even and Tarjan 1975, `even1975network`), and the global cuts
 //! are searched over the same pairs as the global connectivities in
 //! [`super::values`] (Even 1975, `even1975algorithm`; Esfahanian and
-//! Hakimi 1984, `esfahanian1984computing`; Esfahanian 2013,
-//! `esfahanian2013connectivity`).
+//! Hakimi 1984, `esfahanian1984computing`; Schnorr 1979,
+//! `schnorr1979bottlenecks`).
 //!
 //! Minimum cuts are generally not unique. Two conventions are offered
 //! ([`CutConvention`]):

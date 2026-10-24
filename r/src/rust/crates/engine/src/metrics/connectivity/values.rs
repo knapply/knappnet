@@ -23,8 +23,9 @@
 //! of least degree (for a directed network, least of in- and out-degree)
 //! and K its degree, it is the least of K and kappa over the pairs (v, w)
 //! with w not adjacent to v (both orders if directed) and the
-//! non-adjacent pairs of v's neighbours (Esfahanian 2013,
-//! `esfahanian2013connectivity`). Global edge connectivity of an
+//! non-adjacent pairs of v's neighbours (Esfahanian and Hakimi 1984,
+//! `esfahanian1984computing`, who also treat digraphs). Global edge
+//! connectivity of an
 //! undirected network is the least of its least degree and lambda(v, w)
 //! over the members w of a dominating set D, v being D's first member:
 //! when lambda is below the least degree, both sides of a minimum cut hold
@@ -32,7 +33,8 @@
 //! (Esfahanian and Hakimi 1984, `esfahanian1984computing`; D is built
 //! greedily in node order). For a directed network it is the least of
 //! lambda(v_i, v_{i+1}) around the cycle v_0, ..., v_{n-1}, v_0 (a minimum
-//! cut separates some consecutive pair; Esfahanian 2013). Every flow stops
+//! cut separates some consecutive pair; Schnorr 1979,
+//! `schnorr1979bottlenecks`). Every flow stops
 //! once it reaches the best value found so far.
 //!
 //! Conventions (see also [`super`]): simple graph, directions kept. The

@@ -125,7 +125,6 @@ cited by author and year in an R help page or a vignette instead.
 | `epskamp2012qgraph` | Epskamp et al. (2012). qgraph: Network Visualizations of Relationships in Psychometric Data. *Journal of Statistical Software*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `erdos1959random` | Erdős and Rényi (1959). On Random Graphs I. *Publicationes Mathematicae Debrecen*. | `crates/engine/src/generate.rs` |
 | `esfahanian1984computing` | Esfahanian and Hakimi (1984). On Computing the Connectivities of Graphs and Digraphs. *Networks*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
-| `esfahanian2013connectivity` | Esfahanian (2013). Connectivity Algorithms. *Topics in Structural Graph Theory*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `even1975algorithm` | Even (1975). An Algorithm for Determining Whether the Connectivity of a Graph is at Least k. *SIAM Journal on Computing*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `even1975network` | Even and Tarjan (1975). Network Flow and Testing Graph Connectivity. *SIAM Journal on Computing*. | `crates/engine/src/flow/network.rs`, `crates/engine/src/metrics/connectivity.rs`, `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/disjoint.rs`, and 1 more |
 | `everett1985role` | Everett (1985). Role similarity and complexity in social networks. *Social Networks*. | `crates/engine/src/metrics/regular.rs` |
@@ -214,7 +213,7 @@ cited by author and year in an R help page or a vignette instead.
 | `kepner2011graph` | Kepner and Gilbert (2011). Graph Algorithms in the Language of Linear Algebra. *Society for Industrial and Applied Mathematics*. | `crates/engine/src/metrics/equivalence.rs` |
 | `kepner2016mathematical` | Kepner et al. (2016). Mathematical Foundations of the GraphBLAS. *2016 IEEE High Performance Extreme Computing Conference (HPEC)*. | `docs/ARCHITECTURE.md` |
 | `kim2016measuring` | Kim and Jo (2016). Measuring Burstiness for Finite Event Sequences. *Physical Review E*. |  |
-| `kirchhoff1847ueber` | Kirchhoff (1847). Ueber die Auflösung der Gleichungen, auf welche man bei der Untersuchung der linearen Vertheilung galvanischer Ströme geführt wird. *Annalen der Physik und Chemie*. | `crates/engine/src/metrics/cycles.rs` |
+| `kirchhoff1847ueber` | Kirchhoff (1847). Ueber die Auflösung der Gleichungen, auf welche man bei der Untersuchung der linearen Vertheilung galvanischer Ströme geführt wird. *Annalen der Physik*. | `crates/engine/src/metrics/cycles.rs` |
 | `kirkpatrick1983optimization` | Kirkpatrick, Gelatt, and Vecchi (1983). Optimization by Simulated Annealing. *Science*. | `crates/engine/src/metrics/partition/spinglass.rs` |
 | `kivela2014multilayer` | Kivelä et al. (2014). Multilayer Networks. *Journal of Complex Networks*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `kleinberg1999authoritative` | Kleinberg (1999). Authoritative Sources in a Hyperlinked Environment. *Journal of the ACM*. | `crates/engine/src/metrics/spectral.rs` |
@@ -321,6 +320,7 @@ cited by author and year in an R help page or a vignette instead.
 | `sabidussi1966centrality` | Sabidussi (1966). The Centrality Index of a Graph. *Psychometrika*. | `crates/engine/src/metrics/closeness.rs` |
 | `salmon2011parallel` | Salmon et al. (2011). Parallel Random Numbers: As Easy as 1, 2, 3. *Proceedings of the 2011 International Conference for High Performance Computing, Networking, Storage and Analysis (SC '11)*. | `crates/engine/src/rng.rs` |
 | `sampson1968novitiate` | Sampson (1968). A Novitiate in a Period of Change: An Experimental and Case Study of Social Relationships. |  |
+| `schnorr1979bottlenecks` | Schnorr (1979). Bottlenecks and Edge Connectivity in Unsymmetrical Networks. *SIAM Journal on Computing*. | `crates/engine/src/metrics/connectivity/cuts.rs`, `crates/engine/src/metrics/connectivity/values.rs` |
 | `schweinberger2007markov` | Schweinberger and Snijders (2007). Markov Models for Digraph Panel Data: Monte Carlo-Based Derivative Estimation. *Computational Statistics & Data Analysis*. |  |
 | `schweinberger2011instability` | Schweinberger (2011). Instability, Sensitivity, and Degeneracy of Discrete Exponential Families. *Journal of the American Statistical Association*. |  |
 | `sedgewick2011algorithms` | Sedgewick and Wayne (2011). Algorithms. *Addison-Wesley*. | `crates/engine/src/metrics/dag.rs` |
