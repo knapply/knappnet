@@ -518,6 +518,19 @@ pub fn current_flow_betweenness_approx(
     sample: Sample,
     opts: FlowOptions,
 ) -> Result<Vec<f64>> {
+    approx_with(g, sample, opts, DENSE_LIMIT)
+}
+
+/// Largest network whose potentials come from the dense grounded inverse;
+/// larger ones use conjugate gradients.
+const DENSE_LIMIT: usize = 3000;
+
+fn approx_with(
+    g: &Graph,
+    sample: Sample,
+    opts: FlowOptions,
+    dense_limit: usize,
+) -> Result<Vec<f64>> {
     let n = g.node_count();
     let c = Circuit::new(g, opts.weighted, opts.weights_as)?;
     if !c.connected() {
@@ -579,9 +592,12 @@ pub fn current_flow_betweenness_approx(
     if k == 0 {
         return Ok(vec![0.0; n]);
     }
-    // Potentials: from the grounded inverse on networks of moderate size,
-    // otherwise by conjugate gradients.
-    let dense = n <= 3000;
+    // Potentials: from the grounded inverse when its O(n^3) cost is below
+    // that of one conjugate-gradient solve per pair (taken as 100 sweeps
+    // over the network), otherwise by conjugate gradients.
+    let nn = n as f64;
+    let per_pair = 100.0 * (nn + c.rows.arc_count() as f64);
+    let dense = n <= dense_limit && nn * nn * nn / 3.0 <= k as f64 * per_pair;
     let all: Vec<usize> = (0..n).collect();
     let inv = if dense {
         Some(c.grounded_inverse(&all)?)
@@ -903,6 +919,80 @@ mod tests {
         let approx = current_flow_betweenness_approx(&h, Sample::Pairs(&pairs), opts).unwrap();
         for (a, b) in approx.iter().zip(&full.nodes) {
             assert!((a - b).abs() < 1e-12);
+        }
+        // Conjugate gradients give the same potentials as the inverse.
+        let cg = approx_with(&h, Sample::Pairs(&pairs), opts, 0).unwrap();
+        for (a, b) in cg.iter().zip(&approx) {
+            assert!((a - b).abs() < 1e-9, "{cg:?} {approx:?}");
+        }
+    }
+
+    /// The approximation with potentials from the dense inverse whatever
+    /// the number of pairs.
+    fn approx_dense(g: &Graph, sample: Sample, opts: FlowOptions) -> Vec<f64> {
+        let n = g.node_count();
+        let pairs: Vec<(u32, u32)> = match sample {
+            Sample::Pairs(p) => p.to_vec(),
+            Sample::Random {
+                epsilon,
+                sample_weight,
+                seed,
+                ..
+            } => {
+                let nf = n as f64;
+                let cstar = nf * (nf - 1.0) / ((nf - 1.0) * (nf - 2.0));
+                let k = (sample_weight * ((cstar / epsilon).powi(2) * nf.ln()).ceil()).floor();
+                (0..k as u64)
+                    .map(|i| {
+                        let mut rng = Stream::new(seed, i);
+                        let s = rng.below(n as u64) as u32;
+                        let mut t = rng.below(n as u64 - 1) as u32;
+                        if t >= s {
+                            t += 1;
+                        }
+                        (s, t)
+                    })
+                    .collect()
+            }
+        };
+        // Every ordered pair repeated makes the dense inverse the cheaper
+        // choice without changing the mean.
+        let mut many = Vec::new();
+        for _ in 0..(n * n * n / 300 / pairs.len().max(1) + 1) {
+            many.extend_from_slice(&pairs);
+        }
+        approx_with(g, Sample::Pairs(&many), opts, usize::MAX).unwrap()
+    }
+
+    #[test]
+    fn conjugate_gradients_on_a_larger_random_network() {
+        let mut rng = Stream::new(3, 0);
+        let n = 300;
+        let mut s: Vec<i64> = (0..n as i64 - 1).collect();
+        let mut t: Vec<i64> = (1..n as i64).collect();
+        for _ in 0..900 {
+            s.push(rng.below(n as u64) as i64);
+            t.push(rng.below(n as u64) as i64);
+        }
+        let w: Vec<f64> = (0..s.len()).map(|_| 0.5 + rng.uniform() * 3.0).collect();
+        let h = Graph::from_edges(n, &s, &t, Some(&w), false).unwrap();
+        let opts = FlowOptions {
+            weighted: true,
+            threads: 2,
+            ..Default::default()
+        };
+        let sample = Sample::Random {
+            epsilon: 2.0,
+            kmax: 10_000,
+            sample_weight: 1.0,
+            seed: 11,
+        };
+        // Few pairs on a network this size choose conjugate gradients; force
+        // the dense inverse for the comparison.
+        let dense = approx_dense(&h, sample, opts);
+        let cg = approx_with(&h, sample, opts, 0).unwrap();
+        for (a, b) in dense.iter().zip(&cg) {
+            assert!((a - b).abs() <= 1e-8 * (1.0 + a.abs()), "{a} {b}");
         }
     }
 }

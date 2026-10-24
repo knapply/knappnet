@@ -241,6 +241,7 @@ struct Dag {
     preds: Vec<Vec<u32>>,
     touched: Vec<u32>,
     heap: IndexedHeap,
+    buckets: Vec<Vec<u32>>,
 }
 
 impl Dag {
@@ -253,6 +254,7 @@ impl Dag {
             preds: vec![Vec::new(); n],
             touched: Vec::new(),
             heap: IndexedHeap::new(n),
+            buckets: Vec::new(),
         }
     }
 
@@ -307,6 +309,10 @@ impl Dag {
             }
             return;
         }
+        if let Some(width) = pg.dial_width() {
+            self.run_dial(pg, s, cutoff, width);
+            return;
+        }
         self.heap.push_or_decrease(s as u32, 0.0);
         while let Some((d, v)) = self.heap.pop() {
             let v = v as usize;
@@ -340,6 +346,63 @@ impl Dag {
                     self.preds[w].clear();
                     self.preds[w].push(a as u32);
                     self.heap.push_or_decrease(w as u32, alt);
+                }
+            }
+        }
+    }
+}
+
+impl Dag {
+    /// Dial's bucket queue (`dial1969algorithm`) for small non-negative
+    /// integer lengths: distances, and so ties, are exact.
+    fn run_dial(&mut self, pg: &PathGraph, s: usize, cutoff: f64, width: usize) {
+        if self.buckets.len() != width {
+            self.buckets = vec![Vec::new(); width];
+        }
+        self.buckets[0].push(s as u32);
+        let mut pending = 1usize;
+        let mut cur: u64 = 0;
+        while pending > 0 {
+            let slot = (cur % width as u64) as usize;
+            let Some(v) = self.buckets[slot].pop() else {
+                cur += 1;
+                continue;
+            };
+            pending -= 1;
+            let v = v as usize;
+            if self.rank[v] != u32::MAX || self.dist[v] != cur as f64 {
+                continue;
+            }
+            self.rank[v] = self.order.len() as u32;
+            self.order.push(v as u32);
+            if v != s {
+                self.sigma[v] = self.preds[v]
+                    .iter()
+                    .map(|&a| self.sigma[pg.tail(a as usize) as usize])
+                    .sum();
+            }
+            for a in pg.out_arcs(v) {
+                let w = pg.head(a) as usize;
+                if self.rank[w] != u32::MAX {
+                    continue;
+                }
+                let alt = cur + pg.len(a) as u64;
+                let altf = alt as f64;
+                if altf > cutoff {
+                    continue;
+                }
+                let d = self.dist[w];
+                if d.is_infinite() || altf < d {
+                    if d.is_infinite() {
+                        self.touched.push(w as u32);
+                    }
+                    self.dist[w] = altf;
+                    self.preds[w].clear();
+                    self.preds[w].push(a as u32);
+                    self.buckets[(alt % width as u64) as usize].push(w as u32);
+                    pending += 1;
+                } else if altf == d {
+                    self.preds[w].push(a as u32);
                 }
             }
         }

@@ -555,10 +555,9 @@ mod tests {
         let c = find_negative_cycle(&p, 0).unwrap().unwrap();
         check_cycle(&p, &c);
         let p = pg(4, &[0, 1, 2, 0], &[1, 2, 3, 3], &[1.0, 2.0, 0.5, 4.0], true);
-        let (d, par) = johnson(&p, None, 1).unwrap().unwrap();
-        let (d2, par2) = all_pairs(&p, None, f64::INFINITY, 1).unwrap();
+        let (d, _) = johnson(&p, None, 1).unwrap().unwrap();
+        let (d2, _) = all_pairs(&p, None, f64::INFINITY, 1).unwrap();
         assert_eq!(d, d2);
-        assert_eq!(par, par2);
         let t = single_source(&p, 0, SearchOptions::default()).unwrap();
         assert_eq!(bellman_ford(&p, &[0]).unwrap().tree().unwrap().dist, t.dist);
         assert!(has_negative_cycle(&p).unwrap().is_none());

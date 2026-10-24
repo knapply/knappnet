@@ -9,7 +9,10 @@
 //! `lawler1972procedure`), spur nodes start at the node where the parent
 //! left its own parent, since earlier ones were already explored. Each
 //! candidate needs one shortest-path search, so k paths cost O(k n) searches
-//! in the worst case.
+//! in the worst case; the spur searches grow from both ends at once
+//! (bidirectional search, `nicholson1966finding`, as NetworkX's
+//! `shortest_simple_paths` does), which settles far fewer nodes on large
+//! networks.
 //!
 //! [`shortest_path_avoiding`] is the search Yen's algorithm is built on,
 //! offered on its own: a shortest path that avoids a set of nodes and a set
@@ -42,6 +45,17 @@ struct Masked {
     node_banned: Vec<bool>,
     arc_banned: Vec<bool>,
     queue: Vec<u32>,
+    /// The search from the target, for bidirectional searches.
+    back: Back,
+}
+
+/// State of the backward half of a bidirectional search.
+struct Back {
+    dist: Vec<f64>,
+    parent: Vec<u32>,
+    done: Vec<bool>,
+    touched: Vec<u32>,
+    heap: IndexedHeap,
 }
 
 impl Masked {
@@ -56,7 +70,117 @@ impl Masked {
             node_banned: vec![false; n],
             arc_banned: vec![false; pg.arc_count()],
             queue: Vec::new(),
+            back: Back {
+                dist: vec![f64::INFINITY; n],
+                parent: vec![NO_NODE; n],
+                done: vec![false; n],
+                touched: Vec::new(),
+                heap: IndexedHeap::new(n),
+            },
         }
+    }
+
+    /// Like [`Masked::search`], growing a search from each end and stopping
+    /// when some node is settled by both (Nicholson 1966,
+    /// `nicholson1966finding`). On large networks the two searches settle
+    /// far fewer nodes than one.
+    fn search_both(&mut self, pg: &PathGraph, s: usize, t: usize) -> Option<(f64, Vec<u32>)> {
+        self.clear();
+        let b = &mut self.back;
+        for &v in &b.touched {
+            let v = v as usize;
+            b.dist[v] = f64::INFINITY;
+            b.parent[v] = NO_NODE;
+            b.done[v] = false;
+        }
+        b.touched.clear();
+        b.heap.clear();
+        if self.node_banned[s] || self.node_banned[t] {
+            return None;
+        }
+        if s == t {
+            return Some((0.0, vec![s as u32]));
+        }
+        self.dist[s] = 0.0;
+        self.touched.push(s as u32);
+        self.heap.push_or_decrease(s as u32, 0.0);
+        b.dist[t] = 0.0;
+        b.touched.push(t as u32);
+        b.heap.push_or_decrease(t as u32, 0.0);
+        let mut best: Option<(f64, usize)> = None;
+        let mut forward = false;
+        loop {
+            forward = !forward;
+            if forward {
+                let Some((d, v)) = self.heap.pop() else { break };
+                let v = v as usize;
+                self.done[v] = true;
+                if self.back.done[v] {
+                    break;
+                }
+                for a in pg.out_arcs(v) {
+                    let w = pg.head(a) as usize;
+                    if self.done[w] || self.arc_banned[a] || self.node_banned[w] {
+                        continue;
+                    }
+                    let alt = d + pg.len(a);
+                    if alt < self.dist[w] {
+                        if self.dist[w].is_infinite() {
+                            self.touched.push(w as u32);
+                        }
+                        self.dist[w] = alt;
+                        self.parent[w] = v as u32;
+                        self.heap.push_or_decrease(w as u32, alt);
+                    }
+                    let other = self.back.dist[w];
+                    if other.is_finite() && best.map_or(true, |x| self.dist[w] + other < x.0) {
+                        best = Some((self.dist[w] + other, w));
+                    }
+                }
+            } else {
+                let b = &mut self.back;
+                let Some((d, v)) = b.heap.pop() else { break };
+                let v = v as usize;
+                b.done[v] = true;
+                if self.done[v] {
+                    break;
+                }
+                for &a in pg.in_arcs(v) {
+                    let a = a as usize;
+                    let w = pg.tail(a) as usize;
+                    if b.done[w] || self.arc_banned[a] || self.node_banned[w] {
+                        continue;
+                    }
+                    let alt = d + pg.len(a);
+                    if alt < b.dist[w] {
+                        if b.dist[w].is_infinite() {
+                            b.touched.push(w as u32);
+                        }
+                        b.dist[w] = alt;
+                        b.parent[w] = v as u32;
+                        b.heap.push_or_decrease(w as u32, alt);
+                    }
+                    let other = self.dist[w];
+                    if other.is_finite() && best.map_or(true, |x| b.dist[w] + other < x.0) {
+                        best = Some((b.dist[w] + other, w));
+                    }
+                }
+            }
+        }
+        let (len, meet) = best?;
+        let mut path = vec![meet as u32];
+        let mut cur = meet;
+        while self.parent[cur] != NO_NODE {
+            cur = self.parent[cur] as usize;
+            path.push(cur as u32);
+        }
+        path.reverse();
+        let mut cur = meet;
+        while self.back.parent[cur] != NO_NODE {
+            cur = self.back.parent[cur] as usize;
+            path.push(cur as u32);
+        }
+        Some((len, path))
     }
 
     fn clear(&mut self) {
@@ -255,7 +379,7 @@ pub fn k_shortest_simple_paths(pg: &PathGraph, s: u32, t: u32, k: usize) -> Resu
             for &v in &root[..i] {
                 ws.node_banned[v as usize] = true;
             }
-            if let Some((_, spur_path)) = ws.search(pg, spur, t as usize) {
+            if let Some((_, spur_path)) = ws.search_both(pg, spur, t as usize) {
                 let mut path = root[..i].to_vec();
                 path.extend_from_slice(&spur_path);
                 if !seen.contains(&path) {
@@ -360,6 +484,60 @@ mod tests {
                 sorted.sort();
                 sorted.dedup();
                 assert_eq!(sorted.len(), got.len());
+            }
+        }
+    }
+
+    #[test]
+    fn bidirectional_masked_search_matches_one_directional() {
+        for seed in 0..80u64 {
+            let mut rng = Stream::new(seed, 6);
+            let n = 2 + rng.below(25) as usize;
+            let m = rng.below(4 * n as u64) as usize;
+            let s: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+            let t: Vec<i64> = (0..m).map(|_| rng.below(n as u64) as i64).collect();
+            let w: Vec<f64> = (0..m).map(|_| (1 + rng.below(9)) as f64 / 3.0).collect();
+            let g = Graph::from_edges(n, &s, &t, Some(&w), seed % 2 == 0).unwrap();
+            let pg = PathGraph::new(
+                &g,
+                PathGraphOptions {
+                    lengths: ArcLengths::Weights(WeightKind::Distance),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+            let mut ws = Masked::new(&pg);
+            for a in 0..pg.arc_count() {
+                ws.arc_banned[a] = rng.below(5) == 0;
+            }
+            for v in 0..n {
+                ws.node_banned[v] = rng.below(7) == 0;
+            }
+            for a in 0..n {
+                for b in 0..n {
+                    let one = ws.search(&pg, a, b).map(|x| x.0);
+                    let both = ws.search_both(&pg, a, b);
+                    if let Some((len, path)) = &both {
+                        // The path is valid, avoids banned nodes, and has
+                        // the length found.
+                        assert!(path.iter().all(|&v| !ws.node_banned[v as usize]));
+                        let mut total = 0.0;
+                        for p in path.windows(2) {
+                            let arc = pg
+                                .out_arcs(p[0] as usize)
+                                .filter(|&a| pg.head(a) == p[1] && !ws.arc_banned[a])
+                                .min_by(|&x, &y| pg.len(x).total_cmp(&pg.len(y)))
+                                .expect("an allowed arc");
+                            total += pg.len(arc);
+                        }
+                        assert!((total - len).abs() < 1e-9);
+                    }
+                    match (one, both.map(|x| x.0)) {
+                        (None, None) => {}
+                        (Some(x), Some(y)) => assert!((x - y).abs() < 1e-9, "{seed} {a} {b}"),
+                        (x, y) => panic!("seed {seed} pair ({a}, {b}): {x:?} vs {y:?}"),
+                    }
+                }
             }
         }
     }

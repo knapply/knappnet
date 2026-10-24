@@ -11,7 +11,7 @@
 //!
 //! | Problem | Function | Algorithm |
 //! |---|---|---|
-//! | one source, or several at once | [`search::single_source`], [`search::multi_source`] | breadth-first search for unit lengths; otherwise Dijkstra's algorithm with an indexed 4-ary heap (`dijkstra1959note`, `johnson1975priority`) |
+//! | one source, or several at once | [`search::single_source`], [`search::multi_source`] | breadth-first search for unit lengths, Dial's buckets for small integer lengths (`dial1969algorithm`), otherwise Dijkstra's algorithm with an indexed 4-ary heap (`dijkstra1959note`, `johnson1975priority`) |
 //! | every source | [`search::all_pairs`] | one search per source, in parallel |
 //! | all predecessors on shortest paths | [`search::predecessors`] | one scan of the arcs after a search |
 //! | one pair | [`bidirectional::bidirectional`] | bidirectional breadth-first search or Dijkstra (`nicholson1966finding`) |
@@ -45,12 +45,11 @@
 //!   igraph's policy), or only when they are equal as floating-point
 //!   numbers ([`Tie::Exact`], NetworkX). Integer lengths are summed
 //!   exactly either way. Which of several shortest paths a search returns
-//!   is deterministic: among nodes at the same distance, the one with the
-//!   smaller index is settled first, and a node keeps the first
-//!   predecessor that reached its final distance. NetworkX settles ties
-//!   in the order nodes were inserted into its adjacency dictionaries, so
-//!   on networks with tied paths it can return another, equally short,
-//!   path.
+//!   is deterministic: nodes at the same distance are settled in a fixed
+//!   order, and a node keeps the first predecessor that reached its final
+//!   distance. NetworkX settles ties in the order nodes were inserted into
+//!   its adjacency dictionaries, so on networks with tied paths it can
+//!   return another, equally short, path.
 //! - Searches are designed as building blocks for further path problems:
 //!   the label-setting core takes the arrival label of an arc as a
 //!   function ([`search::Searcher::run_with`]), so a time-dependent arrival
@@ -164,6 +163,7 @@ pub struct PathGraph {
     rev_arcs: Vec<u32>,
     unit: bool,
     min_len: f64,
+    max_len: f64,
     integral: bool,
     edge_count: usize,
 }
@@ -274,6 +274,7 @@ impl PathGraph {
         }
         let unit = lens.iter().all(|&x| x == 1.0);
         let min_len = lens.iter().copied().fold(f64::INFINITY, f64::min);
+        let max_len = lens.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         let integral = lens
             .iter()
             .all(|&x| x.fract() == 0.0 && x.abs() < 2f64.powi(52));
@@ -288,6 +289,7 @@ impl PathGraph {
             rev_arcs,
             unit,
             min_len,
+            max_len,
             integral,
             edge_count: m,
         })
@@ -299,6 +301,7 @@ impl PathGraph {
         let mut pg = self.clone();
         pg.unit = lens.iter().all(|&x| x == 1.0);
         pg.min_len = lens.iter().copied().fold(f64::INFINITY, f64::min);
+        pg.max_len = lens.iter().copied().fold(f64::NEG_INFINITY, f64::max);
         pg.integral = lens
             .iter()
             .all(|&x| x.fract() == 0.0 && x.abs() < 2f64.powi(52));
@@ -383,6 +386,17 @@ impl PathGraph {
     #[inline]
     pub fn min_len(&self) -> f64 {
         self.min_len
+    }
+
+    /// The number of buckets of Dial's algorithm (the largest length plus
+    /// one) when every length is a non-negative integer of at most
+    /// [`crate::weights::DIAL_MAX`] and not every length is 1.
+    pub fn dial_width(&self) -> Option<usize> {
+        (!self.unit
+            && self.integral
+            && self.min_len >= 0.0
+            && self.max_len <= crate::weights::DIAL_MAX as f64)
+            .then(|| self.max_len.max(0.0) as usize + 1)
     }
 
     /// An error unless every length is non-negative, naming `what` needs it.

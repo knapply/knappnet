@@ -1,9 +1,11 @@
 //! Single-source, multi-source, and all-pairs shortest paths with
 //! parents, and the predecessor lists of the shortest-path DAG.
 //!
-//! Unit lengths use breadth-first search; other non-negative lengths use
-//! Dijkstra's algorithm (`dijkstra1959note`) with the indexed 4-ary heap of
-//! [`crate::weights`] (`johnson1975priority`). A multi-source search starts
+//! Unit lengths use breadth-first search; non-negative integer lengths up
+//! to [`crate::weights::DIAL_MAX`] use Dial's bucket queue
+//! (`dial1969algorithm`), with exact integer distances; other non-negative
+//! lengths use Dijkstra's algorithm (`dijkstra1959note`) with the indexed
+//! 4-ary heap of [`crate::weights`] (`johnson1975priority`). A multi-source search starts
 //! every source at distance 0, so each node gets the distance to its
 //! nearest source and the source it was reached from (the cells of a
 //! graph Voronoi diagram, `erwig2000graph`).
@@ -20,8 +22,10 @@
 //!   (NetworkX's `single_target_*` functions).
 //! - The parent of a node is the first node (in settling order) whose arc
 //!   reached the node's final distance; the source of a multi-source search
-//!   is inherited from the parent. Among tied nodes the smaller index is
-//!   settled first, so results do not depend on threads or timing.
+//!   is inherited from the parent. Nodes at the same distance are settled
+//!   in a fixed order (by index with the heap, in bucket order with Dial's
+//!   queue, in discovery order with breadth-first search), so results do
+//!   not depend on threads or timing.
 //! - Predecessor lists ([`predecessors`]) hold every node `u` with an arc
 //!   `u -> v` such that d(u) + len = d(v) under the tie rule, in the order
 //!   the predecessors were settled, each once however many parallel arcs
@@ -102,6 +106,7 @@ pub struct Searcher {
     order: Vec<u32>,
     touched: Vec<u32>,
     heap: IndexedHeap,
+    buckets: Vec<Vec<u32>>,
 }
 
 impl Searcher {
@@ -116,6 +121,7 @@ impl Searcher {
             order: Vec::new(),
             touched: Vec::new(),
             heap: IndexedHeap::new(n),
+            buckets: Vec::new(),
         }
     }
 
@@ -156,8 +162,89 @@ impl Searcher {
             return Ok(());
         }
         pg.require_nonnegative("Dijkstra's algorithm")?;
-        self.dijkstra(pg, sources, opts, |a, d| d + pg.len(a));
+        match pg.dial_width() {
+            Some(width) => self.dial(pg, sources, opts, width),
+            None => self.dijkstra(pg, sources, opts, |a, d| d + pg.len(a)),
+        }
         Ok(())
+    }
+
+    /// Dial's bucket queue (`dial1969algorithm`) for non-negative integer
+    /// lengths up to [`crate::weights::DIAL_MAX`]: a circular array of
+    /// buckets indexed by distance modulo the largest length plus one.
+    /// Distances are exact integers.
+    fn dial(&mut self, pg: &PathGraph, sources: &[u32], opts: SearchOptions, width: usize) {
+        self.reset();
+        if self.buckets.len() != width {
+            self.buckets = vec![Vec::new(); width];
+        }
+        let mut pending = 0usize;
+        for &s in sources {
+            let s = s as usize;
+            if self.origin[s] != NO_NODE {
+                continue;
+            }
+            self.dist[s] = 0.0;
+            self.origin[s] = s as u32;
+            self.touched.push(s as u32);
+            self.buckets[0].push(s as u32);
+            pending += 1;
+        }
+        let mut cur: u64 = 0;
+        while pending > 0 {
+            let slot = (cur % width as u64) as usize;
+            let Some(v) = self.buckets[slot].pop() else {
+                cur += 1;
+                continue;
+            };
+            pending -= 1;
+            let v = v as usize;
+            if self.rank[v] != u32::MAX || self.dist[v] != cur as f64 {
+                continue;
+            }
+            self.rank[v] = self.order.len() as u32;
+            self.order.push(v as u32);
+            if opts.target == Some(v as u32) {
+                break;
+            }
+            let (out, inn) = if opts.reverse {
+                (0..0, pg.in_arcs(v))
+            } else {
+                (pg.out_arcs(v), &[][..])
+            };
+            for a in out.chain(inn.iter().map(|&a| a as usize)) {
+                let w = if opts.reverse { pg.tail(a) } else { pg.head(a) } as usize;
+                if self.rank[w] != u32::MAX {
+                    continue;
+                }
+                let alt = cur + pg.len(a) as u64;
+                let altf = alt as f64;
+                if altf > opts.cutoff || altf >= self.dist[w] {
+                    continue;
+                }
+                if self.origin[w] == NO_NODE && self.dist[w].is_infinite() {
+                    self.touched.push(w as u32);
+                }
+                self.dist[w] = altf;
+                self.parent[w] = v as u32;
+                self.parent_arc[w] = a as u32;
+                self.origin[w] = self.origin[v];
+                self.buckets[(alt % width as u64) as usize].push(w as u32);
+                pending += 1;
+            }
+        }
+        // Nodes still waiting when a target stopped the search are not final.
+        for b in 0..self.buckets.len() {
+            while let Some(w) = self.buckets[b].pop() {
+                let w = w as usize;
+                if self.rank[w] == u32::MAX {
+                    self.dist[w] = f64::INFINITY;
+                    self.parent[w] = NO_NODE;
+                    self.parent_arc[w] = NO_NODE;
+                    self.origin[w] = NO_NODE;
+                }
+            }
+        }
     }
 
     /// Dijkstra's algorithm where following arc `a` from a node whose label
