@@ -10,9 +10,9 @@ on:
         required: true
         default: tools/local_check.sh
       runner:
-        description: check (builds and tests, two run side by side) or bench (timings, own CPUs)
+        description: check (builds and tests, two run side by side), bench (timings, own CPUs), or gpu
         type: choice
-        options: [check, bench]
+        options: [check, bench, gpu]
         default: check
       artifact:
         description: Optional path (file or directory) to upload as an artifact
@@ -24,7 +24,7 @@ permissions:
 
 jobs:
   run:
-    runs-on: ${{ inputs.runner == 'bench' && fromJSON('["self-hosted", "btower-bench"]') || fromJSON('["self-hosted", "btower-check"]') }}
+    runs-on: ${{ fromJSON(inputs.runner == 'bench' && '["self-hosted", "btower-bench"]' || inputs.runner == 'gpu' && '["self-hosted", "btower-gpu"]' || '["self-hosted", "btower-check"]') }}
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
