@@ -232,3 +232,303 @@ one core).
 5. Methods inherently O(n^2) (CONCOR, structural-equivalence matrices,
    full stress, QAP on all dyads) need blocking and output streaming, or
    sampling; they do not reach billion-edge scale as exact methods.
+
+## Thread policy and round-3 measurements (btower, 8-CPU bench runner)
+
+Measured with `bench_models MODE=scaling` (median of 3) on the branch and
+on main in the same job; "t=8" is 8 threads.
+
+- Every parallel call now sizes its thread count by its work
+  (`parallel::threads_for`: at most one thread per `GRAIN` = 2^17
+  elementary steps; `search_work` and `ball_steps` estimate graph
+  searches). Threads are started per call (some microseconds each), so
+  this removes the slowdowns of small calls without changing any result.
+  Girvan-Newman, dense n = 60: 0.30x at 16 threads (main) -> 0.97x at 8
+  (one thread; each round's betweenness is too small to split).
+- `parallel::for_each_claimed` / `map_items`: threads claim strided chunks
+  of items dynamically, for merges that do not depend on the schedule
+  (sorted outputs, integer sums, results keyed by item). Used for
+  multi-start tabu searches, maximal cliques, ego networks, and the triad
+  census. Strided chunks matter on preferential-attachment graphs, whose
+  hubs are numbered first: with contiguous chunks pa100k `ego_summary`
+  fell to 2.8x at 16 threads; strided, 6.6x at 8.
+- `parallel::crew`: one group of threads runs all phases of an iterative
+  method and meets at a spinning barrier between phases, instead of
+  starting threads per phase. Sparse stress (n = 10k) runs its sweeps on a
+  crew: 1.1x at 16 threads (main) -> 4.0x at 16 (0.276 s -> 0.069 s),
+  results identical bit for bit. The barrier spins about 4k times, then
+  yields, so oversubscribed machines (CRAN's 2-core checks) are not
+  starved.
+- Small multi-start problems (factions, core-periphery at n = 200, about
+  10 ms in all) and maximal cliques at n = 150 (7 ms) stay at 2-6x: 20
+  starts over 8-16 threads is at most 2.5 rounds, and clique subproblems
+  are few and uneven. Not worth more threads.
+- CONCOR column correlations: now 64 x 64 tiles of pairs per task (packed
+  rows and columns stay in cache), column centring and the symmetric
+  assembly in parallel too, sums in their old order (identical results).
+  Dense n = 1k depth 3: 0.24 s -> 0.22 s at 8 threads (2.3x -> 2.6x over
+  one thread), one thread unchanged (0.56-0.57 s). Most of the remaining
+  serial time is outside the correlations: the initial profile
+  correlations and the per-split bookkeeping, and the splits at depth 3
+  have small b, below the work threshold.
+- Remaining: PageRank, eigenvector (Lanczos), Katz, and HITS still start
+  threads once per matrix-vector product. With the work threshold they no
+  longer slow down (x0.3-0.5 at 16 threads on n = 1k-10k before, x1.0
+  now), but n = 100k gains only 1.4-2x. Running each solver on a `crew`
+  (blocked sums in a fixed order) is the next step; it changes the
+  rounding of the sums, so results would move within tolerance.
+
+### Ego betweenness on bit rows
+
+- Directed (and order > 1) ego betweenness used Brandes per ego. Now: one
+  search from ego and one against the arcs give d(ego, .), sigma(ego, .),
+  d(., ego), sigma(., ego); ego is on a shortest i-j path iff
+  d(i, ego) + d(ego, j) = d(i, j), with sigma(i, ego) sigma(ego, j) paths
+  through it (Brandes 2001), so each alter's search stops at depth
+  d(i, ego) + max d(ego, j) and counts paths only to the nodes that can
+  have ego on their way (and their ancestors), on bit rows
+  (`bitset::RowPaths`, POPCNT build at run time). O(s^2/64) per alter.
+- densedir1k (n = 1000, density 0.3, mode all): 86.6 s -> 2.23 s at one
+  thread, 7.04 s (16 threads) -> 0.30 s (8 threads); meddir3k 0.70 s ->
+  0.44 s; dense1k (undirected pairs, POPCNT build) 0.61 s -> 0.54 s.
+- Working set per thread: two s x s bit matrices (2 x 8 MB at the cap
+  s = 8192) plus O(s) search state.
+
+### Triad census
+
+- Flat adjacency with offsets and one reused union buffer: allocations
+  271,608 -> 30 on densedir1k (159k -> 22 on dense1k), and 1.99 s -> 1.73 s
+  at one thread; pa100k 0.77 s -> 0.64 s, 8 threads 0.12 s -> 0.08 s.
+## Flows, connectivity, trees, DAGs, and cycles
+
+Kernels added with the flow and connectivity work: `crates/engine/src/flow/`,
+`metrics/connectivity/`, `metrics/trees.rs`, `metrics/dag.rs`,
+`metrics/cycles.rs`. Measurements: `cargo run --release --example
+bench_flows` on the btower bench runner (8 threads visible), median of 3,
+random networks with average degree 8 (connectivity: 20; cycles: 6;
+minimum cycle bases: 4) and weights 1..10; peak heap from the counting
+allocator, including the input graph's own copy. NetworkX 3.7 figures were
+taken on the 2-vCPU development VM on comparable random graphs, where the
+engine runs about 2x slower than on btower, so the ratios quoted are
+conservative.
+
+### Maximum flow and minimum cut (Dinic 1970)
+
+- One residual network (`flow::FlowNetwork`) serves every flow: arcs in
+  reverse pairs, per-pair flow in one f64 array, CSR of arcs by tail built
+  once; BFS levels plus DFS blocking flow with current-arc pointers.
+  Working set ~50 B per arc (tail-indexed CSR, heads, capacities, flows)
+  plus O(n) scratch. Measured: n = 10^5, m = 8 x 10^5: 0.12 s, 47 MB;
+  n = 10^4: 8 ms (NetworkX `maximum_flow_value`, preflow-push: 0.57 s on
+  the VM, ~40x).
+- Unit-capacity networks (connectivity) need O(m min(n^(2/3), m^(1/2)))
+  per flow; general capacities O(n^2 m) worst case, rarely approached on
+  sparse graphs. A highest-label push-relabel with gap and global
+  relabelling (Goldberg and Tarjan 1988; Cherkassky and Goldberg 1997) is
+  the next step for large dense or adversarial instances; the API
+  (`FlowNetwork::max_flow`, `reachable_from`, `reaching`) would not change.
+- Semi-external: no; flows touch arcs repeatedly in data-dependent order.
+  Memory-mapped CSR for the arc lists is viable (read-only), with the
+  flow array in RAM (8 B per arc pair).
+- Node capacities (node splitting) double the node count and add n arcs;
+  several sources or sinks add one node and O(|S|) arcs.
+
+### Minimum-cost flow (network simplex)
+
+- Primal network simplex, strongly feasible trees, block pivot search
+  (block ~ sqrt(m)), parent/child-list tree with subtree re-rooting.
+  n = 10^4, m = 8 x 10^4 (max flow of least cost): 47 ms, 6.4 MB; n = 10^3:
+  1.9 ms (NetworkX `max_flow_min_cost`: 0.11 s, ~30x).
+- Allocations scale with pivots (child lists); a thread/depth array
+  representation (Ahuja, Magnanti and Orlin 1993, ch. 11) would remove
+  them. Floating-point data: exact for integers below 2^53.
+
+### Gomory-Hu trees (Gusfield 1990)
+
+- n - 1 maximum flows on the original network, reusing one residual
+  network (reset is O(m)). n = 3000, m = 12000: 1.7 s, 3 MB; n = 300: 15 ms
+  (NetworkX `gomory_hu_tree`: 0.31 s, ~10x before the btower factor).
+- Sequential by construction: each flow's terminals depend on the tree so
+  far. Parallel options: speculative flows for independent leaves, or the
+  recent cut-equivalent tree algorithms with polylogarithmic max-flow
+  calls (Abboud et al. 2021, unit capacities). For undirected unit
+  capacities, k-edge-components reuse this tree.
+
+### Node and edge connectivity, cuts, disjoint paths
+
+- Even's reduction for kappa (pairs at a least-degree node and among its
+  neighbours) and a dominating set for undirected lambda (Esfahanian and
+  Hakimi 1984); flows stop at the best value so far. Pairs run in
+  parallel, one network copy per thread (so memory grows with threads:
+  23.7 MB at 8 threads vs 5.1 MB at 1 for n = 3000, m = 30000).
+- kappa, n = 3000, m = 30000: 2.24 s on 1 thread, 0.33 s on 8 (6.8x);
+  lambda: 0.96 s / 0.15 s before the dominating set, which cut the number
+  of flows from n - 1 to |D| (n = 1000: 0.19 s -> 0.03 s on the VM).
+  NetworkX on n = 300, m = 3000: kappa 0.48 s (engine 18 ms, 1 thread),
+  lambda 33 ms (engine 2 ms).
+- All-pairs node connectivity is n(n - 1)/2 unit flows on the split
+  network: n = 300: 2.9 s on 1 thread, 0.41 s on 8 (7x); NetworkX n = 100:
+  2.2 s vs 0.09 s. For large n the right tool is a cut-equivalent tree
+  for vertex connectivity where one exists, or sampling pairs.
+- Global cuts and k-components need cut sets, not just values, so they
+  compute full flows for every candidate pair.
+
+### k-components and k-edge-components
+
+- k-components: recursion on minimum node cuts of induced subgraphs, from
+  the blocks; each level rebuilds the induced subgraph and its split
+  network. n = 300, m = 1200: 0.57 s on 8 threads (NetworkX `k_components`
+  on n = 100: 3.8 s vs 0.05 s). Worst case exponential in the number of
+  nested cuts, as for Moody and White's procedure.
+- k-edge-components: Gomory-Hu tree (undirected) or representative-based
+  pairwise flows with cutoff k inside strong components (directed).
+  n = 5000, k = 3: 3.3 s. NetworkX's `k_edge_components` on n = 1000
+  (average degree 8) fails with RecursionError after 26 s; the engine
+  takes 0.12 s.
+
+### Spanning trees and branchings
+
+- Kruskal (sort by (weight, position), union-find): n = 10^6, m = 4 x 10^6:
+  0.24 s, 82 MB. Boruvka 0.51 s, 57 MB (rounds parallelizable: the
+  per-round lightest-edge scan is a natural parallel reduction with the
+  total order guaranteeing the same forest). Prim with a binary heap of
+  all arcs: 4.4 s, 447 MB, kept for completeness. NetworkX Kruskal on
+  n = 10^4: 0.12 s vs 1.2 ms.
+- Optimum branchings (Edmonds/Tarjan with leftist heaps, lazy costs,
+  rollback union-find): n = 10^6, m = 8 x 10^6: 2.4 s; 32-bit heap links
+  reduced the arena to ~76 B per arc. NetworkX `maximum_branching` on
+  n = 10^4: 12 s vs 3.7 ms (~3000x). Heap merges recurse to O(log m)
+  depth only.
+
+### DAG kernels
+
+- Topological sort (Kahn by generations), dominators (Cooper-Harvey-
+  Kennedy over reverse postorder): n = 10^6, m = 8 x 10^6: 0.35 s and 1.5 s
+  (296 MB and 400 MB, mostly deduplicated neighbour rows; the dominator
+  rows could reuse the CSR when no input-order is requested). For very
+  large flow graphs Lengauer-Tarjan (1979) has better worst-case bounds;
+  CHK's iterations stayed small here. NetworkX `immediate_dominators`
+  n = 10^4: 0.15 s vs 3.3 ms.
+- Transitive closure: one bit row per strong component, unioned in reverse
+  topological order (Purdom 1970); output-bound (n = 10^4: 0.18 s, 214 MB
+  for ~25 x 10^6 pairs). Transitive reduction reuses the reachability bits:
+  n = 10^4: 21 ms. NetworkX on n = 1000: closure 2.2 s vs 1.7 ms,
+  reduction 0.14 s vs 0.7 ms.
+- Lowest common ancestors in a DAG use ancestor bitsets (n^2/8 bytes);
+  beyond ~10^5 nodes, pairs should be answered by targeted searches
+  instead (Bender et al. 2005).
+
+### Cycles
+
+- Girth: BFS from every node with pruning at the best cycle so far;
+  n = 10^4, m = 3 x 10^4: 0.4 ms (the bound prunes almost everything).
+- Bounded simple cycles (DFS above the start node): n = 10^4, m = 3 x 10^4,
+  length <= 5: 1.9 s on btower with a strong component search per start
+  node (O(nm) in all), 0.30 s on the slower VM after dropping it (it is
+  only needed for Johnson's unbounded search); NetworkX on n = 1000:
+  11.8 s vs 20 ms.
+- Chordless cycles (path extension with neighbour counters): length <= 6,
+  n = 10^4: 0.34 s; NetworkX n = 1000: 5.4 s vs 27 ms.
+- Minimum cycle basis (de Pina): one Dijkstra per witness edge endpoint
+  per basis cycle, in parallel. Restricting starts to the witness's
+  endpoints made n = 300 22x faster (4.4 s -> 0.2 s on the VM); n = 1000,
+  m = 2000: 2.6 s on 1 thread, 0.61 s on 8. NetworkX `minimum_cycle_basis`
+  n = 300: 85 s vs 0.09 s (~900x). Further: Mehlhorn and Michail's
+  O(m^2 n / log n) variants and isometric-cycle candidate sets.
+
+## Link prediction, hashing, similarity, isomorphism, cores, mixing, cuts, matching, colouring, rewiring
+
+Measured with `cargo run --release --example bench_similarity` (median of
+3) on the btower bench runner (8 dedicated CPUs; "t=8" is every core), and,
+for the NetworkX ratios, the engine through the C ABI and NetworkX 3.7 on
+the same random graphs on the 2-vCPU VM, one thread each. Sizes: G(n, m)
+random graphs and Barabasi-Albert graphs (BA, 5 edges per node).
+
+### Per kernel
+
+- Link prediction for given pairs: one intersection of sorted neighbour
+  rows per pair (bit rows with popcount on dense graphs, through
+  `bitset::NeighborSets`); 10^6 pairs on n = 10^5, m = 5 x 10^5: 0.093 s,
+  0.016 s at t=8 (fill_chunks over the pairs; results per pair, so any
+  thread count gives the same bits). For every non-edge each node's
+  two-step neighbourhood is tallied once (common-neighbour counts and the
+  method's sums in increasing neighbour order, bitwise equal to the pair
+  path), so a row costs the sum of the neighbours' degrees plus n instead
+  of one intersection per pair: Jaccard over all 4.4 x 10^6 non-edges of
+  n = 3000, m = 6 x 10^4 went from 3.7 s to 0.09 s on the VM (0.045 s,
+  0.010 s at t=8 on btower); NetworkX 49 s (~350x). The output is n^2/2
+  pairs, so this is output-bound beyond n ~ 10^5; common-neighbour
+  centrality adds one BFS per node (O(n m)).
+- Weisfeiler-Lehman graph hash (NetworkX-exact strings, BLAKE2b):
+  n = 10^5, m = 5 x 10^5: 0.25 s (t=8 0.23 s before removing a string
+  allocation per neighbour, which halved the time on the VM and let the
+  per-node hashing scale; the sort of each round's labels and the initial
+  adjacency remain sequential). NetworkX 1.34 s on the VM vs 0.46 s.
+  n = 4 x 10^5, m = 2 x 10^6: 1.5 s, 276 MB (the labels are 2 x 16-byte
+  hex strings per node and round, as NetworkX's are). Integer colour
+  refinement (`wl::Refiner`, shared with CATREGE) avoids strings entirely
+  and is the kernel for graph kernels and incremental relabelling.
+- SimRank, dense n x n iteration with sparse W: O(iterations n m);
+  n = 2000, m = 10^4: 0.38 s, 0.11 s at t=8 (rows in parallel, each entry
+  in a fixed order); 97 MB (three n^2 matrices). NetworkX (NumPy, dense
+  W) 8.9 s vs 0.68 s on the VM. Beyond n ~ 2 x 10^4 the n^2 output is the
+  limit; single-source or top-k SimRank (random-walk estimators) would be
+  the scalable variants.
+- VF2++: about 20 ns per candidate pair tested; all 10 400 labelled
+  4-cycle monomorphisms of G(10^5, 5 x 10^5) in 1.0 s (btower), 2.1 s on
+  the VM. The search is sequential; a parallel version would split the
+  candidates of the first node (results are a set, so the order could be
+  restored by sorting).
+- Truss numbers (support peeling with a bucket queue, O(m^1.5)): BA
+  n = 2 x 10^5, m = 10^6: 0.48 s, 61 MB; 4 x 10^6 edges: 2.7 s, 242 MB.
+  NetworkX `k_truss(G, 4)` (one k, repeated scans) 8.9 s vs 0.88 s (all k)
+  on the VM. Supports could be computed in parallel by edge.
+- Onion layers (queue of nodes at or below the current core): 14 ms for
+  BA m = 10^6, 0.11 s for 4 x 10^6; NetworkX re-sorts the remaining
+  degrees every layer: 1.9 s vs 33 ms (~60x).
+- Square clustering (NetworkX's closed form, per node in parallel with a
+  marker array): BA n = 2 x 10^5: 2.9 s, 0.41 s at t=8 (7x); 4 x 10^6
+  edges: 26.5 s, 4.0 s at t=8. Cost is the sum over nodes of the two-step
+  neighbourhood, dominated by hubs. NetworkX on BA n = 2 x 10^4: 3.6 s vs
+  0.22 s.
+- Mixing: degree pairs, assortativity, average neighbour degree, average
+  degree connectivity, and cut measures are single passes over the arcs
+  (BA m = 10^6: 7 to 22 ms). NetworkX degree assortativity on the same
+  graph: 4.0 s vs 26 ms (~150x).
+- Greedy colouring: DSATUR with a lazy max-heap keyed by (saturation,
+  degree, -index), O((n + m) log n), reproducing NetworkX's colouring;
+  BA n = 2 x 10^5: 0.27 s. NetworkX's DSATUR rebuilds the saturation of
+  every uncoloured node at each step (O(n^2)): n = 5000 takes 24 s vs
+  6.5 ms (identical colourings), and n = 2 x 10^5 did not finish in an
+  hour. Smallest last: 0.18 s; NetworkX 6.9 s vs 0.34 s.
+- Maximum-weight matching (Edmonds' blossom algorithm in Galil's O(n^3)
+  form): n = 2000, m = 6000: 0.12 s vs NetworkX 4.3 s (~37x); n = 2 x
+  10^4, m = 6 x 10^4: 6.6 s. Each stage resets labels, best edges, and
+  allowed-edge flags over all nodes and edges, and each dual adjustment
+  scans every vertex and blossom; touched lists for the resets and
+  priority queues for the four kinds of dual step (Gabow 1990's
+  O(n (m + n log n)) organization) are the known remedy.
+- Double edge swaps on `rewiring::SwapGraph` (edge hash for O(1) tests,
+  position maps for O(1) removal, degree-proportional draws from the edge
+  ends): 10^6 swaps on n = 10^5, m = 5 x 10^5: 1.08 s (63 MB); NetworkX
+  10^5 swaps 1.5 s vs 0.38 s for 10^5 on the VM. Swaps are inherently
+  sequential; reference graphs and the small-world means run one
+  reference per thread (streams (seed, r)), so sigma, omega, and the
+  normalized rich club scale with the number of references.
+
+### Primitives worth sharing (added in this round)
+
+- `bitset::NeighborSets`: distinct neighbour rows plus optional bit rows
+  with `common_count` and `for_each_common`; the basis for every pair
+  similarity (link prediction now, Jaccard/cosine node similarity and
+  graph kernels next).
+- `wl::Refiner`: colour refinement over any neighbourhood with set or
+  multiset aggregation and a dictionary that persists across rounds and
+  graphs; CATREGE now runs on it, and it is ready for WL subtree kernels
+  and for refining incrementally after edge insertions (only nodes within
+  r hops of a change can change colour in r rounds).
+- `rewiring::SwapGraph`: a mutable simple graph with constant-time edge
+  tests, insertions, and removals and uniform neighbour draws; the
+  natural store for streaming edge updates and for MCMC null models.
+- `isomorphism::Matcher`: a resumable search (the C ABI hands out
+  mappings in caller-sized batches), so very large enumerations stream.

@@ -163,3 +163,109 @@ allocator, `VmHWM`) on a 2-core x86-64 machine; n nodes, m edges, arcs = m
   s approaches n; sampling sources within the ego network is the scalable
   substitute.
 
+
+## Round 3 (btower, 8-CPU bench runner)
+
+- `distances(sources)` writes rows in place (`parallel::fill_chunks`),
+  64 rows per multi-source search, into one zeroed (lazily mapped)
+  matrix: no per-row vectors, no copy into the matrix. sparse100k, 500
+  sources: 0.39 s -> 0.30 s at one thread, 0.26 s -> 0.16 s at 8;
+  allocations 941 -> 61. The output is 8 bytes x sources x n (400 MB
+  here), so "bytes per (n + m)" is inherent to a dense distance matrix;
+  the benchmark's 763 MB peak is that matrix plus the benchmark's own copy
+  of it for fingerprinting. Scaling is bounded by writing the 400 MB
+  (first-touch page faults and memory bandwidth), not by the searches.
+- Dijkstra with a radix heap (Ahuja, Mehlhorn, Orlin and Tarjan 1990)
+  keyed by the 128-bit integer (order-preserving distance bits, node
+  index), which removes nodes in exactly the order of the indexed 4-ary
+  heap (identical results), was tried and dropped: sparse10k weighted
+  betweenness 19.6 s (indexed heap) vs 20.7 s (radix heap), dir10k 14.4 s
+  vs 14.6 s. Comparing keys as integers instead of `f64::total_cmp` gained
+  nothing either. Instruction counts put about half of Dijkstra's time in
+  heap operations, but the heap (at most n entries, 10k here) is
+  cache-resident; the rest is the relaxation and the tolerance tests of
+  the accumulation (`approx_eq` per arc in both passes), which Dial and BFS
+  avoid with exact integer distances. Remaining options that stay exact:
+  run Dial on real lengths that are integer multiples of a common unit
+  (detected at setup), and for betweenness keep the forward pass's
+  predecessor arcs (a flag per arc) so the backward pass skips the
+  tolerance tests. Delta-stepping buckets only pay with parallelism inside
+  one search, which all-sources measures do not need.
+
+## Shortest-path API, centrality variants, distance measures
+
+`engine::paths` (path graphs, searches with parents, predecessor lists,
+negative lengths, all pairs, k shortest paths) and the modules built on it
+(`metrics::path_centrality`, `current_flow`, `communicability`,
+`spreading`, `hierarchy`, `distance_measures`). Timings from
+`crates/engine/examples/bench_paths_extra.rs` on the btower bench runner
+(8 CPUs), one thread / all 8 threads; random networks with integer
+weights 1..8 and a spanning path (cycle when directed), average degree 4
+added on top.
+
+- Path graph (`PathGraph`): its own CSR of the arcs a search may follow,
+  oriented for the mode, with an f64 length, the tail, the head, and the
+  edge index per arc (20 B/arc), plus a reverse index (4 B/arc + 8 B/node)
+  for backward and bidirectional searches: about 24 B/arc + 16 B/node,
+  built once in O(n + m) by two counting sorts (once per handle through
+  the C ABI, so repeated queries do not rebuild it). Per-search state is
+  O(n) per worker (distance, parent, parent arc, origin, rank: 24 B/node).
+  Streaming: searches need random access to rows, so the CSR must be
+  resident or memory-mapped (the arrays are flat and could be).
+- Searches pick the cheapest exact algorithm: BFS for unit lengths, Dial's
+  buckets for integer lengths up to 1024 (exact integer distances), the
+  indexed 4-ary heap otherwise. Dial halved the time of weighted searches
+  against the heap: one search on n = 100k, m = 500k 19 ms -> 9 ms; 500
+  sources 8.2 s -> 3.8 s at one thread, 1.25 s -> 0.62 s at 8 (BFS: 1.9 s
+  / 0.37 s).
+- All pairs (`all_pairs`, Johnson): one search per source; each row is
+  written in place by the worker that computes it (`fill_rows`), so the
+  output (12 B per entry: distance and parent) is the only large
+  allocation, and it is inherently n^2 (1.2 GB for n = 10k). n = 10k,
+  m = 50k: 5.3 s / 0.90 s; Johnson with negative lengths 5.4 s / 0.93 s
+  (its reduced lengths stay integers, so the searches use Dial too; before
+  Dial 13.5 s / 1.96 s).
+- Negative lengths: Bellman-Ford-Moore (FIFO queue) 11 ms and
+  Goldberg-Radzik 15 ms from one source on the 100k network with lengths
+  reweighted by a potential (some negative, no negative cycle). Negative
+  cycles are found from parent pointers once a node is queued in pass n,
+  or by the depth-first search of Goldberg-Radzik.
+- Floyd-Warshall: O(n^3) on a dense matrix of atomics; rows are updated in
+  parallel for each intermediate node (one barrier per node, through
+  `parallel::crew`), with results identical to the sequential order.
+  n = 2000: 4.95 s / 0.57 s. A tiled formulation would add cache reuse; not
+  needed below a few thousand nodes, where Johnson is faster on sparse
+  networks anyway.
+- k shortest simple paths (Yen with Lawler's restriction of spur nodes):
+  making every spur search bidirectional took k = 50 on the 100k network
+  from 4.2 s to 0.087 s (each unidirectional spur search settled most of
+  the network).
+- Betweenness for sources and targets, percolation, load: one DAG search
+  per source with predecessor arc lists (4 B per arc on a shortest path,
+  per worker), sources summed in fixed groups (`sum_in_order`); O(nm) for
+  all sources. 200 sampled sources on the 100k network: 4.2 s -> 2.2 s at
+  one thread with Dial, 0.64 s at 8. Load centrality, n = 10k: 4.2 s /
+  0.57 s.
+- Current flow: the grounded Laplacian inverse is dense. A parallel
+  Cholesky factorization (rows of each column in parallel) and parallel
+  triangular solves (`linalg::spd_inverse_parallel`) replaced the
+  sequential `cholesky_inverse`: exact current-flow betweenness for
+  n = 2000, m = 10k went from 4.2 s / 4.2 s to 3.2 s / 0.48 s. The
+  per-edge flow sums (sorting each flow-matrix row, O(mn log n)) run in
+  parallel. Memory: 8 n^2 bytes for the inverse (32 MB at n = 2000). The
+  sampled approximation solves one system per pair by Jacobi-preconditioned
+  conjugate gradients whenever k pairs times about 100 sweeps of the
+  network cost less than n^3/3: 400 pairs on n = 2000 went from 4.2 s
+  (dense inverse) to 0.22 s / 0.03 s, with O(m) memory, so it applies to
+  large sparse networks.
+- Communicability betweenness: one symmetric eigendecomposition per node
+  (O(n^4) in all), nodes in parallel: n = 200, 1.17 s / 0.16 s.
+- Closeness vitality: one all-pairs computation per removed node
+  (O(n^2 m)), through the multi-source BFS kernels when unweighted: n =
+  2000, 11 s / 2.2 s. Removing a node changes distances globally, so
+  there is no cheap update; for large networks, sampling sources is the
+  scalable substitute.
+- Local efficiency: per node, BFS inside its neighborhood with a
+  per-worker membership array (O(sum over nodes of deg x local arcs)):
+  n = 200k, 65 ms / 15 ms. Wiener index n = 10k (unweighted, multi-source
+  BFS): 0.18 s / 0.03 s.

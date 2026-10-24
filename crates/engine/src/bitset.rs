@@ -22,6 +22,10 @@
 //! Searches follow a [`View`] of a graph: its out-arcs, its in-arcs, or
 //! both (direction ignored), read from the graph's own adjacency lists, so
 //! no reversed or symmetrized copy of the graph is built.
+//!
+//! [`NeighborSets`] holds every node's distinct neighbours as sorted rows
+//! and, on dense networks, as bit rows, for set measures over pairs of
+//! nodes (common neighbours, unions, link prediction).
 
 use crate::graph::{Csr, Graph};
 use crate::metrics::degree::DegreeMode;
@@ -73,6 +77,342 @@ impl BitMatrix {
     pub fn row(&self, row: usize) -> &[u64] {
         &self.bits[row * self.words_per_row..(row + 1) * self.words_per_row]
     }
+
+    /// Makes this an empty n-by-n matrix, reusing its storage.
+    pub fn reset(&mut self, n: usize) {
+        self.words_per_row = n.saturating_add(63) / 64;
+        self.bits.clear();
+        self.bits.resize(self.words_per_row * n, 0);
+    }
+
+    /// Number of 64-bit words in each row.
+    #[inline]
+    pub fn words_per_row(&self) -> usize {
+        self.words_per_row
+    }
+}
+
+/// Shortest-path levels and counts from one source in a small dense
+/// network held as bit rows: the forward phase of Brandes' (2001,
+/// `brandes2001faster`) accumulation, with every level found by word
+/// operations on rows instead of a scan of adjacency lists.
+///
+/// A level is expanded top-down (the next level is the OR of the frontier's
+/// out-rows, minus the nodes already reached) or, when the frontier is
+/// large next to the nodes not yet reached, bottom-up (each node not yet
+/// reached tests its in-row against the previous level), as in Beamer,
+/// Asanovic, and Patterson (2012, `beamer2012direction`). The number of
+/// shortest paths to a node at level l is the sum of the counts of its
+/// in-neighbours at level l - 1, read from its in-row ANDed with that
+/// level; while every count involved is 1 (always at level 2) the sum is a
+/// population count. Counts are exact integers in `f64` up to 2^53, as in
+/// the list-based search.
+///
+/// [`RowPaths::run_for`] counts paths only to the nodes a caller asks for
+/// and to the nodes on their shortest paths, found by one pass back up the
+/// levels; callers that need a few counts (ego betweenness needs those to
+/// the nodes beyond ego) skip most of the population counts.
+///
+/// A search costs O(n w) word operations for n nodes and w words per row,
+/// plus one addition per arc between consecutive levels beyond the second
+/// on the shortest paths counted.
+#[derive(Debug, Clone, Default)]
+pub struct RowPaths {
+    /// Level of every node; `u32::MAX` if not reached.
+    level: Vec<u32>,
+    /// Number of shortest paths from the source; 0 if not reached or not
+    /// counted.
+    sigma: Vec<f64>,
+    /// Reached nodes by level, each level in increasing node order.
+    order: Vec<u32>,
+    /// Start of each level in `order`.
+    starts: Vec<usize>,
+    /// The nodes of each level as bits, `words` words per level.
+    levels: Vec<u64>,
+    /// The nodes of each level whose counts are needed.
+    need: Vec<u64>,
+    seen: Vec<u64>,
+    words: usize,
+}
+
+impl RowPaths {
+    /// Empty scratch space; it grows to fit the first search.
+    pub fn new() -> RowPaths {
+        RowPaths::default()
+    }
+
+    /// Searches from `source` in the network on nodes `0..n` whose arcs
+    /// are the set bits of `out` (row a has bit b for an arc a -> b) and
+    /// whose transpose is `inc`, stopping after `max_level` levels, and
+    /// counts the shortest paths to every node reached. Both matrices are
+    /// n by n; an undirected network passes the same matrix twice.
+    pub fn run(
+        &mut self,
+        out: &BitMatrix,
+        inc: &BitMatrix,
+        n: usize,
+        source: usize,
+        max_level: u32,
+    ) {
+        self.search(out, inc, n, source, max_level);
+        let total = self.levels.len();
+        self.need.clear();
+        self.need.extend_from_slice(&self.levels[..total]);
+        self.count(inc);
+    }
+
+    /// As [`RowPaths::run`], but counts shortest paths only to the nodes
+    /// at each level l whose bit is set in `wanted(l, w)` (word w of a node
+    /// mask) and to every node on one of their shortest paths. Other
+    /// counts read as 0.
+    pub fn run_for(
+        &mut self,
+        out: &BitMatrix,
+        inc: &BitMatrix,
+        n: usize,
+        source: usize,
+        max_level: u32,
+        wanted: impl Fn(usize, usize) -> u64,
+    ) {
+        self.search(out, inc, n, source, max_level);
+        let words = self.words;
+        let depth = self.depth();
+        self.need.clear();
+        self.need.resize(self.levels.len(), 0);
+        for l in (1..depth).rev() {
+            for w in 0..words {
+                self.need[l * words + w] |= self.levels[l * words + w] & wanted(l, w);
+            }
+            if l < 2 {
+                continue;
+            }
+            // Every in-neighbour one level up of a needed node is needed.
+            let (above, here) = self.need.split_at_mut(l * words);
+            let above = &mut above[(l - 1) * words..];
+            let prev = &self.levels[(l - 1) * words..l * words];
+            for (w, &bits) in here[..words].iter().enumerate() {
+                for_each_bit(bits, |bit| {
+                    for ((x, r), p) in above.iter_mut().zip(inc.row(w * 64 + bit)).zip(prev) {
+                        *x |= r & p;
+                    }
+                });
+            }
+        }
+        self.count(inc);
+    }
+
+    /// Finds the levels of a search without counting paths.
+    fn search(
+        &mut self,
+        out: &BitMatrix,
+        inc: &BitMatrix,
+        n: usize,
+        source: usize,
+        max_level: u32,
+    ) {
+        let words = out.words_per_row();
+        debug_assert_eq!(inc.words_per_row(), words);
+        self.words = words;
+        if self.level.len() < n {
+            self.level.resize(n, u32::MAX);
+            self.sigma.resize(n, 0.0);
+        }
+        for &v in &self.order {
+            self.level[v as usize] = u32::MAX;
+            self.sigma[v as usize] = 0.0;
+        }
+        self.order.clear();
+        self.starts.clear();
+        self.levels.clear();
+        self.levels.resize(words, 0);
+        self.seen.clear();
+        self.seen.resize(words, 0);
+        // Padding bits past node n - 1 count as reached, so they are never
+        // candidates of a bottom-up level.
+        if n % 64 != 0 {
+            self.seen[words - 1] = !0u64 << (n % 64);
+        }
+        self.level[source] = 0;
+        self.order.push(source as u32);
+        self.starts.push(0);
+        self.seen[source / 64] |= 1 << (source % 64);
+        self.levels[source / 64] |= 1 << (source % 64);
+        let mut unseen = n - 1;
+        let mut depth = 0u32;
+        while depth < max_level && unseen > 0 {
+            let first = *self.starts.last().expect("a level");
+            let width = self.order.len() - first;
+            if width == 0 {
+                break;
+            }
+            depth += 1;
+            let start = self.order.len();
+            self.starts.push(start);
+            let base = self.levels.len();
+            self.levels.resize(base + words, 0);
+            let (done, next) = self.levels.split_at_mut(base);
+            let frontier = &done[base - words..];
+            if 2 * width < unseen {
+                // Top-down.
+                for &v in &self.order[first..] {
+                    for (x, r) in next.iter_mut().zip(out.row(v as usize)) {
+                        *x |= r;
+                    }
+                }
+                for (x, s) in next.iter_mut().zip(&self.seen) {
+                    *x &= !s;
+                }
+            } else {
+                // Bottom-up.
+                for (w, (x, &s)) in next.iter_mut().zip(&self.seen).enumerate() {
+                    let mut hit = 0u64;
+                    for_each_bit(!s, |bit| {
+                        let row = inc.row(w * 64 + bit);
+                        if row.iter().zip(frontier).any(|(a, b)| a & b != 0) {
+                            hit |= 1 << bit;
+                        }
+                    });
+                    *x = hit;
+                }
+            }
+            for (w, (&x, s)) in next.iter().zip(self.seen.iter_mut()).enumerate() {
+                let order = &mut self.order;
+                for_each_bit(x, |bit| order.push((w * 64 + bit) as u32));
+                *s |= x;
+            }
+            for &j in &self.order[start..] {
+                self.level[j as usize] = depth;
+            }
+            unseen -= self.order.len() - start;
+        }
+        // Close the last level, unless it was empty (then drop its bits;
+        // its start already closes the level before it).
+        if self.starts.last() != Some(&self.order.len()) {
+            self.starts.push(self.order.len());
+        } else {
+            self.levels.truncate(self.levels.len() - words);
+        }
+    }
+
+    /// Counts the shortest paths to the nodes set in `need`, level by
+    /// level; `need` must hold every needed node's in-neighbours one level
+    /// up.
+    fn count(&mut self, inc: &BitMatrix) {
+        let words = self.words;
+        self.sigma[self.order[0] as usize] = 1.0;
+        let mut unit = true;
+        for l in 1..self.depth() {
+            unit = count_level(
+                inc,
+                &self.need[l * words..(l + 1) * words],
+                &self.levels[(l - 1) * words..l * words],
+                &mut self.sigma,
+                unit,
+            );
+        }
+    }
+
+    /// Level of `v` in the last search; `u32::MAX` if it was not reached.
+    #[inline]
+    pub fn level(&self, v: usize) -> u32 {
+        self.level[v]
+    }
+
+    /// Number of shortest paths from the source to `v` in the last search
+    /// (1 for the source, 0 if `v` was not reached or not counted).
+    #[inline]
+    pub fn sigma(&self, v: usize) -> f64 {
+        self.sigma[v]
+    }
+
+    /// Number of levels reached by the last search, the source's included.
+    #[inline]
+    pub fn depth(&self) -> usize {
+        self.starts.len() - 1
+    }
+
+    /// The nodes at level `l` of the last search as bits (`l` less than
+    /// [`RowPaths::depth`]).
+    #[inline]
+    pub fn level_bits(&self, l: usize) -> &[u64] {
+        &self.levels[l * self.words..(l + 1) * self.words]
+    }
+
+    /// Nodes at level `l` of the last search, in increasing order (empty
+    /// past the last level).
+    #[inline]
+    pub fn nodes_at(&self, l: usize) -> &[u32] {
+        if l + 1 >= self.starts.len() {
+            return &[];
+        }
+        &self.order[self.starts[l]..self.starts[l + 1]]
+    }
+}
+
+/// Sets `sigma[j]` for every node j set in `nodes` to the sum of `sigma`
+/// over the nodes set in both `inc.row(j)` and `prev` (a population count
+/// when every count in `prev` that is read is 1, `unit`), and returns
+/// whether every new count is 1. Population counts dominate the cost of
+/// [`RowPaths`], so on x86-64 processors with the POPCNT instruction this
+/// runs through a copy compiled to use it; both copies compute the same
+/// integers.
+fn count_level(
+    inc: &BitMatrix,
+    nodes: &[u64],
+    prev: &[u64],
+    sigma: &mut [f64],
+    unit: bool,
+) -> bool {
+    #[cfg(target_arch = "x86_64")]
+    {
+        #[target_feature(enable = "popcnt")]
+        unsafe fn fast(
+            inc: &BitMatrix,
+            nodes: &[u64],
+            prev: &[u64],
+            sigma: &mut [f64],
+            unit: bool,
+        ) -> bool {
+            count_level_body(inc, nodes, prev, sigma, unit)
+        }
+        if std::is_x86_feature_detected!("popcnt") {
+            // SAFETY: the processor supports POPCNT.
+            return unsafe { fast(inc, nodes, prev, sigma, unit) };
+        }
+    }
+    count_level_body(inc, nodes, prev, sigma, unit)
+}
+
+#[inline(always)]
+fn count_level_body(
+    inc: &BitMatrix,
+    nodes: &[u64],
+    prev: &[u64],
+    sigma: &mut [f64],
+    unit: bool,
+) -> bool {
+    let mut all_unit = true;
+    for (w, &bits) in nodes.iter().enumerate() {
+        for_each_bit(bits, |bit| {
+            let j = w * 64 + bit;
+            let row = inc.row(j);
+            let c = if unit {
+                row.iter()
+                    .zip(prev)
+                    .map(|(a, b)| (a & b).count_ones())
+                    .sum::<u32>() as f64
+            } else {
+                let mut total = 0.0;
+                for (v, (a, b)) in row.iter().zip(prev).enumerate() {
+                    for_each_bit(a & b, |bit| total += sigma[v * 64 + bit]);
+                }
+                total
+            };
+            all_unit &= c == 1.0;
+            sigma[j] = c;
+        });
+    }
+    all_unit
 }
 
 /// The arcs a search follows: one or two adjacency lists per node, read in
@@ -419,6 +759,177 @@ pub fn for_each_bit(mut bits: u64, mut f: impl FnMut(usize)) {
     while bits != 0 {
         f(bits.trailing_zeros() as usize);
         bits &= bits - 1;
+    }
+}
+
+/// The distinct neighbours of every node of a graph read as undirected
+/// (direction ignored, parallel edges merged), as sorted rows and, when
+/// the network is dense enough to repay it ([`BitMatrix::worthwhile`]), as
+/// bit rows. A self-loop puts a node in its own row, as in the adjacency
+/// dict of a NetworkX `Graph`. Set measures over pairs of nodes (common
+/// neighbours, unions, link prediction, similarity) are population counts
+/// of ANDed bit rows on dense networks and merges of sorted rows
+/// otherwise.
+#[derive(Debug, Clone)]
+pub struct NeighborSets {
+    offsets: Vec<usize>,
+    targets: Vec<u32>,
+    loops: Vec<bool>,
+    bits: Option<BitMatrix>,
+}
+
+impl NeighborSets {
+    /// The neighbour sets of `g`; `bits` allows the bit rows (they are
+    /// built only when [`BitMatrix::worthwhile`]).
+    pub fn new(g: &Graph, bits: bool) -> NeighborSets {
+        let n = g.node_count();
+        let out = g.out();
+        let inc = g.inc();
+        let mut offsets = Vec::with_capacity(n + 1);
+        offsets.push(0);
+        let mut targets: Vec<u32> = Vec::with_capacity(out.arc_count());
+        let mut loops = vec![false; n];
+        for (v, has_loop) in loops.iter_mut().enumerate() {
+            let a = out.neighbors(v);
+            let b: &[u32] = if g.is_directed() {
+                inc.neighbors(v)
+            } else {
+                &[]
+            };
+            let start = targets.len();
+            let (mut i, mut j) = (0, 0);
+            while i < a.len() || j < b.len() {
+                let u = if j >= b.len() || (i < a.len() && a[i] <= b[j]) {
+                    i += 1;
+                    a[i - 1]
+                } else {
+                    j += 1;
+                    b[j - 1]
+                };
+                if targets.len() == start || targets[targets.len() - 1] != u {
+                    targets.push(u);
+                    if u as usize == v {
+                        *has_loop = true;
+                    }
+                }
+            }
+            offsets.push(targets.len());
+        }
+        let bits = (bits && BitMatrix::worthwhile(n, targets.len())).then(|| {
+            let mut m = BitMatrix::new(n);
+            for v in 0..n {
+                for &u in &targets[offsets[v]..offsets[v + 1]] {
+                    m.set(v, u as usize);
+                }
+            }
+            m
+        });
+        NeighborSets {
+            offsets,
+            targets,
+            loops,
+            bits,
+        }
+    }
+
+    /// Number of nodes.
+    #[inline]
+    pub fn node_count(&self) -> usize {
+        self.loops.len()
+    }
+
+    /// The neighbours of `v`, sorted, `v` itself included if it has a loop.
+    #[inline]
+    pub fn row(&self, v: usize) -> &[u32] {
+        &self.targets[self.offsets[v]..self.offsets[v + 1]]
+    }
+
+    /// Whether `v` has a self-loop.
+    #[inline]
+    pub fn has_loop(&self, v: usize) -> bool {
+        self.loops[v]
+    }
+
+    /// Number of distinct neighbours of `v`, itself included if looped.
+    #[inline]
+    pub fn len(&self, v: usize) -> usize {
+        self.offsets[v + 1] - self.offsets[v]
+    }
+
+    /// Whether no node has a neighbour.
+    pub fn is_empty(&self) -> bool {
+        self.targets.is_empty()
+    }
+
+    /// Degree of `v` in the simple graph, a self-loop counting twice (the
+    /// degree of a NetworkX `Graph`).
+    #[inline]
+    pub fn simple_degree(&self, v: usize) -> usize {
+        self.len(v) + self.loops[v] as usize
+    }
+
+    /// Total number of row entries (twice the edges plus the loops).
+    #[inline]
+    pub fn entries(&self) -> usize {
+        self.targets.len()
+    }
+
+    /// The bit rows, if built.
+    #[inline]
+    pub fn bits(&self) -> Option<&BitMatrix> {
+        self.bits.as_ref()
+    }
+
+    /// Whether `u` and `v` are adjacent (`u == v`: whether `u` is looped).
+    #[inline]
+    pub fn adjacent(&self, u: usize, v: usize) -> bool {
+        match &self.bits {
+            Some(m) => m.get(u, v),
+            None => self.row(u).binary_search(&(v as u32)).is_ok(),
+        }
+    }
+
+    /// Calls `f(w)` for every common neighbour `w` of `u` and `v`, in
+    /// increasing order (`u` and `v` themselves included when they are
+    /// in both rows).
+    #[inline]
+    pub fn for_each_common(&self, u: usize, v: usize, mut f: impl FnMut(usize)) {
+        if let Some(m) = &self.bits {
+            for (k, (a, b)) in m.row(u).iter().zip(m.row(v)).enumerate() {
+                for_each_bit(a & b, |lane| f(k * 64 + lane));
+            }
+            return;
+        }
+        let (a, b) = (self.row(u), self.row(v));
+        let (mut i, mut j) = (0, 0);
+        while i < a.len() && j < b.len() {
+            match a[i].cmp(&b[j]) {
+                std::cmp::Ordering::Less => i += 1,
+                std::cmp::Ordering::Greater => j += 1,
+                std::cmp::Ordering::Equal => {
+                    f(a[i] as usize);
+                    i += 1;
+                    j += 1;
+                }
+            }
+        }
+    }
+
+    /// Number of common neighbours of `u` and `v` (themselves included
+    /// when they are in both rows).
+    #[inline]
+    pub fn common_count(&self, u: usize, v: usize) -> usize {
+        if let Some(m) = &self.bits {
+            return m
+                .row(u)
+                .iter()
+                .zip(m.row(v))
+                .map(|(a, b)| (a & b).count_ones() as usize)
+                .sum();
+        }
+        let mut c = 0;
+        self.for_each_common(u, v, |_| c += 1);
+        c
     }
 }
 

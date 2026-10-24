@@ -27,6 +27,10 @@
 //!   8.2.
 //! - Moore-Penrose inverse through the eigendecomposition: Golub and Van
 //!   Loan 2013, section 5.5.
+//! - Conjugate gradients for sparse symmetric positive semidefinite
+//!   systems given as a matrix-vector product, with a diagonal (Jacobi)
+//!   preconditioner: Hestenes and Stiefel 1952, `hestenes1952methods`;
+//!   Golub and Van Loan 2013, section 11.5.
 //!
 //! Numerical properties:
 //! - [`cholesky`] succeeds exactly when every pivot is positive and finite,
@@ -46,6 +50,12 @@
 //! - [`pseudo_inverse`] symmetrizes its input first and drops eigenvalues
 //!   at most `tol` times the largest in magnitude, returning the rank it
 //!   kept.
+//! - [`conjugate_gradient`] stops when the residual norm is at most `tol`
+//!   times the norm of the right-hand side. A singular positive
+//!   semidefinite system (a graph Laplacian) is solved when the right-hand
+//!   side is orthogonal to the null space, starting from zero; the
+//!   solution is then the one orthogonal to the null space in the
+//!   preconditioned inner product.
 
 use crate::error::{Error, Result};
 use crate::matrix::Dense;
@@ -232,6 +242,112 @@ pub fn cholesky_inverse(a: &Dense) -> Option<Dense> {
         }
     }
     Some(inv)
+}
+
+/// The inverse of a symmetric positive definite matrix on several threads,
+/// or `None` if `a` is not positive definite (to working precision).
+///
+/// The Cholesky factor is computed column by column, the rows below the
+/// diagonal of each column in parallel (each entry a dot product of two
+/// row prefixes, so memory is read contiguously); then every column of the
+/// inverse is found by a forward and a backward triangular solve, columns
+/// in parallel. Every entry is computed by the same operations in the same
+/// order whatever the number of threads, so results do not depend on it;
+/// they can differ from [`cholesky_inverse`] in the last bits, since the
+/// operations are grouped differently. O(n^3) work in all, about twice
+/// that of [`cholesky_inverse`], spread over the threads.
+pub fn spd_inverse_parallel(a: &Dense, threads: usize) -> Option<Dense> {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    let n = a.rows();
+    assert_eq!(
+        a.cols(),
+        n,
+        "spd_inverse_parallel: the matrix must be square"
+    );
+    if n == 0 {
+        return Some(Dense::zeros(0, 0));
+    }
+    let threads = crate::parallel::threads_for(threads, n, (n as u64).pow(3) / 2);
+    // The lower factor, row-major, shared between the members.
+    let l: Vec<AtomicU64> = (0..n * n).map(|_| AtomicU64::new(0)).collect();
+    let s: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
+    let failed = AtomicBool::new(false);
+    let get = |i: usize, j: usize| f64::from_bits(l[i * n + j].load(Ordering::Relaxed));
+    crate::parallel::crew(threads, |crew| {
+        let size = crew.size();
+        let me = crew.index();
+        for j in 0..n {
+            // Rows j.. are dealt out in turn so that the work stays even as
+            // the columns shrink.
+            let first = j + (me + size - j % size) % size;
+            let mut i = first;
+            while i < n {
+                let mut acc = a.get(i, j);
+                for k in 0..j {
+                    acc -= get(i, k) * get(j, k);
+                }
+                s[i].store(acc.to_bits(), Ordering::Relaxed);
+                i += size;
+            }
+            crew.wait();
+            let d = f64::from_bits(s[j].load(Ordering::Relaxed));
+            if d.is_nan() || d <= 0.0 || !d.is_finite() {
+                failed.store(true, Ordering::Relaxed);
+                return;
+            }
+            let d = d.sqrt();
+            let mut i = first;
+            while i < n {
+                let x = f64::from_bits(s[i].load(Ordering::Relaxed));
+                let v = if i == j { d } else { x / d };
+                l[i * n + j].store(v.to_bits(), Ordering::Relaxed);
+                i += size;
+            }
+            crew.wait();
+        }
+    });
+    if failed.load(Ordering::Relaxed) {
+        return None;
+    }
+    let l: Vec<f64> = l
+        .into_iter()
+        .map(|x| f64::from_bits(x.into_inner()))
+        .collect();
+    // U = L' row-major, for contiguous backward solves.
+    let mut u = vec![0.0; n * n];
+    for i in 0..n {
+        for j in 0..=i {
+            u[j * n + i] = l[i * n + j];
+        }
+    }
+    let mut inv = vec![0.0; n * n];
+    // Row c of the (symmetric) inverse is the solution of L L' x = e_c.
+    crate::parallel::fill_chunks(
+        &mut inv,
+        n,
+        threads,
+        || vec![0.0; n],
+        |y, c, row| {
+            y.iter_mut().for_each(|v| *v = 0.0);
+            for i in c..n {
+                let li = &l[i * n..i * n + i];
+                let mut acc = if i == c { 1.0 } else { 0.0 };
+                for k in c..i {
+                    acc -= li[k] * y[k];
+                }
+                y[i] = acc / l[i * n + i];
+            }
+            for i in (0..n).rev() {
+                let ui = &u[i * n..(i + 1) * n];
+                let mut acc = y[i];
+                for k in i + 1..n {
+                    acc -= ui[k] * row[k];
+                }
+                row[i] = acc / u[i * n + i];
+            }
+        },
+    );
+    Dense::from_row_major(n, n, inv).ok()
 }
 
 // ---- Gaussian elimination -----------------------------------------------------
@@ -589,6 +705,87 @@ fn tql2(w: &mut [f64], d: &mut [f64], e: &mut [f64]) -> Result<()> {
     Ok(())
 }
 
+/// The result of [`conjugate_gradient`].
+#[derive(Debug, Clone, PartialEq)]
+pub struct CgSolution {
+    /// The approximate solution.
+    pub x: Vec<f64>,
+    /// Iterations used.
+    pub iterations: usize,
+    /// Final relative residual ||b - A x|| / ||b||.
+    pub residual: f64,
+}
+
+/// Solves A x = b by preconditioned conjugate gradients, where
+/// `apply(v, out)` writes A v to `out` for a symmetric positive
+/// semidefinite A, and `diag` holds the diagonal used as preconditioner
+/// (entries that are not positive are treated as 1). Stops when the
+/// relative residual is at most `tol` or after `max_iter` iterations.
+pub fn conjugate_gradient<F>(
+    apply: F,
+    diag: &[f64],
+    b: &[f64],
+    tol: f64,
+    max_iter: usize,
+) -> CgSolution
+where
+    F: Fn(&[f64], &mut [f64]),
+{
+    let n = b.len();
+    let dot = |a: &[f64], c: &[f64]| a.iter().zip(c).map(|(x, y)| x * y).sum::<f64>();
+    let inv: Vec<f64> = diag
+        .iter()
+        .map(|&d| if d > 0.0 { 1.0 / d } else { 1.0 })
+        .collect();
+    let mut x = vec![0.0; n];
+    let bnorm = dot(b, b).sqrt();
+    if bnorm == 0.0 {
+        return CgSolution {
+            x,
+            iterations: 0,
+            residual: 0.0,
+        };
+    }
+    let mut r = b.to_vec();
+    let mut z: Vec<f64> = r.iter().zip(&inv).map(|(r, m)| r * m).collect();
+    let mut p = z.clone();
+    let mut q = vec![0.0; n];
+    let mut rz = dot(&r, &z);
+    let mut iterations = 0;
+    let mut residual = 1.0;
+    while iterations < max_iter {
+        apply(&p, &mut q);
+        let pq = dot(&p, &q);
+        if pq <= 0.0 || !pq.is_finite() {
+            break;
+        }
+        let alpha = rz / pq;
+        for i in 0..n {
+            x[i] += alpha * p[i];
+            r[i] -= alpha * q[i];
+        }
+        iterations += 1;
+        residual = dot(&r, &r).sqrt() / bnorm;
+        if residual <= tol {
+            break;
+        }
+        for i in 0..n {
+            z[i] = r[i] * inv[i];
+        }
+        let rz_next = dot(&r, &z);
+        let beta = rz_next / rz;
+        rz = rz_next;
+        for i in 0..n {
+            p[i] = z[i] + beta * p[i];
+        }
+    }
+    CgSolution {
+        x,
+        iterations,
+        residual,
+    }
+}
+
 /// The Moore-Penrose inverse of a symmetric matrix through its
 /// eigendecomposition, with the rank used. Eigenvalues whose magnitude is
 /// at most `tol` times the largest are treated as zero. The input is
@@ -824,6 +1021,56 @@ mod tests {
         check_eigen(&Dense::zeros(4, 4));
         let (vals, vecs) = symmetric_eigen(&Dense::zeros(0, 0)).unwrap();
         assert!(vals.is_empty() && vecs.rows() == 0);
+    }
+
+    #[test]
+    fn parallel_spd_inverse_matches_cholesky_inverse() {
+        let mut rng = crate::rng::Stream::new(4, 0);
+        for &n in &[1usize, 2, 7, 40, 97] {
+            let b: Vec<f64> = (0..n * n).map(|_| rng.uniform() - 0.5).collect();
+            let b = square(b);
+            let mut a = matmul(&b, &transpose(&b));
+            for i in 0..n {
+                a.set(i, i, a.get(i, i) + 0.5);
+            }
+            let want = cholesky_inverse(&a).unwrap();
+            let one = spd_inverse_parallel(&a, 1).unwrap();
+            let four = spd_inverse_parallel(&a, 4).unwrap();
+            assert_eq!(one, four);
+            for i in 0..n {
+                for j in 0..n {
+                    assert!(
+                        (one.get(i, j) - want.get(i, j)).abs()
+                            < 1e-9 * (1.0 + want.get(i, j).abs())
+                    );
+                }
+            }
+        }
+        let mut not_pd = Dense::identity(3);
+        not_pd.set(1, 1, -1.0);
+        assert!(spd_inverse_parallel(&not_pd, 2).is_none());
+    }
+
+    #[test]
+    fn conjugate_gradient_solves_laplacian_systems() {
+        // Laplacian of the path 0-1-2-3 with conductances 1, 2, 4; inject
+        // 1 at node 0 and extract it at node 3: potential drops 1, 1/2, 1/4.
+        let c = [1.0, 2.0, 4.0];
+        let apply = |v: &[f64], out: &mut [f64]| {
+            out.iter_mut().for_each(|x| *x = 0.0);
+            for (i, &w) in c.iter().enumerate() {
+                let d = w * (v[i] - v[i + 1]);
+                out[i] += d;
+                out[i + 1] -= d;
+            }
+        };
+        let diag = [1.0, 3.0, 6.0, 4.0];
+        let s = conjugate_gradient(apply, &diag, &[1.0, 0.0, 0.0, -1.0], 1e-14, 100);
+        assert!(s.residual <= 1e-14);
+        let x = &s.x;
+        assert!((x[0] - x[1] - 1.0).abs() < 1e-12);
+        assert!((x[1] - x[2] - 0.5).abs() < 1e-12);
+        assert!((x[2] - x[3] - 0.25).abs() < 1e-12);
     }
 
     #[test]

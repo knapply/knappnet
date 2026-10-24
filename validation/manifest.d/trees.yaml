@@ -1,0 +1,335 @@
+# Spanning trees (Kruskal 1956; Prim 1957; Boruvka 1926), optimum
+# branchings and arborescences (Edmonds 1967; Tarjan 1977), and directed
+# acyclic graphs: topological orders (Kahn 1962; Knuth and Szwarcfiter
+# 1974), transitive closure and reduction, longest paths, dominators
+# (Cooper, Harvey, and Kennedy 2001), and lowest common ancestors. Format:
+# see ../README.md; engine runners, derived networks, and encodings in
+# ../bindings/trees.py.
+#
+# DAG functions run on the DAG derived from each fixture (its arcs a -> b
+# with a < b, in file order); tree lowest common ancestors on the
+# breadth-first tree from node 0. Orders that depend on the neighbour
+# order use the input order, which reproduces NetworkX for graphs built
+# from the same edges in the same order.
+
+tree_mst_weight:
+  engine: {fn: spanning_weight}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "Jarnik-Prim on the dense matrix of lightest edges (trees_definition_oracle.py)"
+    networkx:
+      call: "nx.minimum_spanning_tree(M).size(weight = 'weight') on the multigraph"
+
+tree_mst_weight_weighted:
+  engine: {fn: spanning_weight, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Jarnik-Prim on the dense matrix of lightest edges"
+    networkx:
+      call: "nx.minimum_spanning_tree(M, weight = 'weight').size(weight = 'weight')"
+
+tree_maxst_weight_weighted:
+  engine: {fn: spanning_weight, weighted: true, maximum: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "Jarnik-Prim on the dense matrix of heaviest edges"
+    networkx:
+      call: "nx.maximum_spanning_tree(M, weight = 'weight').size(weight = 'weight')"
+
+tree_mst_edges_kruskal:
+  engine: {fn: spanning_tree, weighted: true, nx_order: true}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.minimum_spanning_edges(M, algorithm = 'kruskal', keys = True) as (u, v, weight); the engine is given the edges in M.edges() order"
+
+tree_mst_edges_prim:
+  engine: {fn: spanning_tree, weighted: true, nx_order: true, algorithm: prim}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.minimum_spanning_edges(M, algorithm = 'kruskal', keys = True): every algorithm of the engine returns Kruskal's forest"
+
+tree_mst_edges_boruvka:
+  engine: {fn: spanning_tree, weighted: true, nx_order: true, algorithm: boruvka}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.minimum_spanning_edges(M, algorithm = 'kruskal', keys = True)"
+
+tree_maxst_edges_kruskal:
+  engine: {fn: spanning_tree, weighted: true, nx_order: true, maximum: true}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.maximum_spanning_edges(M, algorithm = 'kruskal', keys = True) as (u, v, weight)"
+
+tree_max_branching:
+  engine: {fn: branching, kind: max_branching, weighted: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "best choice of at most one incoming arc per node without a cycle, over every choice"
+      undefined_on: &bigdir [gnp_dir_dense, gnp_dir_sparse, multi_loops_dir, real_weights_dir,
+                             weighted_dir]
+      undefined_reason: >-
+        trying every choice of incoming arcs is limited to networks with at
+        most 300 000 choices
+    networkx:
+      call: "nx.maximum_branching(M, attr = 'weight').size(weight = 'weight')"
+
+tree_min_branching:
+  engine: {fn: branching, kind: min_branching, weighted: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "least-weight choice of at most one incoming arc per node without a cycle"
+      undefined_on: *bigdir
+      undefined_reason: as for tree_max_branching
+    networkx:
+      call: "nx.minimum_branching(M, attr = 'weight').size(weight = 'weight')"
+
+tree_minimal_branching:
+  engine: {fn: branching, kind: minimal, weighted: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "best choice under the weights (2 max - min + 1) - w, reported in the original weights"
+      undefined_on: *bigdir
+      undefined_reason: as for tree_max_branching
+    networkx:
+      call: "nx.algorithms.tree.branchings.minimal_branching(M, attr = 'weight').size(weight = 'weight')"
+
+tree_max_arborescence:
+  engine: {fn: branching, kind: max_arborescence, weighted: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "best choice of one incoming arc for all nodes but one root, without a cycle; -1 if none"
+      undefined_on: *bigdir
+      undefined_reason: as for tree_max_branching
+    networkx:
+      call: "nx.maximum_spanning_arborescence(M, attr = 'weight').size(weight = 'weight'); -1 on NetworkXException"
+
+tree_min_arborescence:
+  engine: {fn: branching, kind: min_arborescence, weighted: true}
+  applies_to: directed
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "least-weight choice of one incoming arc for all nodes but one root, without a cycle; -1 if none"
+      undefined_on: *bigdir
+      undefined_reason: as for tree_max_branching
+    networkx:
+      call: "nx.minimum_spanning_arborescence(M, attr = 'weight').size(weight = 'weight'); -1 on NetworkXException"
+
+dag_topological_sort:
+  engine: {fn: topological_sort, order: input}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "list(nx.topological_sort(D))"
+
+dag_generations:
+  engine: {fn: generations}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "number of arcs on the longest path ending at each node"
+    networkx:
+      call: "generation index of each node in nx.topological_generations(D)"
+
+dag_lexicographic:
+  engine: {fn: lexicographic}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "list(nx.lexicographical_topological_sort(D))"
+
+dag_all_topological:
+  engine: {fn: all_topological, order: input}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "the first 50 orders of nx.all_topological_sorts(D), in its sequence"
+
+dag_is_dag:
+  engine: {fn: is_dag}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "1 for a directed network in which no node reaches itself"
+    networkx:
+      call: "nx.is_directed_acyclic_graph(M)"
+
+dag_closure_cycles:
+  engine: {fn: closure, reflexive: cycles}
+  applies_to: directed
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pairs (u, v) with v reachable from u by at least one arc"
+    networkx:
+      call: "nx.transitive_closure(G, reflexive = False).edges()"
+
+dag_closure_never:
+  engine: {fn: closure, reflexive: never}
+  applies_to: directed
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pairs (u, v), v != u reachable from u, and existing self-loops"
+    networkx:
+      call: "nx.transitive_closure(G, reflexive = None).edges()"
+
+dag_closure_always:
+  engine: {fn: closure, reflexive: always}
+  applies_to: directed
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "pairs (u, v) with v reachable from u, and every (v, v)"
+    networkx:
+      call: "nx.transitive_closure(G, reflexive = True).edges()"
+
+dag_reduction:
+  engine: {fn: reduction}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "arcs u -> v of D such that v is not reachable from another successor of u"
+    networkx:
+      call: "nx.transitive_reduction(D).edges()"
+
+dag_longest_path:
+  engine: {fn: longest_path}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.dag_longest_path(D)"
+
+dag_longest_path_weighted:
+  engine: {fn: longest_path, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.dag_longest_path(D, weight = 'weight') on the multigraph D"
+
+dag_longest_length:
+  engine: {fn: longest_length}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the most arcs on any path, by enumerating every path (n <= 20)"
+      undefined_on: &bigpaths [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                               gnp_und_sparse, karate, les_miserables, real_weights_dir,
+                               real_weights_und, southern_women, twomode_random,
+                               uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: enumerating every path is limited to fixtures of at most 20 nodes
+    networkx:
+      call: "nx.dag_longest_path_length(D)"
+
+dag_longest_length_weighted:
+  engine: {fn: longest_length, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the greatest weight of any path, by enumerating every path (n <= 20)"
+      undefined_on: *bigpaths
+      undefined_reason: as for dag_longest_length
+    networkx:
+      call: "nx.dag_longest_path_length(D, weight = 'weight') on the multigraph D"
+
+dag_immediate_dominators:
+  engine: {fn: idom}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the strict dominator of v dominated by all others; d dominates v when v is unreachable from 0 without d"
+    networkx:
+      call: "nx.immediate_dominators(G, 0), with 0 for the start and -1 for unreachable nodes"
+
+dag_dominance_frontiers:
+  engine: {fn: frontiers}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes y with a predecessor dominated by x, not strictly dominated by x (Cytron et al. 1991)"
+    networkx:
+      call: "nx.dominance_frontiers(G, 0), one sorted tuple per node, (-1) if unreachable"
+
+dag_lca:
+  engine: {fn: dag_lca, order: input}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "dict(nx.all_pairs_lowest_common_ancestor(D, pairs)) for every pair u <= v, -1 if absent"
+      differs_on: [davis_twomode, gnp_dir_sparse, gnp_und_sparse, karate, real_weights_dir,
+                   real_weights_und, southern_women, twomode_random, uniform_weights,
+                   weighted_dir, weighted_und]
+      reason: >-
+        On these DAGs a few pairs have several lowest common ancestors.
+        NetworkX starts its walk from the first common ancestor in Python's
+        set order and the engine from the one of smallest index, so they can
+        return different, equally valid ancestors (checked pair by pair when
+        this entry was written: every differing answer of both is a lowest
+        common ancestor). dag_lca_check confirms every engine answer.
+
+dag_lca_check:
+  engine: {fn: dag_lca_check}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[pairs u <= v with a common ancestor, 1]; the runner checks that each answer is a common ancestor with no child that is one"
+    networkx:
+      call: "[number of pairs nx.all_pairs_lowest_common_ancestor(D, pairs) answers, 1]"
+
+dag_tree_lca:
+  engine: {fn: tree_lca}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "last common node of the root paths of u and v in the breadth-first tree"
+    networkx:
+      call: "nx.tree_all_pairs_lowest_common_ancestor(T, root = 0, pairs)"

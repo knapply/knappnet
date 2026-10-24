@@ -1,0 +1,187 @@
+# Maximum-weight matching (Edmonds 1965; Galil 1986), minimum-weight
+# maximum-cardinality matching, greedy maximal matching and the matching
+# tests, greedy colouring (Kosowski and Manuszewski 2004; Welsh and Powell
+# 1967; Matula and Beck 1983; Brelaz 1979), random maximal independent
+# sets, square clustering (Lind, Gonzalez, and Herrmann 2005; Zhang et al.
+# 2008), and generalized degree (Zlatic, Garlaschelli, and Caldarelli
+# 2012), as NetworkX 3.7 defines them. Format: see ../README.md; runners,
+# derived inputs, and encodings in ../bindings/matching.py.
+#
+# Matchings are compared by size, total weight, and validity: when several
+# matchings are optimal NetworkX and the engine may return different ones.
+# NetworkX rejects multigraphs for matchings, so its oracle reads the
+# simple graph with the heaviest (for minimum weight, lightest) copy of
+# each pair, which is the engine's convention. Colourings by largest
+# first and DSATUR must equal NetworkX's; the other deterministic
+# strategies break ties as the engine documents and are compared with the
+# definition oracle, which implements the same rules independently.
+
+matching_max:
+  engine: {fn: max_weight_matching}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the largest matching size by exhaustive search over vertex subsets (n <= 20) (matching_definition_oracle.py)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_und,
+        real_weights_und, southern_women, twomode_random, uniform_weights, weighted_und]
+      undefined_reason: exhaustive search over vertex subsets runs on networks of at most 16 nodes
+    networkx:
+      call: "nx.max_weight_matching(G) on unit weights: (size, size, 1 if nx.is_matching)"
+
+matching_max_weight:
+  engine: {fn: max_weight_matching, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "(size, weight) of a heaviest matching by exhaustive search (n <= 20) (matching_definition_oracle.py)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_und,
+        real_weights_und, southern_women, twomode_random, uniform_weights, weighted_und]
+      undefined_reason: exhaustive search over vertex subsets runs on networks of at most 16 nodes
+    networkx:
+      call: "nx.max_weight_matching(G, weight = 'weight')"
+
+matching_max_weight_card:
+  engine: {fn: max_weight_matching, weighted: true, max_cardinality: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the heaviest among the largest matchings by exhaustive search (n <= 20) (matching_definition_oracle.py)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_und,
+        real_weights_und, southern_women, twomode_random, uniform_weights, weighted_und]
+      undefined_reason: exhaustive search over vertex subsets runs on networks of at most 16 nodes
+    networkx:
+      call: "nx.max_weight_matching(G, maxcardinality = True, weight = 'weight')"
+
+matching_min_weight:
+  engine: {fn: min_weight_matching, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the lightest among the largest matchings by exhaustive search (n <= 20) (matching_definition_oracle.py)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, karate, les_miserables, multi_loops_und,
+        real_weights_und, southern_women, twomode_random, uniform_weights, weighted_und]
+      undefined_reason: exhaustive search over vertex subsets runs on networks of at most 16 nodes
+    networkx:
+      call: "nx.min_weight_matching(G, weight = 'weight')"
+
+matching_maximal:
+  engine: {fn: maximal_matching}
+  applies_to: undirected
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "greedy scan of nx_order(fixture) (matching_definition_oracle.py)"
+    networkx:
+      call: "nx.maximal_matching(G)"
+
+matching_check_candidate:
+  engine: {fn: check_matching, pairs: candidate}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "is a matching, maximal, perfect, by definition (matching_definition_oracle.py)"
+    networkx:
+      call: "nx.is_matching, nx.is_maximal_matching, nx.is_perfect_matching of the candidate pairs"
+
+matching_check_maximal:
+  engine: {fn: check_matching, pairs: maximal}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the tests on the greedy matching of nx_order(fixture) (matching_definition_oracle.py)"
+    networkx:
+      call: "the tests on nx.maximal_matching(G)"
+
+color_largest_first:
+  engine: {fn: greedy_color, strategy: largest_first}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the largest_first order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+    networkx:
+      call: "nx.greedy_color(G, strategy = 'largest_first')"
+
+color_saturation_largest_first:
+  engine: {fn: greedy_color, strategy: saturation_largest_first}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the saturation_largest_first order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+    networkx:
+      call: "nx.greedy_color(G, strategy = 'saturation_largest_first')"
+
+color_smallest_last:
+  engine: {fn: greedy_color, strategy: smallest_last}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the smallest_last order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+
+color_independent_set:
+  engine: {fn: greedy_color, strategy: independent_set}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the independent_set order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+
+color_connected_sequential_bfs:
+  engine: {fn: greedy_color, strategy: connected_sequential_bfs}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the connected_sequential_bfs order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+
+color_connected_sequential_dfs:
+  engine: {fn: greedy_color, strategy: connected_sequential_dfs}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the connected_sequential_dfs order with the engine's documented tie-breaking, then smallest free colours (matching_definition_oracle.py)"
+
+mis_check:
+  engine: {fn: mis_check}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the engine's set is independent, maximal, and contains its starting node (the oracle writes 1, 1, 1) (matching_definition_oracle.py)"
+    networkx:
+      call: "1, 1, 1 for nx.maximal_independent_set(G, [start], seed = 11), checked the same way"
+
+square_clustering:
+  engine: {fn: square_clustering}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the published pairwise formula sum q / sum (a + q) over neighbour pairs (matching_definition_oracle.py)"
+      undefined_when: [directed]
+      undefined_reason: the pairwise formula is stated for undirected graphs; NetworkX's closed form with successor sets is compared directly
+    networkx:
+      call: "nx.square_clustering(G)"
+
+generalized_degree:
+  engine: {fn: generalized_degree}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "per neighbour, the number of common neighbours, tallied (matching_definition_oracle.py)"
+    networkx:
+      call: "nx.generalized_degree(G)"

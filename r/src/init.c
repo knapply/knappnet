@@ -120,6 +120,20 @@ extern SEXP C_random_small_world(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_random_uman(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_small_world(SEXP, SEXP, SEXP, SEXP, SEXP);
 
+/* communities.c: Community detection, partition comparison, and dendrograms. */
+extern SEXP C_compare_partitions(SEXP, SEXP, SEXP);
+extern SEXP C_cut_dendrogram(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_dendrogram_modularity(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_fluid_communities(SEXP, SEXP, SEXP);
+extern SEXP C_infomap(SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_label_propagation(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_leiden(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_map_equation(SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_optimal_modularity(SEXP, SEXP, SEXP);
+extern SEXP C_spinglass(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_voronoi(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
+extern SEXP C_walktrap(SEXP, SEXP, SEXP, SEXP);
+
 /* cyber.c: Key players, group centrality, and flow betweenness. */
 extern SEXP C_flow_betweenness(SEXP, SEXP, SEXP, SEXP);
 extern SEXP C_group_centrality(SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP, SEXP);
@@ -254,6 +268,19 @@ static const R_CallMethodDef call_methods[] = {
     {"C_random_small_world", (DL_FUNC)&C_random_small_world, 6},
     {"C_random_uman", (DL_FUNC)&C_random_uman, 6},
     {"C_small_world", (DL_FUNC)&C_small_world, 5},
+    /* communities.c */
+    {"C_compare_partitions", (DL_FUNC)&C_compare_partitions, 3},
+    {"C_cut_dendrogram", (DL_FUNC)&C_cut_dendrogram, 5},
+    {"C_dendrogram_modularity", (DL_FUNC)&C_dendrogram_modularity, 5},
+    {"C_fluid_communities", (DL_FUNC)&C_fluid_communities, 3},
+    {"C_infomap", (DL_FUNC)&C_infomap, 5},
+    {"C_label_propagation", (DL_FUNC)&C_label_propagation, 7},
+    {"C_leiden", (DL_FUNC)&C_leiden, 9},
+    {"C_map_equation", (DL_FUNC)&C_map_equation, 4},
+    {"C_optimal_modularity", (DL_FUNC)&C_optimal_modularity, 3},
+    {"C_spinglass", (DL_FUNC)&C_spinglass, 12},
+    {"C_voronoi", (DL_FUNC)&C_voronoi, 6},
+    {"C_walktrap", (DL_FUNC)&C_walktrap, 4},
     /* cyber.c */
     {"C_flow_betweenness", (DL_FUNC)&C_flow_betweenness, 4},
     {"C_group_centrality", (DL_FUNC)&C_group_centrality, 8},

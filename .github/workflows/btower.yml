@@ -1,0 +1,50 @@
+# Runs heavy jobs (benchmarks, thread scaling, large inputs) on the owner's
+# self-hosted runner. Manual dispatch only: pushes and pull requests never
+# reach this runner.
+name: btower
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Shell command to run from the repository root
+        required: true
+        default: tools/local_check.sh
+      runner:
+        description: check (builds and tests, two run side by side), bench (timings, own CPUs), or gpu
+        type: choice
+        options: [check, bench, gpu]
+        default: check
+      artifact:
+        description: Optional path (file or directory) to upload as an artifact
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ${{ fromJSON(inputs.runner == 'bench' && '["self-hosted", "btower-bench"]' || inputs.runner == 'gpu' && '["self-hosted", "btower-gpu"]' || '["self-hosted", "btower-check"]') }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run
+        env:
+          COMMAND: ${{ inputs.command }}
+        run: |
+          set -o pipefail
+          bash -c "$COMMAND" 2>&1 | tee btower.log
+      - name: Annotate
+        if: always()
+        # The last 300 lines as notices of 60 lines each, readable from the
+        # run summary and the check-run annotations API.
+        run: |
+          tail -n 300 btower.log | split -l 60 - part.
+          for f in part.*; do
+            printf '::notice title=btower %s::%s\n' "$f" "$(sed 's/%/%25/g' "$f" | awk 'BEGIN{ORS="%0A"}1')"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always() && inputs.artifact != ''
+        with:
+          name: btower-output
+          path: ${{ inputs.artifact }}

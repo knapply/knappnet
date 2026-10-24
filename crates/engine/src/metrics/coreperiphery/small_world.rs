@@ -108,7 +108,12 @@ pub fn small_world(g: &Graph, opts: SmallWorldOptions) -> Result<SmallWorld> {
     let m = simple.edge_count() as u64;
     let (c, l) = measures(&simple, opts.local)?;
     let nets = gnm(n, m, false, false, opts.reps, opts.seed, opts.threads)?;
-    let parts = parallel::for_each_item(opts.reps, opts.threads, Vec::new, |acc, r| {
+    let threads = parallel::threads_for(
+        opts.threads,
+        opts.reps,
+        parallel::search_work(opts.reps, n, 2 * m as usize).saturating_mul(n as u64),
+    );
+    let parts = parallel::for_each_claimed(opts.reps, threads, Vec::new, |acc, r| {
         let e = &nets[r];
         let s: Vec<i64> = e.from.iter().map(|&x| x as i64).collect();
         let t: Vec<i64> = e.to.iter().map(|&x| x as i64).collect();

@@ -365,7 +365,14 @@ pub fn factions(g: &Graph, opts: FactionOptions) -> Result<Factions> {
     } else {
         opts.tenure
     };
-    let parts = parallel::for_each_item(opts.starts, opts.threads, Vec::new, |acc, s| {
+    // Starts differ in length, so threads claim them as they finish; runs
+    // are sorted by start below.
+    let threads = parallel::threads_for(
+        opts.threads,
+        opts.starts,
+        (opts.starts as u64).saturating_mul((n * n) as u64 * 16),
+    );
+    let parts = parallel::for_each_claimed(opts.starts, threads, Vec::new, |acc, s| {
         acc.push((s, tabu_search(&ties, &c, &opts, tenure, s)));
     });
     let mut runs: Vec<(usize, (Score, Vec<usize>))> = parts.into_iter().flatten().collect();

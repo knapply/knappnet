@@ -632,6 +632,83 @@ int32_t net_group_shares(const GraphHandle *h, const int64_t *groups,
                          int64_t k, int32_t direction, double *out,
                          char *err, size_t err_len);
 
+/* NetworkX-style mixing (its assortativity package): degree kinds x, y,
+ * source, target are 1 = out, 2 = in, 3 = in+out (ignored for undirected
+ * graphs; degrees count parallel edges and an undirected loop twice);
+ * nodes (n_nodes values) restricts to a subset, NULL for all. Pairs run
+ * along every arc leaving a node of the subset (to a node of the subset
+ * for degrees, to any node for attributes, as NetworkX does). */
+
+/* Degree mixing counts: the distinct degrees met, increasing, into
+ * values[0..*k) and pair counts into counts[i * k + j] (row-major k by
+ * k). When *k > cap only *k is written; call again with cap >= *k. */
+int32_t net_degree_mixing(const GraphHandle *h, int32_t x, int32_t y,
+                          int32_t weighted, const int64_t *nodes,
+                          int64_t n_nodes, int64_t cap, double *values,
+                          double *counts, int64_t *k, char *err,
+                          size_t err_len);
+
+/* Attribute mixing counts of node values labels (n values), as for
+ * net_degree_mixing. */
+int32_t net_attribute_mixing(const GraphHandle *h, const double *labels,
+                             const int64_t *nodes, int64_t n_nodes,
+                             int64_t cap, double *values, double *counts,
+                             int64_t *k, char *err, size_t err_len);
+
+/* Assortativity over a subset as NetworkX's coefficients: coefficient 0 =
+ * degree (x, y, weighted), 1 = attribute (nominal values), 2 = numeric
+ * values (pairs with a value outside the subset's values dropped, as
+ * NetworkX does). NaN when undefined. */
+int32_t net_assortativity_subset(const GraphHandle *h, int32_t coefficient,
+                                 int32_t x, int32_t y, int32_t weighted,
+                                 const double *values, const int64_t *nodes,
+                                 int64_t n_nodes, double *out, char *err,
+                                 size_t err_len);
+
+/* Average neighbour degree (NetworkX's average_neighbor_degree) of the
+ * subset's nodes, in order, into out (n_nodes values, or n). */
+int32_t net_average_neighbor_degree(const GraphHandle *h, int32_t source,
+                                    int32_t target, int32_t weighted,
+                                    const int64_t *nodes, int64_t n_nodes,
+                                    double *out, char *err, size_t err_len);
+
+/* Average degree connectivity (NetworkX's average_degree_connectivity):
+ * distinct source degrees, increasing, into degrees[0..*count) and k_nn
+ * into values (both hold n). Source in+out of a directed graph follows
+ * successors only, as NetworkX does. */
+int32_t net_average_degree_connectivity(const GraphHandle *h, int32_t source,
+                                        int32_t target, int32_t weighted,
+                                        const int64_t *nodes, int64_t n_nodes,
+                                        double *degrees, double *values,
+                                        int64_t *count, char *err,
+                                        size_t err_len);
+
+/* Cut measures between node sets s (ns nodes) and t (nt nodes; NULL for
+ * the complement of s), as NetworkX's algorithms.cuts: out[0..9) = cut
+ * size (both directions in a directed graph), volume of S, volume of T
+ * (out-degrees in a directed graph), normalized cut size, conductance,
+ * edge expansion, mixing expansion (cut / 2m), node expansion, boundary
+ * expansion. weighted != 0 adds weights; IEEE inf or NaN where NetworkX
+ * divides by zero. */
+int32_t net_cut_measures(const GraphHandle *h, const int64_t *s, int64_t ns,
+                         const int64_t *t, int64_t nt, int32_t weighted,
+                         double *out, char *err, size_t err_len);
+
+/* Square clustering of every node (NetworkX's square_clustering;
+ * successor sets in a directed graph) into out[0..n). */
+int32_t net_square_clustering(const GraphHandle *h, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Generalized degree (NetworkX's generalized_degree): node v's entries
+ * are offsets[v] .. offsets[v + 1] of ks (a triangle count k, increasing)
+ * and counts (neighbours sharing k triangles with v). *total receives the
+ * number of entries (at most 2m); when it exceeds cap only *total is
+ * written. */
+int32_t net_generalized_degree(const GraphHandle *h, int32_t threads,
+                               int64_t *offsets, int64_t *ks, int64_t *counts,
+                               int64_t cap, int64_t *total, char *err,
+                               size_t err_len);
+
 /* ---- Ego networks and two-mode networks ---------------------------------
  * types holds one value per node, 0 for the first mode and 1 for the
  * second; two-mode measure 0 = degree, 1 = closeness, 2 = betweenness;
@@ -726,6 +803,76 @@ void net_projection_free(ProjectionHandle *p);
  * 1 = out, 2 = in, 3 = all; ignored for undirected graphs. */
 int32_t net_coreness(const GraphHandle *h, int32_t mode, double *out,
                      char *err, size_t err_len);
+
+/* The nodes (increasing) of the k-core (which 0), k-shell (1), k-crust
+ * (2), or k-corona (3: k-shell nodes with exactly k neighbours, distinct
+ * successors in directed graphs, in the k-core), from the core numbers
+ * of net_coreness with mode 3, into nodes[0..*count). has_k == 0 takes
+ * NetworkX's default k (largest core number; one less for the crust). */
+int32_t net_core_subset(const GraphHandle *h, int32_t which, int64_t k,
+                        int32_t has_k, int64_t *nodes, int64_t *count,
+                        char *err, size_t err_len);
+
+/* Truss number of every edge (the largest k whose k-truss contains it; 2
+ * outside triangles, 0 for self-loops) of the simple undirected graph,
+ * into out[0..m); parallel copies share their edge's value. */
+int32_t net_truss_numbers(const GraphHandle *h, int64_t *out, char *err,
+                          size_t err_len);
+
+/* The k-truss (NetworkX's k_truss): its edges (indices, increasing) into
+ * edges[0..*n_edges) and the nodes they touch into nodes[0..*n_nodes). */
+int32_t net_k_truss(const GraphHandle *h, int64_t k, int64_t *edges,
+                    int64_t *n_edges, int64_t *nodes, int64_t *n_nodes,
+                    char *err, size_t err_len);
+
+/* Onion decomposition layers (from 1; isolated nodes first) of the simple
+ * undirected graph, self-loops ignored, into out[0..n). */
+int32_t net_onion_layers(const GraphHandle *h, int64_t *out, char *err,
+                         size_t err_len);
+
+/* Matchings of the undirected graph (self-loops never matched; the best
+ * copy of parallel edges stands for them): matched edge indices,
+ * increasing, into edges[0..*found) (edges holds m). */
+
+/* Maximum-weight matching (Edmonds' blossom algorithm); max_cardinality
+ * != 0 maximizes weight among the largest matchings. */
+int32_t net_max_weight_matching(const GraphHandle *h, int32_t weighted,
+                                int32_t max_cardinality, int64_t *edges,
+                                int64_t *found, char *err, size_t err_len);
+
+/* Least-weight matching among the largest (NetworkX's
+ * min_weight_matching). */
+int32_t net_min_weight_matching(const GraphHandle *h, int32_t weighted,
+                                int64_t *edges, int64_t *found, char *err,
+                                size_t err_len);
+
+/* Greedy maximal matching over the edges in order (NetworkX's
+ * maximal_matching over G.edges()). */
+int32_t net_maximal_matching(const GraphHandle *h, int64_t *edges,
+                             int64_t *found, char *err, size_t err_len);
+
+/* out[0..3) = 1 or 0: the k pairs (us[i], vs[i]) are a matching, a
+ * maximal matching, a perfect matching (NetworkX's is_matching,
+ * is_maximal_matching, is_perfect_matching). */
+int32_t net_check_matching(const GraphHandle *h, const int64_t *us,
+                           const int64_t *vs, int64_t k, int32_t *out,
+                           char *err, size_t err_len);
+
+/* Greedy colouring (colours from 0) into out[0..n). strategy: 0 = largest
+ * first, 1 = random sequential (seed), 2 = smallest last, 3 = independent
+ * set, 4 = connected sequential breadth-first, 5 = depth-first, 6 =
+ * saturation largest first (DSATUR). 2 to 5 need an undirected graph. */
+int32_t net_greedy_color(const GraphHandle *h, int32_t strategy,
+                         uint64_t seed, int64_t *out, char *err,
+                         size_t err_len);
+
+/* A random maximal independent set containing start (n_start nodes, an
+ * independent set; one random node when 0), increasing, into
+ * nodes[0..*found) (nodes holds n). */
+int32_t net_maximal_independent_set(const GraphHandle *h, const int64_t *start,
+                                    int64_t n_start, uint64_t seed,
+                                    int64_t *nodes, int64_t *found, char *err,
+                                    size_t err_len);
 
 /* Maximal cliques; release with net_groups_free. */
 typedef struct GroupsHandle GroupsHandle;
@@ -1126,6 +1273,217 @@ int32_t net_classical_mds(const double *d, int64_t n, int64_t k,
 int32_t net_mds_stress(const double *d, int64_t n, const double *points,
                        int64_t p, double *out, char *err, size_t err_len);
 
+/* ---- Link prediction and similarity -------------------------------------
+ * Pair scores read the network as undirected and simple (directions,
+ * weights, and edge multiplicity ignored; a self-loop puts a node in its
+ * own neighbour set and adds 2 to its degree), as NetworkX's
+ * link_prediction functions do. method: 0 = common neighbours,
+ * 1 = Jaccard, 2 = Adamic-Adar, 3 = resource allocation, 4 = preferential
+ * attachment, 5 = common-neighbour centrality (alpha), 6 = CN
+ * Soundarajan-Hopcroft, 7 = RA Soundarajan-Hopcroft, 8 =
+ * within-inter-cluster (delta > 0). communities holds one label per node
+ * for methods 6 to 8 and may be NULL otherwise. */
+
+/* Scores of npairs pairs (us[i], vs[i]) into out[0..npairs). */
+int32_t net_link_prediction(const GraphHandle *h, int32_t method,
+                            double alpha, double delta,
+                            const int64_t *communities, const int64_t *us,
+                            const int64_t *vs, int64_t npairs,
+                            int32_t threads, double *out, char *err,
+                            size_t err_len);
+
+/* Number of non-edges: unordered pairs of distinct nodes adjacent in
+ * neither direction. */
+int32_t net_non_edge_count(const GraphHandle *h, int64_t *out, char *err,
+                           size_t err_len);
+
+/* Scores of every non-edge u < v in lexicographic order; us, vs, and
+ * scores hold len values, len being net_non_edge_count's count. */
+int32_t net_link_prediction_non_edges(const GraphHandle *h, int32_t method,
+                                      double alpha, double delta,
+                                      const int64_t *communities,
+                                      int32_t threads, int64_t *us,
+                                      int64_t *vs, double *scores,
+                                      int64_t len, char *err,
+                                      size_t err_len);
+
+/* Weisfeiler-Lehman graph hash, character for character NetworkX's
+ * weisfeiler_lehman_graph_hash: node_labels (n strings) and edge_labels
+ * (m strings, no parallel edges) are NULL or str() of the attributes,
+ * ASCII. out receives 2 * digest_size hexadecimal characters, without a
+ * terminator; out_len must equal that. */
+int32_t net_wl_graph_hash(const GraphHandle *h,
+                          const char *const *node_labels,
+                          const char *const *edge_labels, int64_t iterations,
+                          int64_t digest_size, int32_t threads, char *out,
+                          size_t out_len, char *err, size_t err_len);
+
+/* Weisfeiler-Lehman subgraph hashes (NetworkX's
+ * weisfeiler_lehman_subgraph_hashes): node v's L = iterations (+ 1 with
+ * include_initial_labels) hashes, oldest first, fill
+ * out[v * L * 2 * digest_size ...); out_len must be n * L * 2 *
+ * digest_size. */
+int32_t net_wl_subgraph_hashes(const GraphHandle *h,
+                               const char *const *node_labels,
+                               const char *const *edge_labels,
+                               int64_t iterations, int64_t digest_size,
+                               int32_t include_initial_labels,
+                               int32_t threads, char *out, size_t out_len,
+                               char *err, size_t err_len);
+
+/* SimRank of every pair of nodes (in-neighbours in directed graphs) into
+ * an n-by-n matrix. stop 0 = NetworkX's simrank_similarity (weights used
+ * when weighted != 0), 1 = its pairwise iteration (unweighted).
+ * Reaching max_iterations is an error, as in NetworkX. */
+int32_t net_simrank(const GraphHandle *h, double importance,
+                    int64_t max_iterations, double tolerance,
+                    int32_t weighted, int32_t stop, int32_t threads,
+                    double *out, char *err, size_t err_len);
+
+/* Panther similarity: the k nodes most similar to source (random paths of
+ * path_length steps; eps <= 0 uses 1/sqrt(m)), most similar first, into
+ * nodes and scores, *found of them (k, or k + 1 on ties with the source;
+ * capacity >= k + 1). Path i is drawn from stream (seed, i). */
+int32_t net_panther_similarity(const GraphHandle *h, int64_t source,
+                               int64_t k, int64_t path_length, double c,
+                               double delta, double eps, int32_t weighted,
+                               uint64_t seed, int32_t threads,
+                               int64_t *nodes, double *scores,
+                               int64_t capacity, int64_t *found, char *err,
+                               size_t err_len);
+
+/* Exact graph edit distance into *out with *found = 1, or *found = 0 when
+ * it exceeds upper_bound (INFINITY for none). Node labels (n1, n2 values)
+ * and edge labels (m1, m2 values) are both NULL or both given; equal
+ * labels substitute at no cost. costs: node substitution, deletion,
+ * insertion, edge substitution, deletion, insertion (NULL: all 1).
+ * root1, root2 >= 0 fix that pair. Fails after max_steps mappings
+ * (0: 10^8). */
+int32_t net_graph_edit_distance(const GraphHandle *h1, const GraphHandle *h2,
+                                const int64_t *node_labels1,
+                                const int64_t *node_labels2,
+                                const int64_t *edge_labels1,
+                                const int64_t *edge_labels2,
+                                const double *costs, int64_t root1,
+                                int64_t root2, double upper_bound,
+                                int64_t max_steps, double *out,
+                                int32_t *found, char *err, size_t err_len);
+
+/* ---- Isomorphism -------------------------------------------------------
+ * VF2++ (NetworkX's vf2pp_* functions): problem 0 = isomorphism, 1 = sg
+ * isomorphic to an induced subgraph of fg, 2 = monomorphism (sg
+ * isomorphic to a subgraph of fg). Both graphs directed or both
+ * undirected; edge multiplicities and self-loops must match (be no
+ * larger in sg for monomorphism); labels are both NULL or one value per
+ * node of each graph. A mapping lists, for every node of sg, its node of
+ * fg (NetworkX's dicts map fg nodes to sg nodes). With empty_matches ==
+ * 0 a graph without nodes gives no mapping, as in NetworkX. */
+
+/* A VF2++ search in progress; release with net_vf2pp_free. */
+typedef struct MatcherHandle MatcherHandle;
+
+/* Starts a search for the mappings of sg into fg. */
+int32_t net_vf2pp_new(const GraphHandle *fg, const GraphHandle *sg,
+                      const int64_t *fg_labels, const int64_t *sg_labels,
+                      int32_t problem, int32_t empty_matches,
+                      MatcherHandle **out, char *err, size_t err_len);
+
+/* Writes up to max further mappings (mapping i at mappings[i * n_sg ...))
+ * and their number into *found; fewer than max means the search is
+ * over. */
+int32_t net_vf2pp_next(MatcherHandle *h, int64_t max, int64_t *mappings,
+                       int64_t *found, char *err, size_t err_len);
+
+/* Releases a search (NULL is allowed). */
+void net_vf2pp_free(MatcherHandle *h);
+
+/* Number of mappings, counting at most limit (1: whether one exists). */
+int32_t net_vf2pp_count(const GraphHandle *fg, const GraphHandle *sg,
+                        const int64_t *fg_labels, const int64_t *sg_labels,
+                        int32_t problem, int32_t empty_matches,
+                        int64_t limit, int64_t *out, char *err,
+                        size_t err_len);
+
+/* NetworkX's could_be_isomorphic: *out = 1 when the node counts and,
+ * cumulatively, the sorted degree (properties bit 1), triangle (bit 2),
+ * and maximal-clique (bit 4) sequences agree. Bits 2 and 4 need
+ * undirected graphs. */
+int32_t net_could_be_isomorphic(const GraphHandle *g1, const GraphHandle *g2,
+                                int32_t properties, int32_t threads,
+                                int32_t *out, char *err, size_t err_len);
+
+/* Tree isomorphism, direction ignored: rooted (root1, root2 >= 0, roots
+ * mapped onto each other) or free (both < 0, rooted at the centres).
+ * *found = 1 and mapping[0..n1) (node of t2 for every node of t1) when
+ * isomorphic. A graph that is not a tree is an error. */
+int32_t net_tree_isomorphism(const GraphHandle *t1, const GraphHandle *t2,
+                             int64_t root1, int64_t root2, int64_t *mapping,
+                             int32_t *found, char *err, size_t err_len);
+
+/* ---- Rewiring and small-world coefficients -----------------------------
+ * Degree-preserving swaps as NetworkX performs them, drawing from the
+ * stream of seed (not NetworkX's samples). Rewired graphs come back as
+ * edge lists in from and to (m values each; a rewired simple graph has at
+ * most m edges): (u, v) with u <= v for undirected graphs, sorted, with
+ * their number in *n_edges. Undirected simple graphs (parallel edges
+ * merged, loops kept) except for the directed swap. */
+
+/* nswap double edge swaps (NetworkX's double_edge_swap); fails after
+ * max_tries attempts. */
+int32_t net_double_edge_swap(const GraphHandle *h, int64_t nswap,
+                             int64_t max_tries, uint64_t seed, int64_t *from,
+                             int64_t *to, int64_t *n_edges, char *err,
+                             size_t err_len);
+
+/* Connectivity-preserving swaps (connected_double_edge_swap): nswap
+ * attempts, *swaps of them kept. */
+int32_t net_connected_double_edge_swap(const GraphHandle *h, int64_t nswap,
+                                       uint64_t seed, int64_t *from,
+                                       int64_t *to, int64_t *n_edges,
+                                       int64_t *swaps, char *err,
+                                       size_t err_len);
+
+/* nswap directed three-edge swaps (directed_edge_swap); fails after
+ * max_tries attempts. */
+int32_t net_directed_edge_swap(const GraphHandle *h, int64_t nswap,
+                               int64_t max_tries, uint64_t seed,
+                               int64_t *from, int64_t *to, int64_t *n_edges,
+                               char *err, size_t err_len);
+
+/* A random reference graph (random_reference). */
+int32_t net_random_reference(const GraphHandle *h, int64_t niter,
+                             int32_t connectivity, uint64_t seed,
+                             int64_t *from, int64_t *to, int64_t *n_edges,
+                             char *err, size_t err_len);
+
+/* A lattice reference graph (lattice_reference) towards the n-by-n
+ * distance matrix dist (NULL: ring distance between node positions). */
+int32_t net_lattice_reference(const GraphHandle *h, int64_t niter,
+                              const double *dist, int32_t connectivity,
+                              uint64_t seed, int64_t *from, int64_t *to,
+                              int64_t *n_edges, char *err, size_t err_len);
+
+/* Small-world sigma (NetworkX's sigma; reference r from stream (seed,
+ * r)) into *out. Needs a connected graph. */
+int32_t net_small_world_sigma(const GraphHandle *h, int64_t niter,
+                              int64_t nrand, uint64_t seed, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Small-world omega (NetworkX's omega; round r from streams (seed, 2r)
+ * and (seed, 2r + 1)) into *out. Needs a connected graph. */
+int32_t net_small_world_omega(const GraphHandle *h, int64_t niter,
+                              int64_t nrand, uint64_t seed, int32_t threads,
+                              double *out, char *err, size_t err_len);
+
+/* Rich-club coefficient for k = 0, 1, ... (rich_club_coefficient) into
+ * out[0..*count) (out holds n); normalized != 0 divides by its mean over
+ * n_samples graphs rewired with q * m swaps (sample r from stream (seed,
+ * r)). Self-loops are an error. */
+int32_t net_rich_club(const GraphHandle *h, int32_t normalized, int64_t q,
+                      int64_t n_samples, uint64_t seed, int32_t threads,
+                      double *out, int64_t *count, char *err,
+                      size_t err_len);
+
 /* ---- Quadratic assignment procedure (QAP) -------------------------------
  * Matrices are n-by-n doubles in column-major order; NaN marks a missing
  * value and drops the dyad (listwise deletion). mode: 0 = digraph (every
@@ -1439,6 +1797,647 @@ int32_t net_random_sbm(int64_t k, const int64_t *sizes, const double *probs,
                        int32_t directed, int32_t loops, int64_t reps,
                        uint64_t seed, int32_t threads, EdgeListsHandle **out,
                        char *err, size_t err_len);
+
+/* ---- Shortest paths -----------------------------------------------------
+ * A path graph holds the arcs a search may follow, oriented for a mode,
+ * with one length per arc; build it once and run any number of searches.
+ * Lengths are unit (weighted == 0), the edge weights read per weights_as,
+ * or one value per edge (lengths != NULL; +Inf hides an edge). Searches
+ * other than the negative-length ones need non-negative lengths. tie:
+ * 0 = path lengths equal to a relative tolerance of 1e-10, 1 = exactly
+ * equal (NetworkX). Parent and predecessor arrays use -1 for "no node";
+ * all-pairs matrices are column-major with one row per source. Paths,
+ * predecessor lists, and cycles come back as a list collection: query the
+ * number of lists and nodes, allocate, then copy; list i is
+ * nodes[offsets[i] .. offsets[i + 1]) with value values[i] (a path
+ * length, or NaN). Ties among equally short paths are settled by node
+ * index, so results are deterministic. */
+
+/* Arcs with lengths; release with net_path_graph_free. */
+typedef struct PathGraphHandle PathGraphHandle;
+
+/* mode 1 = out, 2 = in (paths to the source), 3 = all. collapse_parallel
+ * != 0 keeps only the shortest of parallel arcs (node-sequence path counts,
+ * as NetworkX reads a multigraph). n_lengths must equal the edge count
+ * when lengths != NULL. */
+int32_t net_path_graph_new(const GraphHandle *h, int32_t mode,
+                           int32_t weighted, int32_t weights_as,
+                           const double *lengths, int64_t n_lengths,
+                           int32_t collapse_parallel, PathGraphHandle **out,
+                           char *err, size_t err_len);
+
+/* Releases a path graph (NULL is allowed). */
+void net_path_graph_free(PathGraphHandle *h);
+
+/* Number of arcs, or -1 for NULL. */
+int64_t net_path_graph_arc_count(const PathGraphHandle *h);
+
+/* A collection of node lists; release with net_path_lists_free. */
+typedef struct PathListsHandle PathListsHandle;
+
+/* Number of lists, or -1 for NULL. */
+int64_t net_path_lists_count(const PathListsHandle *h);
+
+/* Total number of nodes over all lists, or -1 for NULL. */
+int64_t net_path_lists_total(const PathListsHandle *h);
+
+/* offsets holds count + 1 values, nodes total values, values (may be
+ * NULL) count values. */
+int32_t net_path_lists_copy(const PathListsHandle *h, int64_t *offsets,
+                            int64_t *nodes, double *values, char *err,
+                            size_t err_len);
+
+/* Releases a list collection (NULL is allowed). */
+void net_path_lists_free(PathListsHandle *h);
+
+/* Shortest paths from the nearest of n_sources sources: dist (Inf when
+ * not reached) and parent, and when not NULL parent_edge (input index of
+ * the edge from the parent) and origin (the source each node was reached
+ * from); n values each. cutoff bounds distances (Inf for none);
+ * target >= 0 stops once the target is settled (other nodes may then be
+ * reported unreached); reverse != 0 follows arcs backward. */
+int32_t net_shortest_paths(const PathGraphHandle *pg, const int64_t *sources,
+                           int64_t n_sources, double cutoff, int64_t target,
+                           int32_t reverse, double *dist, int64_t *parent,
+                           int64_t *parent_edge, int64_t *origin, char *err,
+                           size_t err_len);
+
+/* Predecessor lists of one search (list v: every u with an arc u -> v on a
+ * shortest path, in settling order); dist receives n distances. */
+int32_t net_shortest_path_predecessors(const PathGraphHandle *pg,
+                                       const int64_t *sources,
+                                       int64_t n_sources, double cutoff,
+                                       int32_t reverse, int32_t tie,
+                                       double *dist, PathListsHandle **out,
+                                       char *err, size_t err_len);
+
+/* Distances and parents (parent may be NULL) from every source (every node
+ * when sources is NULL or n_sources < 0); (number of sources) * n values
+ * each. */
+int32_t net_all_pairs_shortest_paths(const PathGraphHandle *pg,
+                                     const int64_t *sources,
+                                     int64_t n_sources, double cutoff,
+                                     int32_t threads, double *dist,
+                                     int64_t *parent, char *err,
+                                     size_t err_len);
+
+/* One shortest path from s to t by bidirectional search: zero lists (no
+ * path) or one path with its length. */
+int32_t net_bidirectional_shortest_path(const PathGraphHandle *pg, int64_t s,
+                                        int64_t t, PathListsHandle **out,
+                                        char *err, size_t err_len);
+
+/* A* from s to t; heuristic holds n estimates of the remaining length to t
+ * (a shortest path when none overestimates). Nodes whose length plus
+ * heuristic exceeds cutoff are dropped (Inf for none). */
+int32_t net_astar_path(const PathGraphHandle *pg, int64_t s, int64_t t,
+                       const double *heuristic, double cutoff,
+                       PathListsHandle **out, char *err, size_t err_len);
+
+/* Shortest paths with lengths of any sign. method 0 = Bellman-Ford (any
+ * number of sources), 1 = Goldberg-Radzik (one source). Without a negative
+ * cycle reachable from the sources: dist and parent (n values) are filled,
+ * *preds (if preds != NULL) receives predecessor lists, and *cycle zero
+ * lists. Otherwise *cycle receives the cycle as a closed walk (first node
+ * repeated) and nothing else is written. */
+int32_t net_negative_shortest_paths(const PathGraphHandle *pg,
+                                    const int64_t *sources, int64_t n_sources,
+                                    int32_t method, int32_t tie, double *dist,
+                                    int64_t *parent, PathListsHandle **preds,
+                                    PathListsHandle **cycle, char *err,
+                                    size_t err_len);
+
+/* A negative cycle reachable from source (anywhere when source < 0): zero
+ * lists or one closed walk. */
+int32_t net_negative_cycle(const PathGraphHandle *pg, int64_t source,
+                           PathListsHandle **out, char *err, size_t err_len);
+
+/* All-pairs distances and parents by Johnson's algorithm (lengths of any
+ * sign), as net_all_pairs_shortest_paths; *cycle receives zero lists, or
+ * one negative cycle and the matrices are not written. */
+int32_t net_johnson(const PathGraphHandle *pg, const int64_t *sources,
+                    int64_t n_sources, int32_t threads, double *dist,
+                    int64_t *parent, PathListsHandle **cycle, char *err,
+                    size_t err_len);
+
+/* Floyd-Warshall: n-by-n distances and predecessors (pred may be NULL; the
+ * node before v on the path from u). *negative_cycle is 1 when the network
+ * has a negative cycle (the matrices are then not path lengths). */
+int32_t net_floyd_warshall(const PathGraphHandle *pg, int32_t threads,
+                           double *dist, int64_t *pred,
+                           int32_t *negative_cycle, char *err,
+                           size_t err_len);
+
+/* Number of shortest paths (node sequences) from s to every node; out
+ * holds n doubles. */
+int32_t net_count_shortest_paths(const PathGraphHandle *pg, int64_t s,
+                                 int32_t tie, double *out, char *err,
+                                 size_t err_len);
+
+/* Every shortest path from s to t in lexicographic order with its length
+ * (zero lists when t is unreachable); fails beyond max_paths paths. */
+int32_t net_all_shortest_paths(const PathGraphHandle *pg, int64_t s,
+                               int64_t t, int32_t tie, int64_t max_paths,
+                               PathListsHandle **out, char *err,
+                               size_t err_len);
+
+/* The k shortest simple paths from s to t in order of length (Yen). */
+int32_t net_k_shortest_paths(const PathGraphHandle *pg, int64_t s, int64_t t,
+                             int64_t k, PathListsHandle **out, char *err,
+                             size_t err_len);
+
+/* A shortest path from s to t avoiding n_nodes nodes and n_edges edges
+ * (input indices): zero lists or one path with its length. */
+int32_t net_shortest_path_avoiding(const PathGraphHandle *pg, int64_t s,
+                                   int64_t t, const int64_t *nodes,
+                                   int64_t n_nodes, const int64_t *edges,
+                                   int64_t n_edges, PathListsHandle **out,
+                                   char *err, size_t err_len);
+
+/* ---- Centrality: path variants, current flow, walks ---------------------
+ * weights_as: path-based measures read 0 = distance / 1 = strength as path
+ * lengths w / 1/w; current-flow measures read a distance as a resistance
+ * (conductance 1/w) and a strength as a conductance. rescale: 0 =
+ * unordered pairs (igraph), 1 = NetworkX's betweenness_centrality (sampled
+ * sources passed as sources), 2 = NetworkX's *_subset functions.
+ * parallel: 0 = parallel edges are distinct paths (igraph), 1 = adjacent
+ * nodes are joined once (NetworkX). edge_split: 0 = proportional to path
+ * counts, 1 = NetworkX's subset edge betweenness. tie: 0 = relative
+ * tolerance 1e-10, 1 = exact (NetworkX). Node lists: NULL or a negative
+ * count means every node. Pairs are flat arrays s0, t0, s1, t1, ...
+ * Matrices are n-by-n and column-major. Undefined values are NaN. */
+
+/* Betweenness for sources and targets: nodes n values, edges (may be NULL)
+ * m values. endpoints != 0 counts the endpoints of each path. */
+int32_t net_betweenness_subset(const GraphHandle *h, const int64_t *sources,
+                               int64_t n_sources, const int64_t *targets,
+                               int64_t n_targets, int32_t weighted,
+                               int32_t weights_as, int32_t endpoints,
+                               int32_t normalized, int32_t rescale,
+                               int32_t parallel, int32_t edge_split,
+                               int32_t tie, int32_t threads, double *nodes,
+                               double *edges, char *err, size_t err_len);
+
+/* Percolation centrality with percolation states (n doubles). */
+int32_t net_percolation_centrality(const GraphHandle *h, const double *states,
+                                   int32_t weighted, int32_t weights_as,
+                                   int32_t parallel, int32_t tie,
+                                   int32_t threads, double *out, char *err,
+                                   size_t err_len);
+
+/* Load centrality; cutoff bounds path lengths (Inf for none);
+ * networkx_ties != 0 reproduces NetworkX's handling of the source among
+ * several predecessors. */
+int32_t net_load_centrality(const GraphHandle *h, int32_t weighted,
+                            int32_t weights_as, int32_t normalized,
+                            double cutoff, int32_t networkx_ties,
+                            int32_t tie, int32_t threads, double *out,
+                            char *err, size_t err_len);
+
+/* NetworkX's edge load: out holds 2m values, per edge the ordered pairs
+ * (source, target) and (target, source). Weights are ignored. */
+int32_t net_edge_load(const GraphHandle *h, double cutoff, int32_t threads,
+                      double *out, char *err, size_t err_len);
+
+/* Current-flow betweenness: nodes n values, edges (may be NULL) m values;
+ * NaN when the network is disconnected. */
+int32_t net_current_flow_betweenness(const GraphHandle *h, int32_t weighted,
+                                     int32_t weights_as, int32_t normalized,
+                                     int32_t threads, double *nodes,
+                                     double *edges, char *err,
+                                     size_t err_len);
+
+/* Current-flow betweenness for sources and targets; networkx != 0 uses
+ * NetworkX's formula (which adds 1/(2 - n) to node values). */
+int32_t net_current_flow_betweenness_subset(
+    const GraphHandle *h, const int64_t *sources, int64_t n_sources,
+    const int64_t *targets, int64_t n_targets, int32_t networkx,
+    int32_t weighted, int32_t weights_as, int32_t normalized, int32_t threads,
+    double *nodes, double *edges, char *err, size_t err_len);
+
+/* Approximate current-flow betweenness from n_pairs pairs, or, when
+ * n_pairs < 0, from random pairs drawn with seed (as many as epsilon and
+ * sample_weight require; an error beyond kmax). */
+int32_t net_current_flow_betweenness_approx(
+    const GraphHandle *h, const int64_t *pairs, int64_t n_pairs,
+    double epsilon, int64_t kmax, double sample_weight, uint64_t seed,
+    int32_t weighted, int32_t weights_as, int32_t normalized, int32_t threads,
+    double *out, char *err, size_t err_len);
+
+/* Current-flow closeness (1 / sum of resistance distances). */
+int32_t net_current_flow_closeness(const GraphHandle *h, int32_t weighted,
+                                   int32_t weights_as, int32_t threads,
+                                   double *out, char *err, size_t err_len);
+
+/* Resistance distances, n * n values (Inf between components). */
+int32_t net_resistance_distance(const GraphHandle *h, int32_t weighted,
+                                int32_t weights_as, int32_t threads,
+                                double *out, char *err, size_t err_len);
+
+/* Effective graph resistance (one double; Inf when disconnected). */
+int32_t net_effective_graph_resistance(const GraphHandle *h, int32_t weighted,
+                                       int32_t weights_as, int32_t threads,
+                                       double *out, char *err, size_t err_len);
+
+/* Kemeny's constant of the random walk (one double). */
+int32_t net_kemeny_constant(const GraphHandle *h, int32_t weighted,
+                            double *out, char *err, size_t err_len);
+
+/* Second-order centrality (n doubles). */
+int32_t net_second_order_centrality(const GraphHandle *h, int32_t weighted,
+                                    double *out, char *err, size_t err_len);
+
+/* Communicability matrix e^A of the binary undirected reading, n * n. */
+int32_t net_communicability(const GraphHandle *h, double *out, char *err,
+                            size_t err_len);
+
+/* Communicability betweenness (n doubles). */
+int32_t net_communicability_betweenness(const GraphHandle *h, int32_t threads,
+                                        double *out, char *err,
+                                        size_t err_len);
+
+/* Dispersion of n_pairs ties (u, v); normalized != 0 gives
+ * (dispersion + b)^alpha / (embeddedness + c). */
+int32_t net_dispersion(const GraphHandle *h, const int64_t *pairs,
+                       int64_t n_pairs, int32_t normalized, double alpha,
+                       double b, double c, double *out, char *err,
+                       size_t err_len);
+
+/* VoteRank: up to count nodes (all when count < 0) in the order chosen;
+ * out holds n values and *n_out receives how many were chosen. */
+int32_t net_voterank(const GraphHandle *h, int64_t count, int64_t *out,
+                     int64_t *n_out, char *err, size_t err_len);
+
+/* Laplacian centrality of the undirected reading (n doubles). */
+int32_t net_laplacian_centrality(const GraphHandle *h, int32_t weighted,
+                                 int32_t normalized, double *out, char *err,
+                                 size_t err_len);
+
+/* Trophic measures of a directed network: what 0 = levels (n values),
+ * 1 = differences (m values), 2 = incoherence parameter (one value;
+ * cannibalism != 0 keeps self-loops). */
+int32_t net_trophic(const GraphHandle *h, int32_t what, int32_t weighted,
+                    int32_t cannibalism, double *out, char *err,
+                    size_t err_len);
+
+/* Local (n values; may be NULL) and global (one value; may be NULL)
+ * reaching centrality. */
+int32_t net_reaching_centrality(const GraphHandle *h, int32_t weighted,
+                                int32_t normalized, int32_t threads,
+                                double *local, double *global, char *err,
+                                size_t err_len);
+
+/* ---- Distance measures ---------------------------------------------------
+ * mode 1 = out, 2 = in, 3 = all; reachable 0 = require a (strongly)
+ * connected network (NetworkX; empty result otherwise), 1 = eccentricity
+ * over the nodes reached (igraph). index: 0 = Wiener, 1 = Schultz,
+ * 2 = Gutman, 3 = hyper-Wiener (published, half NetworkX's), 4 =
+ * hyper-Wiener (NetworkX), 5 = harmonic diameter, 6 = global efficiency.
+ * Node sets are written to out (n values) with their size in *count. */
+
+/* Center (which 0) or periphery (which 1). */
+int32_t net_center_periphery(const GraphHandle *h, int32_t which,
+                             int32_t reachable, int32_t mode,
+                             int32_t weighted, int32_t weights_as,
+                             int32_t threads, int64_t *out, int64_t *count,
+                             char *err, size_t err_len);
+
+/* Barycenter; totals (may be NULL) receives every node's total distance. */
+int32_t net_barycenter(const GraphHandle *h, int32_t mode, int32_t weighted,
+                       int32_t weights_as, int32_t tie, int32_t threads,
+                       int64_t *out, int64_t *count, double *totals,
+                       char *err, size_t err_len);
+
+/* A distance index (one double; Inf for the Wiener family on disconnected
+ * networks). */
+int32_t net_distance_index(const GraphHandle *h, int32_t index, int32_t mode,
+                           int32_t weighted, int32_t weights_as,
+                           int32_t threads, double *out, char *err,
+                           size_t err_len);
+
+/* Local efficiency (one double); loop_is_neighbor != 0 counts a looped
+ * node among its own neighbors (NetworkX). */
+int32_t net_local_efficiency(const GraphHandle *h, int32_t loop_is_neighbor,
+                             int32_t threads, double *out, char *err,
+                             size_t err_len);
+
+/* Closeness vitality: W(G) - W(G - v) (n doubles). */
+int32_t net_closeness_vitality(const GraphHandle *h, int32_t mode,
+                               int32_t weighted, int32_t weights_as,
+                               int32_t threads, double *out, char *err,
+                               size_t err_len);
+
+/* ---- Flows and cuts -----------------------------------------------------
+ * sources and sinks hold 0-based node indices (at least one each, disjoint,
+ * no repeats). Capacities hold one value per edge in input order,
+ * non-negative and possibly INFINITY; for maximum flows and cuts a NULL
+ * capacity gives every edge capacity 1, for minimum-cost flows a NULL
+ * capacity is infinite and a NULL cost 0 (NetworkX's defaults). Self-loops
+ * carry no flow; parallel edges add their capacities. side: 0 = smallest
+ * source side of a minimum cut (nodes reachable from the sources in the
+ * residual network), 1 = largest source side (NetworkX's minimum_cut).
+ * An unbounded problem (a path or cycle of infinite capacity) is an error.
+ * Output arrays documented as "may be NULL" are skipped when NULL.
+ *
+ * A list collection holds integer lists, each with one double attached
+ * (its meaning depends on the function): query the sizes, allocate, then
+ * copy. List i is items[offsets[i] .. offsets[i + 1]). */
+
+/* A collection of integer lists; release with net_lists_free. */
+typedef struct ListsHandle ListsHandle;
+
+/* Number of lists, or -1 for a NULL handle. */
+int64_t net_lists_count(const ListsHandle *h);
+
+/* Total number of items over all lists, or -1 for a NULL handle. */
+int64_t net_lists_total(const ListsHandle *h);
+
+/* offsets must hold count + 1 values, items total values, and values
+ * (may be NULL) count values. */
+int32_t net_lists_copy(const ListsHandle *h, int64_t *offsets, int64_t *items,
+                       double *values, char *err, size_t err_len);
+
+/* Releases a list collection (NULL is allowed). */
+void net_lists_free(ListsHandle *h);
+
+/* Maximum flow from the sources to the sinks (Dinic): the value to *value
+ * and the flow on each edge to edge_flow (m doubles, may be NULL; for
+ * undirected edges the net flow from the first to the second endpoint). */
+int32_t net_max_flow(const GraphHandle *h, const int64_t *sources,
+                     int64_t n_sources, const int64_t *sinks, int64_t n_sinks,
+                     const double *capacity, double *value, double *edge_flow,
+                     char *err, size_t err_len);
+
+/* Minimum cut between the sources and the sinks: its capacity to *value,
+ * 1/0 per node to source_side (n, may be NULL), and 1/0 per edge to
+ * cut_edges (m, may be NULL; edges of positive capacity leaving the
+ * source side, either way if undirected). */
+int32_t net_min_cut(const GraphHandle *h, const int64_t *sources,
+                    int64_t n_sources, const int64_t *sinks, int64_t n_sinks,
+                    const double *capacity, int32_t side, double *value,
+                    int32_t *source_side, int32_t *cut_edges, char *err,
+                    size_t err_len);
+
+/* Minimum cut with node capacities (node_capacity: n doubles, NULL = 1)
+ * and edge capacities (edge_capacity: m doubles, NULL = infinite, so only
+ * nodes are cut), found by splitting every node; terminals are never cut.
+ * Its capacity to *value, 1/0 flags to cut_nodes (n, may be NULL) and
+ * cut_edges (m, may be NULL). */
+int32_t net_min_node_cut_capacitated(const GraphHandle *h,
+                                     const int64_t *sources, int64_t n_sources,
+                                     const int64_t *sinks, int64_t n_sinks,
+                                     const double *node_capacity,
+                                     const double *edge_capacity, int32_t side,
+                                     double *value, int32_t *cut_nodes,
+                                     int32_t *cut_edges, char *err,
+                                     size_t err_len);
+
+/* Minimum-cost flow of a directed network (network simplex) meeting
+ * demand (n doubles: positive receives, negative supplies, summing to 0):
+ * the cost to *total_cost and the edge flows to edge_flow (m, may be
+ * NULL). */
+int32_t net_min_cost_flow(const GraphHandle *h, const double *demand,
+                          const double *capacity, const double *cost,
+                          double *total_cost, double *edge_flow, char *err,
+                          size_t err_len);
+
+/* Maximum flow from source to sink of least cost (directed networks): the
+ * flow value to *value, its cost to *total_cost, edge flows to edge_flow
+ * (m, may be NULL). */
+int32_t net_max_flow_min_cost(const GraphHandle *h, int64_t source,
+                              int64_t sink, const double *capacity,
+                              const double *cost, double *value,
+                              double *total_cost, double *edge_flow, char *err,
+                              size_t err_len);
+
+/* Gomory-Hu tree of an undirected network rooted at node 0 (Gusfield's
+ * method; NetworkX's gomory_hu_tree for nodes in order): parent[v] is v's
+ * tree neighbour toward the root (-1 for the root) and weight[v] the
+ * weight of that edge (0 for the root); n values each. */
+int32_t net_gomory_hu_tree(const GraphHandle *h, const double *capacity,
+                           int64_t *parent, double *weight, char *err,
+                           size_t err_len);
+
+/* ---- Connectivity -------------------------------------------------------
+ * Connectivity uses the simple graph (parallel edges once, self-loops
+ * ignored, weights unused) with directions kept. kind: 0 = node (vertex)
+ * connectivity, 1 = edge connectivity. convention (node cuts): 0 = engine
+ * (the cut nearest the source; adjacent nodes are an error), 1 = NetworkX
+ * (minimum_st_node_cut; empty for adjacent nodes). order: 0 = sorted
+ * neighbours, 1 = input order (NetworkX's numbering for a graph built from
+ * the same edges in the same order). In the cut functions s = t = -1 asks
+ * for a global cut, which is empty for a network that is not connected
+ * (NetworkX raises an error). Bridges, cut points, and blocks are under
+ * "Structure and description" and "Cohesion and groups". */
+
+/* Local node or edge connectivity between s and t (s != t) to *out: the
+ * largest number of internally node-disjoint (an edge s-t counts as one)
+ * or edge-disjoint paths. */
+int32_t net_local_connectivity(const GraphHandle *h, int64_t s, int64_t t,
+                               int32_t kind, int64_t *out, char *err,
+                               size_t err_len);
+
+/* Global node or edge connectivity to *out (0 if not connected, n - 1 for
+ * a complete graph's node connectivity). */
+int32_t net_connectivity(const GraphHandle *h, int32_t kind, int32_t threads,
+                         int64_t *out, char *err, size_t err_len);
+
+/* Local node connectivity of every ordered pair to out (n * n doubles,
+ * column-major, zero diagonal) and its mean over pairs to *average (may be
+ * NULL; NetworkX's average_node_connectivity). */
+int32_t net_all_pairs_node_connectivity(const GraphHandle *h, int32_t threads,
+                                        double *out, double *average,
+                                        char *err, size_t err_len);
+
+/* A minimum edge cut between s and t (or global): its node pairs (u, v),
+ * u on the source side, to from and to (m values each, allocated by the
+ * caller) and their number to *size. The s-t cut leaves the largest source
+ * side of a minimum cut, as NetworkX's minimum_st_edge_cut. */
+int32_t net_min_edge_cut(const GraphHandle *h, int64_t s, int64_t t,
+                         int32_t threads, int64_t *from, int64_t *to,
+                         int64_t *size, char *err, size_t err_len);
+
+/* A minimum node cut between s and t (or global): its nodes to nodes (n
+ * values allocated by the caller) and their number to *size. */
+int32_t net_min_node_cut(const GraphHandle *h, int64_t s, int64_t t,
+                         int32_t convention, int32_t threads, int64_t *nodes,
+                         int64_t *size, char *err, size_t err_len);
+
+/* Node-disjoint (kind 0) or edge-disjoint (kind 1) paths from s to t, as
+ * many as possible, each a node sequence (value 0); none if t is
+ * unreachable. */
+int32_t net_disjoint_paths(const GraphHandle *h, int64_t s, int64_t t,
+                           int32_t kind, ListsHandle **out, char *err,
+                           size_t err_len);
+
+/* k-components of an undirected network (maximal node sets inducing a
+ * k-connected subgraph): one sorted list per component carrying its k,
+ * for k = 1, 2, ... in turn. */
+int32_t net_k_components(const GraphHandle *h, int32_t threads,
+                         ListsHandle **out, char *err, size_t err_len);
+
+/* k-edge-connected components (k >= 1; classes of nodes joined by k
+ * edge-disjoint paths, both ways if directed): a label per node (0-based,
+ * in order of each class's lowest node) to membership. */
+int32_t net_k_edge_components(const GraphHandle *h, int64_t k, int32_t threads,
+                              int32_t *membership, char *err, size_t err_len);
+
+/* Local bridges of an undirected network (edges whose endpoints share no
+ * neighbour): 1/0 per edge to flags (m) and each local bridge's span to
+ * span (m, may be NULL; INFINITY without another path, NaN otherwise). */
+int32_t net_local_bridges(const GraphHandle *h, int32_t *flags, double *span,
+                          char *err, size_t err_len);
+
+/* Strongly connected components of a directed network, numbered as the
+ * nodes of its condensation (completion order of Tarjan's algorithm, a
+ * reverse topological order), to membership (n) and their number to
+ * *count. */
+int32_t net_condensation(const GraphHandle *h, int32_t order,
+                         int32_t *membership, int64_t *count, char *err,
+                         size_t err_len);
+
+/* Attracting components of a directed network: the component label (as
+ * in net_condensation) of each node in one, else -1, to membership (n). */
+int32_t net_attracting_components(const GraphHandle *h, int32_t order,
+                                  int32_t *membership, char *err,
+                                  size_t err_len);
+
+/* Whether a directed network is semiconnected (every pair joined by a
+ * path in at least one direction): 1 or 0 to *out. */
+int32_t net_is_semiconnected(const GraphHandle *h, int32_t *out, char *err,
+                             size_t err_len);
+
+/* ---- Trees and directed acyclic graphs -----------------------------------
+ * weighted != 0 uses edge weights, otherwise every edge weighs 1;
+ * self-loops never belong to a tree or branching. algorithm (spanning
+ * trees): 0 = Kruskal, 1 = Prim, 2 = Boruvka; all return the same forest,
+ * the unique optimum when edges are compared by (weight, position).
+ * kind (branchings): 0 = maximum branching, 1 = minimum branching,
+ * 2 = minimal branching (NetworkX's minimal_branching), 3 = maximum
+ * spanning arborescence, 4 = minimum spanning arborescence. order: 0 =
+ * sorted neighbours, 1 = input order (NetworkX's results for a graph
+ * built from the same edges in the same order). reflexive: 0 = (v, v)
+ * for nodes on cycles (NetworkX's default), 1 = never, 2 = always. The
+ * DAG functions fail on a network with a cycle (a self-loop included). */
+
+/* Minimum (maximum == 0) or maximum spanning forest of an undirected
+ * network: edge positions in increasing (weight, position) order to edges
+ * (allocate n), their number to *size, their total weight to *weight. */
+int32_t net_spanning_tree(const GraphHandle *h, int32_t weighted,
+                          int32_t maximum, int32_t algorithm, int64_t *edges,
+                          int64_t *size, double *weight, char *err,
+                          size_t err_len);
+
+/* Optimum branching or spanning arborescence of a directed network (root
+ * >= 0 fixes the arborescence's root, -1 for none; Edmonds' algorithm):
+ * edge positions (increasing) to edges (allocate n), their number to
+ * *size, their total weight to *weight. */
+int32_t net_branching(const GraphHandle *h, int32_t weighted, int32_t kind,
+                      int64_t root, int64_t *edges, int64_t *size,
+                      double *weight, char *err, size_t err_len);
+
+/* A topological order of a DAG, generation by generation, to nodes (n),
+ * and each node's generation (0 for roots) to generation (n, may be
+ * NULL). */
+int32_t net_topological_sort(const GraphHandle *h, int32_t order,
+                             int64_t *nodes, int64_t *generation, char *err,
+                             size_t err_len);
+
+/* The topological order that always takes the smallest available node, to
+ * nodes (n). */
+int32_t net_lexicographical_topological_sort(const GraphHandle *h,
+                                             int64_t *nodes, char *err,
+                                             size_t err_len);
+
+/* Every topological order of a DAG (at most limit; 0 = all), one list
+ * each, in NetworkX's sequence for the input order. */
+int32_t net_all_topological_sorts(const GraphHandle *h, int32_t order,
+                                  int64_t limit, ListsHandle **out, char *err,
+                                  size_t err_len);
+
+/* Whether the network is a directed acyclic graph: 1 or 0 to *out. */
+int32_t net_is_dag(const GraphHandle *h, int32_t *out, char *err,
+                   size_t err_len);
+
+/* Transitive closure of a directed network: list u holds every v with
+ * (u, v) in the closure, sorted. */
+int32_t net_transitive_closure(const GraphHandle *h, int32_t reflexive,
+                               ListsHandle **out, char *err, size_t err_len);
+
+/* Transitive reduction of a DAG: list u holds the v with u -> v kept. */
+int32_t net_transitive_reduction(const GraphHandle *h, ListsHandle **out,
+                                 char *err, size_t err_len);
+
+/* A longest path of a DAG: its nodes to path (allocate n), their number to
+ * *size, its length to *length (negative arcs never extend a path). */
+int32_t net_dag_longest_path(const GraphHandle *h, int32_t weighted,
+                             int32_t order, int64_t *path, int64_t *size,
+                             double *length, char *err, size_t err_len);
+
+/* Immediate dominators from start (Cooper, Harvey, and Kennedy) to out (n
+ * values; the start's is itself, -1 for nodes unreachable from it). */
+int32_t net_immediate_dominators(const GraphHandle *h, int64_t start,
+                                 int64_t *out, char *err, size_t err_len);
+
+/* Dominance frontiers from start: one sorted list per node, value 1 for
+ * nodes reachable from the start and 0 (empty list) otherwise. */
+int32_t net_dominance_frontiers(const GraphHandle *h, int64_t start,
+                                ListsHandle **out, char *err, size_t err_len);
+
+/* Lowest common ancestor of each of k pairs (a[i], b[i]) to out (k values;
+ * -1 when a DAG pair has no common ancestor). root: -2 for a DAG, -1 for a
+ * tree with its own root, otherwise the tree's root. */
+int32_t net_lowest_common_ancestors(const GraphHandle *h, const int64_t *a,
+                                    const int64_t *b, int64_t k, int64_t root,
+                                    int32_t order, int64_t *out, char *err,
+                                    size_t err_len);
+
+/* ---- Cycles -------------------------------------------------------------
+ * Cycles are node sequences; a self-loop is the cycle [v] and parallel
+ * undirected edges the cycle [u, v]. order: 0 = sorted neighbours, 1 =
+ * input order (NetworkX's results for a graph built from the same edges in
+ * the same order). length_bound: the longest cycle to report in nodes, -1
+ * for none; limit: the most cycles to report, 0 for all. orientation
+ * (find_cycle, directed networks): 0 = original, 1 = reverse, 2 = ignore.
+ * Cycle bases are for undirected networks and use every edge, so they have
+ * m - n + c cycles. */
+
+/* A cycle basis of an undirected network (NetworkX's cycle_basis for the
+ * same neighbour order; root >= 0 starts the first search there, -1 as
+ * NetworkX), one list per cycle. */
+int32_t net_cycle_basis(const GraphHandle *h, int32_t order, int64_t root,
+                        ListsHandle **out, char *err, size_t err_len);
+
+/* A minimum cycle basis of an undirected network (de Pina's algorithm),
+ * one list per cycle carrying its weight. */
+int32_t net_minimum_cycle_basis(const GraphHandle *h, int32_t weighted,
+                                int32_t threads, ListsHandle **out, char *err,
+                                size_t err_len);
+
+/* Every simple cycle (Johnson's algorithm), one list each. */
+int32_t net_simple_cycles(const GraphHandle *h, int64_t length_bound,
+                          int64_t limit, ListsHandle **out, char *err,
+                          size_t err_len);
+
+/* Every chordless (induced) cycle, one list each. */
+int32_t net_chordless_cycles(const GraphHandle *h, int64_t length_bound,
+                             int64_t limit, ListsHandle **out, char *err,
+                             size_t err_len);
+
+/* Length of a shortest cycle to *out (INFINITY without one; 1 for a
+ * self-loop, 2 for parallel undirected edges). */
+int32_t net_girth(const GraphHandle *h, double *out, char *err,
+                  size_t err_len);
+
+/* A cycle found by depth-first search over edges (NetworkX's find_cycle)
+ * from source (-1: every node in turn): edge positions to edges and 1 for
+ * an edge traversed against its direction to reversed (m values each,
+ * allocated by the caller), the number of edges to *size (0 without a
+ * cycle). */
+int32_t net_find_cycle(const GraphHandle *h, int64_t source,
+                       int32_t orientation, int32_t order, int64_t *edges,
+                       int32_t *reversed, int64_t *size, char *err,
+                       size_t err_len);
 
 #ifdef __cplusplus
 }

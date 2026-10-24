@@ -271,7 +271,14 @@ pub fn continuous_core_periphery(
     if opts.fit == ContinuousFit::Minres {
         return minres(&obj, opts);
     }
-    let parts = parallel::for_each_item(opts.starts, opts.threads, Vec::new, |acc, s| {
+    // Starts differ in length, so threads claim them as they finish; runs
+    // are sorted by start below.
+    let threads = parallel::threads_for(
+        opts.threads,
+        opts.starts,
+        (opts.starts as u64).saturating_mul((n * n) as u64 * 16),
+    );
+    let parts = parallel::for_each_claimed(opts.starts, threads, Vec::new, |acc, s| {
         let t = if s == 0 {
             // Total value plus 1, as t = sqrt(c).
             let mut start = vec![1.0; n];

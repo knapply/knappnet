@@ -89,6 +89,11 @@ impl Remaining {
     fn betweenness(&self, sources: &[usize], eb: &mut [f64], threads: usize) {
         let n = self.rows.len();
         let m = self.edges.len();
+        let threads = parallel::threads_for(
+            threads,
+            sources.len(),
+            parallel::search_work(sources.len(), n, 2 * m),
+        );
         let parts = parallel::for_each_item(
             sources.len(),
             threads,

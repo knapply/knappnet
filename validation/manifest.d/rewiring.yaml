@@ -1,0 +1,127 @@
+# Degree-preserving edge swaps (Maslov and Sneppen 2002), connected swaps
+# (NetworkX's windowed procedure), directed three-edge swaps (Erdos,
+# Miklos, and Toroczkai 2010), random and lattice reference
+# graphs (Sporns and Zwi 2004), the small-world coefficients sigma
+# (Humphries and Gurney 2008) and omega (Telesford et al. 2011), and the
+# rich-club coefficient (Zhou and Mondragon 2004; Colizza et al. 2006), as
+# NetworkX 3.7 implements them. Format: see ../README.md; runners and
+# encodings in ../bindings/rewiring.py.
+#
+# The engine and NetworkX draw from different random generators, so the
+# swaps are compared through the contract every result must satisfy
+# (degrees kept, simple, connected where required, the number of edges),
+# which the NetworkX oracle checks on its own rewired graph and the
+# definition oracle states; [-1] where both fail (too few nodes or edges,
+# a disconnected input, no possible swap). Means over random graphs (sigma,
+# omega, the normalized rich club) are compared with a tolerance a few
+# times the spread of NetworkX's estimates across seeds. Every oracle reads
+# the fixture as a simple Graph or DiGraph.
+
+swap_double:
+  engine: {fn: swap_contract, procedure: double}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the contract: degrees kept, simple, as many edges (rewiring_definition_oracle.py)"
+    networkx:
+      call: "nx.double_edge_swap(G, nswap = 10, max_tries = 1000, seed = 7), contract checked on its result"
+
+swap_connected:
+  engine: {fn: swap_contract, procedure: connected}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the contract: degrees kept, connected, as many edges"
+    networkx:
+      call: "nx.connected_double_edge_swap(G, nswap = 20, seed = 7), contract checked on its result"
+
+swap_directed:
+  engine: {fn: swap_contract, procedure: directed}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the contract: in- and out-degrees kept, simple, as many arcs"
+    networkx:
+      call: "nx.directed_edge_swap(G, nswap = 5, max_tries = 500, seed = 7), contract checked on its result"
+
+reference_random:
+  engine: {fn: swap_contract, procedure: random}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the contract: degrees kept, connected if the input is, as many edges"
+    networkx:
+      call: "nx.random_reference(G, niter = 2, seed = 7), contract checked on its result"
+      undefined_on: [star8]
+      undefined_reason: >-
+        every draw on a star is rejected and NetworkX redraws forever; the
+        engine stops each round after 100 (m + 1) rejected draws
+
+reference_lattice:
+  engine: {fn: swap_contract, procedure: lattice}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the contract: degrees kept, connected if the input is, as many edges"
+    networkx:
+      call: "nx.lattice_reference(G, niter = 2, seed = 7), contract checked on its result"
+      undefined_on: [star8]
+      undefined_reason: >-
+        every draw on a star is rejected and NetworkX redraws forever; the
+        engine stops each round after 100 (m + 1) rejected draws
+
+small_world_sigma:
+  engine: {fn: small_world, coefficient: sigma, niter: 20, nrand: 20, seeds: 10}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.15}
+  oracles:
+    networkx:
+      call: "mean of nx.sigma(G, niter = 20, nrand = 20, seed = s) over s = 0..9; -1 where it raises (disconnected graphs)"
+      undefined_on: &not_small [davis_twomode, gnp_und_dense, gnp_und_sparse, les_miserables,
+        multi_loops_und, real_weights_und, southern_women, star8, twomode_random,
+        twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: >-
+        The means over random graphs are compared on the small networks
+        only, to keep the NetworkX oracle fast; on a star NetworkX's
+        random_reference redraws forever (every draw is rejected), where
+        the engine stops each round after 100 (m + 1) rejected draws.
+
+small_world_omega:
+  engine: {fn: small_world, coefficient: omega, niter: 2, nrand: 10, seeds: 10}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.15}
+  oracles:
+    networkx:
+      call: "mean of nx.omega(G, niter = 2, nrand = 10, seed = s) over s = 0..9; -1 where it raises (disconnected graphs)"
+      undefined_on: [davis_twomode, gnp_und_dense, gnp_und_sparse, les_miserables,
+        multi_loops_und, path10, real_weights_und, southern_women, star8, twomode_random,
+        twomode_weighted, uniform_weights, weighted_und]
+      undefined_reason: >-
+        As for small_world_sigma; on path10 every clustering coefficient
+        is 0, so NetworkX divides 0 by 0 and raises ZeroDivisionError,
+        where the engine returns NaN.
+
+rich_club:
+  engine: {fn: rich_club}
+  applies_to: undirected
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "2 E_k / (N_k (N_k - 1)) for every k with N_k > 1, by direct counting; -1 with self-loops"
+    networkx:
+      call: "nx.rich_club_coefficient(G, normalized = False); -1 where it raises (self-loops)"
+
+rich_club_normalized:
+  engine: {fn: rich_club, normalized: true, q: 20, n_samples: 200}
+  applies_to: undirected
+  tolerance: {rel: 0.1, abs: 0.02}
+  oracles:
+    networkx:
+      call: "nx.rich_club_coefficient(G, normalized = True, Q = 20, n_samples = 200, seed = 7); -1 where it raises"
+      undefined_on: *not_small
+      undefined_reason: as for small_world_sigma (the normalization averages 200 rewired graphs)

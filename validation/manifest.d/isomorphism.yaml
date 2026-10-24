@@ -1,0 +1,248 @@
+# Graph isomorphism, induced subgraph isomorphism, and monomorphism
+# (VF2++; Juttner and Madarasi 2018), the quick isomorphism checks, and tree
+# isomorphism (Aho, Hopcroft, and Ullman 1974), as NetworkX 3.7 defines
+# them. Format: see ../README.md; runners, derived inputs, and encodings
+# in ../bindings/isomorphism.py.
+#
+# Every oracle reads a fixture as a NetworkX Graph or DiGraph, or a
+# MultiGraph or MultiDiGraph when it has parallel edges (VF2++ then
+# matches edge multiplicities). Counts of mappings are capped at 5000;
+# the engine's iterator and its count must agree, and its first mapping
+# must be valid. The order in which mappings come is not compared
+# (NetworkX's depends on Python set order).
+
+vf2pp_iso:
+  engine: {fn: vf2pp, problem: iso}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "isomorphisms between the fixture and rev(fixture): every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, kite, les_miserables, multi_loops_dir, multi_loops_und,
+        path10, real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: the definition oracle tries every permutation, so it runs on networks of at most 8 nodes
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_isomorphisms(G, rev(G)))), 5000)"
+
+vf2pp_iso_labels:
+  engine: {fn: vf2pp, problem: iso, labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "label-preserving isomorphisms between the fixture and rev(fixture): every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, kite, les_miserables, multi_loops_dir, multi_loops_und,
+        path10, real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: the definition oracle tries every permutation, so it runs on networks of at most 8 nodes
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_isomorphisms(G, rev(G), node_label = 'label'))), 5000)"
+
+vf2pp_induced_path3:
+  engine: {fn: vf2pp, problem: induced, pattern: path3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "induced copies of path3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, path3))), 5000)"
+
+vf2pp_mono_path3:
+  engine: {fn: vf2pp, problem: mono, pattern: path3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "monomorphisms of path3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, path3))), 5000)"
+
+vf2pp_induced_triangle:
+  engine: {fn: vf2pp, problem: induced, pattern: triangle}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "induced copies of triangle: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, triangle))), 5000)"
+
+vf2pp_mono_triangle:
+  engine: {fn: vf2pp, problem: mono, pattern: triangle}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "monomorphisms of triangle: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, triangle))), 5000)"
+
+vf2pp_induced_star3:
+  engine: {fn: vf2pp, problem: induced, pattern: star3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "induced copies of star3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, star3))), 5000)"
+
+vf2pp_mono_star3:
+  engine: {fn: vf2pp, problem: mono, pattern: star3}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "monomorphisms of star3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, star3))), 5000)"
+
+vf2pp_induced_cycle4:
+  engine: {fn: vf2pp, problem: induced, pattern: cycle4}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "induced copies of cycle4: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, cycle4))), 5000)"
+
+vf2pp_mono_cycle4:
+  engine: {fn: vf2pp, problem: mono, pattern: cycle4}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "monomorphisms of cycle4: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, cycle4))), 5000)"
+
+vf2pp_induced_feedforward:
+  engine: {fn: vf2pp, problem: induced, pattern: feedforward}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "induced copies of feedforward: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, feedforward))), 5000)"
+
+vf2pp_mono_feedforward:
+  engine: {fn: vf2pp, problem: mono, pattern: feedforward}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "monomorphisms of feedforward: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, feedforward))), 5000)"
+
+vf2pp_induced_path3_labels:
+  engine: {fn: vf2pp, problem: induced, pattern: path3, labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "label-preserving induced copies of path3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_subgraph_isomorphisms(G, path3, node_label = 'label'))), 5000)"
+
+vf2pp_mono_star3_labels:
+  engine: {fn: vf2pp, problem: mono, pattern: star3, labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "label-preserving monomorphisms of star3: every injective node map checked against the definition, edge multiplicities included (isomorphism_definition_oracle.py)"
+    networkx:
+      call: "min(len(list(nx.vf2pp_all_monomorphisms(G, star3, node_label = 'label'))), 5000)"
+
+could_be_iso_d_rev:
+  engine: {fn: could_be_iso, properties: d, against: rev}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, compared cumulatively, against rev(fixture)"
+    networkx:
+      call: "nx.could_be_isomorphic(G, rev(G), properties = 'd')"
+
+could_be_iso_d_perturbed:
+  engine: {fn: could_be_iso, properties: d, against: perturbed}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, compared cumulatively, against perturbed(fixture)"
+    networkx:
+      call: "nx.could_be_isomorphic(G, perturbed(G), properties = 'd')"
+
+could_be_iso_dt_rev:
+  engine: {fn: could_be_iso, properties: dt, against: rev}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, triangles, compared cumulatively, against rev(fixture)"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+    networkx:
+      call: "nx.could_be_isomorphic(G, rev(G), properties = 'dt')"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+
+could_be_iso_dt_perturbed:
+  engine: {fn: could_be_iso, properties: dt, against: perturbed}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, triangles, compared cumulatively, against perturbed(fixture)"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+    networkx:
+      call: "nx.could_be_isomorphic(G, perturbed(G), properties = 'dt')"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+
+could_be_iso_dtc_rev:
+  engine: {fn: could_be_iso, properties: dtc, against: rev}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, triangles, maximal cliques containing the node, compared cumulatively, against rev(fixture)"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+    networkx:
+      call: "nx.could_be_isomorphic(G, rev(G), properties = 'dtc')"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+
+could_be_iso_dtc_perturbed:
+  engine: {fn: could_be_iso, properties: dtc, against: perturbed}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "sorted per-node tuples of degree, triangles, maximal cliques containing the node, compared cumulatively, against perturbed(fixture)"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+    networkx:
+      call: "nx.could_be_isomorphic(G, perturbed(G), properties = 'dtc')"
+      undefined_when: [directed]
+      undefined_reason: NetworkX counts triangles and maximal cliques of undirected graphs only (it raises NetworkXNotImplemented)
+
+tree_iso:
+  engine: {fn: tree_iso}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "trees isomorphic by brute force over permutations (at most 8 nodes) or by comparing AHU canonical strings of every rooting; mapping validity checked edge by edge"
+    networkx:
+      call: "isomorphism.tree_isomorphism(T1, T2), (T1, T3), isomorphism.rooted_tree_isomorphism(T1, 0, T2, k - 1), (T1, 0, T2, k - 2); (non-empty, valid) each"

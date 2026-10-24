@@ -64,6 +64,7 @@ use std::collections::HashMap;
 use crate::error::{Error, Result};
 use crate::graph::Graph;
 use crate::metrics::community::dense_labels;
+use crate::metrics::wl::{Aggregate, Refiner};
 use crate::union_find::UnionFind;
 
 // ---- Regular equivalence -----------------------------------------------------
@@ -108,20 +109,20 @@ pub fn regular_equivalence(
     };
     let mut count = distinct(&class);
     let mut rounds = 0;
+    // Each round splits classes by the set of (tie type, alter's class)
+    // pairs: colour refinement with set aggregation, the tie type (a_ik,
+    // a_ki) packed into one code.
+    let mut refiner = Refiner::new();
     loop {
-        let mut sig: HashMap<Signature, u32> = HashMap::new();
-        let mut next = Vec::with_capacity(n);
-        for (i, row) in ties.iter().enumerate() {
-            let mut set: Vec<(u32, u32, u32)> = row
-                .iter()
-                .map(|&(k, out, inc)| (out, inc, class[k as usize]))
-                .collect();
-            set.sort_unstable();
-            set.dedup();
-            let len = sig.len() as u32;
-            next.push(*sig.entry((class[i], set)).or_insert(len));
-        }
-        let new_count = sig.len();
+        refiner.clear();
+        let next = refiner.round(&class, Aggregate::Set, |i, buf| {
+            buf.extend(
+                ties[i]
+                    .iter()
+                    .map(|&(k, out, inc)| ((out as u64) << 32 | inc as u64, k)),
+            )
+        });
+        let new_count = refiner.len();
         if new_count == count {
             break;
         }
@@ -134,9 +135,6 @@ pub fn regular_equivalence(
         rounds,
     })
 }
-
-/// A node's class and the set of (tie out, tie in, alter's class) it has.
-type Signature = (u32, Vec<(u32, u32, u32)>);
 
 /// For every node i, its alters k (k != i, tied in either direction) with
 /// the category codes of a_ik and a_ki (0 = no tie).

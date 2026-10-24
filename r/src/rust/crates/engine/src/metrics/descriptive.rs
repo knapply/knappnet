@@ -305,6 +305,13 @@ pub fn triangles(g: &Graph, threads: usize) -> Vec<u64> {
 
 fn triangles_of(s: &Csr, threads: usize) -> Vec<u64> {
     let n = s.node_count();
+    // Each arc's forward lists are intersected once: about arcs times the
+    // average degree steps.
+    let threads = parallel::threads_for(
+        threads,
+        n,
+        (s.arc_count() as u64).saturating_mul(1 + (s.arc_count() / n.max(1)) as u64),
+    );
     // Orient every edge toward the endpoint later in (degree, index) order;
     // each triangle is then found once, from its earliest node, and no node
     // has more than O(sqrt(m)) later neighbors.
@@ -439,6 +446,11 @@ fn weighted_clustering(s: &Csr, weighting: Weighting, threads: usize) -> Vec<f64
     let n = s.node_count();
     let all = s.all_weights().unwrap_or(&[]);
     let top = all.iter().copied().fold(0.0f64, f64::max);
+    let threads = parallel::threads_for(
+        threads,
+        n,
+        (s.arc_count() as u64).saturating_mul(1 + (s.arc_count() / n.max(1)) as u64),
+    );
     let parts = parallel::for_each_item(
         n,
         threads,
@@ -603,7 +615,11 @@ pub fn distance_rows(
     let p = prepare(g, &opts)?;
     let h = p.h.as_ref();
     let view = p.view();
-    let threads = parallel::resolve_threads(opts.threads, sources.len());
+    let threads = parallel::threads_for(
+        opts.threads,
+        sources.len(),
+        parallel::search_work(sources.len(), n, view.arc_count()),
+    );
     // Keep a block of rows under about 64 MB, but give every thread work.
     let block = ((1usize << 23) / n.max(1)).max(threads).max(1);
     let uniform = matches!(p.lengths, Lengths::Uniform);
@@ -683,16 +699,65 @@ pub fn distance_rows(
 
 /// Distance matrix with one row per source (every node when `sources` is
 /// `None`) and one column per node. See the module documentation.
+///
+/// Rows are written in place by the searches (64 rows per multi-source
+/// search when unweighted), so the matrix is the only large allocation and
+/// its memory is first touched by the threads that fill it.
 pub fn distances(g: &Graph, sources: Option<&[u32]>, opts: PathOptions) -> Result<Dense> {
     let n = g.node_count();
-    let rows = sources.map_or(n, |s| s.len());
-    let mut m = Dense::zeros(rows, n);
-    distance_rows(g, sources, opts, |k, row| {
-        for (j, &d) in row.iter().enumerate() {
-            m.set(k, j, d);
-        }
-    })?;
-    Ok(m)
+    let sources = check_sources(n, sources)?;
+    let p = prepare(g, &opts)?;
+    let h = p.h.as_ref();
+    let view = p.view();
+    let threads = parallel::threads_for(
+        opts.threads,
+        sources.len(),
+        parallel::search_work(sources.len(), n, view.arc_count()),
+    );
+    // Zeroed allocations are mapped lazily, so this does not touch memory.
+    let mut data = vec![0.0f64; sources.len() * n];
+    if n > 0 && matches!(p.lengths, Lengths::Uniform) {
+        parallel::fill_chunks(
+            &mut data,
+            BATCH * n,
+            threads,
+            || MultiBfs::new(n),
+            |ms, b, out| {
+                let group = &sources[b * BATCH..(b * BATCH + BATCH).min(sources.len())];
+                out.fill(f64::INFINITY);
+                for (i, &s) in group.iter().enumerate() {
+                    out[i * n + s as usize] = 0.0;
+                }
+                ms.run(view, group, u32::MAX, |step| {
+                    if let Step::Reached {
+                        level,
+                        node,
+                        sources,
+                    } = step
+                    {
+                        let d = level as f64 * p.unit;
+                        for_each_bit(sources, |i| out[i * n + node as usize] = d);
+                    }
+                });
+            },
+        );
+    } else if n > 0 {
+        parallel::fill_chunks(
+            &mut data,
+            n,
+            threads,
+            || Search::new(n),
+            |ws, k, row| {
+                row.fill(f64::INFINITY);
+                ws.run(h, &p.lengths, sources[k] as usize);
+                for &v in &ws.order {
+                    row[v as usize] = ws.distance(v as usize, &p.lengths) * p.unit;
+                }
+                ws.reset();
+            },
+        );
+    }
+    Dense::from_row_major(sources.len(), n, data)
 }
 
 /// What one single-source search records.
@@ -721,13 +786,18 @@ fn profiles(
     let view = p.view();
     let integral = !matches!(p.lengths, Lengths::Real(_));
     clock.mark("setup");
+    let threads = parallel::threads_for(
+        opts.threads,
+        sources.len(),
+        parallel::search_work(sources.len(), n, h.out().arc_count()),
+    );
     let parts: Vec<Vec<(usize, PathProfile)>> = if matches!(p.lengths, Lengths::Uniform) {
         // Breadth-first search from 64 sources at a time
         // (`crate::bitset::MultiBfs`), one batch per work item. Every
         // total is an exact integer count of hops.
         parallel::for_each_item(
             (sources.len() + BATCH - 1) / BATCH,
-            opts.threads,
+            threads,
             || (MultiBfs::new(n), Vec::new()),
             |(ms, found), b| {
                 let lo = b * BATCH;
@@ -762,7 +832,7 @@ fn profiles(
     } else {
         parallel::for_each_item(
             sources.len(),
-            opts.threads,
+            threads,
             || (Search::new(n), Vec::new()),
             |(ws, found), k| {
                 let s = sources[k] as usize;
@@ -935,6 +1005,12 @@ fn within_hops(view: View, sources: Option<&[u32]>, max_level: u32, threads: usi
             &all
         }
     };
+    let ball = parallel::ball_steps(n, view.arc_count(), max_level as usize);
+    let threads = parallel::threads_for(
+        threads,
+        sources.len(),
+        (sources.len() as u64).saturating_mul(ball),
+    );
     if !batches_pay(view, max_level) {
         // Small balls that rarely overlap: one search per source.
         let parts = parallel::for_each_item(
@@ -1006,9 +1082,14 @@ pub fn within_distance(g: &Graph, limit: f64, opts: PathOptions) -> Result<Vec<u
         return Ok(within_hops(p.view(), None, max_level, opts.threads));
     }
     let n = h.node_count();
+    let threads = parallel::threads_for(
+        opts.threads,
+        n,
+        parallel::search_work(n, n, h.out().arc_count()),
+    );
     let parts = parallel::for_each_item(
         n,
-        opts.threads,
+        threads,
         || (Search::new(n), Vec::new()),
         |(ws, found), s| {
             ws.run_within(h, &p.lengths, s, limit);

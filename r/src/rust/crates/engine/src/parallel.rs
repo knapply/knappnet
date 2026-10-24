@@ -14,6 +14,16 @@
 //! so the result is the same for every thread count. Threads claim groups
 //! dynamically, which also balances items of very different cost (the
 //! hubs of a scale-free network).
+//!
+//! Threads are started for each parallel call and joined at its end, which
+//! costs some microseconds per thread. A call whose total work is small
+//! therefore runs faster on fewer threads, or on one. [`threads_for`] turns
+//! an estimate of the work into a thread count: at most one thread per
+//! [`GRAIN`] elementary steps (an arc scanned, a multiply-add, a
+//! comparison), so every thread has enough to do to repay its start. The
+//! kernels in this crate pass their thread count through it. Every result
+//! that does not depend on the thread count (all of those documented as
+//! such) is unchanged by it.
 
 /// Resolves a requested thread count. Zero means "use all available cores".
 pub fn resolve_threads(requested: usize, items: usize) -> usize {
@@ -27,6 +37,35 @@ pub fn resolve_threads(requested: usize, items: usize) -> usize {
         .unwrap_or(1);
     let t = if requested == 0 { available } else { requested };
     t.clamp(1, items.max(1))
+}
+
+/// Smallest number of elementary steps worth a thread of its own: about
+/// 50 to 150 microseconds of work, against some microseconds to start and
+/// join a thread.
+pub const GRAIN: u64 = 1 << 17;
+
+/// Threads to use for `items` independent items that take about `work`
+/// elementary steps in all: the requested count (0 for all cores), at most
+/// one per item, and at most one per [`GRAIN`] steps of work, so small
+/// problems run on the calling thread alone.
+pub fn threads_for(requested: usize, items: usize, work: u64) -> usize {
+    let by_work = (work / GRAIN).clamp(1, usize::MAX as u64) as usize;
+    resolve_threads(requested, items).min(by_work)
+}
+
+/// Work of `searches` graph searches over a network with `n` nodes and
+/// `arcs` arcs, each of which may visit every node and arc once.
+pub fn search_work(searches: usize, n: usize, arcs: usize) -> u64 {
+    (searches as u64).saturating_mul(n as u64 + arcs as u64)
+}
+
+/// Steps of one search stopped after `levels` levels in a network with `n`
+/// nodes and `arcs` arcs: with average degree d it reaches about d^levels
+/// nodes and scans their arcs, and never more than the whole network.
+pub fn ball_steps(n: usize, arcs: usize, levels: usize) -> u64 {
+    let d = arcs as f64 / n.max(1) as f64;
+    let ball = d.max(1.0).powf(levels.min(64) as f64) * (d + 1.0);
+    ball.min((n + arcs) as f64) as u64
 }
 
 /// Runs `work(state, item)` for every item in `0..items`, where each thread
@@ -67,6 +106,274 @@ where
             .map(|h| h.join().expect("worker thread panicked"))
             .collect()
     })
+}
+
+/// Runs `work(state, item)` for every item in `0..items`, where each thread
+/// owns one `state` created by `init`, and returns the per-thread states.
+///
+/// Unlike [`for_each_item`], threads claim items dynamically, which
+/// balances items of very different cost, but which thread processes which
+/// item varies from run to run. A claim takes a strided chunk (items c,
+/// c + k, c + 2k, ... for k chunks), so costly items that are numbered
+/// together (the hubs of a preferential-attachment network come first) are
+/// spread over many claims.
+/// Use it only when the merged result cannot depend on that: integer sums,
+/// maxima, results keyed by item, collections sorted afterwards.
+pub fn for_each_claimed<S, I, W>(items: usize, threads: usize, init: I, work: W) -> Vec<S>
+where
+    S: Send,
+    I: Fn() -> S + Sync,
+    W: Fn(&mut S, usize) + Sync,
+{
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let threads = resolve_threads(threads, items);
+    if threads == 1 {
+        let mut state = init();
+        for item in 0..items {
+            work(&mut state, item);
+        }
+        return vec![state];
+    }
+    let chunks = items.min(threads * 64);
+    let next = AtomicUsize::new(0);
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..threads)
+            .map(|_| {
+                let (init, work, next) = (&init, &work, &next);
+                scope.spawn(move || {
+                    let mut state = init();
+                    loop {
+                        let c = next.fetch_add(1, Ordering::Relaxed);
+                        if c >= chunks {
+                            break;
+                        }
+                        for item in (c..items).step_by(chunks) {
+                            work(&mut state, item);
+                        }
+                    }
+                    state
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .map(|h| h.join().expect("worker thread panicked"))
+            .collect()
+    })
+}
+
+/// Returns `f(state, item)` for every item in `0..items`, in item order,
+/// where each thread owns one `state` created by `init`. Items are claimed
+/// dynamically as in [`for_each_claimed`]; the output is the same for every
+/// thread count as long as each result depends only on its item.
+pub fn map_items<S, T, I, F>(items: usize, threads: usize, init: I, f: F) -> Vec<T>
+where
+    T: Send,
+    S: Send,
+    I: Fn() -> S + Sync,
+    F: Fn(&mut S, usize) -> T + Sync,
+{
+    let parts = for_each_claimed(
+        items,
+        threads,
+        || (init(), Vec::new()),
+        |(state, out): &mut (S, Vec<(usize, T)>), item| out.push((item, f(state, item))),
+    );
+    let mut slots: Vec<Option<T>> = (0..items).map(|_| None).collect();
+    for (_, out) in parts {
+        for (item, t) in out {
+            slots[item] = Some(t);
+        }
+    }
+    slots
+        .into_iter()
+        .map(|t| t.expect("every item is computed"))
+        .collect()
+}
+
+/// Calls `f(state, c, chunk)` for every chunk `c` of `chunk` consecutive
+/// elements of `out` (the last may be shorter), where each thread owns one
+/// `state` created by `init`. Threads claim chunks dynamically and write
+/// their results in place, so a large output is filled (and its memory
+/// first touched) in parallel without intermediate copies; each element is
+/// written by exactly one call, so the result does not depend on the
+/// thread count as long as each chunk's values depend only on the chunk.
+pub fn fill_chunks<T, S, I, F>(out: &mut [T], chunk: usize, threads: usize, init: I, f: F)
+where
+    T: Send,
+    S: Send,
+    I: Fn() -> S + Sync,
+    F: Fn(&mut S, usize, &mut [T]) + Sync,
+{
+    let chunk = chunk.max(1);
+    let count = (out.len() + chunk - 1) / chunk;
+    let threads = resolve_threads(threads, count);
+    if threads <= 1 {
+        let mut state = init();
+        for (c, part) in out.chunks_mut(chunk).enumerate() {
+            f(&mut state, c, part);
+        }
+        return;
+    }
+    let queue = std::sync::Mutex::new(out.chunks_mut(chunk).enumerate());
+    std::thread::scope(|scope| {
+        for _ in 0..threads {
+            let (queue, init, f) = (&queue, &init, &f);
+            scope.spawn(move || {
+                let mut state = init();
+                loop {
+                    let next = queue.lock().unwrap_or_else(|e| e.into_inner()).next();
+                    match next {
+                        Some((c, part)) => f(&mut state, c, part),
+                        None => break,
+                    }
+                }
+            });
+        }
+    });
+}
+
+/// One member of a [`crew`]: its index, the crew's size, and the barrier
+/// all members wait at between phases.
+pub struct Crew<'a> {
+    index: usize,
+    size: usize,
+    barrier: Option<&'a SpinBarrier>,
+}
+
+impl Crew<'_> {
+    /// This member's index, from 0 to `size() - 1`.
+    #[inline]
+    pub fn index(&self) -> usize {
+        self.index
+    }
+
+    /// Number of members.
+    #[inline]
+    pub fn size(&self) -> usize {
+        self.size
+    }
+
+    /// This member's share of `items` items: one of `size()` contiguous
+    /// ranges of nearly equal length, in member order.
+    #[inline]
+    pub fn share(&self, items: usize) -> std::ops::Range<usize> {
+        (items * self.index / self.size)..(items * (self.index + 1) / self.size)
+    }
+
+    /// Waits until every member has reached this point. Everything a member
+    /// wrote before waiting is visible to every member after it.
+    pub fn wait(&self) {
+        if let Some(b) = self.barrier {
+            b.wait();
+        }
+    }
+}
+
+/// Barrier for [`crew`]: members spin briefly, then yield, so phases of a
+/// few microseconds do not pay for putting threads to sleep and waking them.
+pub struct SpinBarrier {
+    size: usize,
+    arrived: std::sync::atomic::AtomicUsize,
+    generation: std::sync::atomic::AtomicUsize,
+    /// Set when a member panicked, so the others stop waiting for it.
+    poisoned: std::sync::atomic::AtomicBool,
+}
+
+impl SpinBarrier {
+    fn new(size: usize) -> SpinBarrier {
+        SpinBarrier {
+            size,
+            arrived: std::sync::atomic::AtomicUsize::new(0),
+            generation: std::sync::atomic::AtomicUsize::new(0),
+            poisoned: std::sync::atomic::AtomicBool::new(false),
+        }
+    }
+
+    fn wait(&self) {
+        use std::sync::atomic::Ordering;
+        let gen = self.generation.load(Ordering::Acquire);
+        if self.arrived.fetch_add(1, Ordering::AcqRel) + 1 == self.size {
+            self.arrived.store(0, Ordering::Relaxed);
+            self.generation
+                .store(gen.wrapping_add(1), Ordering::Release);
+            return;
+        }
+        let mut spins = 0u32;
+        while self.generation.load(Ordering::Acquire) == gen {
+            if self.poisoned.load(Ordering::Relaxed) {
+                panic!("another member of the crew panicked");
+            }
+            if spins < 1 << 12 {
+                spins += 1;
+                std::hint::spin_loop();
+            } else {
+                std::thread::yield_now();
+            }
+        }
+    }
+}
+
+/// Runs `body` on `threads` threads at once (0 uses all available cores),
+/// each with its own [`Crew`] member, and returns when all have finished.
+///
+/// The members run the same code on different parts of the data and meet
+/// at [`Crew::wait`] between phases, so an iterative method starts its
+/// threads once instead of once per phase. The caller decides the
+/// partition of work (for example with [`Crew::share`]); results that do not
+/// depend on that partition do not depend on the thread count. With one
+/// thread `body` runs on the calling thread and waiting costs nothing.
+pub fn crew<F>(threads: usize, body: F)
+where
+    F: Fn(&Crew) + Sync,
+{
+    let size = resolve_threads(threads, usize::MAX);
+    if size == 1 {
+        body(&Crew {
+            index: 0,
+            size: 1,
+            barrier: None,
+        });
+        return;
+    }
+    let barrier = SpinBarrier::new(size);
+    /// Marks the barrier poisoned if its member unwinds.
+    struct Guard<'a>(&'a SpinBarrier);
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            if std::thread::panicking() {
+                self.0
+                    .poisoned
+                    .store(true, std::sync::atomic::Ordering::Relaxed);
+            }
+        }
+    }
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = (1..size)
+            .map(|index| {
+                let (body, barrier) = (&body, &barrier);
+                scope.spawn(move || {
+                    let _guard = Guard(barrier);
+                    body(&Crew {
+                        index,
+                        size,
+                        barrier: Some(barrier),
+                    });
+                })
+            })
+            .collect();
+        {
+            let _guard = Guard(&barrier);
+            body(&Crew {
+                index: 0,
+                size,
+                barrier: Some(&barrier),
+            });
+        }
+        for h in handles {
+            h.join().expect("worker thread panicked");
+        }
+    });
 }
 
 /// Number of groups [`sum_in_order`] splits its items into (fewer when
@@ -277,6 +584,70 @@ mod tests {
             },
         );
         (total.to_bits(), seen)
+    }
+
+    #[test]
+    fn claimed_items_are_each_done_once() {
+        for items in [0usize, 1, 7, 1000, 5000] {
+            for t in [1, 3, 16] {
+                let parts = for_each_claimed(items, t, Vec::new, |v: &mut Vec<usize>, i| v.push(i));
+                let mut all: Vec<usize> = parts.into_iter().flatten().collect();
+                all.sort_unstable();
+                assert_eq!(all, (0..items).collect::<Vec<_>>());
+                let squares = map_items(items, t, || (), |_, i| i * i);
+                assert_eq!(squares, (0..items).map(|i| i * i).collect::<Vec<_>>());
+            }
+        }
+    }
+
+    #[test]
+    fn crews_meet_at_barriers() {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        for t in [1usize, 2, 5] {
+            let cells: Vec<AtomicU64> = (0..100).map(|_| AtomicU64::new(0)).collect();
+            crew(t, |c| {
+                // Each phase reads what every member wrote in the last one.
+                for phase in 1..=50u64 {
+                    for i in c.share(cells.len()) {
+                        assert_eq!(cells[(i + 99) % 100].load(Ordering::Relaxed), phase - 1);
+                    }
+                    c.wait();
+                    for i in c.share(cells.len()) {
+                        cells[i].store(phase, Ordering::Relaxed);
+                    }
+                    c.wait();
+                }
+            });
+            assert!(cells.iter().all(|x| x.load(Ordering::Relaxed) == 50));
+        }
+    }
+
+    #[test]
+    fn chunks_are_filled_once() {
+        for t in [1usize, 4] {
+            let mut v = vec![0usize; 1003];
+            fill_chunks(
+                &mut v,
+                10,
+                t,
+                || (),
+                |_, c, part| {
+                    for (i, x) in part.iter_mut().enumerate() {
+                        *x += c * 10 + i;
+                    }
+                },
+            );
+            assert_eq!(v, (0..1003).collect::<Vec<_>>());
+        }
+    }
+
+    #[test]
+    fn threads_follow_the_work() {
+        assert_eq!(threads_for(8, 100, 10), 1);
+        assert_eq!(threads_for(8, 100, 3 * GRAIN), 3);
+        assert_eq!(threads_for(8, 2, 100 * GRAIN), 2);
+        assert_eq!(threads_for(8, 100, u64::MAX), 8);
+        assert_eq!(threads_for(1, 100, u64::MAX), 1);
     }
 
     #[test]

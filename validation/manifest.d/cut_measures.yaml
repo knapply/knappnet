@@ -1,0 +1,43 @@
+# Cut size, volume, normalized cut (Shi and Malik 2000), conductance
+# (Kannan, Vempala, and Vetta 2004), and edge, mixing, node, and boundary
+# expansion (Hoory, Linial, and Wigderson 2006), as NetworkX 3.7's
+# algorithms.cuts defines them. Format: see ../README.md; runner, derived
+# sets, and encodings in ../bindings/cut_measures.py.
+#
+# The NetworkX oracle reads each fixture as a Graph or DiGraph, or a
+# multigraph when it has parallel edges (edges then count once each, as in
+# the engine). Where NetworkX raises ZeroDivisionError the oracle writes
+# the IEEE value the engine returns (inf, or NaN for 0/0). NetworkX's
+# cut_size of a directed graph raises TypeError without T, so the oracle
+# passes the complement of S explicitly.
+
+cut_measures:
+  engine: {fn: cut_measures, t: complement}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the nine measures from their formulas over the edge list, exact fractions (cut_measures_definition_oracle.py)"
+    networkx:
+      call: "nx.cut_size, volume, normalized_cut_size, conductance, edge_expansion, mixing_expansion, node_expansion, boundary_expansion with S = even nodes, T = the rest"
+
+cut_measures_overlap:
+  engine: {fn: cut_measures, t: mod3}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "as cut_measures with T = nodes v % 3 == 1, which overlaps S, counted as NetworkX's edge_boundary counts"
+    networkx:
+      call: "the same functions with T = nodes v % 3 == 1"
+
+cut_measures_weighted:
+  engine: {fn: cut_measures, t: complement, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "weighted cut and volumes (strengths); mixing expansion over the unweighted edge count"
+    networkx:
+      call: "the same functions with weight = 'weight'"

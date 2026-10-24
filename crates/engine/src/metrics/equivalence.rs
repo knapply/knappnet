@@ -335,74 +335,152 @@ fn iterate(init: &Dense, block: &[usize], opts: ConcorOptions) -> Iteration {
 /// have correlation 0 with every column, including themselves.
 fn column_correlations(m: &Dense, threads: usize) -> Dense {
     let b = m.rows();
-    // Centred columns, stored as rows for contiguous access.
-    let mut centred = Dense::zeros(b, b);
+    let threads = parallel::threads_for(
+        threads,
+        b,
+        (b as u64).saturating_mul(b as u64).saturating_mul(b as u64) / 2,
+    );
+    // Centred columns, stored as rows for contiguous access, GROUP columns
+    // per task. Each task reads the rows of `m` in order, so every column's
+    // mean and sum of squares add their terms in row order, as one sum per
+    // column would.
+    let mut centred_data = vec![0.0; b * b];
     let mut norm = vec![0.0; b];
-    for (c, nc) in norm.iter_mut().enumerate() {
-        let mean = (0..b).map(|r| m.get(r, c)).sum::<f64>() / b as f64;
-        let mut ss = 0.0;
-        for r in 0..b {
-            let x = m.get(r, c) - mean;
-            centred.set(c, r, x);
-            ss += x * x;
-        }
-        *nc = ss.sqrt();
+    if b > 0 {
+        let start: f64 = std::iter::empty::<f64>().sum();
+        let mut norms = vec![0.0; b];
+        let mut both: Vec<(&mut [f64], &mut [f64])> = centred_data
+            .chunks_mut(GROUP * b)
+            .zip(norms.chunks_mut(GROUP))
+            .collect();
+        parallel::fill_chunks(
+            &mut both,
+            1,
+            threads,
+            Vec::new,
+            |mean: &mut Vec<f64>, g, part| {
+                let (rows, ns) = (&mut *part[0].0, &mut *part[0].1);
+                let c0 = g * GROUP;
+                let w = ns.len();
+                mean.clear();
+                mean.resize(w, start);
+                for r in 0..b {
+                    for (acc, &x) in mean.iter_mut().zip(&m.row(r)[c0..c0 + w]) {
+                        *acc += x;
+                    }
+                }
+                mean.iter_mut().for_each(|x| *x /= b as f64);
+                ns.iter_mut().for_each(|x| *x = 0.0);
+                for r in 0..b {
+                    for (c, &x) in m.row(r)[c0..c0 + w].iter().enumerate() {
+                        let y = x - mean[c];
+                        rows[c * b + r] = y;
+                        ns[c] += y * y;
+                    }
+                }
+                ns.iter_mut().for_each(|x| *x = x.sqrt());
+            },
+        );
+        drop(both);
+        norm = norms;
     }
+    let centred = Dense::from_row_major(b, b, centred_data).expect("square");
     // Correlation is symmetric and each dot product is the same sequence
     // of exactly rounded products whichever column comes first, so only
-    // j >= i is computed and mirrored. The products are tiled: a block of
-    // RB rows of `centred` is packed so that the RB values for one k are
+    // j >= i is computed and mirrored. The products are tiled: each block
+    // of RB rows of `centred` is packed so that the RB values for one k are
     // adjacent, and each pass over k updates RB x CB running sums, one per
     // pair, from one packed load and CB scalars. Every sum still adds its
     // terms in order of k, starting from the value the standard library's
     // sum starts from, so the result is that of one sum per pair; the
     // compiler can keep the RB sums of a column in vector registers since
     // they are independent.
+    //
+    // Work is split into square tasks of GROUP rows by GROUP columns (on or
+    // above the diagonal), so that the packed rows and the columns a task
+    // reads stay in cache while it computes GROUP^2 sums from them; a pass
+    // over every column per block of rows would instead be limited by
+    // memory bandwidth once several threads run. Which task computes a
+    // pair does not change its sum.
     let zero: f64 = std::iter::empty::<f64>().sum();
     let blocks = (b + RB - 1) / RB;
-    let rows = parallel::for_each_item(blocks, threads, Vec::new, |out, blk| {
+    let mut packed = vec![0.0; blocks * b * RB];
+    for (blk, pack) in packed.chunks_exact_mut(b * RB).enumerate() {
         let i0 = blk * RB;
         let i1 = (i0 + RB).min(b);
-        let mut pack = vec![0.0; b * RB];
         for r in 0..RB {
             let row = centred.row((i0 + r).min(i1 - 1));
             for (k, &x) in row.iter().enumerate() {
                 pack[k * RB + r] = x;
             }
         }
-        let mut part: Vec<Vec<f64>> = (i0..i1).map(|i| vec![0.0; b - i]).collect();
-        let mut j = i0;
-        while j < b {
-            let cols: [&[f64]; CB] = std::array::from_fn(|c| centred.row((j + c).min(b - 1)));
-            let acc = simd::dispatch!(correlation_tile(&pack, &cols, b, zero));
-            for (r, i) in (i0..i1).enumerate() {
-                for (c, sums) in acc.iter().enumerate() {
-                    let jj = j + c;
-                    if jj < b && jj >= i && norm[i] > 0.0 && norm[jj] > 0.0 {
-                        part[r][jj - i] = (sums[r] / (norm[i] * norm[jj])).clamp(-1.0, 1.0);
-                    }
-                }
-            }
-            j += CB;
-        }
-        out.push((i0, part));
-    });
-    let mut out = vec![0.0; b * b];
-    for st in rows {
-        for (i0, part) in st {
-            for (r, row) in part.into_iter().enumerate() {
-                let i = i0 + r;
-                for (d, x) in row.into_iter().enumerate() {
-                    let j = i + d;
-                    out[i * b + j] = x;
-                    out[j * b + i] = x;
-                }
-            }
-        }
     }
+    let groups = (b + GROUP - 1) / GROUP;
+    let tasks: Vec<(usize, usize)> = (0..groups)
+        .flat_map(|gi| (gi..groups).map(move |gj| (gi, gj)))
+        .collect();
+    let tiles = parallel::map_items(
+        tasks.len(),
+        threads,
+        || (),
+        |_, t| {
+            let (gi, gj) = tasks[t];
+            let (r0, r1) = (gi * GROUP, ((gi + 1) * GROUP).min(b));
+            let (c0, c1) = (gj * GROUP, ((gj + 1) * GROUP).min(b));
+            let mut tile = vec![0.0; GROUP * GROUP];
+            for i0 in (r0..r1).step_by(RB) {
+                let i1 = (i0 + RB).min(r1);
+                let pack = &packed[(i0 / RB) * b * RB..(i0 / RB + 1) * b * RB];
+                let mut j = c0.max(i0);
+                while j < c1 {
+                    let cols: [&[f64]; CB] =
+                        std::array::from_fn(|c| centred.row((j + c).min(b - 1)));
+                    let acc = simd::dispatch!(correlation_tile(pack, &cols, b, zero));
+                    for (r, i) in (i0..i1).enumerate() {
+                        for (c, sums) in acc.iter().enumerate() {
+                            let jj = j + c;
+                            if jj < c1 && jj >= i && norm[i] > 0.0 && norm[jj] > 0.0 {
+                                tile[(i - r0) * GROUP + (jj - c0)] =
+                                    (sums[r] / (norm[i] * norm[jj])).clamp(-1.0, 1.0);
+                            }
+                        }
+                    }
+                    j += CB;
+                }
+            }
+            tile
+        },
+    );
+    // Each row of the result reads its entries from the tiles on and above
+    // the diagonal, the row's own for j >= i and the mirrored ones below.
+    let mut index = vec![usize::MAX; groups * groups];
+    for (t, &(gi, gj)) in tasks.iter().enumerate() {
+        index[gi * groups + gj] = t;
+    }
+    let mut out = vec![0.0; b * b];
+    parallel::fill_chunks(
+        &mut out,
+        b,
+        threads,
+        || (),
+        |_, i, row| {
+            let gi = i / GROUP;
+            for (j, x) in row.iter_mut().enumerate() {
+                let gj = j / GROUP;
+                *x = if j >= i {
+                    tiles[index[gi * groups + gj]][(i - gi * GROUP) * GROUP + (j - gj * GROUP)]
+                } else {
+                    tiles[index[gj * groups + gi]][(j - gj * GROUP) * GROUP + (i - gi * GROUP)]
+                };
+            }
+        },
+    );
     Dense::from_row_major(b, b, out).expect("square")
 }
 
+/// Rows and columns per task in [`column_correlations`] (a multiple of
+/// `RB` and `CB`).
+const GROUP: usize = 64;
 /// Rows per tile in [`column_correlations`].
 const RB: usize = 8;
 /// Columns per tile in [`column_correlations`].
