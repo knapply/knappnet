@@ -42,6 +42,39 @@ static int similarity_checks(void) {
   return 0;
 }
 
+/* Isomorphism, trusses, and onion layers on a 4-cycle. */
+static int structure_checks(void) {
+  int64_t src[] = {0, 1, 2, 3};
+  int64_t tgt[] = {1, 2, 3, 0};
+  char err[256];
+  GraphHandle *g = NULL;
+  if (net_graph_new(4, src, tgt, NULL, 4, 0, &g, err, sizeof err) != 0) return 1;
+  int64_t count = 0;
+  if (net_vf2pp_count(g, g, NULL, NULL, 0, 0, 100, &count, err, sizeof err) != 0 ||
+      count != 8) return 1;
+  MatcherHandle *m = NULL;
+  if (net_vf2pp_new(g, g, NULL, NULL, 0, 0, &m, err, sizeof err) != 0) return 1;
+  int64_t maps[4 * 8], found = 0;
+  if (net_vf2pp_next(m, 8, maps, &found, err, sizeof err) != 0 || found != 8) return 1;
+  net_vf2pp_free(m);
+  net_vf2pp_free(NULL);
+  int32_t ok = 0;
+  if (net_could_be_isomorphic(g, g, 7, 1, &ok, err, sizeof err) != 0 || !ok) return 1;
+  int64_t tsrc[] = {0, 1, 2}, ttgt[] = {1, 2, 3}, map[4];
+  GraphHandle *t = NULL;
+  if (net_graph_new(4, tsrc, ttgt, NULL, 3, 0, &t, err, sizeof err) != 0) return 1;
+  if (net_tree_isomorphism(t, t, -1, -1, map, &ok, err, sizeof err) != 0 || !ok) return 1;
+  if (net_tree_isomorphism(g, g, -1, -1, map, &ok, err, sizeof err) == 0) return 1;
+  int64_t nodes[4], truss[4], edges[4], ne = 0, nn = 0, layers[4];
+  if (net_core_subset(g, 1, 0, 0, nodes, &count, err, sizeof err) != 0 || count != 4) return 1;
+  if (net_truss_numbers(g, truss, err, sizeof err) != 0 || truss[0] != 2) return 1;
+  if (net_k_truss(g, 3, edges, &ne, nodes, &nn, err, sizeof err) != 0 || ne != 0) return 1;
+  if (net_onion_layers(g, layers, err, sizeof err) != 0 || layers[0] != 1) return 1;
+  net_graph_free(t);
+  net_graph_free(g);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -95,6 +128,10 @@ int main(void) {
   if (s == NULL || s[0] != 'c') return 1;
   net_network_free(r);
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
+  if (structure_checks() != 0) {
+    fprintf(stderr, "structure checks failed\n");
+    return 1;
+  }
   if (similarity_checks() != 0) {
     fprintf(stderr, "similarity checks failed\n");
     return 1;

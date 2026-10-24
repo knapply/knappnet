@@ -1,0 +1,177 @@
+# k-shells, k-crusts, and k-coronas (Carmi et al. 2007; Goltsev,
+# Dorogovtsev, and Mendes 2006), k-trusses (Wang and Cheng 2012), and onion
+# layers (Hebert-Dufresne, Grochow, and Allard 2016), as NetworkX 3.7
+# defines them. Format: see ../README.md; runners and encodings in
+# ../bindings/cores.py.
+#
+# Core subsets follow the core numbers of coreness(mode = 'all') (parallel
+# edges and loops counted, as igraph does); NetworkX's core_number rejects
+# loops and multigraphs, so its oracle runs on the simple graph without
+# loops and differs where those matter. Trusses and onion layers are
+# defined on the simple undirected graph without loops, which is what the
+# NetworkX oracle builds.
+
+core_k2:
+  engine: {fn: core_subset, which: core, k: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes with core number at least 2, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_core(G, k = 2) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_shell:
+  engine: {fn: core_subset, which: shell}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes with the largest core number, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_shell(G) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_shell_k1:
+  engine: {fn: core_subset, which: shell, k: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes with core number 1, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_shell(G, k = 1) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_crust:
+  engine: {fn: core_subset, which: crust}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes with core number below the largest, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_crust(G) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_crust_k1:
+  engine: {fn: core_subset, which: crust, k: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "nodes with core number at most 1, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_crust(G, k = 1) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_corona_k1:
+  engine: {fn: core_subset, which: corona, k: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "1-shell nodes with exactly 1 distinct neighbour (successor if directed) in the 1-core, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_corona(G, k = 1) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+core_corona_k2:
+  engine: {fn: core_subset, which: corona, k: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "2-shell nodes with exactly 2 distinct neighbours (successors if directed) in the 2-core, core numbers by repeated deletion of nodes below degree k (cores_definition_oracle.py)"
+    networkx:
+      call: "nx.k_corona(G, k = 2) on nx.Graph or nx.DiGraph without self-loops, its nodes sorted"
+      differs_when: [loops, multi_edges]
+      reason: >-
+        nx.core_number rejects self-loops and multigraphs, so the oracle
+        runs on the simple graph without loops; this engine counts each
+        parallel edge and a loop in a node's degree, as igraph does.
+
+truss_numbers:
+  engine: {fn: truss}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "for k = 2, 3, ...: repeatedly delete edges in fewer than k - 2 triangles; an edge's number is the last k it survives (0 for loops)"
+    networkx:
+      call: "the largest k with the edge in nx.k_truss(G, k), G the simple undirected graph without loops (0 for loops)"
+
+k_truss_3_edges:
+  engine: {fn: k_truss, k: 3, part: edges}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of edges in fewer than 1 triangles; the edges that remain"
+    networkx:
+      call: "nx.k_truss(G, 3), G the simple undirected graph without loops: the fixture edges whose pair it keeps"
+
+k_truss_3_nodes:
+  engine: {fn: k_truss, k: 3, part: nodes}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of edges in fewer than 1 triangles; the nodes that remain"
+    networkx:
+      call: "nx.k_truss(G, 3), G the simple undirected graph without loops: its nodes"
+
+k_truss_4_edges:
+  engine: {fn: k_truss, k: 4, part: edges}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of edges in fewer than 2 triangles; the edges that remain"
+    networkx:
+      call: "nx.k_truss(G, 4), G the simple undirected graph without loops: the fixture edges whose pair it keeps"
+
+k_truss_4_nodes:
+  engine: {fn: k_truss, k: 4, part: nodes}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "repeated deletion of edges in fewer than 2 triangles; the nodes that remain"
+    networkx:
+      call: "nx.k_truss(G, 4), G the simple undirected graph without loops: its nodes"
+
+onion_layers:
+  engine: {fn: onion}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "layer-by-layer removal written from Hebert-Dufresne et al. (2016)"
+    networkx:
+      call: "nx.onion_layers(G), G the simple undirected graph without loops"

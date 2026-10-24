@@ -21,11 +21,13 @@ use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
 mod communities;
+mod cores;
 mod cyber;
 mod descriptive;
 mod files;
 mod frame;
 mod groups;
+mod isomorphism;
 mod layout;
 mod positions;
 mod qap;

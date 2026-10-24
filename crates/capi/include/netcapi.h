@@ -727,6 +727,32 @@ void net_projection_free(ProjectionHandle *p);
 int32_t net_coreness(const GraphHandle *h, int32_t mode, double *out,
                      char *err, size_t err_len);
 
+/* The nodes (increasing) of the k-core (which 0), k-shell (1), k-crust
+ * (2), or k-corona (3: k-shell nodes with exactly k neighbours, distinct
+ * successors in directed graphs, in the k-core), from the core numbers
+ * of net_coreness with mode 3, into nodes[0..*count). has_k == 0 takes
+ * NetworkX's default k (largest core number; one less for the crust). */
+int32_t net_core_subset(const GraphHandle *h, int32_t which, int64_t k,
+                        int32_t has_k, int64_t *nodes, int64_t *count,
+                        char *err, size_t err_len);
+
+/* Truss number of every edge (the largest k whose k-truss contains it; 2
+ * outside triangles, 0 for self-loops) of the simple undirected graph,
+ * into out[0..m); parallel copies share their edge's value. */
+int32_t net_truss_numbers(const GraphHandle *h, int64_t *out, char *err,
+                          size_t err_len);
+
+/* The k-truss (NetworkX's k_truss): its edges (indices, increasing) into
+ * edges[0..*n_edges) and the nodes they touch into nodes[0..*n_nodes). */
+int32_t net_k_truss(const GraphHandle *h, int64_t k, int64_t *edges,
+                    int64_t *n_edges, int64_t *nodes, int64_t *n_nodes,
+                    char *err, size_t err_len);
+
+/* Onion decomposition layers (from 1; isolated nodes first) of the simple
+ * undirected graph, self-loops ignored, into out[0..n). */
+int32_t net_onion_layers(const GraphHandle *h, int64_t *out, char *err,
+                         size_t err_len);
+
 /* Maximal cliques; release with net_groups_free. */
 typedef struct GroupsHandle GroupsHandle;
 
@@ -1221,6 +1247,57 @@ int32_t net_graph_edit_distance(const GraphHandle *h1, const GraphHandle *h2,
                                 int64_t root2, double upper_bound,
                                 int64_t max_steps, double *out,
                                 int32_t *found, char *err, size_t err_len);
+
+/* ---- Isomorphism -------------------------------------------------------
+ * VF2++ (NetworkX's vf2pp_* functions): problem 0 = isomorphism, 1 = sg
+ * isomorphic to an induced subgraph of fg, 2 = monomorphism (sg
+ * isomorphic to a subgraph of fg). Both graphs directed or both
+ * undirected; edge multiplicities and self-loops must match (be no
+ * larger in sg for monomorphism); labels are both NULL or one value per
+ * node of each graph. A mapping lists, for every node of sg, its node of
+ * fg (NetworkX's dicts map fg nodes to sg nodes). With empty_matches ==
+ * 0 a graph without nodes gives no mapping, as in NetworkX. */
+
+/* A VF2++ search in progress; release with net_vf2pp_free. */
+typedef struct MatcherHandle MatcherHandle;
+
+/* Starts a search for the mappings of sg into fg. */
+int32_t net_vf2pp_new(const GraphHandle *fg, const GraphHandle *sg,
+                      const int64_t *fg_labels, const int64_t *sg_labels,
+                      int32_t problem, int32_t empty_matches,
+                      MatcherHandle **out, char *err, size_t err_len);
+
+/* Writes up to max further mappings (mapping i at mappings[i * n_sg ...))
+ * and their number into *found; fewer than max means the search is
+ * over. */
+int32_t net_vf2pp_next(MatcherHandle *h, int64_t max, int64_t *mappings,
+                       int64_t *found, char *err, size_t err_len);
+
+/* Releases a search (NULL is allowed). */
+void net_vf2pp_free(MatcherHandle *h);
+
+/* Number of mappings, counting at most limit (1: whether one exists). */
+int32_t net_vf2pp_count(const GraphHandle *fg, const GraphHandle *sg,
+                        const int64_t *fg_labels, const int64_t *sg_labels,
+                        int32_t problem, int32_t empty_matches,
+                        int64_t limit, int64_t *out, char *err,
+                        size_t err_len);
+
+/* NetworkX's could_be_isomorphic: *out = 1 when the node counts and,
+ * cumulatively, the sorted degree (properties bit 1), triangle (bit 2),
+ * and maximal-clique (bit 4) sequences agree. Bits 2 and 4 need
+ * undirected graphs. */
+int32_t net_could_be_isomorphic(const GraphHandle *g1, const GraphHandle *g2,
+                                int32_t properties, int32_t threads,
+                                int32_t *out, char *err, size_t err_len);
+
+/* Tree isomorphism, direction ignored: rooted (root1, root2 >= 0, roots
+ * mapped onto each other) or free (both < 0, rooted at the centres).
+ * *found = 1 and mapping[0..n1) (node of t2 for every node of t1) when
+ * isomorphic. A graph that is not a tree is an error. */
+int32_t net_tree_isomorphism(const GraphHandle *t1, const GraphHandle *t2,
+                             int64_t root1, int64_t root2, int64_t *mapping,
+                             int32_t *found, char *err, size_t err_len);
 
 /* ---- Quadratic assignment procedure (QAP) -------------------------------
  * Matrices are n-by-n doubles in column-major order; NaN marks a missing

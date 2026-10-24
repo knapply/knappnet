@@ -5,7 +5,7 @@
 //! | Centrality | [`degree`], [`betweenness`], [`closeness`], [`eigenvector`], [`spectral`] (PageRank, Katz, power, HITS), [`reach`] (reach, edge betweenness, information, bridging), [`brokerage`] |
 //! | Structure and description | [`descriptive`] (reciprocity, transitivity, distances), [`topography`] (density, components, centralization), [`triad`], [`mixing`], [`ego`], [`bipartite`], [`linkpred`] (link prediction) |
 //! | Cohesion and groups | [`cores`], [`cliques`], [`factions`] (bicomponents, n-cliques, k-plexes, lambda sets), [`community`] (modularity, Louvain), [`partition`] (Girvan-Newman, leading eigenvector, fast greedy), [`resilience`] (key players, flow betweenness) |
-//! | Positions and roles | [`equivalence`] (structural equivalence, CONCOR), [`regular`], [`blockmodel`], [`coreperiphery`], [`scaling`], [`similarity`] (SimRank, Panther), [`edit_distance`], [`wl`] (colour refinement, Weisfeiler-Lehman hashes) |
+//! | Positions and roles | [`equivalence`] (structural equivalence, CONCOR), [`regular`], [`blockmodel`], [`coreperiphery`], [`scaling`], [`similarity`] (SimRank, Panther), [`edit_distance`], [`isomorphism`] (VF2++, tree isomorphism), [`wl`] (colour refinement, Weisfeiler-Lehman hashes) |
 
 // Centrality.
 pub mod betweenness;
@@ -38,6 +38,7 @@ pub mod blockmodel;
 pub mod coreperiphery;
 pub mod edit_distance;
 pub mod equivalence;
+pub mod isomorphism;
 pub mod regular;
 pub mod scaling;
 pub mod similarity;
