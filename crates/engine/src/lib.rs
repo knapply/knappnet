@@ -12,7 +12,7 @@
 //! |---|---|
 //! | Storage and shared machinery | [`graph`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
 //! | Data model and validation | [`frame`] (typed node and edge tables, roles, declared properties, diagnostics, graph construction) |
-//! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
+//! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies), [`paths`] (shortest paths, predecessors, negative lengths, all pairs, k shortest paths) |
 //! | Network files | [`io`] |
 //! | Measures (centrality, cohesion, positions, structure) | [`metrics`] |
 //! | Statistical models | [`qap`] |
@@ -30,6 +30,7 @@ pub mod graph;
 pub mod linalg;
 pub mod matrix;
 pub mod parallel;
+pub mod paths;
 pub mod rng;
 pub mod union_find;
 pub mod weights;

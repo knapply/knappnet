@@ -27,6 +27,7 @@ mod files;
 mod frame;
 mod groups;
 mod layout;
+mod paths;
 mod positions;
 mod qap;
 mod roles;

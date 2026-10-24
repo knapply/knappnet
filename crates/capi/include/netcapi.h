@@ -1440,6 +1440,162 @@ int32_t net_random_sbm(int64_t k, const int64_t *sizes, const double *probs,
                        uint64_t seed, int32_t threads, EdgeListsHandle **out,
                        char *err, size_t err_len);
 
+/* ---- Shortest paths -----------------------------------------------------
+ * A path graph holds the arcs a search may follow, oriented for a mode,
+ * with one length per arc; build it once and run any number of searches.
+ * Lengths are unit (weighted == 0), the edge weights read per weights_as,
+ * or one value per edge (lengths != NULL; +Inf hides an edge). Searches
+ * other than the negative-length ones need non-negative lengths. tie:
+ * 0 = path lengths equal to a relative tolerance of 1e-10, 1 = exactly
+ * equal (NetworkX). Parent and predecessor arrays use -1 for "no node";
+ * all-pairs matrices are column-major with one row per source. Paths,
+ * predecessor lists, and cycles come back as a list collection: query the
+ * number of lists and nodes, allocate, then copy; list i is
+ * nodes[offsets[i] .. offsets[i + 1]) with value values[i] (a path
+ * length, or NaN). Ties among equally short paths are settled by node
+ * index, so results are deterministic. */
+
+/* Arcs with lengths; release with net_path_graph_free. */
+typedef struct PathGraphHandle PathGraphHandle;
+
+/* mode 1 = out, 2 = in (paths to the source), 3 = all. collapse_parallel
+ * != 0 keeps only the shortest of parallel arcs (node-sequence path counts,
+ * as NetworkX reads a multigraph). n_lengths must equal the edge count
+ * when lengths != NULL. */
+int32_t net_path_graph_new(const GraphHandle *h, int32_t mode,
+                           int32_t weighted, int32_t weights_as,
+                           const double *lengths, int64_t n_lengths,
+                           int32_t collapse_parallel, PathGraphHandle **out,
+                           char *err, size_t err_len);
+
+/* Releases a path graph (NULL is allowed). */
+void net_path_graph_free(PathGraphHandle *h);
+
+/* Number of arcs, or -1 for NULL. */
+int64_t net_path_graph_arc_count(const PathGraphHandle *h);
+
+/* A collection of node lists; release with net_path_lists_free. */
+typedef struct PathListsHandle PathListsHandle;
+
+/* Number of lists, or -1 for NULL. */
+int64_t net_path_lists_count(const PathListsHandle *h);
+
+/* Total number of nodes over all lists, or -1 for NULL. */
+int64_t net_path_lists_total(const PathListsHandle *h);
+
+/* offsets holds count + 1 values, nodes total values, values (may be
+ * NULL) count values. */
+int32_t net_path_lists_copy(const PathListsHandle *h, int64_t *offsets,
+                            int64_t *nodes, double *values, char *err,
+                            size_t err_len);
+
+/* Releases a list collection (NULL is allowed). */
+void net_path_lists_free(PathListsHandle *h);
+
+/* Shortest paths from the nearest of n_sources sources: dist (Inf when
+ * not reached) and parent, and when not NULL parent_edge (input index of
+ * the edge from the parent) and origin (the source each node was reached
+ * from); n values each. cutoff bounds distances (Inf for none);
+ * target >= 0 stops once the target is settled (other nodes may then be
+ * reported unreached); reverse != 0 follows arcs backward. */
+int32_t net_shortest_paths(const PathGraphHandle *pg, const int64_t *sources,
+                           int64_t n_sources, double cutoff, int64_t target,
+                           int32_t reverse, double *dist, int64_t *parent,
+                           int64_t *parent_edge, int64_t *origin, char *err,
+                           size_t err_len);
+
+/* Predecessor lists of one search (list v: every u with an arc u -> v on a
+ * shortest path, in settling order); dist receives n distances. */
+int32_t net_shortest_path_predecessors(const PathGraphHandle *pg,
+                                       const int64_t *sources,
+                                       int64_t n_sources, double cutoff,
+                                       int32_t reverse, int32_t tie,
+                                       double *dist, PathListsHandle **out,
+                                       char *err, size_t err_len);
+
+/* Distances and parents (parent may be NULL) from every source (every node
+ * when sources is NULL or n_sources < 0); (number of sources) * n values
+ * each. */
+int32_t net_all_pairs_shortest_paths(const PathGraphHandle *pg,
+                                     const int64_t *sources,
+                                     int64_t n_sources, double cutoff,
+                                     int32_t threads, double *dist,
+                                     int64_t *parent, char *err,
+                                     size_t err_len);
+
+/* One shortest path from s to t by bidirectional search: zero lists (no
+ * path) or one path with its length. */
+int32_t net_bidirectional_shortest_path(const PathGraphHandle *pg, int64_t s,
+                                        int64_t t, PathListsHandle **out,
+                                        char *err, size_t err_len);
+
+/* A* from s to t; heuristic holds n estimates of the remaining length to t
+ * (a shortest path when none overestimates). Nodes whose length plus
+ * heuristic exceeds cutoff are dropped (Inf for none). */
+int32_t net_astar_path(const PathGraphHandle *pg, int64_t s, int64_t t,
+                       const double *heuristic, double cutoff,
+                       PathListsHandle **out, char *err, size_t err_len);
+
+/* Shortest paths with lengths of any sign. method 0 = Bellman-Ford (any
+ * number of sources), 1 = Goldberg-Radzik (one source). Without a negative
+ * cycle reachable from the sources: dist and parent (n values) are filled,
+ * *preds (if preds != NULL) receives predecessor lists, and *cycle zero
+ * lists. Otherwise *cycle receives the cycle as a closed walk (first node
+ * repeated) and nothing else is written. */
+int32_t net_negative_shortest_paths(const PathGraphHandle *pg,
+                                    const int64_t *sources, int64_t n_sources,
+                                    int32_t method, int32_t tie, double *dist,
+                                    int64_t *parent, PathListsHandle **preds,
+                                    PathListsHandle **cycle, char *err,
+                                    size_t err_len);
+
+/* A negative cycle reachable from source (anywhere when source < 0): zero
+ * lists or one closed walk. */
+int32_t net_negative_cycle(const PathGraphHandle *pg, int64_t source,
+                           PathListsHandle **out, char *err, size_t err_len);
+
+/* All-pairs distances and parents by Johnson's algorithm (lengths of any
+ * sign), as net_all_pairs_shortest_paths; *cycle receives zero lists, or
+ * one negative cycle and the matrices are not written. */
+int32_t net_johnson(const PathGraphHandle *pg, const int64_t *sources,
+                    int64_t n_sources, int32_t threads, double *dist,
+                    int64_t *parent, PathListsHandle **cycle, char *err,
+                    size_t err_len);
+
+/* Floyd-Warshall: n-by-n distances and predecessors (pred may be NULL; the
+ * node before v on the path from u). *negative_cycle is 1 when the network
+ * has a negative cycle (the matrices are then not path lengths). */
+int32_t net_floyd_warshall(const PathGraphHandle *pg, int32_t threads,
+                           double *dist, int64_t *pred,
+                           int32_t *negative_cycle, char *err,
+                           size_t err_len);
+
+/* Number of shortest paths (node sequences) from s to every node; out
+ * holds n doubles. */
+int32_t net_count_shortest_paths(const PathGraphHandle *pg, int64_t s,
+                                 int32_t tie, double *out, char *err,
+                                 size_t err_len);
+
+/* Every shortest path from s to t in lexicographic order with its length
+ * (zero lists when t is unreachable); fails beyond max_paths paths. */
+int32_t net_all_shortest_paths(const PathGraphHandle *pg, int64_t s,
+                               int64_t t, int32_t tie, int64_t max_paths,
+                               PathListsHandle **out, char *err,
+                               size_t err_len);
+
+/* The k shortest simple paths from s to t in order of length (Yen). */
+int32_t net_k_shortest_paths(const PathGraphHandle *pg, int64_t s, int64_t t,
+                             int64_t k, PathListsHandle **out, char *err,
+                             size_t err_len);
+
+/* A shortest path from s to t avoiding n_nodes nodes and n_edges edges
+ * (input indices): zero lists or one path with its length. */
+int32_t net_shortest_path_avoiding(const PathGraphHandle *pg, int64_t s,
+                                   int64_t t, const int64_t *nodes,
+                                   int64_t n_nodes, const int64_t *edges,
+                                   int64_t n_edges, PathListsHandle **out,
+                                   char *err, size_t err_len);
+
 #ifdef __cplusplus
 }
 #endif

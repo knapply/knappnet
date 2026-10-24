@@ -57,6 +57,32 @@ int main(void) {
   if (s == NULL || s[0] != 'c') return 1;
   net_network_free(r);
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
+
+  /* Shortest paths: a weighted path graph and a k-shortest-paths query. */
+  int64_t ps[] = {0, 1, 0};
+  int64_t pt[] = {1, 2, 2};
+  double pw[] = {1.0, 1.0, 5.0};
+  GraphHandle *pgr = NULL;
+  PathGraphHandle *pgh = NULL;
+  if (net_graph_new(3, ps, pt, pw, 3, 1, &pgr, err, sizeof err) != 0) return 1;
+  if (net_path_graph_new(pgr, 1, 1, 0, NULL, -1, 0, &pgh, err, sizeof err) != 0) return 1;
+  int64_t src0[] = {0};
+  double pdist[3];
+  int64_t ppar[3];
+  if (net_shortest_paths(pgh, src0, 1, INFINITY, -1, 0, pdist, ppar, NULL, NULL, err,
+                         sizeof err) != 0) return 1;
+  if (pdist[2] != 2.0 || ppar[2] != 1 || ppar[0] != -1) return 1;
+  PathListsHandle *kp = NULL;
+  if (net_k_shortest_paths(pgh, 0, 2, 5, &kp, err, sizeof err) != 0) return 1;
+  if (net_path_lists_count(kp) != 2 || net_path_lists_total(kp) != 5) return 1;
+  int64_t koff[3], knodes[5];
+  double klen[2];
+  if (net_path_lists_copy(kp, koff, knodes, klen, err, sizeof err) != 0) return 1;
+  if (klen[0] != 2.0 || klen[1] != 5.0 || koff[1] != 3 || knodes[4] != 2) return 1;
+  net_path_lists_free(kp);
+  net_path_graph_free(pgh);
+  net_path_graph_free(NULL);
+  net_graph_free(pgr);
   puts("C ABI smoke test passed");
   return 0;
 }
