@@ -87,9 +87,9 @@ def _declare() -> ctypes.CDLL:
                                                 i32, f64p, f64p, cp, sz],
         "net_current_flow_betweenness_approx": [h, i64p, i64, f64, i64, f64, u64, i32, i32,
                                                 i32, i32, f64p, cp, sz],
-        "net_current_flow_closeness": [h, i32, i32, f64p, cp, sz],
-        "net_resistance_distance": [h, i32, i32, f64p, cp, sz],
-        "net_effective_graph_resistance": [h, i32, i32, f64p, cp, sz],
+        "net_current_flow_closeness": [h, i32, i32, i32, f64p, cp, sz],
+        "net_resistance_distance": [h, i32, i32, i32, f64p, cp, sz],
+        "net_effective_graph_resistance": [h, i32, i32, i32, f64p, cp, sz],
         "net_kemeny_constant": [h, i32, f64p, cp, sz],
         "net_second_order_centrality": [h, i32, f64p, cp, sz],
         "net_communicability": [h, f64p, cp, sz],
@@ -273,21 +273,21 @@ def _current_flow_approx(g, spec, fx):
 @register("cx_current_flow_closeness")
 def _cfc(g, spec, fx):
     lib = _declare()
-    return _call(lib.net_current_flow_closeness, g.handle, g.n, *_flow(spec))
+    return _call(lib.net_current_flow_closeness, g.handle, g.n, *_flow(spec), 0)
 
 
 @register("cx_resistance")
 def _resistance(g, spec, fx):
     lib = _declare()
     w, wa = int(spec.get("weighted", False)), WEIGHTS_AS[spec.get("weights_as", "distance")]
-    return _matrix(_call(lib.net_resistance_distance, g.handle, g.n * g.n, w, wa), g.n)
+    return _matrix(_call(lib.net_resistance_distance, g.handle, g.n * g.n, w, wa, 0), g.n)
 
 
 @register("cx_effective_resistance")
 def _effective(g, spec, fx):
     lib = _declare()
     w, wa = int(spec.get("weighted", False)), WEIGHTS_AS[spec.get("weights_as", "distance")]
-    return _call(lib.net_effective_graph_resistance, g.handle, 1, w, wa)
+    return _call(lib.net_effective_graph_resistance, g.handle, 1, w, wa, 0)
 
 
 @register("cx_kemeny")

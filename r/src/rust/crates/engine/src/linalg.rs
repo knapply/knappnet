@@ -244,6 +244,112 @@ pub fn cholesky_inverse(a: &Dense) -> Option<Dense> {
     Some(inv)
 }
 
+/// The inverse of a symmetric positive definite matrix on several threads,
+/// or `None` if `a` is not positive definite (to working precision).
+///
+/// The Cholesky factor is computed column by column, the rows below the
+/// diagonal of each column in parallel (each entry a dot product of two
+/// row prefixes, so memory is read contiguously); then every column of the
+/// inverse is found by a forward and a backward triangular solve, columns
+/// in parallel. Every entry is computed by the same operations in the same
+/// order whatever the number of threads, so results do not depend on it;
+/// they can differ from [`cholesky_inverse`] in the last bits, since the
+/// operations are grouped differently. O(n^3) work in all, about twice
+/// that of [`cholesky_inverse`], spread over the threads.
+pub fn spd_inverse_parallel(a: &Dense, threads: usize) -> Option<Dense> {
+    use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+    let n = a.rows();
+    assert_eq!(
+        a.cols(),
+        n,
+        "spd_inverse_parallel: the matrix must be square"
+    );
+    if n == 0 {
+        return Some(Dense::zeros(0, 0));
+    }
+    let threads = crate::parallel::threads_for(threads, n, (n as u64).pow(3) / 2);
+    // The lower factor, row-major, shared between the members.
+    let l: Vec<AtomicU64> = (0..n * n).map(|_| AtomicU64::new(0)).collect();
+    let s: Vec<AtomicU64> = (0..n).map(|_| AtomicU64::new(0)).collect();
+    let failed = AtomicBool::new(false);
+    let get = |i: usize, j: usize| f64::from_bits(l[i * n + j].load(Ordering::Relaxed));
+    crate::parallel::crew(threads, |crew| {
+        let size = crew.size();
+        let me = crew.index();
+        for j in 0..n {
+            // Rows j.. are dealt out in turn so that the work stays even as
+            // the columns shrink.
+            let first = j + (me + size - j % size) % size;
+            let mut i = first;
+            while i < n {
+                let mut acc = a.get(i, j);
+                for k in 0..j {
+                    acc -= get(i, k) * get(j, k);
+                }
+                s[i].store(acc.to_bits(), Ordering::Relaxed);
+                i += size;
+            }
+            crew.wait();
+            let d = f64::from_bits(s[j].load(Ordering::Relaxed));
+            if !(d > 0.0) || !d.is_finite() {
+                failed.store(true, Ordering::Relaxed);
+                return;
+            }
+            let d = d.sqrt();
+            let mut i = first;
+            while i < n {
+                let x = f64::from_bits(s[i].load(Ordering::Relaxed));
+                let v = if i == j { d } else { x / d };
+                l[i * n + j].store(v.to_bits(), Ordering::Relaxed);
+                i += size;
+            }
+            crew.wait();
+        }
+    });
+    if failed.load(Ordering::Relaxed) {
+        return None;
+    }
+    let l: Vec<f64> = l
+        .into_iter()
+        .map(|x| f64::from_bits(x.into_inner()))
+        .collect();
+    // U = L' row-major, for contiguous backward solves.
+    let mut u = vec![0.0; n * n];
+    for i in 0..n {
+        for j in 0..=i {
+            u[j * n + i] = l[i * n + j];
+        }
+    }
+    let mut inv = vec![0.0; n * n];
+    // Row c of the (symmetric) inverse is the solution of L L' x = e_c.
+    crate::parallel::fill_chunks(
+        &mut inv,
+        n,
+        threads,
+        || vec![0.0; n],
+        |y, c, row| {
+            y.iter_mut().for_each(|v| *v = 0.0);
+            for i in c..n {
+                let li = &l[i * n..i * n + i];
+                let mut acc = if i == c { 1.0 } else { 0.0 };
+                for k in c..i {
+                    acc -= li[k] * y[k];
+                }
+                y[i] = acc / l[i * n + i];
+            }
+            for i in (0..n).rev() {
+                let ui = &u[i * n..(i + 1) * n];
+                let mut acc = y[i];
+                for k in i + 1..n {
+                    acc -= ui[k] * row[k];
+                }
+                row[i] = acc / u[i * n + i];
+            }
+        },
+    );
+    Dense::from_row_major(n, n, inv).ok()
+}
+
 // ---- Gaussian elimination -----------------------------------------------------
 
 /// The largest magnitude in `a`, floored at the smallest positive double
@@ -915,6 +1021,34 @@ mod tests {
         check_eigen(&Dense::zeros(4, 4));
         let (vals, vecs) = symmetric_eigen(&Dense::zeros(0, 0)).unwrap();
         assert!(vals.is_empty() && vecs.rows() == 0);
+    }
+
+    #[test]
+    fn parallel_spd_inverse_matches_cholesky_inverse() {
+        let mut rng = crate::rng::Stream::new(4, 0);
+        for &n in &[1usize, 2, 7, 40, 97] {
+            let b: Vec<f64> = (0..n * n).map(|_| rng.uniform() - 0.5).collect();
+            let b = square(b);
+            let mut a = matmul(&b, &transpose(&b));
+            for i in 0..n {
+                a.set(i, i, a.get(i, i) + 0.5);
+            }
+            let want = cholesky_inverse(&a).unwrap();
+            let one = spd_inverse_parallel(&a, 1).unwrap();
+            let four = spd_inverse_parallel(&a, 4).unwrap();
+            assert_eq!(one, four);
+            for i in 0..n {
+                for j in 0..n {
+                    assert!(
+                        (one.get(i, j) - want.get(i, j)).abs()
+                            < 1e-9 * (1.0 + want.get(i, j).abs())
+                    );
+                }
+            }
+        }
+        let mut not_pd = Dense::identity(3);
+        not_pd.set(1, 1, -1.0);
+        assert!(spd_inverse_parallel(&not_pd, 2).is_none());
     }
 
     #[test]

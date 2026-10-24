@@ -136,11 +136,12 @@ struct Circuit {
     edge_cond: Vec<f64>,
     component: Vec<usize>,
     components: usize,
+    threads: usize,
 }
 
 impl Circuit {
     #[allow(clippy::needless_range_loop)]
-    fn new(g: &Graph, weighted: bool, kind: WeightKind) -> Result<Circuit> {
+    fn new(g: &Graph, weighted: bool, kind: WeightKind, threads: usize) -> Result<Circuit> {
         let n = g.node_count();
         let m = g.edge_count();
         let (src, tgt) = (g.edge_sources(), g.edge_targets());
@@ -195,6 +196,7 @@ impl Circuit {
             edge_cond,
             component,
             components,
+            threads,
         })
     }
 
@@ -234,7 +236,7 @@ impl Circuit {
                 }
             }
         }
-        linalg::cholesky_inverse(&a).ok_or_else(|| {
+        linalg::spd_inverse_parallel(&a, self.threads).ok_or_else(|| {
             Error::InvalidArgument("the grounded Laplacian is not positive definite".into())
         })
     }
@@ -313,7 +315,7 @@ fn per_edge(g: &Graph, c: &Circuit, pair_value: impl Fn(usize, usize) -> f64) ->
 pub fn current_flow_betweenness(g: &Graph, opts: FlowOptions) -> Result<FlowBetweenness> {
     let n = g.node_count();
     let m = g.edge_count();
-    let c = Circuit::new(g, opts.weighted, opts.weights_as)?;
+    let c = Circuit::new(g, opts.weighted, opts.weights_as, opts.threads)?;
     if n < 3 {
         return Ok(FlowBetweenness {
             nodes: vec![0.0; n],
@@ -401,7 +403,7 @@ pub fn current_flow_betweenness_subset(
             )));
         }
     }
-    let c = Circuit::new(g, opts.weighted, opts.weights_as)?;
+    let c = Circuit::new(g, opts.weighted, opts.weights_as, opts.threads)?;
     if !c.connected() || n == 0 {
         return Ok(FlowBetweenness::undefined(n, m));
     }
@@ -532,7 +534,7 @@ fn approx_with(
     dense_limit: usize,
 ) -> Result<Vec<f64>> {
     let n = g.node_count();
-    let c = Circuit::new(g, opts.weighted, opts.weights_as)?;
+    let c = Circuit::new(g, opts.weighted, opts.weights_as, opts.threads)?;
     if !c.connected() {
         return Ok(vec![f64::NAN; n]);
     }
@@ -679,7 +681,7 @@ fn laplacian_apply(c: &Circuit, x: &[f64], out: &mut [f64]) {
 /// (infinite between components). See the module documentation.
 pub fn resistance_distance(g: &Graph, opts: FlowOptions) -> Result<Dense> {
     let n = g.node_count();
-    let c = Circuit::new(g, opts.weighted, opts.weights_as)?;
+    let c = Circuit::new(g, opts.weighted, opts.weights_as, opts.threads)?;
     let mut r = Dense::zeros(n, n);
     for i in 0..n {
         for j in 0..n {

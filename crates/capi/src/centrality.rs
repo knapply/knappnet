@@ -372,13 +372,14 @@ pub unsafe extern "C" fn net_current_flow_closeness(
     h: *const GraphHandle,
     weighted: i32,
     weights_as: i32,
+    threads: i32,
     out: *mut f64,
     err: *mut c_char,
     err_len: usize,
 ) -> i32 {
     guard(err, err_len, || {
         let g = handle(h)?;
-        let v = current_flow_closeness(g, flow_options(weighted, weights_as, 0, 1)?)?;
+        let v = current_flow_closeness(g, flow_options(weighted, weights_as, 0, threads)?)?;
         slice_mut(out, g.node_count()).copy_from_slice(&v);
         Ok(())
     })
@@ -394,6 +395,7 @@ pub unsafe extern "C" fn net_resistance_distance(
     h: *const GraphHandle,
     weighted: i32,
     weights_as: i32,
+    threads: i32,
     out: *mut f64,
     err: *mut c_char,
     err_len: usize,
@@ -401,7 +403,7 @@ pub unsafe extern "C" fn net_resistance_distance(
     guard(err, err_len, || {
         let g = handle(h)?;
         let n = g.node_count();
-        let r = resistance_distance(g, flow_options(weighted, weights_as, 0, 1)?)?;
+        let r = resistance_distance(g, flow_options(weighted, weights_as, 0, threads)?)?;
         slice_mut(out, n * n).copy_from_slice(&r.to_col_major());
         Ok(())
     })
@@ -416,6 +418,7 @@ pub unsafe extern "C" fn net_effective_graph_resistance(
     h: *const GraphHandle,
     weighted: i32,
     weights_as: i32,
+    threads: i32,
     out: *mut f64,
     err: *mut c_char,
     err_len: usize,
@@ -423,7 +426,7 @@ pub unsafe extern "C" fn net_effective_graph_resistance(
     guard(err, err_len, || {
         let g = handle(h)?;
         slice_mut(out, 1)[0] =
-            effective_graph_resistance(g, flow_options(weighted, weights_as, 0, 1)?)?;
+            effective_graph_resistance(g, flow_options(weighted, weights_as, 0, threads)?)?;
         Ok(())
     })
 }

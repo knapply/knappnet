@@ -1668,18 +1668,18 @@ int32_t net_current_flow_betweenness_approx(
 
 /* Current-flow closeness (1 / sum of resistance distances). */
 int32_t net_current_flow_closeness(const GraphHandle *h, int32_t weighted,
-                                   int32_t weights_as, double *out, char *err,
-                                   size_t err_len);
+                                   int32_t weights_as, int32_t threads,
+                                   double *out, char *err, size_t err_len);
 
 /* Resistance distances, n * n values (Inf between components). */
 int32_t net_resistance_distance(const GraphHandle *h, int32_t weighted,
-                                int32_t weights_as, double *out, char *err,
-                                size_t err_len);
+                                int32_t weights_as, int32_t threads,
+                                double *out, char *err, size_t err_len);
 
 /* Effective graph resistance (one double; Inf when disconnected). */
 int32_t net_effective_graph_resistance(const GraphHandle *h, int32_t weighted,
-                                       int32_t weights_as, double *out,
-                                       char *err, size_t err_len);
+                                       int32_t weights_as, int32_t threads,
+                                       double *out, char *err, size_t err_len);
 
 /* Kemeny's constant of the random walk (one double). */
 int32_t net_kemeny_constant(const GraphHandle *h, int32_t weighted,
