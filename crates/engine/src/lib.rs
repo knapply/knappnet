@@ -10,7 +10,7 @@
 //!
 //! | Area | Modules |
 //! |---|---|
-//! | Storage and shared machinery | [`graph`], [`bitset`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
+//! | Storage and shared machinery | [`graph`], [`bitset`], [`blake2b`], [`matrix`], [`linalg`], [`union_find`], [`rng`], [`parallel`], [`error`], [`conventions`] |
 //! | Data model and validation | [`frame`] (typed node and edge tables, roles, declared properties, diagnostics, graph construction) |
 //! | Paths and weights | [`weights`] (how weights are read and which shortest-path algorithm applies) |
 //! | Network files | [`io`] |
@@ -23,6 +23,7 @@
 
 // Storage and shared machinery.
 pub mod bitset;
+pub mod blake2b;
 pub mod conventions;
 pub mod error;
 pub mod frame;

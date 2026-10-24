@@ -758,6 +758,177 @@ pub fn for_each_bit(mut bits: u64, mut f: impl FnMut(usize)) {
     }
 }
 
+/// The distinct neighbours of every node of a graph read as undirected
+/// (direction ignored, parallel edges merged), as sorted rows and, when
+/// the network is dense enough to repay it ([`BitMatrix::worthwhile`]), as
+/// bit rows. A self-loop puts a node in its own row, as in the adjacency
+/// dict of a NetworkX `Graph`. Set measures over pairs of nodes (common
+/// neighbours, unions, link prediction, similarity) are population counts
+/// of ANDed bit rows on dense networks and merges of sorted rows
+/// otherwise.
+#[derive(Debug, Clone)]
+pub struct NeighborSets {
+    offsets: Vec<usize>,
+    targets: Vec<u32>,
+    loops: Vec<bool>,
+    bits: Option<BitMatrix>,
+}
+
+impl NeighborSets {
+    /// The neighbour sets of `g`; `bits` allows the bit rows (they are
+    /// built only when [`BitMatrix::worthwhile`]).
+    pub fn new(g: &Graph, bits: bool) -> NeighborSets {
+        let n = g.node_count();
+        let out = g.out();
+        let inc = g.inc();
+        let mut offsets = Vec::with_capacity(n + 1);
+        offsets.push(0);
+        let mut targets: Vec<u32> = Vec::with_capacity(out.arc_count());
+        let mut loops = vec![false; n];
+        for (v, has_loop) in loops.iter_mut().enumerate() {
+            let a = out.neighbors(v);
+            let b: &[u32] = if g.is_directed() {
+                inc.neighbors(v)
+            } else {
+                &[]
+            };
+            let start = targets.len();
+            let (mut i, mut j) = (0, 0);
+            while i < a.len() || j < b.len() {
+                let u = if j >= b.len() || (i < a.len() && a[i] <= b[j]) {
+                    i += 1;
+                    a[i - 1]
+                } else {
+                    j += 1;
+                    b[j - 1]
+                };
+                if targets.len() == start || targets[targets.len() - 1] != u {
+                    targets.push(u);
+                    if u as usize == v {
+                        *has_loop = true;
+                    }
+                }
+            }
+            offsets.push(targets.len());
+        }
+        let bits = (bits && BitMatrix::worthwhile(n, targets.len())).then(|| {
+            let mut m = BitMatrix::new(n);
+            for v in 0..n {
+                for &u in &targets[offsets[v]..offsets[v + 1]] {
+                    m.set(v, u as usize);
+                }
+            }
+            m
+        });
+        NeighborSets {
+            offsets,
+            targets,
+            loops,
+            bits,
+        }
+    }
+
+    /// Number of nodes.
+    #[inline]
+    pub fn node_count(&self) -> usize {
+        self.loops.len()
+    }
+
+    /// The neighbours of `v`, sorted, `v` itself included if it has a loop.
+    #[inline]
+    pub fn row(&self, v: usize) -> &[u32] {
+        &self.targets[self.offsets[v]..self.offsets[v + 1]]
+    }
+
+    /// Whether `v` has a self-loop.
+    #[inline]
+    pub fn has_loop(&self, v: usize) -> bool {
+        self.loops[v]
+    }
+
+    /// Number of distinct neighbours of `v`, itself included if looped.
+    #[inline]
+    pub fn len(&self, v: usize) -> usize {
+        self.offsets[v + 1] - self.offsets[v]
+    }
+
+    /// Whether no node has a neighbour.
+    pub fn is_empty(&self) -> bool {
+        self.targets.is_empty()
+    }
+
+    /// Degree of `v` in the simple graph, a self-loop counting twice (the
+    /// degree of a NetworkX `Graph`).
+    #[inline]
+    pub fn simple_degree(&self, v: usize) -> usize {
+        self.len(v) + self.loops[v] as usize
+    }
+
+    /// Total number of row entries (twice the edges plus the loops).
+    #[inline]
+    pub fn entries(&self) -> usize {
+        self.targets.len()
+    }
+
+    /// The bit rows, if built.
+    #[inline]
+    pub fn bits(&self) -> Option<&BitMatrix> {
+        self.bits.as_ref()
+    }
+
+    /// Whether `u` and `v` are adjacent (`u == v`: whether `u` is looped).
+    #[inline]
+    pub fn adjacent(&self, u: usize, v: usize) -> bool {
+        match &self.bits {
+            Some(m) => m.get(u, v),
+            None => self.row(u).binary_search(&(v as u32)).is_ok(),
+        }
+    }
+
+    /// Calls `f(w)` for every common neighbour `w` of `u` and `v`, in
+    /// increasing order (`u` and `v` themselves included when they are
+    /// in both rows).
+    #[inline]
+    pub fn for_each_common(&self, u: usize, v: usize, mut f: impl FnMut(usize)) {
+        if let Some(m) = &self.bits {
+            for (k, (a, b)) in m.row(u).iter().zip(m.row(v)).enumerate() {
+                for_each_bit(a & b, |lane| f(k * 64 + lane));
+            }
+            return;
+        }
+        let (a, b) = (self.row(u), self.row(v));
+        let (mut i, mut j) = (0, 0);
+        while i < a.len() && j < b.len() {
+            match a[i].cmp(&b[j]) {
+                std::cmp::Ordering::Less => i += 1,
+                std::cmp::Ordering::Greater => j += 1,
+                std::cmp::Ordering::Equal => {
+                    f(a[i] as usize);
+                    i += 1;
+                    j += 1;
+                }
+            }
+        }
+    }
+
+    /// Number of common neighbours of `u` and `v` (themselves included
+    /// when they are in both rows).
+    #[inline]
+    pub fn common_count(&self, u: usize, v: usize) -> usize {
+        if let Some(m) = &self.bits {
+            return m
+                .row(u)
+                .iter()
+                .zip(m.row(v))
+                .map(|(a, b)| (a & b).count_ones() as usize)
+                .sum();
+        }
+        let mut c = 0;
+        self.for_each_common(u, v, |_| c += 1);
+        c
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

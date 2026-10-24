@@ -7,6 +7,9 @@ cited by author and year in an R help page or a vignette instead.
 
 | Key | Reference | Cited in |
 |---|---|---|
+| `abuaisheh2015exact` | Abu-Aisheh et al. (2015). An Exact Graph Edit Distance Algorithm for Solving Pattern Recognition Problems. *Proceedings of the International Conference on Pattern Recognition Applications and Methods*. | `crates/engine/src/metrics/edit_distance.rs` |
+| `adamic2003friends` | Adamic and Adar (2003). Friends and Neighbors on the Web. *Social Networks*. | `crates/engine/src/metrics/linkpred.rs` |
+| `ahmad2020missing` | Ahmad et al. (2020). Missing Link Prediction using Common Neighbor and Centrality based Parameterized Algorithm. *Scientific Reports*. | `crates/engine/src/metrics/linkpred.rs` |
 | `alba1973graph` | Alba (1973). A Graph-Theoretic Definition of a Sociometric Clique. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/factions/ncliques.rs` |
 | `albert2000error` | Albert, Jeong, and Barabási (2000). Error and Attack Tolerance of Complex Networks. *Nature*. |  |
 | `almeidasilva2024network` | Almeida-Silva (2024). Network Analysis in R. *https://almeidasilvaf.github.io/NAR/*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -16,8 +19,9 @@ cited by author and year in an R help page or a vignette instead.
 | `anselin1988spatial` | Anselin (1988). Spatial Econometrics: Methods and Models. *Springer Netherlands*. | `docs/ROADMAP.md`, `r/R/sf.R` |
 | `arabie1978constructing` | Arabie, Boorman, and Levitt (1978). Constructing blockmodels: How and why. *Journal of Mathematical Psychology*. | `crates/engine/src/metrics/blockmodel.rs` |
 | `arrow_c_data_interface` | Apache Arrow Developers (n.d.). The Arrow C Data Interface. *https://arrow.apache.org/docs/format/CDataInterface.html*. |  |
+| `aumasson2013blake2` | Aumasson et al. (2013). BLAKE2: Simpler, Smaller, Fast as MD5. *Applied Cryptography and Network Security*. | `crates/engine/src/blake2b.rs` |
 | `bachi1963standard` | Bachi (1963). Standard distance measures and related methods for spatial analysis. *Papers of the Regional Science Association*. | `crates/engine/src/spatial.rs` |
-| `barabasi1999emergence` | Barabási and Albert (1999). Emergence of Scaling in Random Networks. *Science*. | `crates/engine/src/generate.rs` |
+| `barabasi1999emergence` | Barabási and Albert (1999). Emergence of Scaling in Random Networks. *Science*. | `crates/engine/src/generate.rs`, `crates/engine/src/metrics/linkpred.rs` |
 | `barnes1986hierarchical` | Barnes and Hut (1986). A Hierarchical O(N log N) Force-Calculation Algorithm. *Nature*. | `crates/engine/src/layout/force.rs`, `crates/engine/src/layout/mod.rs` |
 | `barrat2004architecture` | Barrat et al. (2004). The Architecture of Complex Weighted Networks. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/descriptive.rs`, `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, and 1 more |
 | `barthelemy2011spatial` | Barthélemy (2011). Spatial networks. *Physics Reports*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/spatial.rs`, `docs/DATA_MODEL.md`, `docs/ROADMAP.md` |
@@ -45,7 +49,7 @@ cited by author and year in an R help page or a vignette instead.
 | `borg2005modern` | Borg and Groenen (2005). Modern Multidimensional Scaling: Theory and Applications. *Springer*. | `docs/ROADMAP.md` |
 | `borgatti1990ls` | Borgatti, Everett, and Shirey (1990). LS Sets, Lambda Sets and Other Cohesive Subsets. *Social Networks*. | `crates/engine/src/metrics/factions/lambda.rs` |
 | `borgatti1992notions` | Borgatti and Everett (1992). Notions of position in social network analysis. *Sociological Methodology*. | `crates/engine/src/metrics/regular.rs` |
-| `borgatti1993two` | Borgatti and Everett (1993). Two algorithms for computing regular equivalence. *Social Networks*. | `crates/engine/src/metrics/regular.rs` |
+| `borgatti1993two` | Borgatti and Everett (1993). Two algorithms for computing regular equivalence. *Social Networks*. | `crates/engine/src/metrics/regular.rs`, `crates/engine/src/metrics/wl.rs` |
 | `borgatti1997network` | Borgatti and Everett (1997). Network Analysis of 2-Mode Data. *Social Networks*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, and 2 more |
 | `borgatti1997structural` | Borgatti (1997). Structural Holes: Unpacking Burt's Redundancy Measures. *Connections*. | `crates/engine/src/metrics/brokerage.rs` |
 | `borgatti1999models` | Borgatti and Everett (1999). Models of Core/Periphery Structures. *Social Networks*. | `crates/engine/src/metrics/coreperiphery/continuous.rs`, `crates/engine/src/metrics/coreperiphery/discrete.rs`, `crates/engine/src/metrics/factions/kgroups.rs` |
@@ -144,7 +148,7 @@ cited by author and year in an R help page or a vignette instead.
 | `gower1966some` | Gower (1966). Some distance properties of latent root and vector methods used in multivariate analysis. *Biometrika*. | `crates/engine/src/metrics/scaling.rs` |
 | `gray1953pulse` | Gray (1953). Pulse Code Communication. *U.S. Patent 2,632,058*. |  |
 | `gusfield1990very` | Gusfield (1990). Very Simple Methods for All Pairs Network Flow Analysis. *SIAM Journal on Computing*. | `crates/engine/src/metrics/factions/lambda.rs` |
-| `hagberg2008exploring` | Hagberg, Schult, and Swart (2008). Exploring Network Structure, Dynamics, and Function using NetworkX. *Proceedings of the 7th Python in Science Conference (SciPy 2008)*. | `crates/engine/src/conventions.rs`, `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md` |
+| `hagberg2008exploring` | Hagberg, Schult, and Swart (2008). Exploring Network Structure, Dynamics, and Function using NetworkX. *Proceedings of the 7th Python in Science Conference (SciPy 2008)*. | `crates/engine/src/conventions.rs`, `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/edit_distance.rs`, `crates/engine/src/metrics/linkpred.rs`, and 3 more |
 | `hage1983structural` | Hage and Harary (1983). Structural Models in Anthropology. *Cambridge University Press*. |  |
 | `hage1995eccentricity` | Hage and Harary (1995). Eccentricity and Centrality in Networks. *Social Networks*. | `crates/engine/src/metrics/descriptive.rs` |
 | `handcock2003assessing` | Handcock (2003). Assessing Degeneracy in Statistical Models of Social Networks. *Center for Statistics and the Social Sciences, University of Washington*. |  |
@@ -173,6 +177,7 @@ cited by author and year in an R help page or a vignette instead.
 | `hunter2008ergm` | Hunter et al. (2008). ergm: A Package to Fit, Simulate and Diagnose Exponential-Family Models for Networks. *Journal of Statistical Software*. | `docs/ROADMAP.md` |
 | `hunter2008goodness` | Hunter, Goodreau, and Handcock (2008). Goodness of Fit of Social Network Models. *Journal of the American Statistical Association*. |  |
 | `hwang2008bridging` | Hwang et al. (2008). Bridging centrality: Graph mining from element level to group level. *Proceedings of the 14th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*. | `crates/engine/src/metrics/reach.rs` |
+| `jeh2002simrank` | Jeh and Widom (2002). SimRank: A Measure of Structural-Context Similarity. *Proceedings of the Eighth ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*. | `crates/engine/src/metrics/similarity.rs` |
 | `johnson1967hierarchical` | Johnson (1967). Hierarchical Clustering Schemes. *Psychometrika*. |  |
 | `johnson1975priority` | Johnson (1975). Priority Queues with Update and Finding Minimum Spanning Trees. *Information Processing Letters*. | `crates/engine/src/weights.rs`, `crates/engine/tests/paths_properties.rs` |
 | `kadushin2012understanding` | Kadushin (2012). Understanding Social Networks: Theories, Concepts, and Findings. *Oxford University Press*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -210,6 +215,7 @@ cited by author and year in an R help page or a vignette instead.
 | `leicht2008community` | Leicht and Newman (2008). Community Structure in Directed Networks. *Physical Review Letters*. | `crates/engine/src/metrics/community.rs` |
 | `leifeld2018temporal` | Leifeld, Cranmer, and Desmarais (2018). Temporal Exponential Random Graph Models with btergm: Estimation and Bootstrap Confidence Intervals. *Journal of Statistical Software*. |  |
 | `lekkerkerker1962representation` | Lekkerkerker and Boland (1962). Representation of a Finite Graph by a Set of Intervals on the Real Line. *Fundamenta Mathematicae*. | `docs/DATA_MODEL.md` |
+| `liben2007link` | Liben-Nowell and Kleinberg (2007). The Link-Prediction Problem for Social Networks. *Journal of the American Society for Information Science and Technology*. | `crates/engine/src/metrics/linkpred.rs` |
 | `lin1976foundations` | Lin (1976). Foundations of Social Research. *McGraw-Hill*. |  |
 | `lorrain1971structural` | Lorrain and White (1971). Structural Equivalence of Individuals in Social Networks. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/equivalence.rs` |
 | `lospinoso2019goodness` | Lospinoso and Snijders (2019). Goodness of Fit for Stochastic Actor-Oriented Models. *Methodological Innovations*. |  |
@@ -278,14 +284,17 @@ cited by author and year in an R help page or a vignette instead.
 | `rochat2009closeness` | Rochat (2009). Closeness Centrality Extended to Unconnected Graphs: The Harmonic Centrality Index. *6th Conference on Applications of Social Network Analysis (ASNA 2009)*. | `crates/engine/src/metrics/closeness.rs` |
 | `rosvall2008maps` | Rosvall and Bergstrom (2008). Maps of Random Walks on Complex Networks Reveal Community Structure. *Proceedings of the National Academy of Sciences*. | `crates/engine/src/metrics/partition/infomap.rs` |
 | `rosvall2009map` | Rosvall, Axelsson, and Bergstrom (2009). The Map Equation. *The European Physical Journal Special Topics*. | `crates/engine/src/metrics/partition/infomap.rs` |
+| `saarinen2015blake2` | Saarinen and Aumasson (2015). The BLAKE2 Cryptographic Hash and Message Authentication Code (MAC). *RFC Editor*. | `crates/engine/src/blake2b.rs` |
 | `sabidussi1966centrality` | Sabidussi (1966). The Centrality Index of a Graph. *Psychometrika*. | `crates/engine/src/metrics/closeness.rs` |
 | `salmon2011parallel` | Salmon et al. (2011). Parallel Random Numbers: As Easy as 1, 2, 3. *Proceedings of the 2011 International Conference for High Performance Computing, Networking, Storage and Analysis (SC '11)*. | `crates/engine/src/rng.rs` |
 | `sampson1968novitiate` | Sampson (1968). A Novitiate in a Period of Change: An Experimental and Case Study of Social Relationships. |  |
+| `sanfeliu1983distance` | Sanfeliu and Fu (1983). A Distance Measure between Attributed Relational Graphs for Pattern Recognition. *IEEE Transactions on Systems, Man, and Cybernetics*. | `crates/engine/src/metrics/edit_distance.rs` |
 | `schweinberger2007markov` | Schweinberger and Snijders (2007). Markov Models for Digraph Panel Data: Monte Carlo-Based Derivative Estimation. *Computational Statistics & Data Analysis*. |  |
 | `schweinberger2011instability` | Schweinberger (2011). Instability, Sensitivity, and Degeneracy of Discrete Exponential Families. *Journal of the American Statistical Association*. |  |
 | `seidman1978graph` | Seidman and Foster (1978). A Graph-Theoretic Generalization of the Clique Concept. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/factions/kplex.rs` |
 | `seidman1983network` | Seidman (1983). Network Structure and Minimum Degree. *Social Networks*. | `crates/engine/src/metrics/cores.rs`, `crates/engine/src/metrics/factions/kplex.rs` |
 | `shafie2026r4sna` | Shafie and Schoch (2026). R for Social Network Analysis. *https://schochastics.github.io/R4SNA/*. | `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
+| `shervashidze2011weisfeiler` | Shervashidze et al. (2011). Weisfeiler-Lehman Graph Kernels. *Journal of Machine Learning Research*. | `crates/engine/src/metrics/wl.rs` |
 | `sinnott1984virtues` | Sinnott (1984). Virtues of the haversine. *Sky and Telescope*. | `crates/engine/src/spatial.rs` |
 | `smith1976matrix` | Smith et al. (1976). Matrix Eigensystem Routines – EISPACK Guide. *Springer*. | `crates/engine/src/linalg.rs` |
 | `snijders1996stochastic` | Snijders (1996). Stochastic Actor-Oriented Models for Network Change. *The Journal of Mathematical Sociology*. |  |
@@ -296,8 +305,9 @@ cited by author and year in an R help page or a vignette instead.
 | `snijders2010introduction` | Snijders, van de Bunt, and Steglich (2010). Introduction to Stochastic Actor-Based Models for Network Dynamics. *Social Networks*. | `crates/engine/src/frame/mod.rs`, `docs/DATA_MODEL.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` |
 | `snijders2017stochastic` | Snijders (2017). Stochastic Actor-Oriented Models for Network Dynamics. *Annual Review of Statistics and Its Application*. |  |
 | `sokal1958statistical` | Sokal and Michener (1958). A Statistical Method for Evaluating Systematic Relationships. *University of Kansas Science Bulletin*. |  |
+| `soundarajan2012using` | Soundarajan and Hopcroft (2012). Using Community Information to Improve the Precision of Link Prediction Methods. *Proceedings of the 21st International Conference on World Wide Web*. | `crates/engine/src/metrics/linkpred.rs` |
 | `staudt2016networkit` | Staudt, Sazonovs, and Meyerhenke (2016). NetworKit: A Tool Suite for Large-Scale Complex Network Analysis. *Network Science*. |  |
-| `steele2014fast` | Steele, Lea, and Flood (2014). Fast Splittable Pseudorandom Number Generators. *Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages & Applications (OOPSLA '14)*. | `crates/engine/src/frame/validate.rs`, `crates/engine/tests/communities_properties.rs`, `crates/engine/tests/cyber_properties.rs`, `crates/engine/tests/descriptive_properties.rs`, and 11 more |
+| `steele2014fast` | Steele, Lea, and Flood (2014). Fast Splittable Pseudorandom Number Generators. *Proceedings of the 2014 ACM International Conference on Object Oriented Programming Systems Languages & Applications (OOPSLA '14)*. | `crates/engine/src/frame/validate.rs`, `crates/engine/tests/communities_properties.rs`, `crates/engine/tests/cyber_properties.rs`, `crates/engine/tests/descriptive_properties.rs`, and 13 more |
 | `steer2024raphtory` | Steer et al. (2024). Raphtory: The Temporal Graph Engine for Rust and Python. *Journal of Open Source Software*. |  |
 | `stephenson1989rethinking` | Stephenson and Zelen (1989). Rethinking centrality: Methods and examples. *Social Networks*. | `crates/engine/src/metrics/reach.rs` |
 | `stewart2002krylov` | Stewart (2002). A Krylov–Schur Algorithm for Large Eigenproblems. *SIAM Journal on Matrix Analysis and Applications*. | `crates/engine/src/metrics/eigenvector.rs` |
@@ -320,6 +330,7 @@ cited by author and year in an R help page or a vignette instead.
 | `ucinet_help_eigenvector` | Analytic Technologies (n.d.). UCINET 6 for Windows Help: Networks -> Centrality -> Eigenvector. *http://www.analytictech.com/ucinet/help/24d9zjj.htm*. |  |
 | `ucinet_help_multiple` | Analytic Technologies (n.d.). UCINET 6 for Windows Help: Networks -> Centrality -> Multiple Measures. *http://www.analytictech.com/ucinet/help/hs4214.htm*. |  |
 | `uzzi2005collaboration` | Uzzi and Spiro (2005). Collaboration and Creativity: The Small World Problem. *American Journal of Sociology*. | `crates/engine/src/metrics/coreperiphery/small_world.rs` |
+| `valverde2012link` | Valverde-Rebaza and de Andrade Lopes (2012). Link Prediction in Complex Networks Based on Cluster Information. *Advances in Artificial Intelligence – SBIA 2012*. | `crates/engine/src/metrics/linkpred.rs` |
 | `vandermeer2026sfnetworks` | van der Meer et al. (2026). sfnetworks: Tidy Geospatial Networks. | `docs/DATA_MODEL.md`, `docs/ROADMAP.md`, `r/R/sf.R` |
 | `vanderwalt2015viridis` | van der Walt and Smith (2015). mpl Colormaps. *https://bids.github.io/colormap/*. | `r/R/utils-plot.R` |
 | `vandongen2000performance` | van Dongen (2000). Performance Criteria for Graph Clustering and Markov Cluster Experiments. *Centrum voor Wiskunde en Informatica (CWI)*. | `crates/engine/src/metrics/partition/compare.rs` |
@@ -331,6 +342,7 @@ cited by author and year in an R help page or a vignette instead.
 | `wasserman1994social` | Wasserman and Faust (1994). Social Network Analysis: Methods and Applications. *Cambridge University Press*. | `crates/engine/src/frame/mod.rs`, `crates/engine/src/metrics/bipartite.rs`, `crates/engine/src/metrics/blockmodel.rs`, `crates/engine/src/metrics/closeness.rs`, and 9 more |
 | `wasserman1996logit` | Wasserman and Pattison (1996). Logit Models and Logistic Regressions for Social Networks: I. An Introduction to Markov Graphs and p^*. *Psychometrika*. |  |
 | `watts1998collective` | Watts and Strogatz (1998). Collective Dynamics of `Small-World' Networks. *Nature*. | `crates/engine/src/generate.rs`, `crates/engine/src/metrics/coreperiphery/small_world.rs`, `crates/engine/src/metrics/descriptive.rs` |
+| `weisfeiler1968reduction` | Weisfeiler and Leman (1968). A Reduction of a Graph to a Canonical Form and an Algebra Arising during This Reduction. *Nauchno-Technicheskaya Informatsiya, Series 2*. | `crates/engine/src/metrics/wl.rs` |
 | `white1976social` | White, Boorman, and Breiger (1976). Social structure from multiple networks. I. Blockmodels of roles and positions. *American Journal of Sociology*. | `crates/engine/src/metrics/blockmodel.rs` |
 | `white1983graph` | White and Reitz (1983). Graph and semigroup homomorphisms on networks of relations. *Social Networks*. | `crates/engine/src/metrics/regular.rs` |
 | `wiederstein2021network` | Wiederstein (2021). Network Analysis in R. *https://robwiederstein.github.io/network_analysis/*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -339,3 +351,5 @@ cited by author and year in an R help page or a vignette instead.
 | `wu2014path` | Wu et al. (2014). Path Problems in Temporal Graphs. *Proceedings of the VLDB Endowment*. | `crates/engine/src/temporal/mod.rs`, `crates/engine/src/temporal/paths.rs` |
 | `zachary1977information` | Zachary (1977). An Information Flow Model for Conflict and Fission in Small Groups. *Journal of Anthropological Research*. | `docs/ROADMAP.md`, `validation/fixtures.py` |
 | `zeileis2020colorspace` | Zeileis et al. (2020). colorspace: A Toolbox for Manipulating and Assessing Colors and Palettes. *Journal of Statistical Software*. | `r/R/utils-plot.R` |
+| `zhang2015panther` | Zhang et al. (2015). Panther: Fast Top-k Similarity Search on Large Networks. *Proceedings of the 21th ACM SIGKDD International Conference on Knowledge Discovery and Data Mining*. | `crates/engine/src/metrics/similarity.rs` |
+| `zhou2009predicting` | Zhou, Lü, and Zhang (2009). Predicting Missing Links via Local Information. *The European Physical Journal B*. | `crates/engine/src/metrics/linkpred.rs` |

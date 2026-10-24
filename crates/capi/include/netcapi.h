@@ -1126,6 +1126,102 @@ int32_t net_classical_mds(const double *d, int64_t n, int64_t k,
 int32_t net_mds_stress(const double *d, int64_t n, const double *points,
                        int64_t p, double *out, char *err, size_t err_len);
 
+/* ---- Link prediction and similarity -------------------------------------
+ * Pair scores read the network as undirected and simple (directions,
+ * weights, and edge multiplicity ignored; a self-loop puts a node in its
+ * own neighbour set and adds 2 to its degree), as NetworkX's
+ * link_prediction functions do. method: 0 = common neighbours,
+ * 1 = Jaccard, 2 = Adamic-Adar, 3 = resource allocation, 4 = preferential
+ * attachment, 5 = common-neighbour centrality (alpha), 6 = CN
+ * Soundarajan-Hopcroft, 7 = RA Soundarajan-Hopcroft, 8 =
+ * within-inter-cluster (delta > 0). communities holds one label per node
+ * for methods 6 to 8 and may be NULL otherwise. */
+
+/* Scores of npairs pairs (us[i], vs[i]) into out[0..npairs). */
+int32_t net_link_prediction(const GraphHandle *h, int32_t method,
+                            double alpha, double delta,
+                            const int64_t *communities, const int64_t *us,
+                            const int64_t *vs, int64_t npairs,
+                            int32_t threads, double *out, char *err,
+                            size_t err_len);
+
+/* Number of non-edges: unordered pairs of distinct nodes adjacent in
+ * neither direction. */
+int32_t net_non_edge_count(const GraphHandle *h, int64_t *out, char *err,
+                           size_t err_len);
+
+/* Scores of every non-edge u < v in lexicographic order; us, vs, and
+ * scores hold len values, len being net_non_edge_count's count. */
+int32_t net_link_prediction_non_edges(const GraphHandle *h, int32_t method,
+                                      double alpha, double delta,
+                                      const int64_t *communities,
+                                      int32_t threads, int64_t *us,
+                                      int64_t *vs, double *scores,
+                                      int64_t len, char *err,
+                                      size_t err_len);
+
+/* Weisfeiler-Lehman graph hash, character for character NetworkX's
+ * weisfeiler_lehman_graph_hash: node_labels (n strings) and edge_labels
+ * (m strings, no parallel edges) are NULL or str() of the attributes,
+ * ASCII. out receives 2 * digest_size hexadecimal characters, without a
+ * terminator; out_len must equal that. */
+int32_t net_wl_graph_hash(const GraphHandle *h,
+                          const char *const *node_labels,
+                          const char *const *edge_labels, int64_t iterations,
+                          int64_t digest_size, int32_t threads, char *out,
+                          size_t out_len, char *err, size_t err_len);
+
+/* Weisfeiler-Lehman subgraph hashes (NetworkX's
+ * weisfeiler_lehman_subgraph_hashes): node v's L = iterations (+ 1 with
+ * include_initial_labels) hashes, oldest first, fill
+ * out[v * L * 2 * digest_size ...); out_len must be n * L * 2 *
+ * digest_size. */
+int32_t net_wl_subgraph_hashes(const GraphHandle *h,
+                               const char *const *node_labels,
+                               const char *const *edge_labels,
+                               int64_t iterations, int64_t digest_size,
+                               int32_t include_initial_labels,
+                               int32_t threads, char *out, size_t out_len,
+                               char *err, size_t err_len);
+
+/* SimRank of every pair of nodes (in-neighbours in directed graphs) into
+ * an n-by-n matrix. stop 0 = NetworkX's simrank_similarity (weights used
+ * when weighted != 0), 1 = its pairwise iteration (unweighted).
+ * Reaching max_iterations is an error, as in NetworkX. */
+int32_t net_simrank(const GraphHandle *h, double importance,
+                    int64_t max_iterations, double tolerance,
+                    int32_t weighted, int32_t stop, int32_t threads,
+                    double *out, char *err, size_t err_len);
+
+/* Panther similarity: the k nodes most similar to source (random paths of
+ * path_length steps; eps <= 0 uses 1/sqrt(m)), most similar first, into
+ * nodes and scores, *found of them (k, or k + 1 on ties with the source;
+ * capacity >= k + 1). Path i is drawn from stream (seed, i). */
+int32_t net_panther_similarity(const GraphHandle *h, int64_t source,
+                               int64_t k, int64_t path_length, double c,
+                               double delta, double eps, int32_t weighted,
+                               uint64_t seed, int32_t threads,
+                               int64_t *nodes, double *scores,
+                               int64_t capacity, int64_t *found, char *err,
+                               size_t err_len);
+
+/* Exact graph edit distance into *out with *found = 1, or *found = 0 when
+ * it exceeds upper_bound (INFINITY for none). Node labels (n1, n2 values)
+ * and edge labels (m1, m2 values) are both NULL or both given; equal
+ * labels substitute at no cost. costs: node substitution, deletion,
+ * insertion, edge substitution, deletion, insertion (NULL: all 1).
+ * root1, root2 >= 0 fix that pair. Fails after max_steps mappings
+ * (0: 10^8). */
+int32_t net_graph_edit_distance(const GraphHandle *h1, const GraphHandle *h2,
+                                const int64_t *node_labels1,
+                                const int64_t *node_labels2,
+                                const int64_t *edge_labels1,
+                                const int64_t *edge_labels2,
+                                const double *costs, int64_t root1,
+                                int64_t root2, double upper_bound,
+                                int64_t max_steps, double *out,
+                                int32_t *found, char *err, size_t err_len);
+
 /* ---- Quadratic assignment procedure (QAP) -------------------------------
  * Matrices are n-by-n doubles in column-major order; NaN marks a missing
  * value and drops the dyad (listwise deletion). mode: 0 = digraph (every

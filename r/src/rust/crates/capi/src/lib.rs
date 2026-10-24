@@ -30,6 +30,7 @@ mod layout;
 mod positions;
 mod qap;
 mod roles;
+mod similarity;
 mod spectral;
 mod subgroups;
 mod temporal;

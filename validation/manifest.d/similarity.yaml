@@ -1,0 +1,254 @@
+# Weisfeiler-Lehman graph and subgraph hashes (Shervashidze et al. 2011),
+# SimRank (Jeh and Widom 2002), Panther (Zhang et al. 2015), and exact
+# graph edit distance (Sanfeliu and Fu 1983; Abu-Aisheh et al. 2015), as
+# NetworkX 3.7 defines them. Format: see ../README.md; runners, derived
+# inputs, and encodings in ../bindings/similarity.py.
+#
+# The hashes must equal NetworkX's strings exactly (tolerance 0 on their
+# digits). Every oracle reads a fixture as a NetworkX Graph or DiGraph
+# (parallel edges merged), with labels str(v % 3) on nodes and str(e % 2)
+# on edges; edge labels are undefined on fixtures with parallel edges.
+# Panther scores are estimates from random paths: the engine and NetworkX
+# draw different paths, and the definition oracle computes the exact
+# expected score (the probability that a random path visits both nodes),
+# so the tolerance is about five standard errors of the estimate.
+
+wl_hash:
+  engine: {fn: wl_hash}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "degree labels, 3 iterations, 16-byte digests (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G)"
+
+wl_hash_iter1:
+  engine: {fn: wl_hash, iterations: 1}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "1 iteration (the degree labels only) (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G, iterations = 1)"
+
+wl_hash_iter5_digest8:
+  engine: {fn: wl_hash, iterations: 5, digest_size: 8}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "5 iterations, 8-byte digests (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G, iterations = 5, digest_size = 8)"
+
+wl_hash_node_labels:
+  engine: {fn: wl_hash, node_labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "node labels v % 3 (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G, node_attr = 'label')"
+
+wl_hash_edge_labels:
+  engine: {fn: wl_hash, edge_labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "edge labels e % 2 (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G, edge_attr = 'label')"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+
+wl_hash_both_labels:
+  engine: {fn: wl_hash, node_labels: true, edge_labels: true, digest_size: 32}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "node and edge labels, 32-byte digests (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+    networkx:
+      call: "nx.weisfeiler_lehman_graph_hash(G, edge_attr = 'label', node_attr = 'label', digest_size = 32)"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+
+wl_subgraph:
+  engine: {fn: wl_subgraph}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "subgraph hashes, degree labels, 3 iterations (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_subgraph_hashes(G)"
+
+wl_subgraph_initial:
+  engine: {fn: wl_subgraph, include_initial: true, iterations: 2}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "include_initial_labels, 2 iterations (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_subgraph_hashes(G, iterations = 2, include_initial_labels = True)"
+
+wl_subgraph_node_labels:
+  engine: {fn: wl_subgraph, node_labels: true, include_initial: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "node labels v % 3, include_initial_labels (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+    networkx:
+      call: "nx.weisfeiler_lehman_subgraph_hashes(G, node_attr = 'label', include_initial_labels = True)"
+
+wl_subgraph_edge_labels:
+  engine: {fn: wl_subgraph, edge_labels: true}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "edge labels e % 2 (similarity_definition_oracle.py: string aggregation and hashlib.blake2b written from the paper and NetworkX's documentation)"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+    networkx:
+      call: "nx.weisfeiler_lehman_subgraph_hashes(G, edge_attr = 'label')"
+      undefined_when: [multi_edges]
+      undefined_reason: edge labels need a network without parallel edges (a NetworkX Graph has one label per pair)
+
+simrank:
+  engine: {fn: simrank, stop: allclose}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "s(u, v) = c / (|I(u)| |I(v)|) sum over in-neighbour pairs, Jacobi iteration with numpy.allclose's stopping rule"
+    networkx:
+      call: "nx.simrank_similarity(G) on the simple Graph or DiGraph, every pair"
+
+simrank_weighted:
+  engine: {fn: simrank, stop: allclose, weighted: true}
+  applies_to: any
+  requires_weights: true
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the weighted matrix form S = c W^T S W with columns of W normalized, diagonal 1"
+    networkx:
+      call: "nx.simrank_similarity(M) on the weighted multigraph (to_numpy_array adds the weights of parallel edges)"
+
+simrank_pairwise:
+  engine: {fn: simrank, stop: relative}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "the pairwise definition with NetworkX's relative stopping rule |new - old| <= tol (1 + |old|)"
+    networkx:
+      call: "nx.similarity._simrank_similarity_python(G)"
+
+simrank_converged:
+  engine: {fn: simrank, stop: relative, tolerance: 1.0e-13}
+  applies_to: any
+  tolerance: {rel: 1.0e-9, abs: 1.0e-11}
+  oracles:
+    definition:
+      call: "the fixed point: S = c W^T S W with unit diagonal iterated densely until no entry changes by more than 1e-15"
+
+panther:
+  engine: {fn: panther, eps: 0.01, seed: 1}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0.015}
+  oracles:
+    definition:
+      call: "exact probability that a random path (uniform start among non-isolated nodes, 5 uniform steps) visits both the source and the node, by dynamic programming over (node, seen source, seen node)"
+      undefined_on: &panther_skip [complete5_dir, cycle7_dir, davis_twomode, empty, gnp_dir_dense, gnp_dir_sparse,
+        gnp_und_sparse, les_miserables, multi_loops_dir, multi_loops_und, pair, real_weights_dir,
+        real_weights_und, single_node, twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        The comparison runs on small undirected networks, where NetworkX
+        draws its 33 000 paths in reasonable time; it is undefined where
+        the source would be isolated (empty, single_node) or the network
+        is directed or too large.
+    networkx:
+      call: "nx.panther_similarity(G, hub, k = (non-isolated nodes) - 1, eps = 0.01, seed = 1)"
+      undefined_on: *panther_skip
+      undefined_reason: as for the definition oracle
+
+ged:
+  engine: {fn: ged, labels: none}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "minimum over every partial injective node mapping of the induced edit cost, unit costs, no labels"
+      undefined_on: [kite, path10, star8, davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        exact edit distance is exponential in the number of nodes; the
+        comparison runs on the networks of at most 10 nodes (the
+        definition oracle enumerates mappings only up to 7 nodes)
+    networkx:
+      call: "nx.graph_edit_distance(G1, G2) with G2 = ged_pair(fixture)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: exact edit distance is exponential; networks of at most 10 nodes
+
+ged_node_labels:
+  engine: {fn: ged, labels: nodes}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "minimum over every partial injective node mapping of the induced edit cost, node labels v % 2 (equal labels substitute at 0, others at 1)"
+      undefined_on: [kite, path10, star8, davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        exact edit distance is exponential in the number of nodes; the
+        comparison runs on the networks of at most 10 nodes (the
+        definition oracle enumerates mappings only up to 7 nodes)
+    networkx:
+      call: "nx.graph_edit_distance(G1, G2, node_match = equal labels) with G2 = ged_pair(fixture)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: exact edit distance is exponential; networks of at most 10 nodes
+
+ged_labels:
+  engine: {fn: ged, labels: both}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "minimum over every partial injective node mapping of the induced edit cost, node labels v % 2 and edge labels by position % 2"
+      undefined_on: [kite, path10, star8, davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        exact edit distance is exponential in the number of nodes; the
+        comparison runs on the networks of at most 10 nodes (the
+        definition oracle enumerates mappings only up to 7 nodes)
+    networkx:
+      call: "nx.graph_edit_distance(G1, G2, node_match = equal labels, edge_match = equal labels) with G2 = ged_pair(fixture)"
+      undefined_on: [davis_twomode, florentine, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+        gnp_und_sparse, karate, les_miserables, multi_loops_dir, multi_loops_und,
+        real_weights_dir, real_weights_und, southern_women, twomode_random,
+        twomode_weighted, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: exact edit distance is exponential; networks of at most 10 nodes

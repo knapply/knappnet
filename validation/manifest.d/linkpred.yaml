@@ -1,0 +1,193 @@
+# Link prediction scores (Liben-Nowell and Kleinberg 2007; Adamic and
+# Adar 2003; Zhou, Lu, and Zhang 2009; Ahmad, Akhtar, and Noor 2020;
+# Soundarajan and Hopcroft 2012; Valverde-Rebaza and Lopes 2012), as
+# NetworkX's link_prediction module defines them. Format: see ../README.md;
+# runners and encodings in ../bindings/linkpred.py.
+#
+# Every fixture is read as the undirected simple graph of its pairs
+# (directions and edge multiplicity ignored, self-loops kept: a looped node
+# is its own neighbour and its loop adds 2 to its degree), which is the
+# nx.Graph G every oracle builds. Community labels are node % 3. Results are
+# (u, v, score) per pair in lexicographic order: for `pairs: non_edges`
+# every non-edge u < v (NetworkX's non_edges, sorted), for `pairs: all`
+# every pair u < v, edges included.
+
+lp_common_neighbors_non_edges:
+  engine: {fn: link_prediction, method: common_neighbors, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "|CN(u, v)|, CN = (N(u) & N(v)) - {u, v} on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "len(nx.common_neighbors(G, u, v)) for each pair of nx.non_edges(G)"
+
+lp_common_neighbors_all:
+  engine: {fn: link_prediction, method: common_neighbors, pairs: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "|CN(u, v)|, CN = (N(u) & N(v)) - {u, v} on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "len(nx.common_neighbors(G, u, v)) for every pair u < v"
+
+lp_jaccard_non_edges:
+  engine: {fn: link_prediction, method: jaccard, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "|CN| / |N(u) | N(v)| (0 if the union is empty) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.jaccard_coefficient(G, nx.non_edges(G))"
+
+lp_jaccard_all:
+  engine: {fn: link_prediction, method: jaccard, pairs: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "|CN| / |N(u) | N(v)| (0 if the union is empty) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.jaccard_coefficient(G, all pairs u < v)"
+
+lp_adamic_adar_non_edges:
+  engine: {fn: link_prediction, method: adamic_adar, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over CN of 1 / ln k_w on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.adamic_adar_index(G, nx.non_edges(G))"
+
+lp_adamic_adar_all:
+  engine: {fn: link_prediction, method: adamic_adar, pairs: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over CN of 1 / ln k_w on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.adamic_adar_index(G, all pairs u < v)"
+
+lp_resource_allocation_non_edges:
+  engine: {fn: link_prediction, method: resource_allocation, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over CN of 1 / k_w (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.resource_allocation_index(G, nx.non_edges(G))"
+
+lp_resource_allocation_all:
+  engine: {fn: link_prediction, method: resource_allocation, pairs: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over CN of 1 / k_w (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.resource_allocation_index(G, all pairs u < v)"
+
+lp_preferential_attachment_non_edges:
+  engine: {fn: link_prediction, method: preferential_attachment, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "k_u k_v on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.preferential_attachment(G, nx.non_edges(G))"
+
+lp_preferential_attachment_all:
+  engine: {fn: link_prediction, method: preferential_attachment, pairs: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "k_u k_v on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.preferential_attachment(G, all pairs u < v)"
+
+lp_cnc_non_edges:
+  engine: {fn: link_prediction, method: cnc, pairs: non_edges, alpha: 0.8}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "0.8 |CN| + 0.2 n / d(u, v), hop distances by Floyd-Warshall on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.common_neighbor_centrality(G, nx.non_edges(G), alpha = 0.8)"
+
+lp_cnc_all:
+  engine: {fn: link_prediction, method: cnc, pairs: all, alpha: 0.8}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "0.8 |CN| + 0.2 n / d(u, v), hop distances by Floyd-Warshall on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.common_neighbor_centrality(G, all pairs u < v, alpha = 0.8)"
+
+lp_cn_sh_non_edges:
+  engine: {fn: link_prediction, method: cn_sh, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "|CN| + |{w in CN: c_w = c_u}| when c_u = c_v on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.cn_soundarajan_hopcroft(G, nx.non_edges(G), community = 'community')"
+
+lp_cn_sh_all:
+  engine: {fn: link_prediction, method: cn_sh, pairs: all}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "|CN| + |{w in CN: c_w = c_u}| when c_u = c_v on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.cn_soundarajan_hopcroft(G, all pairs u < v, community = 'community')"
+
+lp_ra_sh_non_edges:
+  engine: {fn: link_prediction, method: ra_sh, pairs: non_edges}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over w in CN with c_w = c_u of 1 / k_w when c_u = c_v (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.ra_index_soundarajan_hopcroft(G, nx.non_edges(G), community = 'community')"
+
+lp_ra_sh_all:
+  engine: {fn: link_prediction, method: ra_sh, pairs: all}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "sum over w in CN with c_w = c_u of 1 / k_w when c_u = c_v (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.ra_index_soundarajan_hopcroft(G, all pairs u < v, community = 'community')"
+
+lp_wic_non_edges:
+  engine: {fn: link_prediction, method: wic, pairs: non_edges, delta: 0.001}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "|W| / (|CN - W| + 1/1000) when c_u = c_v (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.within_inter_cluster(G, nx.non_edges(G), delta = 0.001, community = 'community')"
+
+lp_wic_all:
+  engine: {fn: link_prediction, method: wic, pairs: all, delta: 0.001}
+  applies_to: any
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "|W| / (|CN - W| + 1/1000) when c_u = c_v (exact fractions) on the adjacency matrix (linkpred_definition_oracle.py)"
+    networkx:
+      call: "nx.within_inter_cluster(G, all pairs u < v, delta = 0.001, community = 'community')"

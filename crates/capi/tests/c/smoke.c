@@ -4,6 +4,44 @@
 #include <stdio.h>
 #include "netcapi.h"
 
+/* Link prediction, Weisfeiler-Lehman hashes, SimRank, Panther, and edit
+ * distance on a path 0-1-2-3. */
+static int similarity_checks(void) {
+  int64_t src[] = {0, 1, 2};
+  int64_t tgt[] = {1, 2, 3};
+  char err[256];
+  GraphHandle *g = NULL;
+  if (net_graph_new(4, src, tgt, NULL, 3, 0, &g, err, sizeof err) != 0) return 1;
+  int64_t us[] = {0}, vs[] = {2}, count = 0;
+  double score = 0;
+  if (net_link_prediction(g, 0, 0.8, 0.001, NULL, us, vs, 1, 1, &score, err, sizeof err) != 0 ||
+      score != 1.0) return 1;
+  if (net_non_edge_count(g, &count, err, sizeof err) != 0 || count != 3) return 1;
+  int64_t a[3], b[3];
+  double sc[3];
+  if (net_link_prediction_non_edges(g, 1, 0.8, 0.001, NULL, 1, a, b, sc, 3, err,
+                                    sizeof err) != 0 || a[0] != 0 || b[0] != 2) return 1;
+  char hash[32];
+  if (net_wl_graph_hash(g, NULL, NULL, 3, 16, 1, hash, sizeof hash, err, sizeof err) != 0)
+    return 1;
+  char sub[4 * 3 * 32];
+  if (net_wl_subgraph_hashes(g, NULL, NULL, 3, 16, 0, 1, sub, sizeof sub, err,
+                             sizeof err) != 0) return 1;
+  double s[16];
+  if (net_simrank(g, 0.9, 1000, 1e-4, 0, 0, 1, s, err, sizeof err) != 0 || s[0] != 1.0)
+    return 1;
+  int64_t nodes[4], found = 0;
+  double ps[4];
+  if (net_panther_similarity(g, 1, 2, 5, 0.5, 0.1, 0.2, 0, 1, 1, nodes, ps, 4, &found, err,
+                             sizeof err) != 0 || found < 2) return 1;
+  double d = -1;
+  int32_t ok = 0;
+  if (net_graph_edit_distance(g, g, NULL, NULL, NULL, NULL, NULL, -1, -1, INFINITY, 0, &d,
+                              &ok, err, sizeof err) != 0 || !ok || d != 0.0) return 1;
+  net_graph_free(g);
+  return 0;
+}
+
 int main(void) {
   int64_t src[] = {0, 1, 2};
   int64_t tgt[] = {1, 2, 3};
@@ -57,6 +95,10 @@ int main(void) {
   if (s == NULL || s[0] != 'c') return 1;
   net_network_free(r);
   if (net_read("missing.graphml", NULL, -1, &r, err, sizeof err) == 0) return 1;
+  if (similarity_checks() != 0) {
+    fprintf(stderr, "similarity checks failed\n");
+    return 1;
+  }
   puts("C ABI smoke test passed");
   return 0;
 }
