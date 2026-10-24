@@ -1,0 +1,173 @@
+# Cycle bases (Paton 1969), minimum cycle bases (de Pina 1995), simple
+# cycles (Johnson 1975), chordless cycles (Dias et al. 2013), girth, and
+# find_cycle. Format: see ../README.md; engine runners and encodings in
+# ../bindings/cycles.py.
+#
+# Simple and chordless cycles, and find_cycle, are compared with NetworkX
+# on its multigraph of the fixture, whose cycles they define the same way
+# (one cycle per node sequence; see the engine module). Cycle bases and
+# girth, which NetworkX defines only for simple graphs, are compared with
+# its simple graph; on fixtures with parallel edges the engine's results
+# include their cycles, which NetworkX's simple graph cannot hold.
+#
+# The definition oracle enumerates simple cycles by brute force on fixtures
+# of at most 15 nodes.
+
+cyc_basis:
+  engine: {fn: cycle_basis, order: input}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.cycle_basis(G), cycle for cycle, in order"
+      differs_when: [multi_edges]
+      reason: >-
+        NetworkX's simple graph merges parallel edges and repeated loops,
+        whose cycles the engine lists after NetworkX's basis (the basis of
+        the multigraph has m - n + c cycles).
+
+cyc_basis_check:
+  engine: {fn: basis_check, order: input}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[m - n + c, 1]; the runner checks every list is a cycle and the set is independent modulo 2 (cycles_definition_oracle.py)"
+
+cyc_min_basis_weights:
+  engine: {fn: min_basis_weights}
+  applies_to: undirected
+  compare: sorted
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "weights chosen by Horton's method with exact tie-breaking (every edge of the multigraph counted)"
+    networkx:
+      call: "weights of the cycles of nx.minimum_cycle_basis(G)"
+      differs_when: [multi_edges]
+      reason: as for cyc_basis
+
+cyc_min_basis_weights_weighted:
+  engine: {fn: min_basis_weights, weighted: true}
+  applies_to: undirected
+  requires_weights: true
+  compare: sorted
+  tolerance: {rel: 1.0e-12, abs: 1.0e-12}
+  oracles:
+    definition:
+      call: "weights chosen by Horton's method with exact tie-breaking"
+    networkx:
+      call: "weights of the cycles of nx.minimum_cycle_basis(G, weight = 'weight')"
+
+cyc_min_basis_check:
+  engine: {fn: min_basis_check}
+  applies_to: undirected
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "[m - n + c, 1]; the runner checks every list is a cycle and the set is independent modulo 2"
+
+cyc_simple:
+  engine:
+    fn: simple_cycles
+    skip: &many [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense, gnp_und_sparse,
+                 karate, les_miserables, multi_loops_und, real_weights_dir, real_weights_und,
+                 southern_women, uniform_weights, weighted_dir, weighted_und]
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every cycle by depth-first search from its lowest node (n <= 15)"
+      undefined_on: &big [davis_twomode, gnp_dir_dense, gnp_dir_sparse, gnp_und_dense,
+                          gnp_und_sparse, karate, les_miserables, multi_loops_dir,
+                          multi_loops_und, real_weights_dir, real_weights_und, southern_women,
+                          twomode_random, uniform_weights, weighted_dir, weighted_und]
+      undefined_reason: >-
+        the brute-force enumeration is limited to fixtures of at most 15
+        nodes
+    networkx:
+      call: "nx.simple_cycles(M), canonically rotated"
+      undefined_on: *many
+      undefined_reason: >-
+        these fixtures have more than 200 000 simple cycles, which neither
+        side enumerates here; cyc_simple_bound4 covers them
+
+cyc_simple_bound4:
+  engine: {fn: simple_cycles, length_bound: 4}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "every cycle of at most 4 nodes by depth-first search (n <= 15)"
+      undefined_on: *big
+      undefined_reason: as for cyc_simple
+    networkx:
+      call: "nx.simple_cycles(M, length_bound = 4)"
+
+cyc_chordless:
+  engine: {fn: chordless_cycles}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "the simple cycles whose nodes induce exactly as many edges as the cycle has (n <= 15)"
+      undefined_on: *big
+      undefined_reason: as for cyc_simple
+    networkx:
+      call: "nx.chordless_cycles(M)"
+
+cyc_chordless_bound5:
+  engine: {fn: chordless_cycles, length_bound: 5}
+  applies_to: any
+  compare: sets
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "chordless cycles of at most 5 nodes (n <= 15)"
+      undefined_on: *big
+      undefined_reason: as for cyc_simple
+    networkx:
+      call: "nx.chordless_cycles(M, length_bound = 5)"
+
+cyc_girth:
+  engine: {fn: girth}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    definition:
+      call: "least over edges u-v of 1 + the distance from v to u without that edge (1 for a loop)"
+    networkx:
+      call: "nx.girth(G); -2 for infinity"
+      undefined_when: [directed]
+      undefined_reason: NetworkX's girth is not implemented for directed graphs.
+      differs_when: [multi_edges]
+      reason: >-
+        Parallel edges form a cycle of length 2 in the engine's multigraph;
+        NetworkX's simple graph merges them.
+
+cyc_find_cycle:
+  engine: {fn: find_cycle, orientation: original}
+  applies_to: any
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.find_cycle(M) as (key, 0) pairs, nothing on NetworkXNoCycle"
+
+cyc_find_cycle_reverse:
+  engine: {fn: find_cycle, orientation: reverse}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.find_cycle(M, orientation = 'reverse') as (key, reversed) pairs"
+
+cyc_find_cycle_ignore:
+  engine: {fn: find_cycle, orientation: ignore}
+  applies_to: directed
+  tolerance: {rel: 0, abs: 0}
+  oracles:
+    networkx:
+      call: "nx.find_cycle(M, orientation = 'ignore') as (key, reversed) pairs"

@@ -21,9 +21,12 @@ use engine::metrics::triad::triad_census;
 use engine::{Error, Graph, WeightKind};
 
 mod communities;
+mod connectivity;
 mod cyber;
+mod cycles;
 mod descriptive;
 mod files;
+mod flow;
 mod frame;
 mod groups;
 mod layout;
@@ -34,6 +37,7 @@ mod spectral;
 mod subgroups;
 mod temporal;
 mod topography;
+mod trees;
 mod twomode;
 pub use files::*;
 
