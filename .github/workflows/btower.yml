@@ -9,6 +9,11 @@ on:
         description: Shell command to run from the repository root
         required: true
         default: tools/local_check.sh
+      runner:
+        description: check (builds and tests, two run side by side) or bench (timings, own CPUs)
+        type: choice
+        options: [check, bench]
+        default: check
       artifact:
         description: Optional path (file or directory) to upload as an artifact
         required: false
@@ -19,7 +24,7 @@ permissions:
 
 jobs:
   run:
-    runs-on: [self-hosted, btower]
+    runs-on: ${{ inputs.runner == 'bench' && fromJSON('["self-hosted", "btower-bench"]') || fromJSON('["self-hosted", "btower-check"]') }}
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
