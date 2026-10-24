@@ -45,7 +45,9 @@
 //!   classes that can be updated at once without one node reading
 //!   another's new position (each pivot alone, then a greedy coloring of
 //!   the other nodes in node order), a multicolor Gauss-Seidel sweep that
-//!   runs in parallel and does not depend on the thread count. The pivot
+//!   runs in parallel and does not depend on the thread count. The threads
+//!   are started once for all sweeps ([`crate::parallel::crew`]) and meet
+//!   between classes. The pivot
 //!   terms are not symmetric, so the whole layout can keep turning slowly
 //!   once its shape has settled; iteration therefore stops when the
 //!   movement left after removing the best rigid motion (orthogonal
@@ -83,6 +85,7 @@ use crate::graph::Graph;
 use crate::parallel;
 use crate::rng::Stream;
 use crate::weights::WeightKind;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 /// Largest component for which [`StressAlgorithm::Full`] is allowed: its
 /// distance matrix takes 8 n^2 bytes (800 MB at this size).
@@ -728,8 +731,17 @@ fn sparse_stress(
         classes[first_color + col].push(i as u32);
     }
 
-    let update = |z: &[[f64; 2]], i: usize| -> [f64; 2] {
-        let zi = z[i];
+    // Positions are shared by the threads of the sweep below as atomic
+    // bit patterns: within a class no node reads another's position, so the
+    // values read never depend on the order of the writes.
+    let at = |z: &[[AtomicU64; 2]], j: usize| -> [f64; 2] {
+        [
+            f64::from_bits(z[j][0].load(Ordering::Relaxed)),
+            f64::from_bits(z[j][1].load(Ordering::Relaxed)),
+        ]
+    };
+    let update = |z: &[[AtomicU64; 2]], i: usize| -> [f64; 2] {
+        let zi = at(z, i);
         let (mut nx, mut ny, mut den) = (0.0, 0.0, 0.0);
         let mut term = |zj: [f64; 2], d: f64, w: f64| {
             let (dx, dy) = (zi[0] - zj[0], zi[1] - zj[1]);
@@ -745,11 +757,11 @@ fn sparse_stress(
         };
         for a in p.arcs(i) {
             let d = p.lens[a];
-            term(z[p.targets[a] as usize], d, 1.0 / (d * d));
+            term(at(z, p.targets[a] as usize), d, 1.0 / (d * d));
         }
         for (t, wd) in terms[i * k..(i + 1) * k].iter().enumerate() {
             if wd[0] > 0.0 {
-                term(z[pivots[t]], wd[1] as f64, wd[0] as f64);
+                term(at(z, pivots[t]), wd[1] as f64, wd[0] as f64);
             }
         }
         if den > 0.0 {
@@ -758,26 +770,73 @@ fn sparse_stress(
             zi
         }
     };
+    let set = |z: &[[AtomicU64; 2]], i: usize, q: [f64; 2]| {
+        z[i][0].store(q[0].to_bits(), Ordering::Relaxed);
+        z[i][1].store(q[1].to_bits(), Ordering::Relaxed);
+    };
 
-    let mut fresh: Vec<[f64; 2]> = Vec::new();
-    let mut old = z.clone();
-    for _ in 0..max_iter {
-        old.copy_from_slice(&z);
-        for class in &classes {
-            fresh.clear();
-            fresh.resize(class.len(), [0.0; 2]);
-            par_fill(&mut fresh, threads, 2048, |m, out| {
-                *out = update(&z, class[m] as usize);
-            });
-            for (&v, q) in class.iter().zip(&fresh) {
-                z[v as usize] = *q;
+    // The sweeps run on one crew of threads started once: the first member
+    // updates the pivots in order (each reads every node), then all members
+    // update their share of each color class, meeting between classes.
+    let shared: Vec<[AtomicU64; 2]> = z
+        .iter()
+        .map(|q| {
+            [
+                AtomicU64::new(q[0].to_bits()),
+                AtomicU64::new(q[1].to_bits()),
+            ]
+        })
+        .collect();
+    let (pivot_classes, color_classes) = classes.split_at(first_color);
+    let degree_sum: usize = (0..c).map(|i| p.arcs(i).len()).sum();
+    let workers = parallel::threads_for(
+        threads,
+        c,
+        parallel::search_work(k + 1, c, degree_sum) / (color_classes.len() as u64 + 1),
+    );
+    let done = AtomicBool::new(false);
+    parallel::crew(workers, |crew| {
+        let lead = crew.index() == 0;
+        let mut old: Vec<[f64; 2]> = Vec::new();
+        for _ in 0..max_iter {
+            if lead {
+                old.clear();
+                old.extend((0..c).map(|i| at(&shared, i)));
+                for class in pivot_classes {
+                    for &v in class {
+                        set(&shared, v as usize, update(&shared, v as usize));
+                    }
+                }
+            }
+            crew.wait();
+            for class in color_classes {
+                for m in crew.share(class.len()) {
+                    let v = class[m] as usize;
+                    set(&shared, v, update(&shared, v));
+                }
+                crew.wait();
+            }
+            if lead {
+                let now: Vec<[f64; 2]> = (0..c).map(|i| at(&shared, i)).collect();
+                if relative_change(&old, &now) <= tol {
+                    done.store(true, Ordering::Relaxed);
+                }
+            }
+            crew.wait();
+            if done.load(Ordering::Relaxed) {
+                break;
             }
         }
-        if relative_change(&old, &z) <= tol {
-            break;
-        }
-    }
-    z
+    });
+    shared
+        .iter()
+        .map(|q| {
+            [
+                f64::from_bits(q[0].load(Ordering::Relaxed)),
+                f64::from_bits(q[1].load(Ordering::Relaxed)),
+            ]
+        })
+        .collect()
 }
 
 /// Movement from `old` to `new` that is not a rigid motion, relative to the
