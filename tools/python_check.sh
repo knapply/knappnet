@@ -4,7 +4,8 @@
 # the backend.
 #
 #   tools/python_check.sh                          # latest NetworkX, full suite
-#   tools/python_check.sh --networkx 'networkx==3.5' --python 3.10
+#   tools/python_check.sh --networkx 'networkx==3.4.2' --python 3.10
+#   tools/python_check.sh --build-only            # just the environment
 #
 # --python picks a CPython version (installed with uv when it is not the
 # system's python3); without it, python3 is used, or a uv-managed CPython
@@ -14,10 +15,12 @@ set -eu
 cd "$(dirname "$0")/.."
 NX=networkx
 WANT=""
+BUILD_ONLY=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --networkx) NX="$2"; shift 2 ;;
     --python) WANT="$2"; shift 2 ;;
+    --build-only) BUILD_ONLY=1; shift ;;
     *) echo "unknown option $1" >&2; exit 2 ;;
   esac
 done
@@ -40,6 +43,7 @@ PY=.venv-python/bin/python
 "$PY" -m pip install -q "$NX" pytest numpy scipy
 "$PY" -m pip install -q ./python
 "$PY" -c 'import networkx as nx, knappnet; print("networkx", nx.__version__, "knappnet", knappnet.__version__)'
+[ "$BUILD_ONLY" = 1 ] && exit 0
 "$PY" -m pytest -q python/tests
 NETWORKX_TEST_BACKEND=knappnet NETWORKX_FALLBACK_TO_NX=True \
   "$PY" -m pytest -q -p no:cacheprovider --pyargs networkx
