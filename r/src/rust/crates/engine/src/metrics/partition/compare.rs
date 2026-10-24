@@ -35,7 +35,8 @@
 //!   model of their equation (24a) and the arithmetic mean of the two
 //!   entropies (the normalization that matches NMI above).
 //!
-//! Conventions (matching igraph's `compare()` for the measures it offers):
+//! Conventions (matching igraph's `compare()` for the measures it offers,
+//! except where noted):
 //! - Labels are arbitrary integers; only equality matters.
 //! - Both partitions must have the same length. With no nodes every
 //!   measure is NaN.
@@ -44,7 +45,10 @@
 //!   nodes and are NaN there (igraph raises an error).
 //! - The adjusted Rand index is 1 when its denominator vanishes, which
 //!   happens exactly when both partitions are a single group or both are
-//!   all singletons (and so identical). The adjusted mutual information is
+//!   all singletons (and so identical): Hubert and Arabie's formula is 0/0
+//!   there, and 1 is the value it takes on every other pair of identical
+//!   partitions (scikit-learn's `adjusted_rand_score()` also returns 1;
+//!   igraph's `compare()` returns NaN). The adjusted mutual information is
 //!   1 in the same two cases, and NaN if its denominator vanishes in any
 //!   other.
 

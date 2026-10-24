@@ -42,7 +42,8 @@
 //! - Each neighbor counts with the weight of the edge (1 without weights;
 //!   weights must be non-negative); parallel edges add up. Self-loops are
 //!   ignored, so a node never reads its own label (NetworkX counts a loop
-//!   as one neighbor).
+//!   as one neighbor, and igraph's results on networks with loops are
+//!   consistent with the same rule, which it does not document).
 //! - `initial` labels: non-negative values are labels, negative values
 //!   mark unlabeled nodes, which count for nothing until they are
 //!   labeled. Without `initial` every node starts with its own label.
