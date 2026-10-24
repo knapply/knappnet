@@ -152,7 +152,8 @@ fn integer(lens: Vec<f64>, max: u64) -> Lengths {
     Lengths::Integer(lens.into_iter().map(|x| x as u32).collect(), max as u32)
 }
 
-/// A 4-ary min-heap of nodes keyed by tentative distance, with a position
+/// The reference for [`RadixHeap`] in tests: a 4-ary min-heap of nodes
+/// keyed by tentative distance, with a position
 /// index so that a node's key can be lowered in place (Johnson 1975,
 /// `johnson1975priority`). Dijkstra's algorithm then holds at most one
 /// entry per node instead of one per relaxation, and a 4-ary layout halves
@@ -161,13 +162,34 @@ fn integer(lens: Vec<f64>, max: u64) -> Lengths {
 /// Entries are ordered by (distance, node index), a total order, so nodes
 /// are settled in exactly the order a binary heap with the same ordering
 /// and lazy deletion settles them.
+///
+/// Keys are held as the integers whose order is [`f64::total_cmp`]'s (the
+/// IEEE 754 total order), so each comparison is one integer comparison
+/// instead of a floating-point total comparison; the order, and so every
+/// result, is unchanged.
+#[cfg(test)]
 #[derive(Debug, Clone)]
 pub(crate) struct IndexedHeap {
-    items: Vec<(f64, u32)>,
+    items: Vec<(i64, u32)>,
     /// Position of each node in `items`; `u32::MAX` when absent.
     pos: Vec<u32>,
 }
 
+/// The integer whose order among keys is `f64::total_cmp`'s: negative
+/// values have their magnitude bits flipped, so they order downward.
+#[inline]
+fn key(x: f64) -> i64 {
+    let b = x.to_bits() as i64;
+    b ^ (((b >> 63) as u64) >> 1) as i64
+}
+
+/// The inverse of [`key`].
+#[inline]
+fn unkey(k: i64) -> f64 {
+    f64::from_bits((k ^ (((k >> 63) as u64) >> 1) as i64) as u64)
+}
+
+#[cfg(test)]
 impl IndexedHeap {
     const ARITY: usize = 4;
 
@@ -180,28 +202,25 @@ impl IndexedHeap {
     }
 
     #[inline]
-    fn less(a: (f64, u32), b: (f64, u32)) -> bool {
-        match a.0.total_cmp(&b.0) {
-            std::cmp::Ordering::Less => true,
-            std::cmp::Ordering::Greater => false,
-            std::cmp::Ordering::Equal => a.1 < b.1,
-        }
+    fn less(a: (i64, u32), b: (i64, u32)) -> bool {
+        a < b
     }
 
     /// Inserts `node` with key `dist`, or lowers its key to `dist` if it
     /// is present with a larger key. A larger `dist` is ignored.
     #[inline]
     pub(crate) fn push_or_decrease(&mut self, node: u32, dist: f64) {
+        let k = key(dist);
         let p = self.pos[node as usize];
         let i = if p == u32::MAX {
-            self.items.push((dist, node));
+            self.items.push((k, node));
             self.items.len() - 1
         } else {
             let i = p as usize;
-            if !Self::less((dist, node), self.items[i]) {
+            if !Self::less((k, node), self.items[i]) {
                 return;
             }
-            self.items[i].0 = dist;
+            self.items[i].0 = k;
             i
         };
         self.sift_up(i);
@@ -217,7 +236,7 @@ impl IndexedHeap {
             self.items[0] = last;
             self.sift_down(0);
         }
-        Some(top)
+        Some((unkey(top.0), top.1))
     }
 
     /// Removes every entry.
@@ -228,9 +247,9 @@ impl IndexedHeap {
         self.items.clear();
     }
 
-    /// The entries in no particular order.
-    pub(crate) fn entries(&self) -> &[(f64, u32)] {
-        &self.items
+    /// The nodes in the heap, in no particular order.
+    pub(crate) fn nodes(&self) -> impl Iterator<Item = u32> + '_ {
+        self.items.iter().map(|&(_, v)| v)
     }
 
     fn sift_up(&mut self, mut i: usize) {
@@ -273,6 +292,143 @@ impl IndexedHeap {
         }
         self.items[i] = item;
         self.pos[item.1 as usize] = i as u32;
+    }
+}
+
+/// A radix heap (Ahuja, Mehlhorn, Orlin, and Tarjan 1990,
+/// `ahuja1990faster`) of nodes keyed by tentative distance, with the same
+/// interface and the same order of removal as [`IndexedHeap`]: (distance,
+/// node) ascending in the IEEE 754 total order.
+///
+/// Dijkstra's algorithm removes keys in non-decreasing order, which a radix
+/// heap exploits: each (distance, node) pair is read as a 128-bit integer
+/// (the order-preserving integer of the distance above the node index),
+/// and an entry lives in the bucket numbered by the highest bit in which it
+/// differs from the last key removed. Insertion is a bit scan and a push;
+/// removal empties the lowest non-empty bucket into lower ones, so an
+/// entry moves at most once per bit and most moves touch contiguous memory.
+/// Lowering a key adds a new entry and leaves the old one to be skipped
+/// when it surfaces. A key below the last one removed (possible only when
+/// a floating-point sum rounds back to the last distance and the node index
+/// is smaller) goes to bucket 0, from which the smallest is always removed
+/// first, so the order stays exact.
+#[derive(Debug, Clone)]
+pub(crate) struct RadixHeap {
+    buckets: Vec<Vec<u128>>,
+    /// Current key of each node in the heap; `NONE` when absent.
+    current: Vec<u64>,
+    last: u128,
+    len: usize,
+}
+
+impl RadixHeap {
+    const NONE: u64 = u64::MAX;
+
+    /// An empty heap for nodes `0..n`.
+    pub(crate) fn new(n: usize) -> RadixHeap {
+        RadixHeap {
+            buckets: vec![Vec::new(); 129],
+            current: vec![Self::NONE; n],
+            last: 0,
+            len: 0,
+        }
+    }
+
+    /// The unsigned integer whose order is the total order of distances.
+    #[inline]
+    fn ukey(x: f64) -> u64 {
+        (key(x) as u64) ^ (1 << 63)
+    }
+
+    #[inline]
+    fn bucket(&self, e: u128) -> usize {
+        if e <= self.last {
+            0
+        } else {
+            128 - (e ^ self.last).leading_zeros() as usize
+        }
+    }
+
+    /// Inserts `node` with key `dist`, or lowers its key to `dist` if it
+    /// is present with a larger key. A larger `dist` is ignored.
+    #[inline]
+    pub(crate) fn push_or_decrease(&mut self, node: u32, dist: f64) {
+        let k = Self::ukey(dist);
+        let cur = self.current[node as usize];
+        if cur != Self::NONE {
+            if k >= cur {
+                return;
+            }
+        } else {
+            self.len += 1;
+        }
+        self.current[node as usize] = k;
+        let e = (k as u128) << 32 | node as u128;
+        let b = self.bucket(e);
+        self.buckets[b].push(e);
+    }
+
+    /// Removes and returns the entry with the smallest key.
+    #[inline]
+    pub(crate) fn pop(&mut self) -> Option<(f64, u32)> {
+        loop {
+            if self.len == 0 {
+                return None;
+            }
+            if self.buckets[0].is_empty() {
+                let i = (1..129)
+                    .find(|&i| !self.buckets[i].is_empty())
+                    .expect("a live entry");
+                let mut items = std::mem::take(&mut self.buckets[i]);
+                self.last = *items.iter().min().expect("not empty");
+                for &e in &items {
+                    let b = self.bucket(e);
+                    self.buckets[b].push(e);
+                }
+                items.clear();
+                // Keep the emptied bucket's storage for later.
+                self.buckets[i] = items;
+            }
+            let zero = &mut self.buckets[0];
+            let at = (0..zero.len())
+                .min_by_key(|&j| zero[j])
+                .expect("bucket 0 is not empty");
+            let e = zero.swap_remove(at);
+            let node = e as u32;
+            let k = (e >> 32) as u64;
+            if self.current[node as usize] != k {
+                continue; // superseded by a lower key
+            }
+            self.current[node as usize] = Self::NONE;
+            self.len -= 1;
+            if self.len == 0 {
+                // Only superseded entries remain: drop them, so the next
+                // search starts from key 0.
+                self.buckets.iter_mut().for_each(Vec::clear);
+                self.last = 0;
+            }
+            return Some((unkey((k ^ (1 << 63)) as i64), node));
+        }
+    }
+
+    /// Removes every entry.
+    pub(crate) fn clear(&mut self) {
+        for b in &mut self.buckets {
+            for &e in b.iter() {
+                self.current[e as u32 as usize] = Self::NONE;
+            }
+            b.clear();
+        }
+        self.last = 0;
+        self.len = 0;
+    }
+
+    /// The nodes in the heap, in no particular order.
+    pub(crate) fn nodes(&self) -> impl Iterator<Item = u32> + '_ {
+        self.buckets.iter().flatten().filter_map(move |&e| {
+            let node = e as u32;
+            (self.current[node as usize] == (e >> 32) as u64).then_some(node)
+        })
     }
 }
 
@@ -321,6 +477,67 @@ mod tests {
     }
 
     #[test]
+    fn radix_heap_removes_in_the_order_of_the_indexed_heap() {
+        // Dijkstra-like use: keys never fall below the last one removed,
+        // except by rounding back onto it; decreases and ties are common.
+        let mut rng = crate::rng::Stream::new(3, 0);
+        let n = 300;
+        let (mut a, mut b) = (IndexedHeap::new(n), RadixHeap::new(n));
+        for round in 0..20 {
+            let mut last = 0.0f64;
+            let mut done = vec![false; n];
+            a.push_or_decrease(round as u32, 0.0);
+            b.push_or_decrease(round as u32, 0.0);
+            loop {
+                let (x, y) = (a.pop(), b.pop());
+                assert_eq!(
+                    x.map(|p| (p.0.to_bits(), p.1)),
+                    y.map(|p| (p.0.to_bits(), p.1))
+                );
+                let Some((d, v)) = x else { break };
+                assert!(d >= last);
+                last = d;
+                done[v as usize] = true;
+                for _ in 0..4 {
+                    let w = rng.below(n as u64) as u32;
+                    if done[w as usize] {
+                        continue;
+                    }
+                    let step = match rng.below(4) {
+                        0 => 0.0,
+                        1 => 1e-30,
+                        2 => rng.below(3) as f64,
+                        _ => rng.below(1000) as f64 / 7.0,
+                    };
+                    a.push_or_decrease(w, d + step);
+                    b.push_or_decrease(w, d + step);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn heap_keys_follow_the_total_order() {
+        let xs = [
+            f64::NEG_INFINITY,
+            -2.5,
+            -0.0,
+            0.0,
+            1e-300,
+            1.0,
+            3.25,
+            f64::INFINITY,
+            f64::NAN,
+        ];
+        for &a in &xs {
+            assert_eq!(unkey(key(a)).to_bits(), a.to_bits());
+            for &b in &xs {
+                assert_eq!(key(a).cmp(&key(b)), a.total_cmp(&b), "{a} {b}");
+            }
+        }
+    }
+
+    #[test]
     fn indexed_heap_orders_and_decreases() {
         let mut h = IndexedHeap::new(10);
         let mut rng = crate::rng::Stream::new(7, 0);
@@ -346,7 +563,7 @@ mod tests {
         assert!(h.pos.iter().all(|&p| p == u32::MAX));
         h.push_or_decrease(3, 1.0);
         h.push_or_decrease(4, 2.0);
-        assert_eq!(h.entries().len(), 2);
+        assert_eq!(h.nodes().count(), 2);
         h.clear();
         assert!(h.pop().is_none() && h.pos.iter().all(|&p| p == u32::MAX));
     }

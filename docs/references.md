@@ -7,6 +7,7 @@ cited by author and year in an R help page or a vignette instead.
 
 | Key | Reference | Cited in |
 |---|---|---|
+| `ahuja1990faster` | Ahuja et al. (1990). Faster Algorithms for the Shortest Path Problem. *Journal of the ACM*. | `crates/engine/src/weights.rs` |
 | `alba1973graph` | Alba (1973). A Graph-Theoretic Definition of a Sociometric Clique. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/factions/ncliques.rs` |
 | `albert2000error` | Albert, Jeong, and Barabási (2000). Error and Attack Tolerance of Complex Networks. *Nature*. |  |
 | `almeidasilva2024network` | Almeida-Silva (2024). Network Analysis in R. *https://almeidasilvaf.github.io/NAR/*. | `docs/DECISIONS.md`, `docs/ROADMAP.md` |
@@ -58,7 +59,7 @@ cited by author and year in an R help page or a vignette instead.
 | `bostock2011d3` | Bostock, Ogievetsky, and Heer (2011). D3: Data-Driven Documents. *IEEE Transactions on Visualization and Computer Graphics*. | `crates/engine/src/io/nodelink.rs` |
 | `bowdler1968ql` | Bowdler et al. (1968). The QR and QL Algorithms for Symmetric Matrices. *Numerische Mathematik*. | `crates/engine/src/linalg.rs` |
 | `boyd2010computing` | Boyd et al. (2010). Computing Continuous Core/Periphery Structures for Social Relations Data with MINRES/SVD. *Social Networks*. | `crates/engine/src/metrics/coreperiphery/continuous.rs` |
-| `brandes2001faster` | Brandes (2001). A Faster Algorithm for Betweenness Centrality. *Journal of Mathematical Sociology*. | `crates/engine/src/metrics/betweenness.rs`, `crates/engine/src/metrics/ego.rs`, `crates/engine/src/metrics/partition/girvan_newman.rs`, `docs/ROADMAP.md` |
+| `brandes2001faster` | Brandes (2001). A Faster Algorithm for Betweenness Centrality. *Journal of Mathematical Sociology*. | `crates/engine/src/bitset.rs`, `crates/engine/src/metrics/betweenness.rs`, `crates/engine/src/metrics/ego.rs`, `crates/engine/src/metrics/partition/girvan_newman.rs`, and 1 more |
 | `brandes2002graphml` | Brandes et al. (2002). GraphML Progress Report: Structural Layer Proposal. *Graph Drawing (GD 2001)*. | `crates/engine/src/io/graphml.rs` |
 | `brandes2005centrality` | Brandes and Fleischer (2005). Centrality measures based on current flow. *STACS 2005*. | `crates/engine/src/metrics/reach.rs` |
 | `brandes2007eigensolver` | Brandes and Pich (2007). Eigensolver Methods for Progressive Multidimensional Scaling of Large Data. *Graph Drawing (GD 2006)*. | `crates/engine/src/layout/mod.rs`, `crates/engine/src/layout/stress.rs` |

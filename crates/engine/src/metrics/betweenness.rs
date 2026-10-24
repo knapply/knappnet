@@ -24,7 +24,7 @@
 //!   positive. The cheapest exact algorithm is chosen automatically: uniform
 //!   weights reduce to breadth-first search, small integer lengths use
 //!   Dial's bucket queue with exact integer distances, and other lengths use
-//!   Dijkstra's algorithm (indexed 4-ary heap, see [`crate::weights`]).
+//!   Dijkstra's algorithm (radix heap, see [`crate::weights`]).
 //!   In the last case two path lengths are considered
 //!   equal when they agree to a relative tolerance of 1e-10, the policy
 //!   igraph uses, so floating-point rounding does not drop tied paths.
@@ -38,7 +38,7 @@
 use crate::error::Result;
 use crate::graph::Graph;
 use crate::parallel;
-use crate::weights::{path_lengths, IndexedHeap, Lengths, PathAlgorithm, WeightKind};
+use crate::weights::{path_lengths, Lengths, PathAlgorithm, RadixHeap, WeightKind};
 
 const EPSILON: f64 = 1e-10;
 
@@ -138,7 +138,7 @@ struct Workspace {
     rank: Vec<u32>,
     /// Nodes in the order they were settled (non-decreasing distance).
     order: Vec<u32>,
-    heap: IndexedHeap,
+    heap: RadixHeap,
 }
 
 impl Workspace {
@@ -154,7 +154,7 @@ impl Workspace {
             buckets: Vec::new(),
             rank: vec![u32::MAX; n],
             order: Vec::with_capacity(n),
-            heap: IndexedHeap::new(n),
+            heap: RadixHeap::new(n),
         }
     }
 
@@ -301,7 +301,7 @@ impl Workspace {
         self.sigma[s] = 1.0;
         self.heap.push_or_decrease(s as u32, 0.0);
 
-        // Dijkstra's algorithm with an indexed heap. Path counts propagate
+        // Dijkstra's algorithm with a radix heap. Path counts propagate
         // only from settled nodes, so sigma[v] is final when v's arcs are
         // relaxed.
         let mut touched = std::mem::take(&mut self.touched);
