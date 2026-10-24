@@ -412,7 +412,7 @@ def kemeny_constant(G, *, weight=None):
     declined="directed graphs; multigraphs; weight functions; disconnected graphs; negative weights.",
 )
 def second_order_centrality(G, weight="weight"):
-    if len(G) < 2:
+    if len(G) < 2 or weight != "weight":
         raise NotImplementedError("left to NetworkX")
     w = _weighted(G, weight)
     _nonnegative_weights(G, w)
