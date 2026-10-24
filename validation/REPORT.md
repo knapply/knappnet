@@ -5,9 +5,41 @@ manifest file (`validation/manifest.d/<area>.yaml`). Each cell counts
 fixtures as match / documented convention difference / FAIL / not run;
 an empty cell means the oracle does not implement that measure.
 
-Totals: 9570 match, 46 documented differences, 0 FAIL, 4167 not run, 289 awaiting a manual run (UCINET), 1309 undefined for the oracle.
+Totals: 14874 match, 63 documented differences, 0 FAIL, 4223 not run, 289 awaiting a manual run (UCINET), 1639 undefined for the oracle.
 
 Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no goldens yet); igraph (no goldens yet); keyplayer (no goldens yet); networkx 3.7; sna (no goldens yet); stats (no goldens yet); tsna (no goldens yet); ucinet (no goldens yet).
+
+## assortativity
+
+| Measure | definition | networkx |
+|---|---|---|
+| `mixing_degree` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `mixing_degree_in_out` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `mixing_degree_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `mixing_degree_subset` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `mixing_attribute` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `mixing_attribute_subset` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_degree` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_degree_in_in` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `assort_degree_out_out` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `assort_degree_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `assort_degree_subset` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_degree_pearson` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_attribute` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_attribute_subset` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_numeric` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `assort_numeric_subset` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `avg_nbr_deg` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `avg_nbr_deg_in_in` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
+| `avg_nbr_deg_total` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
+| `avg_nbr_deg_out_in` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
+| `avg_nbr_deg_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `avg_nbr_deg_subset` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `avg_deg_conn` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `avg_deg_conn_out_out` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
+| `avg_deg_conn_in_in` | 9 / 0 / 0 / 0 | 8 / 1 / 0 / 0 |
+| `avg_deg_conn_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `avg_deg_conn_subset` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
 
 ## communities
 
@@ -74,6 +106,32 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `betweenness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |  |
 | `betweenness_weighted_strength` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 5 / 2 / 0 / 0 |  |
 | `triad_census` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 9 / 0 / 0 / 0 | 0 / 0 / 0 / 9 |
+
+## cores
+
+| Measure | definition | networkx |
+|---|---|---|
+| `core_k2` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `core_shell` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `core_shell_k1` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `core_crust` | 28 / 0 / 0 / 0 | 26 / 2 / 0 / 0 |
+| `core_crust_k1` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `core_corona_k1` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `core_corona_k2` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `truss_numbers` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `k_truss_3_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `k_truss_3_nodes` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `k_truss_4_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `k_truss_4_nodes` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `onion_layers` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+
+## cut_measures
+
+| Measure | definition | networkx |
+|---|---|---|
+| `cut_measures` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cut_measures_overlap` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `cut_measures_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
 
 ## descriptive
 
@@ -148,8 +206,78 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `core_periphery_correlation` | 28 / 0 / 0 / 0 |  |  |
 | `compactness` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |
 | `compactness_weighted` | 7 / 0 / 0 / 0 | 0 / 0 / 0 / 7 | 7 / 0 / 0 / 0 |
-| `small_world_observed` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |
-| `small_world_observed_local` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 28 / 0 / 0 / 0 |
+| `small_world_observed` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |
+| `small_world_observed_local` | 28 / 0 / 0 / 0 | 0 / 0 / 0 / 28 | 0 / 0 / 0 / 28 |
+
+## isomorphism
+
+| Measure | definition | networkx |
+|---|---|---|
+| `vf2pp_iso` | 8 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_iso_labels` | 8 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_induced_path3` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_mono_path3` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_induced_triangle` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_mono_triangle` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_induced_star3` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_mono_star3` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_induced_cycle4` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_mono_cycle4` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_induced_feedforward` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `vf2pp_mono_feedforward` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `vf2pp_induced_path3_labels` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `vf2pp_mono_star3_labels` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `could_be_iso_d_rev` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `could_be_iso_d_perturbed` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `could_be_iso_dt_rev` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `could_be_iso_dt_perturbed` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `could_be_iso_dtc_rev` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `could_be_iso_dtc_perturbed` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `tree_iso` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+
+## linkpred
+
+| Measure | definition | networkx |
+|---|---|---|
+| `lp_common_neighbors_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_common_neighbors_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_jaccard_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_jaccard_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_adamic_adar_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_adamic_adar_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_resource_allocation_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_resource_allocation_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_preferential_attachment_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_preferential_attachment_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_cnc_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_cnc_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_cn_sh_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_cn_sh_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_ra_sh_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_ra_sh_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_wic_non_edges` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `lp_wic_all` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+
+## matching
+
+| Measure | definition | networkx |
+|---|---|---|
+| `matching_max` | 8 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `matching_max_weight` | 1 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `matching_max_weight_card` | 1 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `matching_min_weight` | 1 / 0 / 0 / 0 | 5 / 0 / 0 / 0 |
+| `matching_maximal` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `matching_check_candidate` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `matching_check_maximal` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `color_largest_first` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `color_saturation_largest_first` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `color_smallest_last` | 19 / 0 / 0 / 0 |  |
+| `color_independent_set` | 19 / 0 / 0 / 0 |  |
+| `color_connected_sequential_bfs` | 19 / 0 / 0 / 0 |  |
+| `color_connected_sequential_dfs` | 19 / 0 / 0 / 0 |  |
+| `mis_check` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `square_clustering` | 19 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `generalized_degree` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
 
 ## positions
 
@@ -198,6 +326,20 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `flow_betweenness_fractional` | 15 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 27 |
 | `flow_betweenness_capacity` | 1 / 0 / 0 / 0 |  |  | 0 / 0 / 0 / 7 |
 
+## rewiring
+
+| Measure | definition | networkx |
+|---|---|---|
+| `swap_double` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `swap_connected` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `swap_directed` | 9 / 0 / 0 / 0 | 9 / 0 / 0 / 0 |
+| `reference_random` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `reference_lattice` | 19 / 0 / 0 / 0 | 18 / 0 / 0 / 0 |
+| `small_world_sigma` |  | 7 / 0 / 0 / 0 |
+| `small_world_omega` |  | 6 / 0 / 0 / 0 |
+| `rich_club` | 19 / 0 / 0 / 0 | 19 / 0 / 0 / 0 |
+| `rich_club_normalized` |  | 7 / 0 / 0 / 0 |
+
 ## roles
 
 | Measure | definition | igraph | networkx | sna | stats |
@@ -243,6 +385,29 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 | `proximity_knn_planar` | 28 / 0 / 0 / 0 |  |  |  |  |
 | `group_geometry_lonlat` | 28 / 0 / 0 / 0 |  |  |  |  |
 | `group_geometry_planar` | 28 / 0 / 0 / 0 |  |  |  |  |
+
+## similarity
+
+| Measure | definition | networkx |
+|---|---|---|
+| `wl_hash` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_hash_iter1` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_hash_iter5_digest8` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_hash_node_labels` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_hash_edge_labels` | 26 / 0 / 0 / 0 | 26 / 0 / 0 / 0 |
+| `wl_hash_both_labels` | 26 / 0 / 0 / 0 | 26 / 0 / 0 / 0 |
+| `wl_subgraph` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_subgraph_initial` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_subgraph_node_labels` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `wl_subgraph_edge_labels` | 26 / 0 / 0 / 0 | 26 / 0 / 0 / 0 |
+| `simrank` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `simrank_weighted` | 7 / 0 / 0 / 0 | 7 / 0 / 0 / 0 |
+| `simrank_pairwise` | 28 / 0 / 0 / 0 | 28 / 0 / 0 / 0 |
+| `simrank_converged` | 28 / 0 / 0 / 0 |  |
+| `panther` | 10 / 0 / 0 / 0 | 10 / 0 / 0 / 0 |
+| `ged` | 7 / 0 / 0 / 0 | 10 / 0 / 0 / 0 |
+| `ged_node_labels` | 7 / 0 / 0 / 0 | 10 / 0 / 0 / 0 |
+| `ged_labels` | 7 / 0 / 0 / 0 | 10 / 0 / 0 / 0 |
 
 ## spectral
 
@@ -447,8 +612,19 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `modularity` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
 - `modularity_resolution` vs definition on `empty` (edge_case): index 0: engine nan, definition nan
 - `modularity_resolution` vs networkx on `empty` (edge_case): index 0: engine nan, networkx 0.0
+- `avg_nbr_deg` vs networkx on `multi_loops_dir` (multi_edges): index 13: engine 6.0, networkx 3.0
+- `avg_nbr_deg_in_in` vs networkx on `multi_loops_dir` (multi_edges): index 2: engine 4.666666666666667, networkx 2.6666666666666665
+- `avg_nbr_deg_total` vs networkx on `multi_loops_dir` (multi_edges): index 16: engine 7.75, networkx 4.5
+- `avg_nbr_deg_out_in` vs networkx on `multi_loops_dir` (multi_edges): index 13: engine 6.0, networkx 3.0
+- `avg_nbr_deg_subset` vs networkx on `multi_loops_dir` (multi_edges): index 6: engine 5.0, networkx 3.0
+- `avg_deg_conn` vs networkx on `multi_loops_dir` (multi_edges): item 2: engine (4.0, 7.5), networkx (4.0, 5.5)
+- `avg_deg_conn_out_out` vs networkx on `multi_loops_dir` (multi_edges): item 1: engine (2.0, 4.2), networkx (2.0, 3.6)
+- `avg_deg_conn_in_in` vs networkx on `multi_loops_dir` (multi_edges): item 3: engine (3.0, 3.8333333333333335), networkx (3.0, 2.5)
+- `avg_deg_conn_subset` vs networkx on `multi_loops_dir` (multi_edges): item 4: engine (8.0, 3.625), networkx (8.0, 2.125)
 - `betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 47.56233570351218, networkx 53.91666666666667
 - `betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 10: engine 0.1390711570278134, networkx 0.15765107212475635
+- `core_shell` vs networkx on `multi_loops_dir` (loops, multi_edges): index 13: engine 16, networkx 15.0
+- `core_crust` vs networkx on `multi_loops_dir` (loops, multi_edges): index 2: engine 15, networkx 18.0
 - `constraint` vs networkx on `multi_loops_dir` (loops): index 18: engine 0.375, networkx 0.6613136574074073
 - `effective_size` vs networkx on `multi_loops_dir` (loops): index 19: engine 3.0, networkx 2.7222222222222223
 - `efficiency` vs networkx on `multi_loops_dir` (loops): index 19: engine 1.0, networkx 0.9074074074074074
@@ -457,12 +633,18 @@ Oracle versions: definition (direct evaluation, exact arithmetic); homophily (no
 - `edge_betweenness` vs networkx on `multi_loops_dir` (multi_edges): index 55: engine 10.771428571428572, networkx 15.666666666666666
 - `edge_betweenness_normalized` vs networkx on `multi_loops_dir` (multi_edges): index 55: engine 0.028345864661654136, networkx 0.04122807017543859
 - `coreness_all` vs networkx on `multi_loops_dir` (loops, multi_edges): index 18: engine 5.0, networkx 3.0
+- `avg_nbr_deg` vs networkx on `multi_loops_und` (multi_edges): index 7: engine 9.875, networkx 4.25
+- `avg_nbr_deg_subset` vs networkx on `multi_loops_und` (multi_edges): index 1: engine 12.0, networkx 8.25
+- `avg_deg_conn` vs networkx on `multi_loops_und` (multi_edges): item 2: engine (4.0, 10.5), networkx (4.0, 8.625)
+- `avg_deg_conn_subset` vs networkx on `multi_loops_und` (multi_edges): item 0: engine (4.0, 10.5), networkx (4.0, 8.625)
 - `label_prop_semisync` vs networkx on `multi_loops_und` (loops, multi_edges): index 10: engine 4.0, networkx 0.0
 - `label_prop_quality_retention` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.2753848379629629, networkx 0.13746527777777778
 - `label_prop_quality_fast` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.17135223765432098, networkx 0.057544367283950626
 - `leiden_quality` vs networkx on `multi_loops_und` (loops, multi_edges): index 0: engine 0.3554398148148148, networkx 0.31441454475308644
 - `betweenness` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 20.710205795909125, networkx 25.2452380952381
 - `betweenness_normalized` vs networkx on `multi_loops_und` (multi_edges): index 17: engine 0.1211123145959598, networkx 0.14763297131718187
+- `core_shell` vs networkx on `multi_loops_und` (loops, multi_edges): length 16 vs 19
+- `core_crust` vs networkx on `multi_loops_und` (loops, multi_edges): length 4 vs 1
 - `constraint` vs networkx on `multi_loops_und` (loops): item 0: engine 0.35074266975308643, networkx 0.3648124035493827
 - `effective_size` vs networkx on `multi_loops_und` (loops): item 0: engine 3.1666666666666665, networkx 3.0416666666666665
 - `efficiency` vs networkx on `multi_loops_und` (loops): item 0: engine 0.7916666666666666, networkx 0.7604166666666666
